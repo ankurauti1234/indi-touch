@@ -1,0 +1,129 @@
+/* css/keyboard.css */
+
+#osk-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #1A1B1E;
+    /* Indi Dark Background */
+    padding: 12px 0 24px 0;
+    z-index: 100000;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+    /* font-family: 'Roboto', sans-serif; */
+}
+
+#osk-container.visible {
+    transform: translateY(0);
+}
+
+.osk-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    width: 100%;
+}
+
+.osk-key {
+    background: #2D2E33;
+    color: #E6E1E5;
+    border: none;
+    border-radius: 6px;
+    height: 48px;
+    min-width: 40px;
+    /* Standard key width */
+    font-size: 20px;
+    font-weight: 400;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.osk-key:active {
+    background: #444746;
+    transform: translateY(1px);
+}
+
+/* SPECIAL KEYS */
+.osk-key.wide {
+    flex-grow: 1;
+    max-width: 60px;
+    font-size: 16px;
+    background: #38393F;
+}
+
+.osk-key.space {
+    flex-grow: 4;
+    max-width: 300px;
+}
+
+.osk-key.action {
+    background: #381E72;
+    color: #D0BCFF;
+    font-weight: 500;
+    font-size: 16px;
+    min-width: 80px;
+}
+
+.osk-key.shift-active {
+    background: #D0BCFF;
+    color: #381E72;
+}
+
+/* ADJUSTMENTS FOR 1024px SCREEN */
+@media (max-width: 1024px) {
+    .osk-key {
+        height: 44px;
+        font-size: 18px;
+        margin: 0 2px;
+    }
+}
+
+/* NUMERIC MODE */
+#osk-container.numeric-mode {
+    padding-bottom: 24px;
+    background-color: #000;
+    /* True black as per image */
+}
+
+#osk-container.numeric-mode .osk-row {
+    flex-wrap: wrap;
+    max-width: 98%;
+    margin: 4px auto;
+    gap: 4px;
+}
+
+#osk-container.numeric-mode .osk-key {
+    background: #2D2E33;
+    flex: 1 1 8%;
+    height: 54px;
+    font-size: 18px;
+    border-radius: 8px;
+    min-width: 40px;
+}
+
+#osk-container.numeric-mode .osk-key.wide,
+#osk-container.numeric-mode .osk-key.action {
+    flex: 1.5;
+    background: #38393F;
+}
+
+#osk-container.numeric-mode .osk-key.space {
+    flex: 3;
+    background: #2D2E33;
+}
+
+#osk-container.numeric-mode .osk-row:last-child .osk-key:last-child {
+    flex: 1.5;
+    background: #38393F;
+}

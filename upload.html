@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Wallpaper — Indi Meter</title>
+    <style>
+        :root {
+            /* M3 Dark Theme Colors */
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-primary-container: #4F378B;
+            --md-sys-color-on-primary-container: #EADDFF;
+            --md-sys-color-secondary: #CCC2DC;
+            --md-sys-color-on-secondary: #332D41;
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-on-surface: #E6E1E5;
+            --md-sys-color-surface-variant: #49454F;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            --md-sys-color-outline: #938F99;
+            --md-sys-color-error: #F2B8B5;
+            --md-sys-color-on-error: #601410;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 400;
+            color: var(--md-sys-color-primary);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .card {
+            background: var(--md-sys-color-surface-variant);
+            border-radius: 28px;
+            padding: 24px;
+            width: 100%;
+            max-width: 480px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--md-sys-color-outline);
+            border-radius: 24px;
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.2, 0, 0, 1);
+            background: rgba(208, 188, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--md-sys-color-primary);
+            background: rgba(208, 188, 255, 0.12);
+        }
+
+        .upload-zone .icon {
+            font-size: 48px;
+            color: var(--md-sys-color-primary);
+        }
+
+        .upload-zone .label {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .upload-zone .hint {
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .preview-area {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .preview-area.visible {
+            display: flex;
+        }
+
+        .preview-img {
+            width: 100%;
+            border-radius: 20px;
+            max-height: 320px;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            height: 48px;
+            border: none;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-tonal {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .btn-primary {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.38;
+            cursor: not-allowed;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+
+        .status-msg {
+            margin-top: 16px;
+            font-size: 14px;
+            text-align: center;
+            min-height: 20px;
+        }
+
+        .error {
+            color: var(--md-sys-color-error);
+        }
+
+        .status-msg.success {
+            color: #B4E197;
+            font-weight: 500;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .section-title {
+            margin: 40px 0 20px;
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            width: 100%;
+            max-width: 480px;
+            text-align: left;
+        }
+
+        .member-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .member-card {
+            background: var(--md-sys-color-surface-variant);
+            border-radius: 20px;
+            padding: 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .member-avatar-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary-container);
+            overflow: hidden;
+            border: 2px solid var(--md-sys-color-primary);
+        }
+
+        .member-avatar-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .member-name {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .btn-small {
+            height: 32px;
+            padding: 0 12px;
+            font-size: 12px;
+            border-radius: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Screensaver Wallpaper</h1>
+        <p>Enhance your display with a custom background</p>
+    </div>
+
+    <div class="card" id="current-wp-card" style="display:none; margin-bottom: 24px;">
+        <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; margin-bottom: 12px;">
+            Active Wallpaper</h3>
+        <img id="current-wp-img" src="" class="preview-img" style="max-height: 200px; cursor: default;">
+        <div id="current-wp-info" style="font-size: 12px; opacity: 0.5; margin-top: 8px; text-align: center;"></div>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; margin-bottom: 12px;">
+            Upload New</h3>
+        <div id="upload-stage">
+            <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                <div class="icon">󰄵</div>
+                <div class="label">Choose Wallaper</div>
+                <div class="hint">JPG, PNG or WebP up to 10 MB</div>
+            </div>
+            <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.webp">
+        </div>
+
+        <div id="preview-stage" class="preview-area">
+            <img class="preview-img" id="preview-img" alt="Preview">
+            <div class="btn-row">
+                <button class="btn btn-tonal" onclick="clearPreview()">Cancel</button>
+                <button class="btn btn-primary" id="btn-upload" onclick="uploadWallpaper()">Upload</button>
+            </div>
+        </div>
+        <div id="status-msg" class="status-msg"></div>
+    </div>
+
+    <h2 class="section-title">Household Members</h2>
+    <div class="member-grid" id="member-grid">
+        <!-- Members injected here -->
+    </div>
+
+    <!-- Hidden input for member avatars -->
+    <input type="file" id="member-file-input" accept=".jpg,.jpeg,.png,.webp">
+
+    <script>
+        const memberFileInput = document.getElementById('member-file-input');
+        const memberGrid = document.getElementById('member-grid');
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const statusMsg = document.getElementById('status-msg');
+        const previewImg = document.getElementById('preview-img');
+        const btnUpload = document.getElementById('btn-upload');
+        const uploadStage = document.getElementById('upload-stage');
+        const previewStage = document.getElementById('preview-stage');
+
+        let activeMemberCode = null;
+        let selectedFile = null;
+
+        // Init
+        fetchMembers();
+        fetchCurrentWallpaper();
+
+        async function fetchCurrentWallpaper() {
+            try {
+                const r = await fetch('/api/wallpaper/status');
+                const d = await r.json();
+                const card = document.getElementById('current-wp-card');
+                const img = document.getElementById('current-wp-img');
+                const info = document.getElementById('current-wp-info');
+
+                if (d.hasWallpaper) {
+                    card.style.display = 'block';
+                    img.src = `${d.url}&t=${Date.now()}`;
+                    info.innerText = `${d.sizeKB} KB • ${d.ext.toUpperCase()} Active`;
+                } else {
+                    card.style.display = 'none';
+                }
+            } catch (e) { }
+        }
+        async function fetchMembers() {
+            try {
+                const r = await fetch('/api/wallpaper/members');
+                const d = await r.json();
+                if (d.success) renderMembers(d.members);
+            } catch (e) { }
+        }
+
+        function renderMembers(members) {
+            memberGrid.innerHTML = members.map(m => `
+                <div class="member-card">
+                    <div class="member-avatar-box">
+                        <img src="${m.offline_avatar && !m.offline_avatar.includes('data:image') ? '/api/wallpaper/avatar_image?code=' + m.member_code + '&t=' + Date.now() : 'https://api.dicebear.com/9.x/initials/svg?seed=' + m.name}" alt="${m.name}">
+                    </div>
+                    <div class="member-name">${m.name}</div>
+                    <button class="btn btn-tonal btn-small" onclick="triggerMemberUpload('${m.member_code}')">Change Photo</button>
+                </div>
+            `).join('');
+        }
+
+        function triggerMemberUpload(code) {
+            activeMemberCode = code;
+            memberFileInput.click();
+        }
+
+        memberFileInput.onchange = async () => {
+            if (!memberFileInput.files.length || !activeMemberCode) return;
+            const file = memberFileInput.files[0];
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Avatar image too large. Max 5MB.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('member_code', activeMemberCode);
+
+            const card = [...document.querySelectorAll('.member-card')].find(c => c.innerHTML.includes(activeMemberCode));
+            const btn = card?.querySelector('button');
+            const originalText = btn.innerText;
+
+            try {
+                btn.disabled = true;
+                btn.innerText = 'Sharing...';
+                const r = await fetch('/api/wallpaper/upload_avatar', {
+                    method: 'POST',
+                    body: formData
+                });
+                const d = await r.json();
+                if (d.success) {
+                    if (d.sizeKB) {
+                        btn.innerText = `Saved (${d.sizeKB}KB)`;
+                        setTimeout(() => fetchMembers(), 1500);
+                    } else {
+                        fetchMembers();
+                    }
+                } else {
+                    alert(d.error || 'Upload failed');
+                }
+            } catch (e) {
+                alert('Connection error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        };
+
+        // Existing Wallpaper Logic
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) handleFile(fileInput.files[0]);
+        });
+
+        function handleFile(file) {
+            statusMsg.textContent = '';
+            statusMsg.className = 'status-msg';
+
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                showError('Invalid format. Use JPG, PNG or WebP.');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showError('File too large. Max 10MB.');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                uploadStage.style.display = 'none';
+                previewStage.classList.add('visible');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearPreview() {
+            selectedFile = null;
+            fileInput.value = '';
+            uploadStage.style.display = 'block';
+            previewStage.classList.remove('visible');
+            statusMsg.textContent = '';
+        }
+
+        function showError(msg) {
+            statusMsg.textContent = msg;
+            statusMsg.className = 'status-msg error';
+        }
+
+        async function uploadWallpaper() {
+            if (!selectedFile) return;
+
+            btnUpload.disabled = true;
+            const originalText = btnUpload.innerHTML;
+            btnUpload.innerHTML = '<div class="spinner"></div> Uploading...';
+            statusMsg.textContent = 'Processing and uploading...';
+            statusMsg.className = 'status-msg';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/api/wallpaper/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    statusMsg.textContent = 'Wallpaper updated successfully!';
+                    statusMsg.className = 'status-msg success';
+                    statusMsg.style.color = '#B4E197';
+                    btnUpload.innerHTML = 'Success!';
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showError(result.error || 'Upload failed');
+                    btnUpload.disabled = false;
+                    btnUpload.innerHTML = 'Retry Upload';
+                }
+            } catch (err) {
+                showError('Network error. Check connection.');
+                btnUpload.disabled = false;
+                btnUpload.innerHTML = 'Retry Upload';
+            }
+        }
+    </script>
+</body>
+
+</html>

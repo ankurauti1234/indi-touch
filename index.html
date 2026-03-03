@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indi Meter + Setup</title>
+
+  <!-- Fonts: served locally from assets/fonts/ — no internet required -->
+  <link rel="stylesheet" href="css/fonts.css" />
+
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/onboarding.css" />
+  <link rel="stylesheet" href="css/keyboard.css" />
+</head>
+
+<body>
+  <div id="onboarding-layer">
+    <div class="wizard-card">
+      <div class="step-container">
+        <!-- Step 1: Welcome -->
+        <div id="step-1" class="step active welcome-step">
+          <div class="welcome-left">
+            <div class="welcome-text-content">
+              <!-- <span class="material-symbols-rounded hero-icon-minimal">hub</span> -->
+              <span class="material-symbols-rounded hero-icon-minimal">
+                nest_display
+              </span>
+              <h1 class="hero-title" data-i18n="app_name">Indi Meter</h1>
+              <p class="hero-desc" data-i18n="onboard_welcome_desc">Welcome to our household panel. Let's get your Indi
+                Meter set up.</p>
+              <button class="setup-btn" onclick="nextStep()" data-i18n="start_setup">
+                Start Setup
+                <span class="material-symbols-rounded">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+          <div class="welcome-right">
+            <video class="welcome-video" autoplay loop muted playsinline>
+              <source src="assets/video/Google_Mio_Web_1080x1080.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+
+        <!-- Step 2: WiFi Setup (Real scan) -->
+        <div id="step-2" class="step">
+          <div class="wiz-header">
+            <h2 class="wiz-title">Network Setup</h2>
+            <p class="wiz-desc">Select a secure network to begin provisioning.</p>
+            <button class="refresh-btn-onboard" onclick="refreshWifi()">
+              <span class="material-symbols-rounded">refresh</span>
+            </button>
+          </div>
+          <div class="net-list" id="onboard-wifi-list">
+            <div class="wifi-skeleton">Searching for networks...</div>
+          </div>
+          <div class="wiz-footer">
+            <button class="btn-back" onclick="prevStep()">Back</button>
+            <button class="btn-next" id="btn-next-2" onclick="nextStep()" disabled>Next</button>
+          </div>
+        </div>
+
+        <!-- Step 3: WiFi Password -->
+        <div id="step-3" class="step">
+          <div class="wiz-header">
+            <h2 class="wiz-title" id="onboard-target-ssid">WiFi Password</h2>
+            <p class="wiz-desc">Enter security key for the selected network.</p>
+          </div>
+          <div class="wiz-input-container">
+            <input type="text" id="onboard-wifi-pass" class="setup-input" placeholder="Password" />
+            <span class="material-symbols-rounded inp-icon" onclick="toggleOnboardPass()"
+              id="onboard-pass-eye">visibility</span>
+          </div>
+          <div class="wiz-footer">
+            <button class="btn-back" onclick="prevStep()">Back</button>
+            <button class="btn-next" id="btn-next-3" onclick="nextStep()">Connect</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Hardware & File Checks -->
+        <div id="step-4" class="step">
+          <div class="wiz-header">
+            <h2 class="wiz-title">Hardware Validation</h2>
+            <p class="wiz-desc">Verifying system indicators and file flags.</p>
+          </div>
+          <div class="chk-group">
+            <div class="chk-item pending" id="hw-wifi">
+              <div class="chk-spinner"></div>
+              <span class="material-symbols-rounded chk-icon">wifi</span>
+              <span>Wi-Fi Status (/run/wifi_network_up)</span>
+            </div>
+            <div class="chk-item pending" id="hw-input">
+              <div class="chk-spinner"></div>
+              <span class="material-symbols-rounded chk-icon">input</span>
+              <span>Input Jack/HDMI Indicator</span>
+            </div>
+            <div class="chk-item pending" id="hw-video" style="display:none">
+              <div class="chk-spinner"></div>
+              <span class="material-symbols-rounded chk-icon">videocam</span>
+              <span>Object Detection Process</span>
+            </div>
+          </div>
+          <div class="wiz-footer">
+            <button class="btn-back" onclick="prevStep()">Back</button>
+            <button class="btn-next" id="btn-next-4" onclick="nextStep()" disabled>Proceed</button>
+          </div>
+        </div>
+
+        <!-- Step 5: HHID Entry (4 digits) -->
+        <div id="step-5" class="step">
+          <div class="wiz-header">
+            <h2 class="wiz-title">Device Association</h2>
+            <p class="wiz-desc">Enter the 4-digit Household ID suffix.</p>
+          </div>
+          <div class="wiz-input-container">
+            <div class="hhid-input-wrapper">
+              <span class="hhid-prefix">HH</span>
+              <input type="text" id="inp-hhid-digits" class="setup-input hhid-digits" placeholder="0000" maxlength="4"
+                data-osk-mode="number" />
+            </div>
+          </div>
+          <div class="wiz-footer">
+            <button class="btn-back" onclick="prevStep()">Back</button>
+            <button class="btn-next" id="btn-next-5" onclick="submitHHID()">Submit</button>
+          </div>
+        </div>
+
+        <!-- Step 6: OTP Verification -->
+        <div id="step-6" class="step">
+          <div class="wiz-header">
+            <h2 class="wiz-title">Verify OTP</h2>
+            <p class="wiz-desc" id="otp-phone-mask">Enter the 4-digit code sent to registered mobile.</p>
+          </div>
+          <div class="wiz-input-container">
+            <input type="text" id="inp-otp" class="setup-input" placeholder="0000" maxlength="4" data-osk-mode="number"
+              style="text-align:center; letter-spacing:8px; font-size:32px" />
+          </div>
+          <div class="wiz-footer">
+            <button class="btn-back" onclick="prevStep()">Back</button>
+            <button class="btn-next" id="btn-next-6" onclick="submitOTP()">Verify</button>
+          </div>
+        </div>
+
+        <!-- Step 7: Finalizing -->
+        <div id="step-7" class="step">
+          <div class="step-content-centered">
+            <div class="install-loader"></div>
+            <h2 class="hero-title" style="font-size:32px">Finalizing Setup</h2>
+            <div class="install-log" id="install-log">Fetching household members...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  </div>
+  </div>
+  </div>
+
+  <script type="module">
+    import { nextStep, prevStep, selectNet, toggleOnboardPass, refreshWifi } from "./js/onboarding.js";
+    window.nextStep = nextStep;
+    window.prevStep = prevStep;
+    window.selectNet = selectNet;
+    window.toggleOnboardPass = toggleOnboardPass;
+    window.refreshWifi = refreshWifi;
+  </script>
+
+  <div id="app-frame">
+    <nav class="nav-rail">
+      <div class="status-rail">
+        <button class="status-icon-btn" id="btn-wifi-status" onclick="navTo('settings'); openSetting('connectivity')">
+          <span class="material-symbols-rounded" id="wifi-status-icon">wifi</span>
+        </button>
+        <div class="status-icon-container" title="TV Status">
+          <span class="material-symbols-rounded" id="tv-status-icon">tv</span>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-btn active" id="btn-home" onclick="navTo('home')">
+          <span class="material-symbols-rounded">grid_view</span>
+        </button>
+        <button class="nav-btn guest-btn" id="btn-guest" onclick="navTo('guest-add')">
+          <span class="material-symbols-rounded">group_add</span>
+          <div class="badge" id="guest-badge">0</div>
+        </button>
+        <button class="nav-btn" id="btn-notif" onclick="navTo('notifications')">
+          <span class="material-symbols-rounded">notifications</span>
+        </button>
+        <button class="nav-btn" id="btn-settings" onclick="navTo('settings')">
+          <span class="material-symbols-rounded">settings</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="main-stage">
+      <section id="view-home" class="view active">
+        <div id="grid-container"></div>
+        <div id="tv-off-overlay" class="grid-lock-overlay" style="display: none;">
+          <div class="lock-content">
+            <span class="material-symbols-rounded lock-icon">tv_off</span>
+            <h3 class="lock-title">TV is Off</h3>
+            <p class="lock-msg">Member declaration is disabled while TV is off.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-notifications" class="view">
+        <div class="page-header">
+          <h2 class="page-title" data-i18n="notifications">Notifications</h2>
+        </div>
+        <div class="list-group" id="notif-list">
+          <!-- Notifications will be rendered here -->
+        </div>
+      </section>
+
+      <section id="view-settings" class="view">
+        <div id="set-main" class="settings-panel active">
+          <div class="page-header">
+            <h2 class="page-title" data-i18n="settings" onclick="handleSettingsTitleClick()"
+              style="cursor: pointer; user-select: none;">Settings</h2>
+          </div>
+          <div class="list-group">
+            <!-- User Personalization First -->
+            <div class="list-item" onclick="openSetting('members')">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">group</span>
+              </div>
+              <div class="item-content">
+                <h4 data-i18n="members">Members</h4>
+                <p>Change Member Names</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
+            </div>
+            <div class="list-item" onclick="openSetting('avatars')">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">face</span>
+              </div>
+              <div class="item-content">
+                <h4 data-i18n="avatar_style">Avatar Style</h4>
+                <p>Customize Grid</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
+            </div>
+            <div class="list-item" onclick="openSetting('language')">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">translate</span>
+              </div>
+              <div class="item-content">
+                <h4 data-i18n="language">Language</h4>
+                <p id="current-lang-text">English</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
+            </div>
+            <div class="list-item" onclick="openSetting('location')">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">location_on</span>
+              </div>
+              <div class="item-content">
+                <h4 data-i18n="location">Location</h4>
+                <p id="current-location-text">Yerevan</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
+            </div>
+
+            <hr style="opacity:0.1; margin: 8px 16px">
+
+            <!-- Technical / System Settings -->
+            <div class="list-item" onclick="openSetting('connectivity')">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">wifi</span>
+              </div>
+              <div class="item-content">
+                <h4 data-i18n="connectivity">Connectivity</h4>
+                <p>Wi-Fi Networks</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
+            </div>
+            <div class="list-item" onclick="openSetting('display')">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">display_settings</span>
+              </div>
+              <div class="item-content">
+                <h4>Display Setting</h4>
+                <p>Night Mode, Brightness, Animations</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
+            </div>
+            <div class="list-item" onclick="openSetting('wallpaper')">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">wallpaper</span>
+              </div>
+              <div class="item-content">
+                <h4>Screensaver Wallpaper</h4>
+                <p id="wallpaper-status-text">No wallpaper set</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
+            </div>
+            <div class="list-item" onclick="openSetting('system')" id="btn-sys-info" style="display: none;">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">info</span>
+              </div>
+              <div class="item-content">
+                <h4 data-i18n="sys_info">System Info</h4>
+                <p data-i18n="ids_ver_mac">IDs, Version, MAC</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
+            </div>
+            <div class="list-item" onclick="openSetting('power')">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">settings_power</span>
+              </div>
+              <div class="item-content">
+                <h4 data-i18n="power_options">Power Options</h4>
+                <p data-i18n="shutdown_reboot">Shutdown, Reboot, Timeout</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
+            </div>
+          </div>
+        </div>
+        <div id="set-display" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title">Display Setting</h2>
+          </div>
+          <div class="list-group" style="padding: 0 24px">
+            <div class="list-item" onclick="toggleTheme()">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">contrast</span>
+              </div>
+              <div class="item-content">
+                <h4>Night Mode</h4>
+                <p>Toggle Theme</p>
+              </div>
+              <div class="switch" id="theme-switch"></div>
+            </div>
+            <div class="list-item" onclick="toggleRemoteMode()">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">gamepad</span>
+              </div>
+              <div class="item-content">
+                <h4>Use Remote</h4>
+                <p>Arrow keys + click navigation</p>
+              </div>
+              <div class="switch" id="remote-switch"></div>
+            </div>
+            <div class="list-item" onclick="toggleAnimations()">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">motion_photos_off</span>
+              </div>
+              <div class="item-content">
+                <h4>Reduce Animations</h4>
+                <p>Faster UI, less system strain</p>
+              </div>
+              <div class="switch" id="anim-switch"></div>
+            </div>
+            <div class="list-item no-click">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">brightness_medium</span>
+              </div>
+              <div class="item-content" style="flex: 1">
+                <h4>Brightness</h4>
+                <div class="chip-group" style="margin-top: 12px">
+                  <div class="chip" onclick="selectBrightness(10, this)">10%</div>
+                  <div class="chip" onclick="selectBrightness(25, this)">25%</div>
+                  <div class="chip" onclick="selectBrightness(50, this)">50%</div>
+                  <div class="chip" onclick="selectBrightness(75, this)">75%</div>
+                  <div class="chip selected" onclick="selectBrightness(100, this)">100%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="set-wallpaper" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title">Screensaver Wallpaper</h2>
+          </div>
+          <div class="settings-scroll-area">
+            <!-- Current Wallpaper Preview -->
+            <div class="wp-preview-card" id="wp-status-card">
+              <div id="wp-no-image" class="wp-empty-state">
+                <span class="material-symbols-rounded">wallpaper</span>
+                <p>Using System Default</p>
+              </div>
+              <div id="wp-has-image" class="wp-active-state" style="display:none">
+                <img id="wp-thumb" src="" class="wp-preview-img">
+                <div class="wp-badge">Active Background</div>
+              </div>
+            </div>
+
+            <div class="list-group">
+              <div class="list-item no-click" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <h4 id="wp-title-text" style="font-size: 16px;">System Default</h4>
+                <p id="wp-size-info" style="font-size: 13px; opacity: 0.6;">No custom image uploaded yet</p>
+                <button class="action-btn-small" id="wp-reset-btn" onclick="resetWallpaper()"
+                  style="display:none; margin-top: 8px; background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container)">
+                  <span class="material-symbols-rounded">delete</span>
+                  Remove Custom Background
+                </button>
+              </div>
+            </div>
+
+            <div class="wp-qr-card">
+              <div class="qr-header">
+                <span class="material-symbols-rounded">qr_code_2</span>
+                <div>
+                  <h4>Upload from Phone</h4>
+                  <p>Scan to upload JPG/PNG/WebP</p>
+                </div>
+              </div>
+              <div class="qr-body">
+                <img id="wp-qr-image" src="" alt="Scan Me">
+                <div class="qr-url-box" id="wp-qr-url">http://...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="set-avatars" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title">Avatar Style</h2>
+          </div>
+          <div class="avatar-grid">
+            <!-- Local (Static) -->
+            <div id="avat-local" class="avatar-option selected" onclick="selectAvatarStyle('local')">
+              <img src="assets/images/avatar/male-middle.png" />
+              <div class="avatar-label">Default Local</div>
+            </div>
+
+            <!-- Custom (Uploaded) -->
+            <div id="avat-custom" class="avatar-option" onclick="selectAvatarStyle('custom')">
+              <img src="https://api.dicebear.com/9.x/initials/svg?seed=Custom" />
+              <div class="avatar-label">Custom Photos</div>
+            </div>
+
+            <!-- DiceBear Styles -->
+            <div id="avat-adventurer" class="avatar-option" onclick="selectAvatarStyle('adventurer')">
+              <img src="https://api.dicebear.com/9.x/adventurer/svg?seed=A" />
+              <div class="avatar-label">Adventurer</div>
+            </div>
+
+            <div id="avat-bottts" class="avatar-option" onclick="selectAvatarStyle('bottts')">
+              <img src="https://api.dicebear.com/9.x/bottts/svg?seed=A" />
+              <div class="avatar-label">Bottts</div>
+            </div>
+
+            <div id="avat-lorelei" class="avatar-option" onclick="selectAvatarStyle('lorelei')">
+              <img src="https://api.dicebear.com/9.x/lorelei/svg?seed=A" />
+              <div class="avatar-label">Lorelei</div>
+            </div>
+          </div>
+
+        </div>
+        <div id="set-members" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title">Members</h2>
+          </div>
+          <div class="list-group" id="member-settings-list" style="padding: 0 20px">
+            <!-- Members will be rendered here dynamically -->
+          </div>
+        </div>
+
+        <div id="set-system" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title">System Info</h2>
+            <button class="icon-btn-ghost" onclick="loadSystemInfo()" style="margin-left:auto">
+              <span class="material-symbols-rounded">refresh</span>
+            </button>
+          </div>
+          <div class="list-group" id="sys-info-content" style="padding:0 20px">
+            <!-- Populated by loadSystemInfo() in settings.js -->
+            <div class="wifi-skeleton">Loading system info...</div>
+          </div>
+        </div>
+
+        <div id="set-connectivity" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title">Connectivity</h2>
+            <button class="icon-btn-ghost" onclick="loadWifiList()" style="margin-left:auto">
+              <span class="material-symbols-rounded">refresh</span>
+            </button>
+          </div>
+          <div class="list-group">
+            <div class="list-item active-net">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">wifi</span>
+              </div>
+              <div class="item-content">
+                <h4 id="curr-net-name">Office_Corp_5G</h4>
+                <p id="curr-net-status">Connected • High Signal</p>
+              </div>
+            </div>
+            <div class="section-title">Available Networks</div>
+            <div id="available-wifi-list" class="net-list-inline">
+              <!-- Wifi list will be rendered here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Password Entry Popover (Material 3 style) -->
+        <div id="wifi-password-overlay" class="popover-overlay">
+          <div class="popover-card">
+            <h3 id="net-password-title">Enter Password</h3>
+            <p id="net-password-desc">Connecting to Office_Corp_5G</p>
+            <div class="input-field-v2">
+              <input type="password" id="wifi-pass-input" placeholder="Password" />
+              <button class="eye-toggle" onclick="togglePassVisibility()">
+                <span class="material-symbols-rounded" id="pass-eye-icon">visibility</span>
+              </button>
+            </div>
+            <div class="popover-actions">
+              <button class="modal-btn" onclick="closePassPopover()">Cancel</button>
+              <button class="modal-btn primary" onclick="submitPass()">Connect</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="set-location" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title">Location</h2>
+          </div>
+          <div class="list-group" id="location-list" style="padding: 0 20px">
+            <!-- Locations will be injected here -->
+          </div>
+        </div>
+
+        <div id="set-power" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title">Power Options</h2>
+          </div>
+          <div class="list-group" style="padding: 0 20px">
+            <div class="list-item" onclick="confirmPower('reboot')">
+              <div class="icon-box" style="background: #2e312e; color: #c4ead1">
+                <span class="material-symbols-rounded">restart_alt</span>
+              </div>
+              <div class="item-content">
+                <h4>Reboot</h4>
+                <p>Restart system</p>
+              </div>
+            </div>
+            <div class="list-item no-click">
+              <div class="icon-box">
+                <span class="material-symbols-rounded">timer</span>
+              </div>
+              <div class="item-content" style="flex:1">
+                <h4>Screen Timeout</h4>
+                <div class="chip-group" style="margin-top: 12px">
+                  <div class="chip" onclick="selectTimeout(0.25, this)">15s</div>
+                  <div class="chip" onclick="selectTimeout(0.5, this)">30s</div>
+                  <div class="chip" onclick="selectTimeout(1, this)">1m</div>
+                  <div class="chip" onclick="selectTimeout(2, this)">2m</div>
+                  <div class="chip selected" onclick="selectTimeout(5, this)">5m</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="set-language" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title" data-i18n="language">Language</h2>
+          </div>
+          <div class="list-group" style="padding: 0 20px">
+            <div class="list-item" onclick="changeAppLanguage('en')">
+              <div class="item-content">
+                <h4 data-i18n="english">English</h4>
+              </div>
+              <span class="material-symbols-rounded" id="lang-check-en">check</span>
+            </div>
+            <div class="list-item" onclick="changeAppLanguage('hy')">
+              <div class="item-content">
+                <h4 data-i18n="armenian">Armenian</h4>
+              </div>
+              <span class="material-symbols-rounded" id="lang-check-hy" style="display:none">check</span>
+            </div>
+            <div class="list-item" onclick="changeAppLanguage('ru')">
+              <div class="item-content">
+                <h4 data-i18n="russian">Russian</h4>
+              </div>
+              <span class="material-symbols-rounded" id="lang-check-ru" style="display:none">check</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-guest-add" class="view">
+        <div class="page-header">
+          <button class="back-btn" onclick="navTo('home')">
+            <span class="material-symbols-rounded">arrow_back</span>
+          </button>
+          <h2 class="page-title" data-i18n="add_guest">Add Guest</h2>
+        </div>
+        <div class="form-area" style="flex: 0">
+          <input type="number" id="g-age" class="input-box" placeholder="Guest Age" data-i18n="guest_age" />
+          <div class="chip-group">
+            <div class="chip selected" onclick="selectChip(this, 'gender')" data-i18n="male">
+              Male
+            </div>
+            <div class="chip" onclick="selectChip(this, 'gender')" data-i18n="female">
+              Female
+            </div>
+          </div>
+          <div class="chip-group" style="display:none">
+            <div class="chip selected" onclick="selectChip(this, 'duration')" data-i18n="duration_24h">
+              24 Hour
+            </div>
+          </div>
+          <button class="action-btn" onclick="addGuest()" data-i18n="add_to_list">
+            Add to Guest List
+          </button>
+        </div>
+        <div class="guest-list-area">
+          <h3 style="color: var(--text-sub); font-size: 16px; margin-bottom: 16px;" data-i18n="active_guests">
+            Active Guests
+          </h3>
+          <div id="guest-list-container" class="guest-avatar-row"></div>
+        </div>
+      </section>
+
+      <section id="view-survey" class="view">
+        <div class="page-header">
+          <button class="back-btn" onclick="navTo('notifications')">
+            <span class="material-symbols-rounded">arrow_back</span>
+          </button>
+          <h2 class="page-title">Survey</h2>
+        </div>
+        <div class="survey-container" id="survey-content">
+          <!-- Survey content will be injected here -->
+        </div>
+      </section>
+    </div>
+
+    <div id="screensaver">
+      <div class="saver-clock">
+        <div id="clock-time">00:00</div>
+        <div class="saver-info-row">
+          <div id="clock-date">...</div>
+          <div class="saver-dot"></div>
+          <div id="saver-weather">
+            <!-- Weather injected by screensaver.js -->
+          </div>
+          <div class="saver-dot"></div>
+          <div id="tv-status-saver" class="saver-tv-tag">
+            <span class="material-symbols-rounded" style="font-size: 20px;">tv</span>
+            <span id="tv-status-saver-text">TV ON</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="saver-active-area">
+        <div class="saver-members-title" data-i18n="watching_now">Watching Now</div>
+        <div id="saver-active-members">
+          <!-- Active member icons will be rendered here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Material Modal -->
+    <div id="modal-overlay">
+      <div class="modal-card">
+        <h3 class="modal-title" id="modal-title">Confirm</h3>
+        <p class="modal-msg" id="modal-msg">Are you sure you want to proceed?</p>
+        <div class="modal-actions" id="modal-actions">
+          <!-- Dynamic Actions -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Critical Warning Popover -->
+  <div id="critical-popover">
+    <div class="critical-card">
+      <div class="critical-icon-container">
+        <span class="material-symbols-rounded critical-icon">report_problem</span>
+      </div>
+      <h2 class="critical-title" data-i18n="active_m_req">Active Members Required</h2>
+      <p class="critical-msg" data-i18n="tv_active_msg">The TV system is active, but no household members are currently
+        declared. Please identify
+        who is watching to ensure accurate monitoring.</p>
+      <button class="critical-btn" onclick="window.handleCriticalAction()" data-i18n="identify_now">
+        Identify Members Now
+      </button>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+  <script type="module">
+    // Import onboarding logic for HTML inline events
+    import { nextStep, selectWifi } from "./js/onboarding.js";
+    window.nextStep = nextStep;
+    window.selectWifi = selectWifi;
+  </script>
+  <!-- Creator Easter Egg Overlay -->
+  <div id="author-overlay" onclick="closeEasterEgg()">
+    <div class="author-content">
+      <div class="author-label">Designed & Engineered by</div>
+      <h1 class="author-name">Ankur</h1>
+      <div class="author-email">ankurauti@gmail.com</div>
+      <div class="author-sub">© 2026 Inditronics</div>
+    </div>
+  </div>
+
+</body>
+
+</html>

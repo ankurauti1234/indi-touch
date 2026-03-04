@@ -48,14 +48,14 @@ export function updateClock() {
     const mins  = now.getMinutes().toString().padStart(2, '0');
     const secs  = now.getSeconds().toString().padStart(2, '0');
     
-    const timeStr = `
-        <div class="clock-main-digits">${hours}:${mins}</div>
-        <div class="clock-secs">${secs}</div>
-    `;
+    const digits = document.getElementById('clock-time-digits');
+    const secsEl = document.getElementById('clock-time-secs');
     
+    if (digits) digits.textContent = `${hours}:${mins}`;
+    if (secsEl) secsEl.textContent = secs;
+
     const clock = document.getElementById('clock-time');
     if (clock) {
-        clock.innerHTML = timeStr;
         if (!tvState.on) clock.classList.add('massive');
         else clock.classList.remove('massive');
     }

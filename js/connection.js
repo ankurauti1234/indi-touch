@@ -1,6 +1,7 @@
 /* js/connection.js — USB and WiFi connection warning popups */
 
 import { openSetting } from './settings.js';
+import { timers } from './utils.js';
 
 const API_STATUS_URL = '/api/system/status';
 const POLL_INTERVAL  = 8000;       // 8 s
@@ -34,7 +35,7 @@ function injectUsbPopup() {
 
 function hideUsbPopup() {
     const el = document.getElementById('usb-warning-overlay');
-    if (el) { el.classList.remove('visible'); setTimeout(() => el.remove(), 400); }
+    if (el) { el.classList.remove('visible'); timers.setTimeout(() => el.remove(), 400); }
 }
 
 /** Called by main.py Qt layer and by the internal poller */
@@ -73,15 +74,15 @@ function injectWifiPopup() {
     document.getElementById('wifi-warn-connect').addEventListener('click', () => {
         _dismissWifi();
         if (window.navTo) window.navTo('settings');
-        setTimeout(() => { if (window.openSetting) window.openSetting('connectivity'); }, 200);
+        timers.setTimeout(() => { if (window.openSetting) window.openSetting('connectivity'); }, 200);
     });
 }
 
 function _dismissWifi() {
     const el = document.getElementById('wifi-warning-overlay');
-    if (el) { el.classList.remove('visible'); setTimeout(() => el.remove(), 400); }
+    if (el) { el.classList.remove('visible'); timers.setTimeout(() => el.remove(), 400); }
     _wifiPopupVisible = false;
-    _wifiCooldownTimer = setTimeout(() => {
+    _wifiCooldownTimer = timers.setTimeout(() => {
         _wifiCooldownTimer = null;
         if (!_wifiConnected) injectWifiPopup();
     }, WIFI_COOLDOWN);
@@ -89,9 +90,9 @@ function _dismissWifi() {
 
 function hideWifiPopup() {
     const el = document.getElementById('wifi-warning-overlay');
-    if (el) { el.classList.remove('visible'); setTimeout(() => el.remove(), 400); }
+    if (el) { el.classList.remove('visible'); timers.setTimeout(() => el.remove(), 400); }
     _wifiPopupVisible = false;
-    clearTimeout(_wifiCooldownTimer);
+    timers.clearTimeout(_wifiCooldownTimer);
     _wifiCooldownTimer = null;
 }
 
@@ -174,7 +175,7 @@ async function _pollStatus() {
 
 export function initConnectionMonitor() {
     // Run immediately (with small delay for app to render)
-    setTimeout(_pollStatus, 1500);
+    timers.setTimeout(_pollStatus, 1500);
     // Then poll every POLL_INTERVAL
-    setInterval(_pollStatus, POLL_INTERVAL);
+    timers.setInterval(_pollStatus, POLL_INTERVAL);
 }

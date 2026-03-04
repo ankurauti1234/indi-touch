@@ -45,10 +45,11 @@ export function showToast(message, duration = 3000) {
 
     const toast = document.createElement('div');
     toast.className = 'toast-card';
-    toast.innerHTML = `
-        <span class="material-symbols-rounded">info</span>
-        <span class="toast-msg">${message}</span>
-    `;
+    toast.innerHTML = `<span class="material-symbols-rounded">info</span>`;
+    const span = document.createElement('span');
+    span.className = 'toast-msg';
+    span.textContent = message;
+    toast.appendChild(span);
 
     container.appendChild(toast);
 

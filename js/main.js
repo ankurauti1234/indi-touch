@@ -10,6 +10,7 @@ import { renderNotifications } from './notifications.js';
 import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState } from './connection.js';
+import { timers } from './utils.js';
 
 
 // Expose functions globally for HTML inline event handlers
@@ -41,7 +42,8 @@ export function resetHomeTimer() {
     const isOnboarding = onboardingLayer && !onboardingLayer.classList.contains('hidden') && onboardingLayer.style.display !== 'none';
     
     if (config.onboardingCompleted && !isOnboarding && !document.getElementById('view-home').classList.contains('active')) {
-        window.homeTimer = setTimeout(() => {
+        timers.clearTimeout(window.homeTimerId); // Track specifically if needed
+        window.homeTimerId = timers.setTimeout(() => {
             console.log("Inactivity timeout: returning to home.");
             navTo('home');
         }, 300000); // 5 minutes
@@ -100,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     
     // 3. Start Background Services
-    setInterval(updateClock, 1000);
+    timers.setInterval(updateClock, 1000);
     updateClock();
 
     window.changeAppLanguage = async (lang) => {
@@ -137,7 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // TV Monitoring Logic
     let lastDismissTime = 0;
 
-    setInterval(() => {
+    timers.setInterval(() => {
         const now = Date.now();
         const cooldownActive = (now - lastDismissTime) < 15000;
 
@@ -155,11 +157,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 popover.classList.remove('active');
             }
         }
-    }, 2000);
+    }, 5000); // 5s instead of 2s to save CPU
 
     // Guest 2 AM Cutoff Logic
     let lastHour = new Date().getHours();
-    setInterval(async () => {
+    timers.setInterval(async () => {
         const now = new Date();
         const currentHour = now.getHours();
         if (lastHour === 1 && currentHour === 2) {
@@ -183,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
         lastHour = currentHour;
-    }, 60000);
+    }, 300000); // Check every 5 mins instead of 1 min
 
     window.handleCriticalAction = () => {
         const popover = document.getElementById('critical-popover');

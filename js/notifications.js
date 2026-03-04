@@ -53,6 +53,17 @@ function renderPageNotifications() {
     const container = document.querySelector('#view-notifications .list-group');
     if (!container) return;
 
+    if (!container._delegated) {
+        container.addEventListener('click', (e) => {
+            const item = e.target.closest('.list-item');
+            if (item) {
+                const id = parseInt(item.dataset.id);
+                window.handleNotificationClick(id);
+            }
+        });
+        container._delegated = true;
+    }
+
     if (notificationData.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
@@ -64,7 +75,7 @@ function renderPageNotifications() {
     }
 
     container.innerHTML = notificationData.map(n => `
-        <div class="list-item ${n.read ? '' : 'unread'}" onclick="handleNotificationClick(${n.id})">
+        <div class="list-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
             <div class="icon-box severity-${n.type}">
                 <span class="material-symbols-rounded">${typeIcons[n.type] || 'notifications'}</span>
             </div>
@@ -84,6 +95,17 @@ function renderScreensaverNotifications() {
     const saver = document.getElementById('screensaver');
     if (!container || !saver) return;
 
+    if (!container._delegated) {
+        container.addEventListener('click', (e) => {
+            const card = e.target.closest('.hub-notif-card');
+            if (card) {
+                const id = parseInt(card.dataset.id);
+                window.handleNotificationClick(id);
+            }
+        });
+        container._delegated = true;
+    }
+
     // Filter unread for saver
     const unread = notificationData.filter(n => !n.read);
 
@@ -94,20 +116,43 @@ function renderScreensaverNotifications() {
     }
 
     saver.classList.remove('no-notif');
-    container.innerHTML = unread.map(n => `
-        <div class="hub-notif-card" onclick="handleNotificationClick(${n.id})">
-            <div class="hub-notif-icon-v2 severity-${n.type}">
-                <span class="material-symbols-rounded">${typeIcons[n.type] || 'notifications'}</span>
-            </div>
-            <div class="hub-notif-body">
-                <div class="hub-notif-top">
-                    <span class="hub-notif-title">${n.title}</span>
-                    <span class="hub-notif-time">${timeAgo(n.created_at)}</span>
+    
+    // Partial update for saver (recycling cards)
+    const existing = container.querySelectorAll('.hub-notif-card');
+    if (existing.length !== unread.length) {
+        container.innerHTML = unread.map(n => `
+            <div class="hub-notif-card" data-id="${n.id}">
+                <div class="hub-notif-icon-v2 severity-${n.type}">
+                    <span class="material-symbols-rounded">${typeIcons[n.type] || 'notifications'}</span>
                 </div>
-                <div class="hub-notif-text">${n.message}</div>
+                <div class="hub-notif-body">
+                    <div class="hub-notif-top">
+                        <span class="hub-notif-title">${n.title}</span>
+                        <span class="hub-notif-time">${timeAgo(n.created_at)}</span>
+                    </div>
+                    <div class="hub-notif-text">${n.message}</div>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    } else {
+        existing.forEach((card, i) => {
+            const n = unread[i];
+            card.dataset.id = n.id;
+            const title = card.querySelector('.hub-notif-title');
+            const time = card.querySelector('.hub-notif-time');
+            const text = card.querySelector('.hub-notif-text');
+            const iconBox = card.querySelector('.hub-notif-icon-v2');
+            const icon = iconBox.querySelector('.material-symbols-rounded');
+
+            if (title.textContent !== n.title) title.textContent = n.title;
+            const tAgo = timeAgo(n.created_at);
+            if (time.textContent !== tAgo) time.textContent = tAgo;
+            if (text.textContent !== n.message) text.textContent = n.message;
+            
+            iconBox.className = `hub-notif-icon-v2 severity-${n.type}`;
+            icon.textContent = typeIcons[n.type] || 'notifications';
+        });
+    }
 }
 
 window.handleNotificationClick = async (id) => {

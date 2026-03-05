@@ -45,15 +45,19 @@
 
         <!-- Step 2: WiFi Setup (Real scan) -->
         <div id="step-2" class="step">
-          <div class="wiz-header">
-            <h2 class="wiz-title">Network Setup</h2>
-            <p class="wiz-desc">Select a secure network to begin provisioning.</p>
+          <div class="wiz-header-row">
+            <div class="wiz-header-text">
+              <h2 class="wiz-title">Network Setup</h2>
+              <p class="wiz-desc">Select a secure network to begin provisioning.</p>
+            </div>
             <button class="refresh-btn-onboard" onclick="refreshWifi()">
               <span class="material-symbols-rounded">refresh</span>
             </button>
           </div>
-          <div class="net-list" id="onboard-wifi-list">
-            <div class="wifi-skeleton">Searching for networks...</div>
+          <div class="net-list-wrapper">
+            <div class="net-list" id="onboard-wifi-list">
+              <div class="wifi-skeleton">Searching for networks...</div>
+            </div>
           </div>
           <div class="wiz-footer">
             <button class="btn-back" onclick="prevStep()">Back</button>
@@ -68,9 +72,12 @@
             <p class="wiz-desc">Enter security key for the selected network.</p>
           </div>
           <div class="wiz-input-container">
-            <input type="text" id="onboard-wifi-pass" class="setup-input" placeholder="Password" />
-            <span class="material-symbols-rounded inp-icon" onclick="toggleOnboardPass()"
-              id="onboard-pass-eye">visibility</span>
+            <div class="setup-input-wrapper">
+              <input type="password" id="onboard-wifi-pass" class="setup-input" placeholder="Password" />
+              <button class="eye-toggle-onboard" onclick="toggleOnboardPass()">
+                <span class="material-symbols-rounded" id="onboard-pass-eye">visibility</span>
+              </button>
+            </div>
           </div>
           <div class="wiz-footer">
             <button class="btn-back" onclick="prevStep()">Back</button>
@@ -145,9 +152,16 @@
         <!-- Step 7: Finalizing -->
         <div id="step-7" class="step">
           <div class="step-content-centered">
-            <div class="install-loader"></div>
+            <div class="m3-morph-loader">
+              <div class="morph-shape"></div>
+            </div>
             <h2 class="hero-title" style="font-size:32px">Finalizing Setup</h2>
             <div class="install-log" id="install-log">Fetching household members...</div>
+            <button id="retry-finalize-btn" class="setup-btn" style="display: none; margin-top: 32px;"
+              onclick="finalizeSetup()">
+              <span class="material-symbols-rounded">refresh</span>
+              Retry Connection
+            </button>
           </div>
         </div>
 

@@ -27,13 +27,25 @@ export async function nextStep() {
         selectedSsid = selected.querySelector('.net-name').innerText;
         isSsidLocked = selected.dataset.locked === 'true';
 
-        if (!isSsidLocked) {
-            // Skip Step 3 (Password) if open
+        if (isSsidLocked) {
+            // If locked, Step 3 (Password) will handle the connection logic
+            animateStep(2, 3);
+            currentStep = 3;
+            handleStepLogic(currentStep);
+            return;
+        } else {
+            // Open network, proceed to Step 4
             animateStep(2, 4);
             currentStep = 4;
             handleStepLogic(currentStep);
             return;
         }
+    }
+
+    if (currentStep === 3) {
+        // Handle connection attempt on Step 3
+        const connected = await connectOnboardWifi();
+        if (!connected) return; // Stay on password page if connection fails
     }
 
     animateStep(currentStep, currentStep + 1);
@@ -168,6 +180,43 @@ export function toggleOnboardPass() {
     }
 }
 
+async function connectOnboardWifi() {
+    const pwd = document.getElementById('onboard-wifi-pass').value;
+    const btn = document.getElementById('btn-next-3');
+    const log = document.getElementById('onboard-wifi-log'); // We might want to add this to HTML if needed, but for now we'll use button state
+
+    if (btn) {
+        btn.classList.add('loading');
+        btn.disabled = true;
+    }
+
+    try {
+        const r = await fetch('/api/wifi/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ssid: selectedSsid, password: pwd })
+        });
+        const d = await r.json();
+        
+        if (d.success) {
+            // Connection initiated. On embedded systems, we might need to wait or just proceed to polling
+            // We'll proceed to Step 4 where polling happens
+            return true;
+        } else {
+            if (window.showToast) window.showToast(d.error || "Failed to initiate connection");
+            return false;
+        }
+    } catch (e) {
+        if (window.showToast) window.showToast("Network error: " + e.message);
+        return false;
+    } finally {
+        if (btn) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+    }
+}
+
 function validateStep(step) {
     if (step === 2) return document.querySelector('#onboard-wifi-list .net-item.selected') !== null;
     if (step === 3) return document.getElementById('onboard-wifi-pass').value.length >= 8 || !isSsidLocked;
@@ -184,18 +233,7 @@ async function handleStepLogic(step) {
 
     // Step 4: Hardware & File Checks
     if (step === 4) {
-        // If we came from password and NOT already connected
-        if (currentStep === 4 && isSsidLocked && !isAlreadyConnected) {
-           const pwd = document.getElementById('onboard-wifi-pass').value;
-           try {
-               await fetch('/api/wifi/connect', {
-                   method: 'POST',
-                   headers: { 'Content-Type': 'application/json' },
-                   body: JSON.stringify({ ssid: selectedSsid, password: pwd })
-               });
-           } catch(e) {}
-        }
-
+        // Logic for auto-connect moved to Step 3 user action
         // Run connectivity checks loop
         startConnectivityPolling();
     }
@@ -206,7 +244,7 @@ async function handleStepLogic(step) {
 
     // Step 7: Finalize
     if (step === 7) {
-        finalizeSetup();
+        window.finalizeSetup();
     }
 }
 
@@ -265,10 +303,13 @@ function setCheckState(id, ok) {
     el.classList.add(ok ? 'done' : 'pending');
 }
 
-async function finalizeSetup() {
+window.finalizeSetup = async () => {
     console.log("[Onboard] Finalizing setup...");
     const log = document.getElementById('install-log');
     const hhid = document.getElementById('inp-hhid-digits').value;
+    const retryBtn = document.getElementById('retry-finalize-btn');
+
+    if (retryBtn) retryBtn.style.display = 'none';
 
     try {
         if(log) log.innerText = `Fetching members for HH${hhid}...`;
@@ -287,13 +328,15 @@ async function finalizeSetup() {
             
             setTimeout(completeSetup, 2000);
         } else {
-            if(log) log.innerText = `Error: ${d.error || 'Failed to fetch members'}`;
+            if(log) log.innerText = `Cloud request error: ${d.error || 'Timed out'}`;
+            if (retryBtn) retryBtn.style.display = 'flex';
         }
     } catch(e) {
         console.error("[Onboard] Finalize Error:", e);
-        if(log) log.innerText = `Error: ${e.message}`;
+        if(log) log.innerText = `Network error: ${e.message}`;
+        if (retryBtn) retryBtn.style.display = 'flex';
     }
-}
+};
 
 export function completeSetup() {
     config.onboardingCompleted = true;

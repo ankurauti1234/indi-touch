@@ -217,25 +217,37 @@
     font-weight: 400;
 }
 
+.wiz-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.wiz-header-text {
+    flex: 1;
+}
+
 .refresh-btn-onboard {
     background: var(--surface-variant);
     color: var(--on-surface-variant);
     border: none;
-    width: 48px;
-    height: 48px;
-    border-radius: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: 0.3s cubic-bezier(0.2, 0, 0, 1);
-    margin-left: auto;
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    margin-left: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .refresh-btn-onboard:active {
     background: var(--primary-container);
     color: var(--on-primary-container);
-    transform: rotate(180deg);
+    transform: rotate(180deg) scale(0.9);
 }
 
 .refresh-btn-onboard .material-symbols-rounded {
@@ -243,14 +255,20 @@
 }
 
 /* NETWORK LIST */
-/* NETWORK & LIST ITEMS */
+.net-list-wrapper {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    margin-bottom: 100px;
+    /* Space for footer */
+}
+
 .net-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
     max-width: 700px;
-    max-height: 480px;
-    /* Reduced to avoid footer overlap */
+    height: 100%;
     overflow-y: auto;
     padding: 4px 12px 20px 4px;
     scrollbar-width: thin;
@@ -323,12 +341,40 @@
     margin-top: 24px;
 }
 
+.setup-input-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.eye-toggle-onboard {
+    position: absolute;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: var(--text-sub);
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.eye-toggle-onboard:active {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(0.9);
+}
+
 .setup-input {
     width: 100%;
     background: var(--bg-surface-container);
     border: 1px solid var(--outline-variant);
     border-radius: 16px;
-    padding: 24px 32px;
+    padding: 24px 72px 24px 32px;
+    /* Extra right padding for eye icon */
     color: var(--text-main);
     font-size: 32px;
     font-weight: 400;
@@ -531,31 +577,53 @@
     }
 }
 
-.install-loader {
-    width: 160px;
-    height: 4px;
-    background: var(--surface-variant);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-bottom: 32px;
+.m3-morph-loader {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 48px;
+    position: relative;
 }
 
-.install-loader::after {
-    content: '';
-    display: block;
-    width: 40%;
-    height: 100%;
+.morph-shape {
+    width: 80px;
+    height: 80px;
     background: var(--primary);
-    animation: load 2s ease-in-out infinite;
+    animation: m3-morph 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
-@keyframes load {
+@keyframes m3-morph {
     0% {
-        transform: translateX(-100%);
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        transform: rotate(0deg) scale(1);
+        background: var(--primary);
+    }
+
+    25% {
+        border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%;
+        transform: rotate(90deg) scale(1.1);
+        background: var(--secondary);
+    }
+
+    50% {
+        border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%;
+        transform: rotate(180deg) scale(1);
+        background: var(--tertiary, var(--primary-container));
+    }
+
+    75% {
+        border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%;
+        transform: rotate(270deg) scale(1.1);
+        background: var(--secondary-container);
     }
 
     100% {
-        transform: translateX(300%);
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        transform: rotate(360deg) scale(1);
+        background: var(--primary);
     }
 }
 
@@ -563,4 +631,6 @@
     font-size: 18px;
     color: var(--text-sub);
     font-weight: 300;
+    margin-top: 16px;
+    min-height: 24px;
 }

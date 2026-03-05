@@ -60,7 +60,7 @@ export function updateClock() {
         else clock.classList.remove('massive');
     }
 
-    const dateStr = now.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}).toLowerCase();
+    const dateStr = now.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
     const dateEl = document.getElementById('clock-date');
     if (dateEl) dateEl.innerText = dateStr;
 }

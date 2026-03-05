@@ -152,13 +152,11 @@
         <!-- Step 7: Finalizing -->
         <div id="step-7" class="step">
           <div class="step-content-centered">
-            <div class="m3-morph-loader">
-              <div class="morph-shape"></div>
-            </div>
+            <div class="install-loader"></div>
             <h2 class="hero-title" style="font-size:32px">Finalizing Setup</h2>
             <div class="install-log" id="install-log">Fetching household members...</div>
             <button id="retry-finalize-btn" class="setup-btn" style="display: none; margin-top: 32px;"
-              onclick="finalizeSetup()">
+              onclick="window.finalizeSetup()">
               <span class="material-symbols-rounded">refresh</span>
               Retry Connection
             </button>
@@ -681,11 +679,10 @@
           <div id="saver-weather">
             <!-- Weather injected by screensaver.js -->
           </div>
-          <div class="saver-dot"></div>
-          <div id="tv-status-saver" class="saver-tv-tag">
-            <span class="material-symbols-rounded" style="font-size: 20px;">tv</span>
-            <span id="tv-status-saver-text">TV ON</span>
-          </div>
+        </div>
+        <div id="tv-status-saver" class="saver-tv-tag">
+          <span class="material-symbols-rounded" style="font-size: 20px;">tv</span>
+          <span id="tv-status-saver-text">TV ON</span>
         </div>
       </div>
 

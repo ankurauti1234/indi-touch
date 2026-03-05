@@ -12,7 +12,6 @@
     align-items: center;
     justify-content: center;
     transition: 0.8s cubic-bezier(0.2, 0, 0, 1);
-    border-radius: 42px;
 }
 
 #onboarding-layer.hidden {
@@ -29,6 +28,8 @@
     flex-direction: column;
     position: relative;
     overflow: hidden;
+    border-radius: 42px;
+
 }
 
 .wizard-card::before {
@@ -101,6 +102,8 @@
     padding: 80px;
     background: var(--bg-surface);
     z-index: 2;
+    border-radius: 42px;
+
 }
 
 .welcome-right {
@@ -108,6 +111,8 @@
     position: relative;
     overflow: hidden;
     background: #000;
+    border-radius: 42px;
+
 }
 
 .welcome-video {
@@ -577,53 +582,31 @@
     }
 }
 
-.m3-morph-loader {
-    width: 120px;
-    height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 48px;
-    position: relative;
+.install-loader {
+    width: 240px;
+    height: 6px;
+    background: var(--surface-variant);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 32px;
 }
 
-.morph-shape {
-    width: 80px;
-    height: 80px;
+.install-loader::after {
+    content: '';
+    display: block;
+    width: 40%;
+    height: 100%;
     background: var(--primary);
-    animation: m3-morph 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    animation: load 2s ease-in-out infinite;
 }
 
-@keyframes m3-morph {
+@keyframes load {
     0% {
-        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-        transform: rotate(0deg) scale(1);
-        background: var(--primary);
-    }
-
-    25% {
-        border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%;
-        transform: rotate(90deg) scale(1.1);
-        background: var(--secondary);
-    }
-
-    50% {
-        border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%;
-        transform: rotate(180deg) scale(1);
-        background: var(--tertiary, var(--primary-container));
-    }
-
-    75% {
-        border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%;
-        transform: rotate(270deg) scale(1.1);
-        background: var(--secondary-container);
+        transform: translateX(-100%);
     }
 
     100% {
-        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-        transform: rotate(360deg) scale(1);
-        background: var(--primary);
+        transform: translateX(300%);
     }
 }
 

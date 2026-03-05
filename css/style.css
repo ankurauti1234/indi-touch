@@ -1504,7 +1504,7 @@ body.osk-open .main-stage {
 }
 
 #clock-time.massive {
-    font-size: 280px;
+    font-size: 380px;
 }
 
 .clock-main-digits {
@@ -1538,22 +1538,28 @@ body.osk-open .main-stage {
 
 /* TV Status Tag (Screensaver) */
 .saver-tv-tag {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 2px 12px;
-    background: rgba(100, 210, 154, 0.2);
-    color: #64d29a;
-    border-radius: 20px;
+    padding: 6px 16px;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    border-radius: 100px;
     font-size: 14px;
     font-weight: 600;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 100;
 }
 
 .saver-tv-tag.offline {
-    background: rgba(255, 255, 255, 0.1);
-    color: #8e8e8e;
+    background: var(--error-container);
+    color: var(--on-error-container);
 }
 
 .saver-info-row {
@@ -1567,7 +1573,6 @@ body.osk-open .main-stage {
 #clock-date {
     font-size: 32px;
     font-weight: 400;
-    text-transform: lowercase;
     opacity: 0.9;
     letter-spacing: 0.5px;
 }

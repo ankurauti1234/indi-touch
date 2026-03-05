@@ -13,10 +13,21 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/onboarding.css" />
   <link rel="stylesheet" href="css/keyboard.css" />
+  <link rel="stylesheet" href="css/loading.css" />
 </head>
 
 <body>
-  <div id="onboarding-layer">
+  <div id="app-loading">
+    <div class="loading-content">
+      <span class="material-symbols-rounded loading-logo">nest_display</span>
+      <div class="loading-bar-container">
+        <div class="loading-bar-progress"></div>
+      </div>
+      <div class="loading-text">Initializing Hub</div>
+    </div>
+  </div>
+
+  <div id="onboarding-layer" style="display: none;">
     <div class="wizard-card">
       <div class="step-container">
         <!-- Step 1: Welcome -->

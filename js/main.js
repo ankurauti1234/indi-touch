@@ -82,6 +82,17 @@ window.closeEasterEgg = () => {
     document.getElementById('author-overlay').classList.remove('active');
 };
 
+export function hideAppLoader() {
+    const loader = document.getElementById('app-loading');
+    if (loader) {
+        loader.classList.add('fade-out');
+        setTimeout(() => {
+            loader.style.display = 'none';
+        }, 600);
+    }
+}
+window.hideAppLoader = hideAppLoader;
+
 import { tvState, memberData, save as legacySave, initData, config } from './data.js';
 import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
 
@@ -99,6 +110,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGuestList();
     initLocation();
     renderNotifications();
+
+    // 4. Finalize - Hide app loader
+    hideAppLoader();
 
     
     // 3. Start Background Services

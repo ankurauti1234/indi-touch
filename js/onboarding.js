@@ -386,6 +386,7 @@ export async function checkOnboardingStatus() {
     }
 
     layer.style.display = 'none';
+    layer.classList.add('hidden');
     return true;
 }
 

@@ -1508,7 +1508,7 @@ body.osk-open .main-stage {
 }
 
 .clock-main-digits {
-    font-size: 180px;
+    font-size: inherit;
     line-height: 0.9;
     font-weight: 200;
     transition: font-size 0.4s ease;
@@ -1538,27 +1538,22 @@ body.osk-open .main-stage {
 
 /* TV Status Tag (Screensaver) */
 .saver-tv-tag {
-    position: absolute;
-    top: 40px;
-    left: 40px;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 16px;
-    background: var(--primary-container);
-    color: var(--on-primary-container);
-    border-radius: 100px;
+    padding: 2px 12px;
+    background: rgba(100, 210, 154, 0.2);
+    color: #64d29a;
+    border-radius: 20px;
     font-size: 14px;
     font-weight: 600;
-    letter-spacing: 0.5px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 100;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
 }
 
 .saver-tv-tag.offline {
-    background: var(--error-container);
-    color: var(--on-error-container);
+    background: rgba(255, 255, 255, 0.1);
+    color: #8e8e8e;
 }
 
 .saver-info-row {

@@ -140,8 +140,8 @@ def get_brightness():
 @system_bp.route("/shutdown", methods=["POST"])
 def shutdown():
     try:
-        # Full path to systemctl
-        subprocess.run(["sudo", "/bin/systemctl", "poweroff"], check=True)
+        # Optimized for RPi/Busybox systems
+        subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -151,8 +151,8 @@ def shutdown():
 @system_bp.route("/restart", methods=["POST"])
 def restart():
     try:
-        # Full path to systemctl
-        subprocess.run(["sudo", "/bin/systemctl", "reboot"], check=True)
+        # Optimized for RPi/Busybox systems
+        subprocess.run(["sudo", "reboot"], check=True)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

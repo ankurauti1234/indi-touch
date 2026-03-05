@@ -504,6 +504,8 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    padding-bottom: 120px;
+    /* Space for footer */
 }
 
 .chk-item {

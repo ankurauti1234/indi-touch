@@ -334,7 +334,7 @@ window.selectLocation = function(city) {
 
 import { showModal } from './ui.js';
 
-window.confirmPower = function(action) {
+window.confirmPower = function (action) {
     const msg = action === 'shutdown'
         ? 'Are you sure you want to shut down the system?'
         : 'Are you sure you want to reboot the system?';
@@ -346,11 +346,38 @@ window.confirmPower = function(action) {
             text: action === 'shutdown' ? 'Shut Down' : 'Reboot',
             primary: true,
             callback: async () => {
-                const actionMsg = action === 'shutdown' ? 'Shutting down...' : 'Rebooting...';
-                document.body.innerHTML = `<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#000;color:#fff;font-size:24px;font-family:Roboto">${actionMsg}</div>`;
-                try {
-                    await fetch('/api/system/' + action, { method: 'POST' });
-                } catch { /* device will go down, ignore network error */ }
+                let seconds = 5;
+                const overlay = document.createElement('div');
+                overlay.style.cssText = "position:fixed;inset:0;background:#000;z-index:999999999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:inherit";
+                
+                const updateOverlay = () => {
+                    overlay.innerHTML = `
+                        <div style="text-align:center">
+                            <span class="material-symbols-rounded" style="font-size:80px;color:var(--primary);margin-bottom:24px;display:block;animation:pulse 1s infinite">${action === 'shutdown' ? 'power_settings_new' : 'restart_alt'}</span>
+                            <h1 style="font-size:32px;font-weight:400;margin:0">${action === 'shutdown' ? 'Shutting Down' : 'Rebooting'}</h1>
+                            <p style="font-size:18px;opacity:0.6;margin:16px 0 32px">System will ${action === 'shutdown' ? 'power off' : 'restart'} in ${seconds}s...</p>
+                            <div style="width:200px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin:0 auto">
+                                <div style="width:${(seconds / 5) * 100}%;height:100%;background:var(--primary);transition:width 1s linear"></div>
+                            </div>
+                        </div>
+                    `;
+                };
+
+                document.body.appendChild(overlay);
+                updateOverlay();
+
+                const timer = setInterval(async () => {
+                    seconds--;
+                    if (seconds <= 0) {
+                        clearInterval(timer);
+                        overlay.innerHTML = `<div style="text-align:center"><h1 style="font-size:24px;font-weight:400">${action === 'shutdown' ? 'Good Bye' : 'Please Wait...'}</h1></div>`;
+                        try {
+                            await fetch('/api/system/' + action, { method: 'POST' });
+                        } catch { /* device will go down */ }
+                    } else {
+                        updateOverlay();
+                    }
+                }, 1000);
             }
         }
     ]);

@@ -348,7 +348,11 @@ export function completeSetup() {
     }
     
     // Refresh UI
-    if (window.loadMembers) window.loadMembers();
+    if (window.loadMembers) {
+        window.loadMembers().then(() => {
+            if (window.renderGrid) window.renderGrid();
+        });
+    }
 }
 
 export async function checkOnboardingStatus() {

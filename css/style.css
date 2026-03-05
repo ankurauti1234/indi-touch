@@ -264,6 +264,7 @@ body {
     flex-direction: column;
     gap: 8px;
     margin-bottom: auto;
+    align-items: center;
 }
 
 .status-icon-btn {

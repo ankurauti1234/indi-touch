@@ -136,23 +136,23 @@ def get_brightness():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ── POST /api/system/shutdown ─────────────────────────────────────────────────
-@system_bp.route("/shutdown", methods=["POST"])
-def shutdown():
+# ── POST /api/system/reboot ────────────────────────────────────────────────────
+@system_bp.route("/reboot", methods=["POST"])
+def reboot():
     try:
-        # Optimized for RPi/Busybox systems
-        subprocess.run(["sudo", "shutdown", "-h", "now"], check=True)
+        # Run in background after 1s delay so we can return the response
+        subprocess.Popen("sleep 1 && sudo reboot", shell=True)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ── POST /api/system/restart ──────────────────────────────────────────────────
-@system_bp.route("/restart", methods=["POST"])
-def restart():
+# ── POST /api/system/shutdown ─────────────────────────────────────────────────
+@system_bp.route("/shutdown", methods=["POST"])
+def shutdown():
     try:
-        # Optimized for RPi/Busybox systems
-        subprocess.run(["sudo", "reboot"], check=True)
+        # Run in background after 1s delay so we can return the response
+        subprocess.Popen("sleep 1 && sudo shutdown -h now", shell=True)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

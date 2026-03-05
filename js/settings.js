@@ -346,18 +346,28 @@ window.confirmPower = function (action) {
             text: action === 'shutdown' ? 'Shut Down' : 'Reboot',
             primary: true,
             callback: async () => {
-                let seconds = 5;
+                let seconds = 3;
                 const overlay = document.createElement('div');
-                overlay.style.cssText = "position:fixed;inset:0;background:#000;z-index:999999999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:inherit";
+                overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(10px);z-index:999999999;display:flex;align-items:center;justify-content:center;color:#fff;font-family:inherit";
                 
                 const updateOverlay = () => {
+                    const progress = (seconds / 3) * 283; // 2*PI*45 approx 283
                     overlay.innerHTML = `
-                        <div style="text-align:center">
-                            <span class="material-symbols-rounded" style="font-size:80px;color:var(--primary);margin-bottom:24px;display:block;animation:pulse 1s infinite">${action === 'shutdown' ? 'power_settings_new' : 'restart_alt'}</span>
-                            <h1 style="font-size:32px;font-weight:400;margin:0">${action === 'shutdown' ? 'Shutting Down' : 'Rebooting'}</h1>
-                            <p style="font-size:18px;opacity:0.6;margin:16px 0 32px">System will ${action === 'shutdown' ? 'power off' : 'restart'} in ${seconds}s...</p>
-                            <div style="width:200px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin:0 auto">
-                                <div style="width:${(seconds / 5) * 100}%;height:100%;background:var(--primary);transition:width 1s linear"></div>
+                        <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:24px">
+                            <div style="position:relative; width:100px; height:100px">
+                                <svg viewBox="0 0 100 100" style="transform: rotate(-90deg); width:100px; height:100px">
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="var(--primary)" stroke-width="4" 
+                                            stroke-dasharray="283" stroke-dashoffset="${283 - progress}" 
+                                            style="transition: stroke-dashoffset 1s linear"/>
+                                </svg>
+                                <span class="material-symbols-rounded" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:40px; color:var(--primary)">
+                                    ${action === 'shutdown' ? 'power_settings_new' : 'restart_alt'}
+                                </span>
+                            </div>
+                            <div>
+                                <h1 style="font-size:24px; font-weight:400; margin:0">${action === 'shutdown' ? 'Shutting Down' : 'Rebooting'}</h1>
+                                <p style="font-size:16px; opacity:0.6; margin:8px 0 0">System will ${action === 'shutdown' ? 'power off' : 'restart'} in ${seconds}s</p>
                             </div>
                         </div>
                     `;
@@ -370,9 +380,10 @@ window.confirmPower = function (action) {
                     seconds--;
                     if (seconds <= 0) {
                         clearInterval(timer);
-                        overlay.innerHTML = `<div style="text-align:center"><h1 style="font-size:24px;font-weight:400">${action === 'shutdown' ? 'Good Bye' : 'Please Wait...'}</h1></div>`;
+                        overlay.innerHTML = `<h1 style="font-size:20px; font-weight:400; opacity:0.8">${action === 'shutdown' ? 'Shutdown Initiated' : 'Reboot Initiated'}</h1>`;
                         try {
-                            await fetch('/api/system/' + action, { method: 'POST' });
+                            const route = action === 'shutdown' ? 'shutdown' : 'reboot';
+                            await fetch('/api/system/' + route, { method: 'POST' });
                         } catch { /* device will go down */ }
                     } else {
                         updateOverlay();

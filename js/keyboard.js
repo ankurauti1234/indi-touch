@@ -28,12 +28,12 @@ const keysSymbol = [
     ["ABC", "lang", "space", ".", "enter"]
 ];
 
-const keysNumber = [
-    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
-    ["+", "x", "÷", "=", "/", "_", "<", ">", "[", "]"],
-    ["!", "@", "#", "₹", "%", "^", "&", "*", "backspace"],
-    ["ABC", "(", ")", ",", "space", ".", "enter"]
-];
+// const keysNumber = [
+//     ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+//     ["+", "x", "÷", "=", "/", "_", "<", ">", "[", "]"],
+//     ["!", "@", "#", "₹", "%", "^", "&", "*", "backspace"],
+//     ["ABC", "(", ")", ",", "space", ".", "enter"]
+// ];
 
 import { config } from './data.js';
 
@@ -58,8 +58,8 @@ export function initOSK() {
         if ((e.target.tagName === 'INPUT' && e.target.type !== 'range') || e.target.tagName === 'TEXTAREA') {
             activeInput = e.target;
             
-            // Check for custom numeric mode attribute
-            isNumberMode = (e.target.type === 'number' || e.target.dataset.oskMode === 'number');
+            // Unified Keyboard: We no longer use a separate large numeric mode
+            isNumberMode = false; 
             
             showOSK();
         }
@@ -86,18 +86,12 @@ function renderKeys() {
     container.innerHTML = ''; // Clear
     
     let layout;
-    if (isNumberMode) {
-        layout = keysNumber;
-        container.classList.add('numeric-mode');
+    if (isSymbol) {
+        layout = keysSymbol;
     } else {
-        container.classList.remove('numeric-mode');
-        if (isSymbol) {
-            layout = keysSymbol;
-        } else {
-            if (inputLang === 'hy') layout = keysHY;
-            else if (inputLang === 'ru') layout = keysRU;
-            else layout = keysEN;
-        }
+        if (inputLang === 'hy') layout = keysHY;
+        else if (inputLang === 'ru') layout = keysRU;
+        else layout = keysEN;
     }
 
     layout.forEach(row => {
@@ -215,4 +209,9 @@ export function showOSK() {
 export function hideOSK() {
     document.getElementById('osk-container').classList.remove('visible');
     document.body.classList.remove('osk-open');
+    
+    // Reset Viewport: Ensure UI returns to center after keyboard push
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
 }

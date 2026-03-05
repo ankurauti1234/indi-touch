@@ -1504,7 +1504,7 @@ body.osk-open .main-stage {
 }
 
 #clock-time.massive {
-    font-size: 380px;
+    font-size: 480px;
 }
 
 .clock-main-digits {
@@ -1540,8 +1540,7 @@ body.osk-open .main-stage {
 .saver-tv-tag {
     position: absolute;
     top: 40px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 40px;
     display: flex;
     align-items: center;
     gap: 8px;

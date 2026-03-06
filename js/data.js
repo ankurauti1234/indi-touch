@@ -72,7 +72,7 @@ export async function loadConfig() {
         // Sync UI labels
         const langText = document.getElementById('current-lang-text');
         if (langText) {
-            const names = { en: 'English', hy: 'Armenian', ru: 'Russian' };
+            const names = { en: 'English', hy: 'Հայերեն', ru: 'Русский' };
             langText.innerText = names[config.language] || config.language;
         }
         const locText = document.getElementById('current-location-text');

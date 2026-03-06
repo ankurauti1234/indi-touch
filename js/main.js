@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update main settings label
         const langText = document.getElementById('current-lang-text');
         if (langText) {
-            const names = { en: 'English', hy: 'Armenian', ru: 'Russian' };
+            const names = { en: 'English', hy: 'Հայերեն', ru: 'Русский' };
             langText.innerText = names[lang] || lang;
         }
     }

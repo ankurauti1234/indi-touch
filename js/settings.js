@@ -1,6 +1,7 @@
 import { renderGrid } from './grid.js';
 import { config, save, memberData, updateSetting } from './data.js';
 import { applyRemoteMode, isRemoteMode } from './remote.js';
+import { t } from './i18n.js';
 
 let currentAvatarStyle = 'local'; // Default
 
@@ -142,15 +143,15 @@ async function loadWifiList() {
         const cr = await fetch('/api/wifi/current');
         const cd = await cr.json();
         _currentSsid = cd.connected ? cd.ssid : null;
-        if (currEl) currEl.innerText = _currentSsid || 'Not connected';
+        if (currEl) currEl.innerText = _currentSsid || t('Not connected');
         const statusEl = document.getElementById('curr-net-status');
         if (statusEl) {
-            statusEl.innerText = _currentSsid ? 'Connected • High Signal' : 'Disconnected';
+            statusEl.innerText = _currentSsid ? t('connected_high_sig') : t('Disconnected');
         }
     } catch { 
-        if (currEl) currEl.innerText = 'Not connected';
+        if (currEl) currEl.innerText = t('Not connected');
         const statusEl = document.getElementById('curr-net-status');
-        if (statusEl) statusEl.innerText = 'Disconnected';
+        if (statusEl) statusEl.innerText = t('Disconnected');
     }
 
     // Scan available + saved networks
@@ -161,7 +162,7 @@ async function loadWifiList() {
 
         const networks = data.networks || [];
         if (networks.length === 0) {
-            list.innerHTML = '<div class="wifi-skeleton">No networks found.</div>';
+            list.innerHTML = `<div class="wifi-skeleton">${t('No networks found.')}</div>`;
             return;
         }
 
@@ -175,8 +176,8 @@ async function loadWifiList() {
                     </span>
                     <div style="flex:1">
                         <div style="font-weight:500">${net.ssid}</div>
-                        ${net.saved ? '<span class="wifi-badge saved">Saved</span>' : ''}
-                        ${isCurr ? '<span class="wifi-badge connected">Connected</span>' : ''}
+                        ${net.saved ? `<span class="wifi-badge saved">${t('Saved')}</span>` : ''}
+                        ${isCurr ? `<span class="wifi-badge connected">${t('Connected')}</span>` : ''}
                     </div>
                     <div style="opacity:0.6; font-size:12px">${net.signal}%</div>
                 </div>
@@ -240,8 +241,8 @@ async function _doConnect(ssid, password) {
             _currentSsid = ssid;
             if (currEl) currEl.innerText = ssid;
             const statusEl = document.getElementById('curr-net-status');
-            if (statusEl) statusEl.innerText = 'Connected • High Signal';
-            if (window.showToast) window.showToast('Connected to ' + ssid);
+            if (statusEl) statusEl.innerText = t('connected_high_sig');
+            if (window.showToast) window.showToast(t('Connected') + ' ' + ssid);
             if (window.setWifiState) window.setWifiState(true);
             setTimeout(loadWifiList, 1000);
         } else {
@@ -443,20 +444,20 @@ export async function loadSystemInfo() {
         el.innerHTML = `
             <div class="info-group">
                 <div class="info-row" style="background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:12px">
-                    <span class="info-label">Device Identifier</span>
+                    <span class="info-label">${t('Device Identifier')}</span>
                     <span class="info-value" style="color:var(--primary); font-family:monospace; font-size:18px">${d.meter_id}</span>
                 </div>
                 
                 <div class="info-row">
-                    <span class="info-label">Local IP Address</span>
+                    <span class="info-label">${t('Local IP Address')}</span>
                     <span class="info-value">${d.ip_address}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">MAC Address</span>
+                    <span class="info-label">${t('MAC Address')}</span>
                     <span class="info-value">${d.mac_address}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Software Version</span>
+                    <span class="info-label">${t('Software Version')}</span>
                     <span class="info-value">v5.2.0-stable</span>
                 </div>
             </div>
@@ -519,17 +520,17 @@ async function loadWallpaperSettings() {
             if (noImg) noImg.style.display = 'none';
             if (hasImg) hasImg.style.display = 'flex';
             if (thumb) thumb.src = `${d.url}&t=${Date.now()}`;
-            if (sizeInfo) sizeInfo.textContent = `${d.sizeKB} KB • ${d.ext.replace('.', '').toUpperCase()} Active`;
+            if (sizeInfo) sizeInfo.textContent = `${d.sizeKB} KB • ${d.ext.replace('.', '').toUpperCase()} ${t('Active')}`;
             if (resetBtn) resetBtn.style.display = 'flex';
-            if (statusText) statusText.textContent = 'Custom Wallpaper Active';
-            if (titleText) titleText.textContent = 'Custom Wallpaper';
+            if (statusText) statusText.textContent = t('active_bg');
+            if (titleText) titleText.textContent = t('active_bg');
         } else {
             if (noImg) noImg.style.display = 'flex';
             if (hasImg) hasImg.style.display = 'none';
             if (resetBtn) resetBtn.style.display = 'none';
-            if (sizeInfo) sizeInfo.textContent = 'No custom image uploaded yet';
-            if (statusText) statusText.textContent = 'System Default';
-            if (titleText) titleText.textContent = 'System Default';
+            if (sizeInfo) sizeInfo.textContent = t('no_custom_image_uploaded');
+            if (statusText) statusText.textContent = t('using_sys_default');
+            if (titleText) titleText.textContent = t('sys_default');
         }
 
         // QR Code

@@ -220,8 +220,8 @@
         <div id="tv-off-overlay" class="grid-lock-overlay tv-only" style="display: none;">
           <div class="lock-content">
             <span class="material-symbols-rounded lock-icon">tv_off</span>
-            <h3 class="lock-title">TV is Off</h3>
-            <p class="lock-msg">Member declaration is disabled while TV is off.</p>
+            <h3 class="lock-title" data-i18n="tv_is_off">TV is Off</h3>
+            <p class="lock-msg" data-i18n="member_decl_disabled">Member declaration is disabled while TV is off.</p>
           </div>
         </div>
       </section>
@@ -249,7 +249,7 @@
               </div>
               <div class="item-content">
                 <h4 data-i18n="members">Members</h4>
-                <p>Change Member Names</p>
+                <p data-i18n="change_names">Change Member Names</p>
               </div>
               <span class="material-symbols-rounded chevron">chevron_right</span>
             </div>
@@ -259,7 +259,7 @@
               </div>
               <div class="item-content">
                 <h4 data-i18n="avatar_style">Avatar Style</h4>
-                <p>Customize Grid</p>
+                <p data-i18n="customize_grid">Customize Grid</p>
               </div>
               <span class="material-symbols-rounded chevron">chevron_right</span>
             </div>
@@ -293,7 +293,7 @@
               </div>
               <div class="item-content">
                 <h4 data-i18n="connectivity">Connectivity</h4>
-                <p>Wi-Fi Networks</p>
+                <p data-i18n="wifi_networks">Wi-Fi Networks</p>
               </div>
               <span class="material-symbols-rounded chevron">chevron_right</span>
             </div>
@@ -302,8 +302,8 @@
                 <span class="material-symbols-rounded">display_settings</span>
               </div>
               <div class="item-content">
-                <h4>Display Setting</h4>
-                <p>Night Mode, Brightness, Animations</p>
+                <h4 data-i18n="display_setting">Display Setting</h4>
+                <p data-i18n="night_mode_on">Night Mode, Brightness, Animations</p>
               </div>
               <span class="material-symbols-rounded chevron">chevron_right</span>
             </div>
@@ -312,8 +312,8 @@
                 <span class="material-symbols-rounded">wallpaper</span>
               </div>
               <div class="item-content">
-                <h4>Screensaver Wallpaper</h4>
-                <p id="wallpaper-status-text">No wallpaper set</p>
+                <h4 data-i18n="screensaver_wallpaper">Screensaver Wallpaper</h4>
+                <p id="wallpaper-status-text" data-i18n="no_wallpaper_set">No wallpaper set</p>
               </div>
               <span class="material-symbols-rounded chevron">chevron_right</span>
             </div>
@@ -344,7 +344,7 @@
             <button class="back-btn" onclick="closeSetting()">
               <span class="material-symbols-rounded">arrow_back</span>
             </button>
-            <h2 class="page-title">Display Setting</h2>
+            <h2 class="page-title" data-i18n="display_setting">Display Setting</h2>
           </div>
           <div class="list-group" style="padding: 0 24px">
             <div class="list-item" onclick="toggleTheme()">
@@ -352,8 +352,8 @@
                 <span class="material-symbols-rounded">contrast</span>
               </div>
               <div class="item-content">
-                <h4>Night Mode</h4>
-                <p>Toggle Theme</p>
+                <h4 data-i18n="night_mode">Night Mode</h4>
+                <p data-i18n="toggle_theme">Toggle Theme</p>
               </div>
               <div class="switch" id="theme-switch"></div>
             </div>
@@ -362,8 +362,8 @@
                 <span class="material-symbols-rounded">gamepad</span>
               </div>
               <div class="item-content">
-                <h4>Use Remote</h4>
-                <p>Arrow keys + click navigation</p>
+                <h4 data-i18n="use_remote">Use Remote</h4>
+                <p data-i18n="arrow_keys_nav">Arrow keys + click navigation</p>
               </div>
               <div class="switch" id="remote-switch"></div>
             </div>
@@ -372,8 +372,8 @@
                 <span class="material-symbols-rounded">motion_photos_off</span>
               </div>
               <div class="item-content">
-                <h4>Reduce Animations</h4>
-                <p>Faster UI, less system strain</p>
+                <h4 data-i18n="reduce_animations">Reduce Animations</h4>
+                <p data-i18n="faster_ui">Faster UI, less system strain</p>
               </div>
               <div class="switch" id="anim-switch"></div>
             </div>
@@ -382,7 +382,7 @@
                 <span class="material-symbols-rounded">brightness_medium</span>
               </div>
               <div class="item-content" style="flex: 1">
-                <h4>Brightness</h4>
+                <h4 data-i18n="brightness">Brightness</h4>
                 <div class="chip-group" style="margin-top: 12px">
                   <div class="chip" onclick="selectBrightness(10, this)">10%</div>
                   <div class="chip" onclick="selectBrightness(25, this)">25%</div>
@@ -399,15 +399,15 @@
             <button class="back-btn" onclick="closeSetting()">
               <span class="material-symbols-rounded">arrow_back</span>
             </button>
-            <h2 class="page-title">Screensaver Wallpaper</h2>
+            <h2 class="page-title" data-i18n="screensaver_wallpaper">Screensaver Wallpaper</h2>
           </div>
           <div class="settings-scroll-area">
             <div class="wp-qr-card">
               <div class="qr-header">
                 <span class="material-symbols-rounded">qr_code_2</span>
                 <div>
-                  <h4>Upload from Phone</h4>
-                  <p>Scan to upload JPG/PNG/WebP</p>
+                  <h4 data-i18n="upload_from_phone">Upload from Phone</h4>
+                  <p data-i18n="scan_to_upload">Scan to upload JPG/PNG/WebP</p>
                 </div>
               </div>
               <div class="qr-body">
@@ -420,11 +420,11 @@
             <div class="wp-preview-card" id="wp-status-card">
               <div id="wp-no-image" class="wp-empty-state">
                 <span class="material-symbols-rounded">wallpaper</span>
-                <p>Using System Default</p>
+                <p data-i18n="using_sys_default">Using System Default</p>
               </div>
               <div id="wp-has-image" class="wp-active-state" style="display:none">
                 <img id="wp-thumb" src="" class="wp-preview-img">
-                <div class="wp-badge">Active Background</div>
+                <div class="wp-badge" data-i18n="active_bg">Active Background</div>
               </div>
             </div>
 
@@ -435,7 +435,7 @@
                 <button class="action-btn-small" id="wp-reset-btn" onclick="resetWallpaper()"
                   style="display:none; margin-top: 8px; background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container)">
                   <span class="material-symbols-rounded">delete</span>
-                  Remove Custom Background
+                  <span data-i18n="remove_custom_bg">Remove Custom Background</span>
                 </button>
               </div>
             </div>
@@ -452,24 +452,24 @@
             <!-- Local (Static) -->
             <div id="avat-local" class="avatar-option selected" onclick="selectAvatarStyle('local')">
               <img src="assets/images/avatar/male-middle.png" />
-              <div class="avatar-label">Default Local</div>
+              <div class="avatar-label" data-i18n="default_local">Default Local</div>
             </div>
 
 
             <!-- DiceBear Styles -->
             <div id="avat-adventurer" class="avatar-option" onclick="selectAvatarStyle('adventurer')">
               <img src="https://api.dicebear.com/9.x/adventurer/svg?seed=A" />
-              <div class="avatar-label">Adventurer</div>
+              <div class="avatar-label" data-i18n="adventurer">Adventurer</div>
             </div>
 
             <div id="avat-bottts" class="avatar-option" onclick="selectAvatarStyle('bottts')">
               <img src="https://api.dicebear.com/9.x/bottts/svg?seed=A" />
-              <div class="avatar-label">Bottts</div>
+              <div class="avatar-label" data-i18n="bottts">Bottts</div>
             </div>
 
             <div id="avat-lorelei" class="avatar-option" onclick="selectAvatarStyle('lorelei')">
               <img src="https://api.dicebear.com/9.x/lorelei/svg?seed=A" />
-              <div class="avatar-label">Lorelei</div>
+              <div class="avatar-label" data-i18n="lorelei">Lorelei</div>
             </div>
           </div>
 
@@ -498,7 +498,7 @@
           </div>
           <div class="list-group" id="sys-info-content" style="padding:0 20px">
             <!-- Populated by loadSystemInfo() in settings.js -->
-            <div class="wifi-skeleton">Loading system info...</div>
+            <div class="wifi-skeleton" data-i18n="loading_sys_info">Loading system info...</div>
           </div>
         </div>
 
@@ -519,10 +519,10 @@
               </div>
               <div class="item-content">
                 <h4 id="curr-net-name">Office_Corp_5G</h4>
-                <p id="curr-net-status">Connected • High Signal</p>
+                <p id="curr-net-status" data-i18n="connected_high_sig">Connected • High Signal</p>
               </div>
             </div>
-            <div class="section-title">Available Networks</div>
+            <div class="section-title" data-i18n="avail_networks">Available Networks</div>
             <div id="available-wifi-list" class="net-list-inline">
               <!-- Wifi list will be rendered here -->
             </div>
@@ -532,8 +532,8 @@
         <!-- Password Entry Popover (Material 3 style) -->
         <div id="wifi-password-overlay" class="popover-overlay">
           <div class="popover-card">
-            <h3 id="net-password-title">Enter Password</h3>
-            <p id="net-password-desc">Connecting to Office_Corp_5G</p>
+            <h3 id="net-password-title" data-i18n="enter_pass">Enter Password</h3>
+            <p id="net-password-desc"><span data-i18n="connecting_to">Connecting to</span> Office_Corp_5G</p>
             <div class="input-field-v2">
               <input type="password" id="wifi-pass-input" placeholder="Password" />
               <button class="eye-toggle" onclick="togglePassVisibility()">
@@ -541,8 +541,8 @@
               </button>
             </div>
             <div class="popover-actions">
-              <button class="modal-btn" onclick="closePassPopover()">Cancel</button>
-              <button class="modal-btn primary" onclick="submitPass()">Connect</button>
+              <button class="modal-btn" onclick="closePassPopover()" data-i18n="cancel">Cancel</button>
+              <button class="modal-btn primary" onclick="submitPass()" data-i18n="connect">Connect</button>
             </div>
           </div>
         </div>
@@ -572,8 +572,8 @@
                 <span class="material-symbols-rounded">restart_alt</span>
               </div>
               <div class="item-content">
-                <h4>Reboot</h4>
-                <p>Restart system</p>
+                <h4 data-i18n="reboot">Reboot</h4>
+                <p data-i18n="restart_system">Restart system</p>
               </div>
             </div>
             <div class="list-item no-click">
@@ -581,7 +581,7 @@
                 <span class="material-symbols-rounded">timer</span>
               </div>
               <div class="item-content" style="flex:1">
-                <h4>Screen Timeout</h4>
+                <h4 data-i18n="screen_timeout">Screen Timeout</h4>
                 <div class="chip-group" style="margin-top: 12px">
                   <div class="chip" onclick="selectTimeout(0.25, this)">15s</div>
                   <div class="chip" onclick="selectTimeout(0.5, this)">30s</div>
@@ -603,19 +603,19 @@
           <div class="list-group" style="padding: 0 20px">
             <div class="list-item" onclick="changeAppLanguage('en')">
               <div class="item-content">
-                <h4 data-i18n="english">English</h4>
+                <h4>English</h4>
               </div>
               <span class="material-symbols-rounded" id="lang-check-en">check</span>
             </div>
             <div class="list-item" onclick="changeAppLanguage('hy')">
               <div class="item-content">
-                <h4 data-i18n="armenian">Armenian</h4>
+                <h4>Հայերեն</h4>
               </div>
               <span class="material-symbols-rounded" id="lang-check-hy" style="display:none">check</span>
             </div>
             <div class="list-item" onclick="changeAppLanguage('ru')">
               <div class="item-content">
-                <h4 data-i18n="russian">Russian</h4>
+                <h4>Русский</h4>
               </div>
               <span class="material-symbols-rounded" id="lang-check-ru" style="display:none">check</span>
             </div>

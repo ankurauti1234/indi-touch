@@ -120,10 +120,11 @@ body {
 
 .conn-card {
     background: var(--bg-surface-container, #1c1b1f);
-    border-radius: 48px;
-    padding: 72px 80px;
-    max-width: 800px;
-    width: 90%;
+    border-radius: 40px;
+    padding: 48px;
+    width: 540px;
+    /* Standardized to match critical popup */
+    max-width: 90%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -148,14 +149,16 @@ body {
 }
 
 .conn-title {
-    font-size: 48px;
+    font-size: 34px;
+    /* Standardized to match critical popup */
     font-weight: 500;
     color: #fff;
     margin: 0;
 }
 
 .conn-body {
-    font-size: 24px;
+    font-size: 19px;
+    /* Standardized to match critical popup */
     color: var(--text-sub, rgba(255, 255, 255, 0.7));
     line-height: 1.5;
     margin: 0;
@@ -1209,7 +1212,6 @@ body {
     opacity: 0.7;
 }
 
-/* CRITICAL WARNING POPOVER - PREMIUM REDESIGN */
 #critical-popover {
     position: fixed;
     top: 0;
@@ -1217,7 +1219,7 @@ body {
     width: 100vw;
     height: 100vh;
     background: rgba(0, 0, 0, 0.9);
-    z-index: 99999999;
+    z-index: 200000000;
     display: none;
     align-items: center;
     justify-content: center;
@@ -1256,13 +1258,14 @@ body {
 }
 
 .critical-card {
-    background: linear-gradient(135deg, rgba(45, 14, 14, 0.9), rgba(20, 5, 5, 0.95));
+    background: linear-gradient(135deg, rgba(30, 0, 0, 0.95), rgba(15, 0, 0, 0.98));
     color: #FFDAD6;
     width: 540px;
     padding: 48px;
     border-radius: 40px;
-    border: 1px solid rgba(255, 180, 171, 0.3);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 84, 71, 0.15);
+    border: 2px solid #FF3131;
+    /* Neon Red */
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 49, 49, 0.4);
     text-align: center;
     transform: scale(0.9);
     transition: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1301,7 +1304,8 @@ body {
 
 .critical-icon {
     font-size: 56px;
-    color: #FFB4AB;
+    color: #FF3131;
+    /* Neon Red */
     animation: premiumPulse 2s infinite ease-in-out;
 }
 
@@ -1337,7 +1341,7 @@ body {
     font-size: 19px;
     line-height: 1.6;
     margin-bottom: 40px;
-    color: #FFB4AB;
+    color: #FFDAD6;
     font-weight: 300;
 }
 
@@ -1463,12 +1467,11 @@ body.osk-open .main-stage {
     background: var(--surface);
     display: none;
     flex-direction: column;
-    z-index: 100;
+    z-index: 50;
     overflow-y: auto;
     padding-bottom: 40px;
 }
 
-/* HUB MODE SCREENSAVER REDESIGN - Material M3 */
 #screensaver {
     position: fixed;
     inset: 0;
@@ -1484,7 +1487,6 @@ body.osk-open .main-stage {
     color: #fff;
     padding: 60px;
     text-align: center;
-    border-radius: 42px;
 }
 
 #screensaver.active {

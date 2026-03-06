@@ -196,13 +196,16 @@
         <button class="status-icon-btn" id="btn-wifi-status" onclick="navTo('settings'); openSetting('connectivity')">
           <span class="material-symbols-rounded" id="wifi-status-icon">wifi</span>
         </button>
-        <div class="status-icon-container" title="TV Status">
+        <div class="status-icon-container tv-only" id="tv-status-badge" title="TV Status">
           <span class="material-symbols-rounded" id="tv-status-icon">tv</span>
         </div>
       </div>
       <div class="nav-group">
         <button class="nav-btn active" id="btn-home" onclick="navTo('home')">
           <span class="material-symbols-rounded">grid_view</span>
+        </button>
+        <button class="nav-btn tv-only" id="nav-remote" onclick="navTo('remote-panel')">
+          <span class="material-symbols-rounded">tv</span>
         </button>
         <button class="nav-btn guest-btn" id="btn-guest" onclick="navTo('guest-add')">
           <span class="material-symbols-rounded">group_add</span>
@@ -220,7 +223,7 @@
     <div class="main-stage">
       <section id="view-home" class="view active">
         <div id="grid-container"></div>
-        <div id="tv-off-overlay" class="grid-lock-overlay" style="display: none;">
+        <div id="tv-off-overlay" class="grid-lock-overlay tv-only" style="display: none;">
           <div class="lock-content">
             <span class="material-symbols-rounded lock-icon">tv_off</span>
             <h3 class="lock-title">TV is Off</h3>

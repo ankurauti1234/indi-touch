@@ -24,6 +24,11 @@ def _run(cmd: list) -> tuple[bool, str]:
         return False, str(e)
 
 
+def _set_reg_domain():
+    """Ensure CRDA/regulatory domain is set to enable 5GHz bands on RPi."""
+    _run(["sudo", "iw", "reg", "set", "US"])
+
+
 # ── GET /api/wifi/status ──────────────────────────────────────────────────────
 @wifi_bp.route("/status")
 def wifi_status():
@@ -52,6 +57,8 @@ def current_wifi():
 @wifi_bp.route("/networks")
 def list_networks():
     """Scan available Wi-Fi networks + merge with saved NetworkManager connections."""
+    # Ensure 5GHz is unlocked
+    _set_reg_domain()
     # Rescan
     _run(["sudo", "nmcli", "device", "wifi", "rescan"])
     time.sleep(2.5)
@@ -109,6 +116,7 @@ def list_networks():
                     pwd = safe("wifi-security", "psk") if km in ("wpa-psk", "wpa-eap") else ""
                     merged[ssid]["password"] = pwd if merged[ssid]["password"] is None else merged[ssid]["password"]
 
+    # Prioritize 5GHz by signal and saved status
     result = sorted(merged.values(), key=lambda x: (not x["saved"], -x["signal"]))
     return jsonify({"success": True, "networks": result})
 
@@ -122,6 +130,8 @@ def wifi_connect():
     if not ssid:
         return jsonify({"success": False, "error": "SSID required"}), 400
 
+    # Ensure 5GHz is unlocked before connecting
+    _set_reg_domain()
     # Remove old saved connection (ignore errors)
     _run(["sudo", "nmcli", "connection", "delete", ssid])
 

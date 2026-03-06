@@ -19,13 +19,24 @@ export async function addGuest() {
     const age = ageInput.value;
     
     if(!age) { 
-        showModal(t('guest_wait'), t('guest_age_req'));
+        showModal(t('guest_wait') || 'Error', t('guest_age_req') || 'Age required');
         return; 
+    }
+
+    const parsedAge = parseInt(age);
+    if(parsedAge < 1 || parsedAge > 110) {
+        showModal(t('guest_wait') || 'Error', "Age limit is between 1 and 110.");
+        return;
+    }
+
+    if(guests.length >= 10) {
+        showModal(t('guest_wait') || 'Error', "Maximum limit of 10 guests reached.");
+        return;
     }
     
     const newGuest = {
         name: `Guest #${guests.length + 1}`,
-        age: parseInt(age),
+        age: parsedAge,
         gender: currentGender,
         duration: currentDuration,
         seed: Math.random().toString(36).substring(7),
@@ -108,11 +119,16 @@ export function renderGuestList() {
     container.innerHTML = guests.map(g => {
         const url = getAvatarUrl(g);
         return `
-        <div class="guest-avatar-circle" title="${g.name || 'Guest'} (${g.gender}, ${g.age})">
-            <img src="${url}" loading="lazy">
-            <div class="guest-delete-overlay" onclick="deleteGuest(${g.id})">
-                <span class="material-symbols-rounded">close</span>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div class="guest-avatar-circle" title="${g.name || 'Guest'} (${g.gender}, ${g.age})">
+                <img src="${url}" loading="lazy">
             </div>
+            <div style="color:var(--text-sub); font-size:14px; font-weight: 500;">
+                ${g.gender.charAt(0)} ${g.age}
+            </div>
+            <button class="action-btn-small" onclick="deleteGuest(${g.id})" style="background: rgba(255, 82, 82, 0.15); color: #ff5252; padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(255, 82, 82, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>
+            </button>
         </div>`;
     }).join('');
 }

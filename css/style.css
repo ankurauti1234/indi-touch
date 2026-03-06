@@ -421,7 +421,7 @@ body {
     pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0, 0, 1);
     transform: translateY(20px);
-    padding: 24px;
+    padding: 24px 24px 0 24px;
 }
 
 .view.active {

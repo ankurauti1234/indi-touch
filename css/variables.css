@@ -1,57 +1,280 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   DYNAMIC ELEVATION DESIGN SYSTEM
+   Auto-layered surfaces · Apple/Tesla-style depth · Dual-mode gradients
+   ═══════════════════════════════════════════════════════════════════════ */
+
 :root {
-    --bg-app: #0E0E11;
-    --bg-surface: #0E0E11;
-    --bg-surface-container-low: #1C1B1F;
-    --bg-surface-container: #211F26;
-    --bg-surface-container-high: #2B2930;
-    --bg-card: #211F26;
-    --bg-card-hover: #2B2930;
+    /* ── Typography ───────────────────────────────────────────────────── */
+    --text-main: #F1F1F5;
+    --text-sub: #8E8E9E;
 
-    --text-main: #E6E1E5;
-    --text-sub: #938F99;
+    /* ── Primary Accent ───────────────────────────────────────────────── */
+    --primary: #A78BFA;
+    --on-primary: #1E1B4B;
+    --primary-container: #4C1D95;
+    --on-primary-container: #EDE9FE;
+    --primary-glow: rgba(167, 139, 250, 0.25);
 
-    --primary: #D0BCFF;
-    --on-primary: #381E72;
-    --primary-container: #4F378B;
-    --on-primary-container: #EADDFF;
+    /* ── Secondary ────────────────────────────────────────────────────── */
+    --secondary-container: #2B2838;
+    --on-secondary-container: #E9E6F5;
 
-    --secondary-container: #332D41;
-    --on-secondary-container: #E8DEF8;
+    /* ── Surface Variants ─────────────────────────────────────────────── */
+    --surface-variant: #3B3B47;
+    --on-surface-variant: #C7C7D1;
 
-    --surface-variant: #49454F;
-    --on-surface-variant: #CAC4D0;
-    --outline: #938F99;
-    --outline-variant: #49454F;
-    --error: #F2B8B5;
-    --on-error: #601410;
+    /* ── Borders ──────────────────────────────────────────────────────── */
+    --outline: #56565E;
+    --outline-variant: #32323A;
 
-    --green-shadow: 0 4px 12px rgba(184, 243, 190, 0.2);
-    --green-border: #B8F3BE;
+    /* ── Status ───────────────────────────────────────────────────────── */
+    --error: #F87171;
+    --on-error: #450A0A;
 
+    /* ── Success ──────────────────────────────────────────────────────── */
+    --green-shadow: 0 6px 20px rgba(74, 222, 128, 0.3);
+    --green-border: #4ADE80;
+
+    /* ── Severity Tokens ──────────────────────────────────────────────── */
+    --sev-info: #D0BCFF;
+    --sev-warn: #FFB866;
+    --sev-alert: #FFB4AB;
+    --sev-success: #C4EAD1;
+
+    /* ── Layout ───────────────────────────────────────────────────────── */
     --gap: 16px;
     --radius-app: 32px;
     --radius-card: 28px;
     --radius-pill: 100px;
+
+    /* ╔══════════════════════════════════════════════════════════════════╗
+       ║   ELEVATION SYSTEM — Dark Mode                                  ║
+       ║   Each level = slightly lighter surface + deeper shadow         ║
+       ╚══════════════════════════════════════════════════════════════════╝ */
+
+    /* Absolute floor — the deepest background */
+    --bg-app: #0B0B0F;
+
+    /* ── Surface Tones (auto-gradient ramp) ──────────────────────────── */
+    /* These serve as the "paint" behind each elevation level.
+       Formula: hsl(245, 13%, [L% + level*1.8%]) — you never pick shades manually */
+    --surface-0: #0F0F14;
+    /* base canvas              L = 7%   */
+    --surface-1: #141419;
+    /* subtle lift               L = 8.8% */
+    --surface-2: #19191F;
+    /* card backgrounds          L = 10.6%*/
+    --surface-3: #1F1F26;
+    /* floating panels           L = 12.4%*/
+    --surface-4: #24242D;
+    /* dialogs / modals          L = 14.2%*/
+    --surface-5: #2A2A34;
+    /* top-most overlays         L = 16%  */
+
+    /* Legacy aliases — keep existing HTML/JS working without changes */
+    --bg-surface: var(--surface-1);
+    --bg-surface-container-low: var(--surface-2);
+    --bg-surface-container: var(--surface-3);
+    --bg-surface-container-high: var(--surface-4);
+    --bg-card: var(--surface-2);
+    --bg-card-hover: var(--surface-3);
+
+    /* Opaque highlight layer applied on top of surface to simulate elevation per Material You spec */
+    --elevation-overlay-0: rgba(255, 255, 255, 0.00);
+    --elevation-overlay-1: rgba(255, 255, 255, 0.05);
+    --elevation-overlay-2: rgba(255, 255, 255, 0.08);
+    --elevation-overlay-3: rgba(255, 255, 255, 0.11);
+    --elevation-overlay-4: rgba(255, 255, 255, 0.12);
+    --elevation-overlay-5: rgba(255, 255, 255, 0.14);
+
+    /* ── Shadow Scale ─────────────────────────────────────────────────── */
+    /* Progressive depth: umbra + penumbra layers for realism */
+    --shadow-0: none;
+    --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.30), 0 4px 8px rgba(0, 0, 0, 0.22);
+    --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.32), 0 8px 16px rgba(0, 0, 0, 0.26);
+    --shadow-3: 0 4px 10px rgba(0, 0, 0, 0.36), 0 12px 24px rgba(0, 0, 0, 0.30);
+    --shadow-4: 0 8px 16px rgba(0, 0, 0, 0.40), 0 20px 40px rgba(0, 0, 0, 0.36);
+    --shadow-5: 0 12px 24px rgba(0, 0, 0, 0.46), 0 32px 64px rgba(0, 0, 0, 0.42);
+
+    /* ── Border Shimmer (subtle light-edge at top of elevated cards) ──── */
+    --border-elevation-1: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --border-elevation-2: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    --border-elevation-3: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    --border-elevation-4: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+
+    /* Colour tokens for border outlines (separate from shimmer) */
+    --card-border-1: rgba(255, 255, 255, 0.05);
+    --card-border-2: rgba(255, 255, 255, 0.07);
+    --card-border-3: rgba(255, 255, 255, 0.09);
+    --card-border-4: rgba(255, 255, 255, 0.11);
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ELEVATION COMPONENT CLASSES  (data-elevation="0" … "5")
+   Usage: add data-elevation="2" to any .card, .list-item, .modal-card …
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-elevation="0"] {
+    background-color: var(--surface-0);
+    box-shadow: var(--shadow-0);
+}
+
+[data-elevation="1"] {
+    background-color: var(--surface-1);
+    box-shadow: var(--shadow-1), var(--border-elevation-1);
+    border: 1px solid var(--card-border-1);
+}
+
+[data-elevation="2"] {
+    background-color: var(--surface-2);
+    box-shadow: var(--shadow-2), var(--border-elevation-2);
+    border: 1px solid var(--card-border-2);
+}
+
+[data-elevation="3"] {
+    background-color: var(--surface-3);
+    box-shadow: var(--shadow-3), var(--border-elevation-3);
+    border: 1px solid var(--card-border-3);
+}
+
+[data-elevation="4"] {
+    background-color: var(--surface-4);
+    box-shadow: var(--shadow-4), var(--border-elevation-4);
+    border: 1px solid var(--card-border-4);
+}
+
+[data-elevation="5"] {
+    background-color: var(--surface-5);
+    box-shadow: var(--shadow-5), var(--border-elevation-4);
+    border: 1px solid var(--card-border-4);
+}
+
+/* Optional hover lift — works on any elevated element */
+[data-elevation]:not([data-no-hover]):hover {
+    transform: translateY(-2px);
+    transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1),
+        box-shadow 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+
+[data-elevation="1"]:not([data-no-hover]):hover {
+    box-shadow: var(--shadow-2), var(--border-elevation-2);
+}
+
+[data-elevation="2"]:not([data-no-hover]):hover {
+    box-shadow: var(--shadow-3), var(--border-elevation-3);
+}
+
+[data-elevation="3"]:not([data-no-hover]):hover {
+    box-shadow: var(--shadow-4), var(--border-elevation-4);
+}
+
+[data-elevation="4"]:not([data-no-hover]):hover {
+    box-shadow: var(--shadow-5), var(--border-elevation-4);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LIGHT MODE  —  Apple-inspired warm-white surface ramp
+   Same elevation logic, auto-brightness-stepped surfaces
+   ═══════════════════════════════════════════════════════════════════════ */
 body.light-mode {
-    --bg-app: #FAFAFA;
-    --bg-surface: #F4F4F5;
-    --bg-card: #FFFFFF;
-    --bg-card-hover: #E4E4E7;
 
-    --text-main: #0F0F11;
-    --text-sub: #3F3F46;
+    /* ── Typography ─────────────────────────────────────────────────── */
+    --text-main: #111113;
+    --text-sub: #52525B;
 
+    /* ── Primary ────────────────────────────────────────────────────── */
     --primary: #7C3AED;
     --on-primary: #FFFFFF;
+    --primary-container: #EDE9FE;
+    --on-primary-container: #2E1065;
+    --primary-glow: rgba(124, 58, 237, 0.18);
 
-    --secondary-container: #E4E4E7;
-    --on-secondary-container: #0F0F11;
+    /* ── Secondary ──────────────────────────────────────────────────── */
+    --secondary-container: #E8E4F6;
+    --on-secondary-container: #111113;
 
-    --error: #B3261E;
+    /* ── Surface Variants ───────────────────────────────────────────── */
+    --surface-variant: #D8D5E6;
+    --on-surface-variant: #3F3F46;
+
+    /* ── Borders ────────────────────────────────────────────────────── */
+    --outline: #B0B0BB;
+    --outline-variant: #DDDDE6;
+
+    /* ── Status ─────────────────────────────────────────────────────── */
+    --error: #DC2626;
     --on-error: #FFFFFF;
 
-    --green-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
-    --green-border: #2E7D32;
+    /* ── Success ─────────────────────────────────────────────────────  */
+    --green-shadow: 0 6px 20px rgba(22, 163, 74, 0.25);
+    --green-border: #16A34A;
+
+    /* ── Absolute floor ─────────────────────────────────────────────── */
+    --bg-app: #F4F4F8;
+
+    /* Light surface ramp:
+       hsl(240, 12%, [L% stepping up from 97%])  — always bright, never flat-white */
+    --surface-0: #F8F8FC;
+    /* page canvas             */
+    --surface-1: #FFFFFF;
+    /* base card               */
+    --surface-2: #FFFFFF;
+    /* same as 1 — cards stay white */
+    --surface-3: #F5F5FA;
+    /* slight inset panels     */
+    --surface-4: #EDEDF5;
+    /* modals / tooltips       */
+    --surface-5: #E5E5F0;
+    /* top overlays            */
+
+    /* Legacy aliases */
+    --bg-surface: var(--surface-0);
+    --bg-surface-container-low: var(--surface-3);
+    --bg-surface-container: var(--surface-4);
+    --bg-surface-container-high: var(--surface-5);
+    --bg-card: var(--surface-1);
+    --bg-card-hover: var(--surface-3);
+
+    /* ── Light-mode shadow scale (warmer, lighter) ──────────────────── */
+    --shadow-0: none;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.08);
+    --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.10);
+    --shadow-3: 0 4px 8px rgba(0, 0, 0, 0.10), 0 8px 20px rgba(0, 0, 0, 0.12);
+    --shadow-4: 0 6px 12px rgba(0, 0, 0, 0.12), 0 16px 32px rgba(0, 0, 0, 0.14);
+    --shadow-5: 0 8px 20px rgba(0, 0, 0, 0.14), 0 24px 48px rgba(0, 0, 0, 0.16);
+
+    /* Light-mode border shimmer uses a bottom shadow to simulate card separation */
+    --border-elevation-1: 0 0 0 1px rgba(0, 0, 0, 0.05);
+    --border-elevation-2: 0 0 0 1px rgba(0, 0, 0, 0.07);
+    --border-elevation-3: 0 0 0 1px rgba(0, 0, 0, 0.09);
+    --border-elevation-4: 0 0 0 1px rgba(0, 0, 0, 0.11);
+
+    --card-border-1: rgba(0, 0, 0, 0.06);
+    --card-border-2: rgba(0, 0, 0, 0.08);
+    --card-border-3: rgba(0, 0, 0, 0.10);
+    --card-border-4: rgba(0, 0, 0, 0.12);
+
+    /* Overlay opacity is reversed for light mode */
+    --elevation-overlay-0: rgba(0, 0, 0, 0.000);
+    --elevation-overlay-1: rgba(0, 0, 0, 0.012);
+    --elevation-overlay-2: rgba(0, 0, 0, 0.022);
+    --elevation-overlay-3: rgba(0, 0, 0, 0.030);
+    --elevation-overlay-4: rgba(0, 0, 0, 0.036);
+    --elevation-overlay-5: rgba(0, 0, 0, 0.042);
+
+    /* Severity tokens stay the same hue but are darker for contrast */
+    --sev-info: #7C3AED;
+    --sev-warn: #D97706;
+    --sev-alert: #DC2626;
+    --sev-success: #16A34A;
+}
+
+/* Light-mode scrollbar */
+body.light-mode ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.22);
 }

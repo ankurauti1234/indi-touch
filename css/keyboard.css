@@ -5,18 +5,16 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: #1A1B1E;
-    /* Indi Dark Background */
+    background-color: var(--surface-5);
     padding: 12px 0 24px 0;
     z-index: 100000;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -1px 0 var(--card-border-2), var(--shadow-4);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
     transform: translateY(100%);
     transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
-    /* font-family: 'Roboto', sans-serif; */
 }
 
 #osk-container.visible {
@@ -31,13 +29,12 @@
 }
 
 .osk-key {
-    background: #2D2E33;
-    color: #E6E1E5;
-    border: none;
-    border-radius: 6px;
+    background: var(--surface-3);
+    color: var(--text-main);
+    border: 1px solid var(--card-border-2);
+    border-radius: 8px;
     height: 48px;
     min-width: 40px;
-    /* Standard key width */
     font-size: 20px;
     font-weight: 400;
     cursor: pointer;
@@ -45,13 +42,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.1s;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    transition: background 0.1s, transform 0.08s;
+    box-shadow: var(--shadow-1), var(--border-elevation-1);
 }
 
 .osk-key:active {
-    background: #444746;
+    background: var(--surface-4);
     transform: translateY(1px);
+    box-shadow: none;
 }
 
 /* SPECIAL KEYS */
@@ -59,7 +57,7 @@
     flex-grow: 1;
     max-width: 60px;
     font-size: 16px;
-    background: #38393F;
+    background: var(--surface-4);
 }
 
 .osk-key.space {
@@ -68,16 +66,19 @@
 }
 
 .osk-key.action {
-    background: #381E72;
-    color: #D0BCFF;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    border-color: transparent;
     font-weight: 500;
     font-size: 16px;
     min-width: 80px;
+    box-shadow: var(--shadow-2);
 }
 
 .osk-key.shift-active {
-    background: #D0BCFF;
-    color: #381E72;
+    background: var(--primary);
+    color: var(--on-primary);
+    border-color: transparent;
 }
 
 /* ADJUSTMENTS FOR 1024px SCREEN */
@@ -92,8 +93,7 @@
 /* NUMERIC MODE */
 #osk-container.numeric-mode {
     padding-bottom: 24px;
-    background-color: #000;
-    /* True black as per image */
+    background-color: var(--surface-5);
 }
 
 #osk-container.numeric-mode .osk-row {
@@ -104,26 +104,26 @@
 }
 
 #osk-container.numeric-mode .osk-key {
-    background: #2D2E33;
+    background: var(--surface-3);
     flex: 1 1 8%;
     height: 54px;
     font-size: 18px;
-    border-radius: 8px;
+    border-radius: 10px;
     min-width: 40px;
 }
 
 #osk-container.numeric-mode .osk-key.wide,
 #osk-container.numeric-mode .osk-key.action {
     flex: 1.5;
-    background: #38393F;
+    background: var(--surface-4);
 }
 
 #osk-container.numeric-mode .osk-key.space {
     flex: 3;
-    background: #2D2E33;
+    background: var(--surface-3);
 }
 
 #osk-container.numeric-mode .osk-row:last-child .osk-key:last-child {
     flex: 1.5;
-    background: #38393F;
+    background: var(--surface-4);
 }

@@ -85,14 +85,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--elevation-overlay-2);
     border-radius: 10px;
     border: 2px solid transparent;
     background-clip: content-box;
+    transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--elevation-overlay-3);
     border: 2px solid transparent;
     background-clip: content-box;
 }
@@ -119,7 +120,7 @@ body {
 }
 
 .conn-card {
-    background: var(--bg-surface-container, #1c1b1f);
+    background: var(--surface-4);
     border-radius: 40px;
     padding: 48px;
     width: 540px;
@@ -129,9 +130,10 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 32px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+    box-shadow: var(--shadow-5), var(--border-elevation-4);
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--card-border-3);
+    transition: box-shadow 0.3s ease;
 }
 
 .conn-icon {
@@ -243,7 +245,7 @@ body {
     cursor: pointer;
     transition: 0.2s;
     min-width: 200px;
-    box-shadow: 0 8px 24px rgba(208, 188, 255, 0.2);
+    box-shadow: var(--shadow-2);
 }
 
 .conn-btn-primary:active {
@@ -267,12 +269,13 @@ body {
 /* SIDEBAR */
 .nav-rail {
     width: 88px;
-    background-color: var(--bg-surface);
+    background-color: var(--surface-1);
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 32px 0;
     z-index: 50;
+    border-right: 1px solid var(--card-border-1);
 }
 
 .status-rail {
@@ -444,12 +447,14 @@ body {
 }
 
 .member-card {
-    background-color: var(--bg-card);
+    background-color: var(--surface-2);
     border-radius: var(--radius-card);
     overflow: hidden;
     position: relative;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
+    box-shadow: var(--shadow-2);
+    transition: box-shadow 0.3s cubic-bezier(0.2, 0, 0, 1),
+        transform 0.3s cubic-bezier(0.2, 0, 0, 1),
+        border-color 0.3s ease;
     cursor: pointer;
     border: 2px solid transparent;
     height: calc((100% - (var(--gap) * (var(--rows) - 1))) / var(--rows));
@@ -559,7 +564,7 @@ body {
 .member-card.focused {
     outline: 3px solid #fff;
     outline-offset: 3px;
-    box-shadow: 0 0 0 6px rgba(208, 188, 255, 0.35), var(--green-shadow, none);
+    box-shadow: 0 0 0 6px var(--primary-glow), var(--shadow-4), var(--green-shadow, none);
     transform: scale(1.03);
     z-index: 2;
 }
@@ -651,19 +656,22 @@ body {
 }
 
 .list-item {
-    background: var(--bg-card);
+    background: var(--surface-2);
     padding: 24px;
     border-radius: 28px;
     display: flex;
     align-items: center;
     gap: 20px;
     cursor: pointer;
-    transition: 0.2s cubic-bezier(0.2, 0, 0, 1);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+    border: 1px solid var(--card-border-1);
+    box-shadow: var(--shadow-1), var(--border-elevation-1);
 }
 
 .list-item:hover {
-    background: var(--bg-card-hover);
+    background: var(--surface-3);
+    box-shadow: var(--shadow-2), var(--border-elevation-2);
+    transform: translateY(-1px);
 }
 
 .list-item:active {
@@ -740,9 +748,17 @@ body {
 }
 
 .stat-card {
-    background: var(--bg-card);
+    background: var(--surface-2);
     padding: 20px;
     border-radius: 20px;
+    box-shadow: var(--shadow-1), var(--border-elevation-1);
+    border: 1px solid var(--card-border-1);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.stat-card:hover {
+    box-shadow: var(--shadow-2), var(--border-elevation-2);
+    transform: translateY(-1px);
 }
 
 .stat-info {
@@ -786,7 +802,7 @@ body {
 }
 
 .hw-grid-item {
-    background: var(--bg-surface-container-high, #2b2930);
+    background: var(--surface-3);
     border-radius: 16px;
     padding: 16px;
     display: flex;
@@ -794,8 +810,14 @@ body {
     align-items: center;
     gap: 8px;
     text-align: center;
-    transition: 0.3s cubic-bezier(0.2, 0, 0, 1);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+    border: 1px solid var(--card-border-2);
+    box-shadow: var(--shadow-2), var(--border-elevation-2);
+}
+
+.hw-grid-item:hover {
+    box-shadow: var(--shadow-3), var(--border-elevation-3);
+    transform: translateY(-2px);
 }
 
 .hw-grid-item .material-symbols-rounded {
@@ -1065,15 +1087,17 @@ body {
 }
 
 .survey-card {
-    background: var(--bg-surface-container);
+    background: var(--surface-3);
     padding: 40px;
     border-radius: 32px;
     width: 100%;
     max-width: 600px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-4), var(--border-elevation-3);
+    border: 1px solid var(--card-border-2);
     display: flex;
     flex-direction: column;
     gap: 32px;
+    transition: box-shadow 0.3s ease;
 }
 
 .survey-question {
@@ -1159,11 +1183,12 @@ body {
 }
 
 .modal-card {
-    background: var(--bg-surface);
+    background: var(--surface-4);
     width: 400px;
     padding: 24px;
     border-radius: 28px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-4), var(--border-elevation-3);
+    border: 1px solid var(--card-border-3);
     transform: scale(0.9);
     transition: 0.3s cubic-bezier(0.2, 0, 0, 1);
     will-change: transform;
@@ -1692,15 +1717,15 @@ body.osk-open .main-stage {
 }
 
 .hub-notif-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-3);
     backdrop-filter: blur(10px);
     border-radius: 16px;
     padding: 8px 12px;
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--card-border-2);
+    box-shadow: var(--shadow-2), var(--border-elevation-2);
     animation: slideInUp 0.8s cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
@@ -1770,7 +1795,7 @@ body.osk-open .main-stage {
 }
 
 .avatar-option {
-    background: var(--bg-card);
+    background: var(--surface-2);
     border-radius: 12px;
     padding: 10px;
     border: 2px solid transparent;
@@ -1778,6 +1803,8 @@ body.osk-open .main-stage {
     display: flex;
     flex-direction: column;
     align-items: center;
+    box-shadow: var(--shadow-1), var(--border-elevation-1);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .avatar-option:hover {
@@ -1880,11 +1907,12 @@ body.osk-open .main-stage {
 }
 
 .popover-card {
-    background: var(--bg-surface-container);
+    background: var(--surface-4);
     width: 420px;
     padding: 32px;
     border-radius: 32px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    box-shadow: var(--shadow-4), var(--border-elevation-3);
+    border: 1px solid var(--card-border-3);
     transform: scale(0.9);
     transition: 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
@@ -1975,15 +2003,16 @@ body.osk-open .main-stage {
 }
 
 .toast-card {
-    background: #322F35;
-    color: #F4EFF4;
+    background: var(--surface-5);
+    color: var(--text-main);
     padding: 12px 16px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     gap: 12px;
     min-width: 300px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-3), var(--border-elevation-2);
+    border: 1px solid var(--card-border-2);
     transform: translateY(20px);
     opacity: 0;
     transition: 0.4s cubic-bezier(0.2, 0, 0, 1);
@@ -2070,7 +2099,8 @@ body.osk-open .main-stage {
 .author-sub {
     margin-top: 60px;
     font-size: 12px;
-    color: #444;
+    color: var(--text-sub);
+    opacity: 0.4;
     letter-spacing: 1px;
 }
 
@@ -2126,11 +2156,12 @@ body.osk-open .main-stage {
 
 /* ── System Info Redesign ──────────────────────────────────────────────────── */
 .info-group {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--surface-2);
     border-radius: 20px;
     padding: 8px 16px;
     margin-bottom: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border-1);
+    box-shadow: var(--shadow-1), var(--border-elevation-1);
 }
 
 .info-row {
@@ -2138,7 +2169,7 @@ body.osk-open .main-stage {
     justify-content: space-between;
     align-items: center;
     padding: 16px 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--card-border-1);
 }
 
 .info-row:last-child {
@@ -2147,13 +2178,13 @@ body.osk-open .main-stage {
 
 .info-label {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-sub);
     font-weight: 500;
 }
 
 .info-value {
     font-size: 16px;
-    color: #fff;
+    color: var(--text-main);
     font-weight: 600;
 }
 
@@ -2165,7 +2196,7 @@ body.osk-open .main-stage {
 
 /* -- WALLPAPER SETTINGS ----------------------------------------------------- */
 .wp-current-box {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--surface-2);
     border-radius: 16px;
     padding: 24px;
     display: flex;
@@ -2173,6 +2204,8 @@ body.osk-open .main-stage {
     justify-content: center;
     min-height: 160px;
     margin-bottom: 24px;
+    border: 1px solid var(--card-border-1);
+    box-shadow: var(--shadow-1), var(--border-elevation-1);
 }
 
 .wp-no-image {
@@ -2266,7 +2299,7 @@ body.osk-open .main-stage {
 
 /* ── WALLPAPER SETTINGS M3 ───────────────────────────────────────────────── */
 .wp-preview-card {
-    background: var(--bg-surface-container-high, #2b2930);
+    background: var(--surface-3);
     border-radius: 20px;
     height: 140px;
     margin: 0 16px 16px 16px;
@@ -2275,7 +2308,8 @@ body.osk-open .main-stage {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border-2);
+    box-shadow: var(--shadow-2), var(--border-elevation-2);
 }
 
 .wp-empty-state {
@@ -2316,13 +2350,15 @@ body.osk-open .main-stage {
 }
 
 .wp-qr-card {
-    background: var(--bg-surface-container-low, #1d1b20);
+    background: var(--surface-2);
     border-radius: 20px;
     padding: 20px;
     margin: 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    border: 1px solid var(--card-border-1);
+    box-shadow: var(--shadow-1), var(--border-elevation-1);
 }
 
 .qr-header {

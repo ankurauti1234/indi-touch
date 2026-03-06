@@ -31,12 +31,10 @@ except ImportError:
 
 # ── API imports ───────────────────────────────────────────────────────────────
 from api         import create_app
-from api.config  import SYSTEM_FILES, is_installation_done
+from api.config  import SYSTEM_FILES, is_installation_done, is_fresh_boot, save_boot_id
 from api.db      import init_db
-from api.mqtt_service import (
-    init_mqtt, is_fresh_boot, save_boot_id,
-    publish_member_event, publish_guest_event,
-    _enqueue,
+from api.collector_service import (
+    publish_member_event, publish_guest_event, send_event
 )
 from api.db import load_members_data, load_guests_data, calculate_age
 
@@ -173,8 +171,8 @@ def _boot_reset():
         for m in data.get("members", [])
         if "dob" in m and "gender" in m and calculate_age(m["dob"]) is not None
     ]
-    _enqueue({"DEVICE_ID": METER_ID, "TS": str(int(_t.time())), "Type": 3, "Details": {"members": members}})
-    _enqueue({"DEVICE_ID": METER_ID, "TS": str(int(_t.time())), "Type": 4, "Details": {"guests": []}})
+    send_event(3, {"members": members})
+    send_event(4, {"guests": []})
     print(f"[BOOT] Reset {len(members)} members to inactive, cleared guests")
 
 
@@ -183,11 +181,7 @@ def main():
     # 1. Database
     init_db()
 
-    # 2. MQTT (worker + heartbeat threads)
-    init_mqtt()
-    time.sleep(2)  # give MQTT time to connect before potentially flushing boot events
-
-    # 3. Fresh-boot detection
+    # 2. Boot sequence / Fresh-boot detection
     if is_fresh_boot():
         print("[BOOT] Fresh boot — resetting session")
         _boot_reset()

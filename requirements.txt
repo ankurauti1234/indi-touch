@@ -1,7 +1,7 @@
 # requirements.txt — RPi dependencies for main.py
 flask>=3.0
 flask-cors>=4.0
-paho-mqtt>=1.6
+dbus-python>=1.2.18
 requests>=2.31
 PyQt5>=5.15
 PyQtWebEngine>=5.15

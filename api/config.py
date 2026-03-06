@@ -49,7 +49,11 @@ INITIATE_URL = f"{API_BASE}/initiate-assignment"
 VERIFY_URL   = f"{API_BASE}/verify-otp"
 MEMBERS_URL  = f"{API_BASE}/members"
 
-# ── MQTT ──────────────────────────────────────────────────────────────────────
+# ── MQTT & D-Bus ──────────────────────────────────────────────────────────────
+DBUS_INTERFACE       = "collector.Service"
+DBUS_OBJECT_PATH     = "/collector/service"
+DBUS_SIGNAL_EVENT    = "Event"
+
 MQTT_TOPIC           = "indi/AM/meter"
 AWS_IOT_ENDPOINT     = "a3uoz4wfsx2nz3-ats.iot.ap-south-1.amazonaws.com"
 MQTT_PORT            = 8883
@@ -109,6 +113,28 @@ def set_current_state(state: str):
 def file_flag_exists(key: str) -> bool:
     """Return True if the /run indicator file exists."""
     return os.path.exists(SYSTEM_FILES.get(key, ""))
+
+def _get_boot_id():
+    try:
+        return open("/proc/sys/kernel/random/boot_id").read().strip()
+    except Exception:
+        return None
+
+def is_fresh_boot() -> bool:
+    current = _get_boot_id()
+    if not current:
+        return False
+    try:
+        last = open(SYSTEM_FILES["last_boot_id"]).read().strip()
+        return current != last
+    except FileNotFoundError:
+        return True
+
+def save_boot_id():
+    bid = _get_boot_id()
+    if bid:
+        with open(SYSTEM_FILES["last_boot_id"], "w") as f:
+            f.write(bid)
 
 METER_ID = get_meter_id()
 print(f"[CONFIG] METER_ID = {METER_ID}")

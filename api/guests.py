@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from .config import METER_ID
 from .db import load_guests_data, save_guests_data
-from .mqtt_service import publish_guest_event
+from .collector_service import publish_guest_event
 
 guests_bp = Blueprint("guests", __name__)
 

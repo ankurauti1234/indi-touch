@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from .config import METER_ID
 from .db import load_members_data, toggle_member_in_db, rename_member_in_db
-from .mqtt_service import publish_member_event
+from .collector_service import publish_member_event
 
 members_bp = Blueprint("members", __name__)
 

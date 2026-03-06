@@ -138,16 +138,21 @@ export function renderScreensaverMembers() {
     const tvText = document.getElementById('tv-status-saver-text');
     const clock = document.getElementById('clock-time');
 
-    // Force massive clock if TV is off
     if (tvTag) {
-        if (tvState.on) {
-            tvTag.classList.remove('offline');
-            if (tvText) tvText.innerText = 'TV ON';
-            if (clock) clock.classList.remove('massive');
+        if (!config.bleAvailable) {
+            tvTag.style.display = 'none';
+            if (clock) clock.classList.remove('massive'); // Don't force massive if no BLE
         } else {
-            tvTag.classList.add('offline');
-            if (tvText) tvText.innerText = 'TV OFF';
-            if (clock) clock.classList.add('massive');
+            tvTag.style.display = 'flex';
+            if (tvState.on) {
+                tvTag.classList.remove('offline');
+                if (tvText) tvText.innerText = 'TV ON';
+                if (clock) clock.classList.remove('massive');
+            } else {
+                tvTag.classList.add('offline');
+                if (tvText) tvText.innerText = 'TV OFF';
+                if (clock) clock.classList.add('massive');
+            }
         }
     }
 

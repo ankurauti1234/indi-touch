@@ -81,6 +81,13 @@ def system_status():
     except:
         wifi_ok = os.path.exists(SYSTEM_FILES["wifi_up"])
 
+    ble_available = os.path.exists(SYSTEM_FILES["ble_status"])
+    tv_on = os.path.exists(SYSTEM_FILES["tv_status"])
+    
+    # If BLE is NOT present, consider TV as always on
+    if not ble_available:
+        tv_on = True
+
     return jsonify({
         "success": True,
         "meter_id":        METER_ID,
@@ -89,7 +96,8 @@ def system_status():
         "usb_jack":        os.path.exists(SYSTEM_FILES["jack_status"]),
         "hdmi_vcc":        os.path.exists(SYSTEM_FILES["hdmi_input"]),
         "video_detection": os.path.exists(SYSTEM_FILES["video_detection"]),
-        "tv_on":           os.path.exists(SYSTEM_FILES["tv_status"]),
+        "tv_on":           tv_on,
+        "ble_available":   ble_available,
         "installation_done": os.path.exists(SYSTEM_FILES["install_done"]) and open(SYSTEM_FILES["install_done"]).read().strip() == "1",
         "ip_address":      get_ip_address(),
         "mac_address":     get_mac_address(),

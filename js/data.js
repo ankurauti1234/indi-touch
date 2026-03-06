@@ -12,7 +12,8 @@ export let config = {
     remoteMode: false,
     onboardingCompleted: false,
     avatarStyle: 'local',
-    reduceAnimations: false
+    reduceAnimations: false,
+    bleAvailable: true
 };
 
 // --- API Sync Helpers ---
@@ -43,8 +44,15 @@ export async function loadConfig() {
         config.reduceAnimations = dSettings.reduceAnimations === true;
         config.brightness = dSettings.brightness !== undefined ? dSettings.brightness : 255;
 
-        // TV Status from status API
+        // TV Status and BLE availability
+        config.bleAvailable = dStatus.ble_available !== false;
         tvState.on = dStatus.tv_on === true;
+
+        // Apply BLE/TV visibility
+        const tvElements = document.querySelectorAll('.tv-only');
+        tvElements.forEach(el => {
+            el.style.display = config.bleAvailable ? 'flex' : 'none';
+        });
 
         // Apply visual states
         if (config.reduceAnimations) document.body.classList.add('reduce-animations');

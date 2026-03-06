@@ -51,6 +51,11 @@ let _wifiPopupVisible  = false;
 
 function injectWifiPopup() {
     if (_wifiPopupVisible || _wifiCooldownTimer) return;
+    
+    // Don't show if we are in the middle of connecting or entering password
+    const pwdOverlay = document.getElementById('wifi-password-overlay');
+    if (pwdOverlay && pwdOverlay.classList.contains('active')) return;
+
     if (document.getElementById('wifi-warning-overlay')) return;
     _wifiPopupVisible = true;
     const el = document.createElement('div');

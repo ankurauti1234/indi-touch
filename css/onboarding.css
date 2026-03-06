@@ -503,9 +503,16 @@
 .chk-group {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding-bottom: 120px;
-    /* Space for footer */
+    gap: 16px;
+    padding-bottom: 20px;
+    overflow-y: auto;
+    max-height: 380px;
+    /* Limit height to prevent overlap with footer */
+    scrollbar-width: none;
+}
+
+.chk-group::-webkit-scrollbar {
+    display: none;
 }
 
 .chk-item {

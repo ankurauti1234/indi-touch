@@ -29,8 +29,8 @@ export async function addGuest() {
         return;
     }
 
-    if(guests.length >= 10) {
-        showModal(t('guest_wait') || 'Error', "Maximum limit of 10 guests reached.");
+    if(guests.length >= 9) {
+        showModal(t('guest_wait') || 'Error', "Maximum limit of 9 guests reached.");
         return;
     }
     
@@ -119,15 +119,16 @@ export function renderGuestList() {
     container.innerHTML = guests.map(g => {
         const url = getAvatarUrl(g);
         return `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div class="guest-card-m3">
             <div class="guest-avatar-circle" title="${g.name || 'Guest'} (${g.gender}, ${g.age})">
-                <img src="${url}" loading="lazy">
+                <img src="${url}" loading="lazy" alt="Guest Avatar">
             </div>
-            <div style="color:var(--text-sub); font-size:14px; font-weight: 500;">
+            <div class="guest-info-text">
                 ${g.gender.charAt(0)} ${g.age}
             </div>
-            <button class="action-btn-small" onclick="deleteGuest(${g.id})" style="background: rgba(255, 82, 82, 0.15); color: #ff5252; padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(255, 82, 82, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>
+            <button class="guest-delete-btn" onclick="deleteGuest(${g.id})">
+                <span class="material-symbols-rounded">delete</span>
+                Delete
             </button>
         </div>`;
     }).join('');

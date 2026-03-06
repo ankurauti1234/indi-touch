@@ -632,7 +632,7 @@
         </div>
         <div class="form-area" style="flex: 0">
           <input type="number" id="g-age" class="input-box" placeholder="Guest Age" data-i18n="guest_age" min="1"
-            max="110" />
+            max="110" oninput="if(this.value.length > 3) this.value = this.value.slice(0,3);" />
           <div class="chip-group">
             <div class="chip selected" onclick="selectChip(this, 'gender')" data-i18n="male">
               Male

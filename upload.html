@@ -194,67 +194,6 @@
         input[type="file"] {
             display: none;
         }
-
-        .section-title {
-            margin: 40px 0 20px;
-            font-size: 20px;
-            font-weight: 500;
-            color: var(--md-sys-color-on-surface);
-            width: 100%;
-            max-width: 480px;
-            text-align: left;
-        }
-
-        .member-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 16px;
-            width: 100%;
-            max-width: 480px;
-        }
-
-        .member-card {
-            background: var(--md-sys-color-surface-variant);
-            border-radius: 20px;
-            padding: 16px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .member-avatar-box {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--md-sys-color-primary-container);
-            overflow: hidden;
-            border: 2px solid var(--md-sys-color-primary);
-        }
-
-        .member-avatar-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .member-name {
-            font-size: 14px;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            width: 100%;
-        }
-
-        .btn-small {
-            height: 32px;
-            padding: 0 12px;
-            font-size: 12px;
-            border-radius: 16px;
-        }
     </style>
 </head>
 
@@ -293,17 +232,9 @@
         <div id="status-msg" class="status-msg"></div>
     </div>
 
-    <h2 class="section-title">Household Members</h2>
-    <div class="member-grid" id="member-grid">
-        <!-- Members injected here -->
-    </div>
-
-    <!-- Hidden input for member avatars -->
-    <input type="file" id="member-file-input" accept=".jpg,.jpeg,.png,.webp">
 
     <script>
-        const memberFileInput = document.getElementById('member-file-input');
-        const memberGrid = document.getElementById('member-grid');
+
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         const statusMsg = document.getElementById('status-msg');
@@ -312,11 +243,9 @@
         const uploadStage = document.getElementById('upload-stage');
         const previewStage = document.getElementById('preview-stage');
 
-        let activeMemberCode = null;
         let selectedFile = null;
 
         // Init
-        fetchMembers();
         fetchCurrentWallpaper();
 
         async function fetchCurrentWallpaper() {
@@ -336,75 +265,6 @@
                 }
             } catch (e) { }
         }
-        async function fetchMembers() {
-            try {
-                const r = await fetch('/api/wallpaper/members');
-                const d = await r.json();
-                if (d.success) renderMembers(d.members);
-            } catch (e) { }
-        }
-
-        function renderMembers(members) {
-            memberGrid.innerHTML = members.map(m => `
-                <div class="member-card">
-                    <div class="member-avatar-box">
-                        <img src="${m.offline_avatar && !m.offline_avatar.includes('data:image') ? '/api/wallpaper/avatar_image?code=' + m.member_code + '&t=' + Date.now() : 'https://api.dicebear.com/9.x/initials/svg?seed=' + m.name}" alt="${m.name}">
-                    </div>
-                    <div class="member-name">${m.name}</div>
-                    <button class="btn btn-tonal btn-small" onclick="triggerMemberUpload('${m.member_code}')">Change Photo</button>
-                </div>
-            `).join('');
-        }
-
-        function triggerMemberUpload(code) {
-            activeMemberCode = code;
-            memberFileInput.click();
-        }
-
-        memberFileInput.onchange = async () => {
-            if (!memberFileInput.files.length || !activeMemberCode) return;
-            const file = memberFileInput.files[0];
-
-            if (file.size > 5 * 1024 * 1024) {
-                alert('Avatar image too large. Max 5MB.');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('member_code', activeMemberCode);
-
-            const card = [...document.querySelectorAll('.member-card')].find(c => c.innerHTML.includes(activeMemberCode));
-            const btn = card?.querySelector('button');
-            const originalText = btn.innerText;
-
-            try {
-                btn.disabled = true;
-                btn.innerText = 'Sharing...';
-                const r = await fetch('/api/wallpaper/upload_avatar', {
-                    method: 'POST',
-                    body: formData
-                });
-                const d = await r.json();
-                if (d.success) {
-                    if (d.sizeKB) {
-                        btn.innerText = `Saved (${d.sizeKB}KB)`;
-                        setTimeout(() => fetchMembers(), 1500);
-                    } else {
-                        fetchMembers();
-                    }
-                } else {
-                    alert(d.error || 'Upload failed');
-                }
-            } catch (e) {
-                alert('Connection error');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        };
-
-        // Existing Wallpaper Logic
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (e) => {

@@ -20,7 +20,7 @@ export function openSetting(id) {
     if (id === 'system')       loadSystemInfo();
     if (id === 'power')        _initPowerPanel();
     if (id === 'wallpaper')    loadWallpaperSettings();
-    if (id === 'avatars')      checkCustomAvatarAvailability();
+    if (id === 'wallpaper')    loadWallpaperSettings();
 }
 
 function _initPowerPanel() {
@@ -108,16 +108,6 @@ export function toggleAnimations() {
 }
 
 export async function selectAvatarStyle(style) {
-    // Check if custom is allowed
-    if (style === 'custom') {
-        const r = await fetch('/api/wallpaper/members');
-        const d = await r.json();
-        if (!d.all_have_avatars) {
-            if (window.showToast) window.showToast('Upload photos for ALL members first');
-            return;
-        }
-    }
-
     currentAvatarStyle = style;
     updateSetting('avatarStyle', style);
     
@@ -135,26 +125,6 @@ export async function selectAvatarStyle(style) {
     renderGrid();
 }
 
-// Logic to hide/show custom option when opening panel
-async function checkCustomAvatarAvailability() {
-    const customOpt = document.getElementById('avat-custom');
-    if (!customOpt) return;
-    
-    try {
-        const r = await fetch('/api/wallpaper/members');
-        const d = await r.json();
-        if (d.all_have_avatars) {
-            customOpt.style.display = 'flex';
-            customOpt.style.opacity = '1';
-        } else {
-            // Keep it visible but faded/disabled-looking, or hide it?
-            // The user said "dont show custom option", so let's hide it.
-            customOpt.style.display = 'none';
-        }
-    } catch(e) {
-        customOpt.style.display = 'none';
-    }
-}
 
 // --- NEW SETTINGS LOGIC ---
 

@@ -119,17 +119,16 @@ export function renderGuestList() {
     container.innerHTML = guests.map(g => {
         const url = getAvatarUrl(g);
         return `
-        <div class="guest-card-m3">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
             <div class="guest-avatar-circle" title="${g.name || 'Guest'} (${g.gender}, ${g.age})">
-                <img src="${url}" loading="lazy" alt="Guest Avatar">
+                <img src="${url}" loading="lazy">
+                <div class="guest-delete-overlay" onclick="deleteGuest(${g.id})">
+                    <span class="material-symbols-rounded">close</span>
+                </div>
             </div>
-            <div class="guest-info-text">
+            <div style="color:var(--text-sub); font-size:14px; font-weight: 500;">
                 ${g.gender.charAt(0)} ${g.age}
             </div>
-            <button class="guest-delete-btn" onclick="deleteGuest(${g.id})">
-                <span class="material-symbols-rounded">delete</span>
-                Delete
-            </button>
         </div>`;
     }).join('');
 }

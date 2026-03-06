@@ -154,17 +154,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     let lastDismissTime = 0;
 
     timers.setInterval(() => {
-        // If bluetooth is not available, TV is always considered ON — skip TV monitoring
+        let isTvOn = tvState.on;
+
+        // If bluetooth is not available, TV is always considered ON
         if (!config.bleAvailable) {
-            const popover = document.getElementById('critical-popover');
-            if (popover) popover.classList.remove('active');
-            return;
+            isTvOn = true;
         }
 
         const now = Date.now();
         const cooldownActive = (now - lastDismissTime) < 15000;
 
-        if (!tvState.on) {
+        if (!isTvOn) {
             // TV is off: hide warning popover and block interaction
             const popover = document.getElementById('critical-popover');
             if (popover) popover.classList.remove('active');

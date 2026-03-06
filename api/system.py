@@ -81,12 +81,19 @@ def system_status():
     except:
         wifi_ok = os.path.exists(SYSTEM_FILES["wifi_up"])
 
-    ble_available = os.path.exists(SYSTEM_FILES["ble_status"])
-    tv_on = os.path.exists(SYSTEM_FILES["tv_status"])
+    ble_available = os.path.exists(SYSTEM_FILES["bluetooth_available"])
+    tv_on = True
     
-    # If BLE is NOT present, consider TV as always on
-    if not ble_available:
-        tv_on = True
+    if ble_available:
+        if os.path.exists(SYSTEM_FILES["tv_status"]):
+            try:
+                with open(SYSTEM_FILES["tv_status"], "r") as f:
+                    tv_state = f.read().strip().upper()
+                    tv_on = (tv_state == "ON")
+            except:
+                tv_on = False
+        else:
+            tv_on = False
 
     return jsonify({
         "success": True,

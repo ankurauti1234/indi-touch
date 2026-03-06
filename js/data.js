@@ -44,20 +44,20 @@ export async function loadConfig() {
         config.reduceAnimations = dSettings.reduceAnimations === true;
         config.brightness = dSettings.brightness !== undefined ? dSettings.brightness : 255;
 
-        // TV Status and BLE availability
-        config.bleAvailable = dStatus.ble_available !== false;
+        // Bluetooth / TV availability — strict: only true if explicitly true
+        config.bleAvailable = dStatus.ble_available === true;
         tvState.on = dStatus.tv_on === true;
 
-        // Apply BLE/TV visibility
+        // Hide all TV-related elements if bluetooth is not available
         const tvElements = document.querySelectorAll('.tv-only');
         tvElements.forEach(el => {
-            el.style.display = config.bleAvailable ? 'flex' : 'none';
+            if (!config.bleAvailable) {
+                el.style.display = 'none';
+            } else {
+                // Restore natural display (flex for most, inline for span etc.)
+                el.style.display = '';
+            }
         });
-
-        // Apply visual states
-        if (config.reduceAnimations) document.body.classList.add('reduce-animations');
-        if (config.remoteMode) document.body.classList.add('remote-mode');
-        window.globalAvatarStyle = config.avatarStyle;
 
         // Apply initial TV UI state
         toggleTv(tvState.on);

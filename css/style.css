@@ -932,6 +932,8 @@ body {
 /* SETTINGS PANELS */
 #view-settings {
     overflow: hidden;
+    padding: 24px 24px 0 24px;
+    /* remove bottom padding — scroll area handles it */
 }
 
 .settings-panel {
@@ -940,7 +942,8 @@ body {
     display: none;
     flex-direction: column;
     animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1);
-    overflow-y: auto;
+    overflow: hidden;
+    /* panels themselves don't scroll — scroll-area inside does */
 }
 
 .settings-panel.active {
@@ -1486,16 +1489,8 @@ body.osk-open .main-stage {
     color: var(--sev-success);
 }
 
-.settings-panel {
-    position: absolute;
-    inset: 0;
-    background: var(--surface);
-    display: none;
-    flex-direction: column;
-    z-index: 50;
-    overflow-y: auto;
-    padding-bottom: 40px;
-}
+/* Duplicate .settings-panel removed — single source of truth above */
+
 
 #screensaver {
     position: fixed;
@@ -2431,5 +2426,8 @@ body.osk-open .main-stage {
 .settings-scroll-area {
     flex: 1;
     overflow-y: auto;
-    padding-bottom: 40px;
+    padding-bottom: 24px;
+    /* breathing room at very bottom of scroll */
+    min-height: 0;
+    /* flexbox scroll fix — prevents child from overflowing parent */
 }

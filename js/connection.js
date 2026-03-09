@@ -2,6 +2,7 @@
 
 import { openSetting } from './settings.js';
 import { timers } from './utils.js';
+import { config } from './data.js';
 
 const API_STATUS_URL = '/api/system/status';
 const POLL_INTERVAL  = 8000;       // 8 s
@@ -11,6 +12,7 @@ let _usbConnected  = true;
 let _wifiConnected = true;
 
 function isOnboarding() {
+    if (config.onboardingCompleted === false) return true;
     const layer = document.getElementById('onboarding-layer');
     if (!layer) return false;
     // Layer is visible and doesn't have 'hidden' class
@@ -194,4 +196,10 @@ export function initConnectionMonitor() {
     timers.setTimeout(_pollStatus, 1500);
     // Then poll every POLL_INTERVAL
     timers.setInterval(_pollStatus, POLL_INTERVAL);
+    
+    // Periodically re-evaluate popups in case they were suppressed during boot/onboarding
+    timers.setInterval(() => {
+        if (!_usbConnected) injectUsbPopup();
+        if (!_wifiConnected) injectWifiPopup();
+    }, 2000);
 }

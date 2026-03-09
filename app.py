@@ -187,7 +187,7 @@ def check_internet_loop():
                 except Exception:
                     pass
 
-        time.sleep(900)  # Next check in 15 minutes
+        time.sleep(5)  # Next check in 5 seconds
 
 
 # ── Boot sequence ─────────────────────────────────────────────────────────────

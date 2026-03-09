@@ -10,8 +10,18 @@ const WIFI_COOLDOWN  = 2 * 60_000; // 2 min
 let _usbConnected  = true;
 let _wifiConnected = true;
 
+function isOnboarding() {
+    const layer = document.getElementById('onboarding-layer');
+    if (!layer) return false;
+    // Layer is visible and doesn't have 'hidden' class
+    return !layer.classList.contains('hidden') && 
+           layer.style.display !== 'none' && 
+           layer.style.opacity !== '0';
+}
+
 // ─── USB Popup ────────────────────────────────────────────────────────────────
 function injectUsbPopup() {
+    if (isOnboarding()) return; // Suppress during onboarding
     if (document.getElementById('usb-warning-overlay')) return;
     const el = document.createElement('div');
     el.id = 'usb-warning-overlay';
@@ -50,6 +60,7 @@ let _wifiCooldownTimer = null;
 let _wifiPopupVisible  = false;
 
 function injectWifiPopup() {
+    if (isOnboarding()) return; // Suppress during onboarding
     if (_wifiPopupVisible || _wifiCooldownTimer) return;
     
     // Don't show if we are in the middle of connecting or entering password

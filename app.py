@@ -10,6 +10,7 @@ import os
 import sys
 import time
 import threading
+import socket
 
 # ── Chromium / Qt environment ─────────────────────────────────────────────────
 os.environ.setdefault("QTWEBENGINE_CHROMIUM_FLAGS", "--no-sandbox")
@@ -97,6 +98,7 @@ class BrowserWindow(QMainWindow):
         # ── Connection state polling (every POLL_INTERVAL_MS) ─────────────────
         self._last_usb  = None
         self._last_wifi = None
+        self._last_internet = None
         self._poll_timer = QTimer(self)
         self._poll_timer.setInterval(POLL_INTERVAL_MS)
         self._poll_timer.timeout.connect(self._poll_connections)
@@ -111,6 +113,7 @@ class BrowserWindow(QMainWindow):
             # Push current connection state immediately after load
             self._push_usb_state()
             self._push_wifi_state()
+            self._push_internet_state()
 
     # ── Connection polling ────────────────────────────────────────────────────
     def _push_usb_state(self):
@@ -125,14 +128,23 @@ class BrowserWindow(QMainWindow):
         self.view.page().runJavaScript(js)
         self._last_wifi = connected
 
+    def _push_internet_state(self):
+        connected = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
+        js = f"if(window.setInternetState) window.setInternetState({'true' if connected else 'false'});"
+        self.view.page().runJavaScript(js)
+        self._last_internet = connected
+
     def _poll_connections(self):
         usb  = os.path.exists(SYSTEM_FILES["jack_status"])
         wifi = os.path.exists(SYSTEM_FILES["wifi_up"])
+        internet = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
 
         if usb != self._last_usb:
             self._push_usb_state()
         if wifi != self._last_wifi:
             self._push_wifi_state()
+        if internet != self._last_internet:
+            self._push_internet_state()
 
     # ── Key handling ──────────────────────────────────────────────────────────
     def keyPressEvent(self, event):
@@ -145,6 +157,37 @@ class BrowserWindow(QMainWindow):
             event.ignore()
         else:
             super().wheelEvent(event)
+
+
+# ── Background Internet Checker ───────────────────────────────────────────────
+def check_internet_loop():
+    while True:
+        internet_ok = False
+        try:
+            # 8.8.8.8:53 is Google DNS (TCP), very reliable for internet checking
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(3.0)
+            s.connect(("8.8.8.8", 53))
+            s.close()
+            internet_ok = True
+        except Exception:
+            internet_ok = False
+
+        flag_path = SYSTEM_FILES.get("internet_ok", "/run/internet_ok")
+        if internet_ok:
+            if not os.path.exists(flag_path):
+                try:
+                    open(flag_path, "w").close()
+                except Exception:
+                    pass
+        else:
+            if os.path.exists(flag_path):
+                try:
+                    os.remove(flag_path)
+                except Exception:
+                    pass
+
+        time.sleep(900)  # Next check in 15 minutes
 
 
 # ── Boot sequence ─────────────────────────────────────────────────────────────
@@ -190,6 +233,11 @@ def main():
     # 4. Flask in background thread
     flask_thread = threading.Thread(target=run_flask, daemon=True, name="flask")
     flask_thread.start()
+    
+    # 4.5 Internet monitor in background thread
+    internet_thread = threading.Thread(target=check_internet_loop, daemon=True, name="internet_check")
+    internet_thread.start()
+    
     time.sleep(1.5)  # wait for Flask to bind before Qt loads the URL
     print(f"[APP] Flask running at http://127.0.0.1:{FLASK_PORT}")
     print(f"[APP] Installation done: {is_installation_done()}")

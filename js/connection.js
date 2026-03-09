@@ -10,6 +10,7 @@ const WIFI_COOLDOWN  = 2 * 60_000; // 2 min
 
 let _usbConnected  = true;
 let _wifiConnected = true;
+let _internetConnected = true;
 
 function isOnboarding() {
     if (config.onboardingCompleted === false) return true;
@@ -121,6 +122,70 @@ export function setWifiState(connected) {
     else           { injectWifiPopup(); }
 }
 
+// ─── Internet Popup ───────────────────────────────────────────────────────────
+let _internetCooldownTimer = null;
+let _internetPopupVisible  = false;
+
+function injectInternetPopup() {
+    if (isOnboarding()) return; // Suppress during onboarding
+    if (_internetPopupVisible || _internetCooldownTimer) return;
+    
+    // Don't show if we are in the middle of connecting or entering password
+    const pwdOverlay = document.getElementById('wifi-password-overlay');
+    if (pwdOverlay && pwdOverlay.classList.contains('active')) return;
+
+    if (document.getElementById('internet-warning-overlay')) return;
+    _internetPopupVisible = true;
+    const el = document.createElement('div');
+    el.id = 'internet-warning-overlay';
+    el.className = 'conn-overlay';
+    el.innerHTML = `
+    <div class="conn-card">
+        <div class="conn-icon" style="background:rgba(255,184,102,0.15)">
+            <span class="material-symbols-rounded" style="color:#FFB866;font-size:40px">cloud_off</span>
+        </div>
+        <h3 class="conn-title">No Internet Connection</h3>
+        <p class="conn-body">The system is connected to a network but cannot reach the internet. Please check your router.</p>
+        <div class="conn-actions">
+            <button class="conn-btn-secondary" id="internet-warn-dismiss">Dismiss</button>
+            <button class="conn-btn-primary"   id="internet-warn-settings">Check Network</button>
+        </div>
+    </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('visible'));
+    document.getElementById('internet-warn-dismiss').addEventListener('click', _dismissInternet);
+    document.getElementById('internet-warn-settings').addEventListener('click', () => {
+        _dismissInternet();
+        if (window.navTo) window.navTo('settings');
+        timers.setTimeout(() => { if (window.openSetting) window.openSetting('connectivity'); }, 200);
+    });
+}
+
+function _dismissInternet() {
+    const el = document.getElementById('internet-warning-overlay');
+    if (el) { el.classList.remove('visible'); timers.setTimeout(() => el.remove(), 400); }
+    _internetPopupVisible = false;
+    _internetCooldownTimer = timers.setTimeout(() => {
+        _internetCooldownTimer = null;
+        if (!_internetConnected) injectInternetPopup();
+    }, WIFI_COOLDOWN);
+}
+
+function hideInternetPopup() {
+    const el = document.getElementById('internet-warning-overlay');
+    if (el) { el.classList.remove('visible'); timers.setTimeout(() => el.remove(), 400); }
+    _internetPopupVisible = false;
+    timers.clearTimeout(_internetCooldownTimer);
+    _internetCooldownTimer = null;
+}
+
+/** Called by main.py Qt layer and by the internal poller */
+export function setInternetState(connected) {
+    _internetConnected = connected;
+    if (connected) { hideInternetPopup(); }
+    else           { injectInternetPopup(); }
+}
+
 // ─── Real-API Poller ──────────────────────────────────────────────────────────
 async function _pollStatus() {
     try {
@@ -144,6 +209,15 @@ async function _pollStatus() {
             setWifiState(d.wifi);
         } else if (d.wifi && document.getElementById('wifi-warning-overlay')) {
             hideWifiPopup();
+        }
+
+        // Internet fallback (if pushed via API)
+        if (d.internet !== undefined) {
+            if (d.internet !== _internetConnected) {
+                setInternetState(d.internet);
+            } else if (d.internet && document.getElementById('internet-warning-overlay')) {
+                hideInternetPopup();
+            }
         }
 
         // TV Status Icon
@@ -201,5 +275,6 @@ export function initConnectionMonitor() {
     timers.setInterval(() => {
         if (!_usbConnected) injectUsbPopup();
         if (!_wifiConnected) injectWifiPopup();
+        if (!_internetConnected) injectInternetPopup();
     }, 2000);
 }

@@ -108,6 +108,7 @@ def system_status():
         "installation_done": os.path.exists(SYSTEM_FILES["install_done"]) and open(SYSTEM_FILES["install_done"]).read().strip() == "1",
         "ip_address":      get_ip_address(),
         "mac_address":     get_mac_address(),
+        "internet":        os.path.exists(SYSTEM_FILES["internet_ok"]),
     })
 
 

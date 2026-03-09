@@ -9,7 +9,7 @@ import { showToast } from './ui.js';
 import { renderNotifications } from './notifications.js';
 import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
-import { initConnectionMonitor, setUsbState, setWifiState } from './connection.js';
+import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
 
 
@@ -30,6 +30,7 @@ window.openSurvey = openSurvey;
 // Expose for Python/integration layer
 window.setUsbState = setUsbState;
 window.setWifiState = setWifiState;
+window.setInternetState = setInternetState;
 window.resetIdle = resetIdle;
 window.renderScreensaverMembers = renderScreensaverMembers;
 window.refreshWallpaperOnScreensaver = refreshWallpaperOnScreensaver;

@@ -27,6 +27,7 @@ SYSTEM_FILES = {
     "last_boot_id":    f"{VAR_LIB}/meter_last_boot_id.txt",
     "tv_status":       f"{RUN_DIR}/tv_status",
     "bluetooth_available": f"{RUN_DIR}/bluetooth_available",
+    "internet_ok":     f"{RUN_DIR}/internet_ok",
 }
 
 SETTINGS_FILE = os.path.join(VAR_LIB, "settings.json")

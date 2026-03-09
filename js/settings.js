@@ -131,6 +131,7 @@ export async function selectAvatarStyle(style) {
 
 // ── WIFI (real API) ──────────────────────────────────────────────────────────
 let _currentSsid = null;
+let _currentInternetOk = true;
 
 async function loadWifiList() {
     const list = document.getElementById('available-wifi-list');
@@ -142,16 +143,36 @@ async function loadWifiList() {
     try {
         const cr = await fetch('/api/wifi/current');
         const cd = await cr.json();
+        
+        const sysR = await fetch('/api/system/status');
+        const sysD = await sysR.json();
+        
         _currentSsid = cd.connected ? cd.ssid : null;
+        _currentInternetOk = sysD.internet !== false; // Default true if property doesn't exist
+        
         if (currEl) currEl.innerText = _currentSsid || t('Not connected');
         const statusEl = document.getElementById('curr-net-status');
         if (statusEl) {
-            statusEl.innerText = _currentSsid ? t('connected_high_sig') : t('Disconnected');
+            if (_currentSsid) {
+                if (!_currentInternetOk) {
+                    statusEl.innerText = t('Connected, No Internet') || 'Connected, No Internet';
+                    statusEl.style.color = '#FFB866'; // Warning orange
+                } else {
+                    statusEl.innerText = t('connected_high_sig') || 'Connected \u2022 High Signal';
+                    statusEl.style.color = ''; // Reset
+                }
+            } else {
+                statusEl.innerText = t('Disconnected');
+                statusEl.style.color = '';
+            }
         }
     } catch { 
         if (currEl) currEl.innerText = t('Not connected');
         const statusEl = document.getElementById('curr-net-status');
-        if (statusEl) statusEl.innerText = t('Disconnected');
+        if (statusEl) {
+            statusEl.innerText = t('Disconnected');
+            statusEl.style.color = '';
+        }
     }
 
     // Scan available + saved networks
@@ -171,13 +192,13 @@ async function loadWifiList() {
             const pwd = net.password || ''; // Assuming API might return password for saved nets
             return `
                 <div class="wifi-item ${isCurr ? 'connected' : ''}" onclick="window._connectToWifi('${net.ssid.replace(/'/g, "\\'")}', ${net.open}, ${net.saved}, '${pwd.replace(/'/g, "\\'")}')">
-                    <span class="material-symbols-rounded" style="color:${isCurr?'#64d29a':'inherit'}">
+                    <span class="material-symbols-rounded" style="color:${isCurr?(_currentInternetOk ? '#64d29a' : '#FFB866'):'inherit'}">
                         ${net.open ? 'wifi' : 'wifi_lock'}
                     </span>
                     <div style="flex:1">
                         <div style="font-weight:500">${net.ssid}</div>
                         ${net.saved ? `<span class="wifi-badge saved">${t('Saved')}</span>` : ''}
-                        ${isCurr ? `<span class="wifi-badge connected">${t('Connected')}</span>` : ''}
+                        ${isCurr ? `<span class="wifi-badge connected" ${!_currentInternetOk ? 'style="background:rgba(255,184,102,0.15); color:#FFB866"' : ''}>${_currentInternetOk ? t('Connected') : (t('No Internet') || 'No Internet')}</span>` : ''}
                     </div>
                     <div style="opacity:0.6; font-size:12px">${net.signal}%</div>
                 </div>
@@ -240,8 +261,7 @@ async function _doConnect(ssid, password) {
         if (d.success) {
             _currentSsid = ssid;
             if (currEl) currEl.innerText = ssid;
-            const statusEl = document.getElementById('curr-net-status');
-            if (statusEl) statusEl.innerText = t('connected_high_sig');
+            // Let loadWifiList figure out the internet state when it fires
             if (window.showToast) window.showToast(t('Connected') + ' ' + ssid);
             if (window.setWifiState) window.setWifiState(true);
             setTimeout(loadWifiList, 1000);
@@ -501,6 +521,12 @@ export async function loadSystemInfo() {
 // ── Global exports for HTML onclick handlers ──────────────────────────────────
 window.loadWifiList   = () => loadWifiList();
 window.loadSystemInfo = () => loadSystemInfo();
+window.refreshConnectivityUI = () => {
+    const main = document.getElementById('set-connectivity');
+    if (main && main.classList.contains('active')) {
+        loadWifiList();
+    }
+};
 
 // ── WALLPAPER SETTINGS ────────────────────────────────────────────────────────
 async function loadWallpaperSettings() {

@@ -120,6 +120,7 @@ export function setWifiState(connected) {
     _wifiConnected = connected;
     if (connected) { hideWifiPopup(); }
     else           { injectWifiPopup(); }
+    if (window.refreshConnectivityUI) window.refreshConnectivityUI();
 }
 
 // ─── Internet Popup ───────────────────────────────────────────────────────────
@@ -184,6 +185,7 @@ export function setInternetState(connected) {
     _internetConnected = connected;
     if (connected) { hideInternetPopup(); }
     else           { injectInternetPopup(); }
+    if (window.refreshConnectivityUI) window.refreshConnectivityUI();
 }
 
 // ─── Real-API Poller ──────────────────────────────────────────────────────────

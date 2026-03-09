@@ -120,6 +120,7 @@ export function setWifiState(connected) {
     _wifiConnected = connected;
     if (connected) { hideWifiPopup(); }
     else           { injectWifiPopup(); }
+    _updateSidebarWifiIcon();
     if (window.refreshConnectivityUI) window.refreshConnectivityUI();
 }
 
@@ -185,7 +186,31 @@ export function setInternetState(connected) {
     _internetConnected = connected;
     if (connected) { hideInternetPopup(); }
     else           { injectInternetPopup(); }
+    _updateSidebarWifiIcon();
     if (window.refreshConnectivityUI) window.refreshConnectivityUI();
+}
+
+function _updateSidebarWifiIcon() {
+    const wifiIcon = document.getElementById('wifi-status-icon');
+    if (wifiIcon) {
+        wifiIcon.innerText = _wifiConnected ? 'wifi' : 'wifi_off';
+        wifiIcon.classList.remove('online', 'offline', 'no-internet');
+        if (_wifiConnected) {
+            if (!_internetConnected) {
+                wifiIcon.classList.add('no-internet');
+                wifiIcon.title = 'No Internet';
+                wifiIcon.style.color = '#FFB866';
+            } else {
+                wifiIcon.classList.add('online');
+                wifiIcon.title = 'Connected';
+                wifiIcon.style.color = '';
+            }
+        } else {
+            wifiIcon.classList.add('offline');
+            wifiIcon.title = 'Disconnected';
+            wifiIcon.style.color = '';
+        }
+    }
 }
 
 // ─── Real-API Poller ──────────────────────────────────────────────────────────
@@ -199,13 +224,8 @@ async function _pollStatus() {
         const usbOk = d.usb_jack || d.hdmi_vcc;
         if (usbOk  !== _usbConnected)  setUsbState(usbOk);
         
-        // WiFi: auto-dismiss and update icon
-        const wifiIcon = document.getElementById('wifi-status-icon');
-        if (wifiIcon) {
-            wifiIcon.innerText = d.wifi ? 'wifi' : 'wifi_off';
-            if (d.wifi) wifiIcon.classList.add('online'), wifiIcon.classList.remove('offline');
-            else wifiIcon.classList.add('offline'), wifiIcon.classList.remove('online');
-        }
+        // Update sidebar icon
+        _updateSidebarWifiIcon();
 
         if (d.wifi !== _wifiConnected) {
             setWifiState(d.wifi);

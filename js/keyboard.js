@@ -176,17 +176,38 @@ function handleKey(key) {
     }
 
     if (key === 'backspace') {
-        activeInput.value = activeInput.value.slice(0, -1);
+        const start = activeInput.selectionStart;
+        const end = activeInput.selectionEnd;
+        const val = activeInput.value;
+
+        if (start !== end) {
+            // Delete selection
+            activeInput.value = val.slice(0, start) + val.slice(end);
+            activeInput.selectionStart = activeInput.selectionEnd = start;
+        } else if (start > 0) {
+            // Delete character before cursor
+            activeInput.value = val.slice(0, start - 1) + val.slice(start);
+            activeInput.selectionStart = activeInput.selectionEnd = start - 1;
+        }
     } else if (key === 'enter') {
         hideOSK();
         activeInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
         activeInput.blur();
     } else if (key === 'space') {
-        activeInput.value += ' ';
+        const start = activeInput.selectionStart;
+        const end = activeInput.selectionEnd;
+        const val = activeInput.value;
+        activeInput.value = val.slice(0, start) + ' ' + val.slice(end);
+        activeInput.selectionStart = activeInput.selectionEnd = start + 1;
     } else {
         // Normal Char
         const char = (isShift && !isSymbol) ? key.toUpperCase() : key;
-        activeInput.value += char;
+        const start = activeInput.selectionStart;
+        const end = activeInput.selectionEnd;
+        const val = activeInput.value;
+        
+        activeInput.value = val.slice(0, start) + char + val.slice(end);
+        activeInput.selectionStart = activeInput.selectionEnd = start + 1;
         
         if (isShift) {
             isShift = false;

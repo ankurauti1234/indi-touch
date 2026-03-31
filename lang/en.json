@@ -137,5 +137,9 @@
     "Local IP Address": "Local IP Address",
     "MAC Address": "MAC Address",
     "Software Version": "Software Version",
-    "Active": "Active"
+    "Active": "Active",
+    "device_info": "Device Information",
+    "device_id": "Device ID",
+    "network": "Network",
+    "ip_address": "IP Address"
 }

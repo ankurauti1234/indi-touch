@@ -135,5 +135,9 @@
     "Local IP Address": "Локальный IP",
     "MAC Address": "MAC-адрес",
     "Software Version": "Версия ПО",
-    "Active": "Активно"
+    "Active": "Активно",
+    "device_info": "Информация об устройстве",
+    "device_id": "ID устройства",
+    "network": "Сеть",
+    "ip_address": "IP-адрес"
 }

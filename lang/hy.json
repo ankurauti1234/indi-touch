@@ -135,5 +135,9 @@
     "Local IP Address": "Տեղական IP Հասցե",
     "MAC Address": "MAC Հասցե",
     "Software Version": "Ծրագրային Ապահովման Տարբերակ",
-    "Active": "Ակտիվ"
+    "Active": "Ակտիվ",
+    "device_info": "Սարքի տեղեկություն",
+    "device_id": "Սարքի ID",
+    "network": "Ցանց",
+    "ip_address": "IP Հասցե"
 }

@@ -174,6 +174,39 @@
           </div>
         </div>
 
+        <!-- Info icon for onboarding (Step 2 to 6) -->
+        <button id="onboard-info-trigger" class="onboard-info-btn" onclick="toggleOnboardInfo()" style="display: none;">
+          <span class="material-symbols-rounded">info</span>
+        </button>
+
+        <!-- Onboarding Info Modal -->
+        <div id="onboard-info-modal" class="onboard-info-popup">
+          <div class="onboard-info-content">
+            <div class="onboard-info-header">
+              <h3 data-i18n="device_info">Device Information</h3>
+              <button class="close-info-btn" onclick="toggleOnboardInfo(false)">
+                <span class="material-symbols-rounded">close</span>
+              </button>
+            </div>
+            <div class="onboard-info-body" id="onboard-info-body">
+              <div class="info-item">
+                <span class="info-label" data-i18n="device_id">Device ID</span>
+                <span class="info-value" id="onboard-info-device-id">Loading...</span>
+              </div>
+              <div id="onboard-info-net-details" style="display: none;">
+                <div class="info-item">
+                  <span class="info-label" data-i18n="network">Network</span>
+                  <span class="info-value" id="onboard-info-ssid">...</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label" data-i18n="ip_address">IP Address</span>
+                  <span class="info-value" id="onboard-info-ip">...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -182,12 +215,13 @@
   </div>
 
   <script type="module">
-    import { nextStep, prevStep, selectNet, toggleOnboardPass, refreshWifi } from "./js/onboarding.js";
+    import { nextStep, prevStep, selectNet, toggleOnboardPass, refreshWifi, toggleOnboardInfo } from "./js/onboarding.js";
     window.nextStep = nextStep;
     window.prevStep = prevStep;
     window.selectNet = selectNet;
     window.toggleOnboardPass = toggleOnboardPass;
     window.refreshWifi = refreshWifi;
+    window.toggleOnboardInfo = toggleOnboardInfo;
   </script>
 
   <div id="app-frame">

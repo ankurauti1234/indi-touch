@@ -86,6 +86,65 @@ function animateStep(from, to) {
         toEl.classList.remove('prev');
         toEl.classList.add('active');
     }
+
+    // Toggle Info icon visibility (Step 2 to 6)
+    const infoTrigger = document.getElementById('onboard-info-trigger');
+    if (infoTrigger) {
+        if (to >= 2 && to <= 6) {
+            infoTrigger.style.display = 'flex';
+        } else {
+            infoTrigger.style.display = 'none';
+            // Also close modal if it was open
+            toggleOnboardInfo(false);
+        }
+    }
+}
+
+export async function toggleOnboardInfo(force) {
+    const modal = document.getElementById('onboard-info-modal');
+    if (!modal) return;
+
+    const isOpening = force !== undefined ? force : !modal.classList.contains('active');
+    
+    if (isOpening) {
+        modal.classList.add('active');
+        await refreshOnboardInfo();
+    } else {
+        modal.classList.remove('active');
+    }
+}
+
+async function refreshOnboardInfo() {
+    const devIdEl = document.getElementById('onboard-info-device-id');
+    const netDetails = document.getElementById('onboard-info-net-details');
+    const ssidEl = document.getElementById('onboard-info-ssid');
+    const ipEl = document.getElementById('onboard-info-ip');
+
+    try {
+        const r = await fetch('/api/system/status');
+        const d = await r.json();
+
+        if (devIdEl) devIdEl.innerText = d.meter_id || 'Unknown';
+        
+        if (d.wifi && d.ip_address && d.ip_address !== '0.0.0.0') {
+            if (netDetails) netDetails.style.display = 'block';
+            if (ssidEl) {
+                // Fetch current SSID if not in system status
+                try {
+                    const cr = await fetch('/api/wifi/current');
+                    const cd = await cr.json();
+                    ssidEl.innerText = cd.ssid || t('Connected');
+                } catch {
+                    ssidEl.innerText = t('Connected');
+                }
+            }
+            if (ipEl) ipEl.innerText = d.ip_address;
+        } else {
+            if (netDetails) netDetails.style.display = 'none';
+        }
+    } catch (e) {
+        if (devIdEl) devIdEl.innerText = 'Error loading';
+    }
 }
 
 export function selectNet(el) {

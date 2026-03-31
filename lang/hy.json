@@ -139,5 +139,11 @@
     "device_info": "Սարքի տեղեկություն",
     "device_id": "Սարքի ID",
     "network": "Ցանց",
-    "ip_address": "IP Հասցե"
+    "ip_address": "IP Հասցե",
+    "auto_detect": "Ավտոմատ",
+    "pixel_art": "Պիքսել Արտ",
+    "big_smile": "Մեծ Ժպիտ",
+    "avataaars": "Ավատարներ",
+    "micah": "Միքա",
+    "miniavs": "Մինի Ավտ"
 }

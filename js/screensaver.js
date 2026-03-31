@@ -93,7 +93,21 @@ async function fetchWeather(city) {
 }
 
 export async function initLocation() {
-    const city = config.location || 'Yerevan';
+    let city = config.location || 'Yerevan';
+
+    if (city === 'Auto') {
+        try {
+            const geoRes = await fetch('https://ipapi.co/json/');
+            const geoData = await geoRes.json();
+            if (geoData.city) {
+                city = geoData.city;
+                console.log("Auto-detected city:", city);
+            }
+        } catch (e) {
+            console.warn("Location auto-detection failed, using Yerevan", e);
+            city = 'Yerevan';
+        }
+    }
     
     const widget = document.getElementById('saver-weather');
     if (!widget) return;

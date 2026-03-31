@@ -141,5 +141,11 @@
     "device_info": "Device Information",
     "device_id": "Device ID",
     "network": "Network",
-    "ip_address": "IP Address"
+    "ip_address": "IP Address",
+    "auto_detect": "Auto Detect",
+    "pixel_art": "Pixel Art",
+    "big_smile": "Big Smile",
+    "avataaars": "Avataaars",
+    "micah": "Micah",
+    "miniavs": "Miniavs"
 }

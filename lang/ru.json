@@ -139,5 +139,11 @@
     "device_info": "Информация об устройстве",
     "device_id": "ID устройства",
     "network": "Сеть",
-    "ip_address": "IP-адрес"
+    "ip_address": "IP-адрес",
+    "auto_detect": "Автоматически",
+    "pixel_art": "Пиксель Арт",
+    "big_smile": "Большая Улыбка",
+    "avataaars": "Аватаарс",
+    "micah": "Мика",
+    "miniavs": "Миниавс"
 }

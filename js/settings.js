@@ -40,7 +40,8 @@ function initDisplaySettings() {
     const body = document.body;
     const themeSwitch = document.getElementById('theme-switch');
     if (themeSwitch) {
-        if (body.classList.contains('light-mode')) themeSwitch.classList.add('on');
+        // Switch is ON when it's DARK (default)
+        if (!body.classList.contains('light-mode')) themeSwitch.classList.add('on');
         else themeSwitch.classList.remove('on');
     }
 
@@ -73,7 +74,8 @@ export function toggleTheme() {
     
     const switchEl = document.getElementById('theme-switch');
     if (switchEl) {
-        if (isLight) switchEl.classList.add('on');
+        // ON = DARK, OFF = LIGHT
+        if (!isLight) switchEl.classList.add('on');
         else switchEl.classList.remove('on');
     }
 }
@@ -279,6 +281,7 @@ async function _doConnect(ssid, password) {
 
 // LOCATION SETTINGS
 const cities = [
+    "Auto",
     "Yerevan",
     "Gyumri",
     "Vanadzor",
@@ -300,7 +303,7 @@ function loadLocationSettings() {
         return `
             <div class="list-item" onclick="selectLocation('${city}')">
                 <div class="item-content">
-                    <h4>${city}</h4>
+                    <h4>${city === 'Auto' ? t('auto_detect') : city}</h4>
                 </div>
                 ${selected ? '<span class="material-symbols-rounded">check</span>' : ''}
             </div>

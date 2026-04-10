@@ -4,11 +4,18 @@ import { applyRemoteMode, isRemoteMode } from './remote.js';
 import { t } from './i18n.js';
 
 let currentAvatarStyle = 'local'; // Default
+let sysInfoTimer = null;
 
 export function openSetting(id) {
     // Hide ALL panels first to prevent overlaps/overlays
     document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
     
+    // Cleanup system info timer if navigating away from system info
+    if (sysInfoTimer && id !== 'system' && id !== 'sys-info') {
+        clearInterval(sysInfoTimer);
+        sysInfoTimer = null;
+    }
+
     const panel = document.getElementById('set-' + id);
     if (panel) panel.classList.add('active');
     
@@ -21,7 +28,18 @@ export function openSetting(id) {
     if (id === 'system')       loadSystemInfo();
     if (id === 'power')        _initPowerPanel();
     if (id === 'wallpaper')    loadWallpaperSettings();
-    if (id === 'wallpaper')    loadWallpaperSettings();
+}
+
+export function closeSetting() {
+    // Cleanup any running timers
+    if (sysInfoTimer) {
+        clearInterval(sysInfoTimer);
+        sysInfoTimer = null;
+    }
+    
+    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+    const main = document.getElementById('set-main');
+    if (main) main.classList.add('active');
 }
 
 function _initPowerPanel() {
@@ -58,12 +76,6 @@ function initDisplaySettings() {
         if (config.reduceAnimations) animSwitch.classList.add('on');
         else animSwitch.classList.remove('on');
     }
-}
-
-export function closeSetting() {
-    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
-    const main = document.getElementById('set-main');
-    if (main) main.classList.add('active');
 }
 
 export function toggleTheme() {
@@ -128,10 +140,7 @@ export async function selectAvatarStyle(style) {
     renderGrid();
 }
 
-
-// --- NEW SETTINGS LOGIC ---
-
-// ── WIFI (real API) ──────────────────────────────────────────────────────────
+// ── WIFI ───────────────────────────────────────────────────────────────────
 let _currentSsid = null;
 let _currentInternetOk = true;
 
@@ -141,118 +150,54 @@ async function loadWifiList() {
     if (!list) return;
     list.innerHTML = '<div class="wifi-skeleton">Scanning for networks...</div>';
 
-    // Show currently connected network first
     try {
         const cr = await fetch('/api/wifi/current');
         const cd = await cr.json();
-        
         const sysR = await fetch('/api/system/status');
         const sysD = await sysR.json();
         
         _currentSsid = cd.connected ? cd.ssid : null;
-        _currentInternetOk = sysD.internet !== false; // Default true if property doesn't exist
+        _currentInternetOk = sysD.internet !== false;
         
         if (currEl) currEl.innerText = _currentSsid || t('Not connected');
         const statusEl = document.getElementById('curr-net-status');
         if (statusEl) {
             if (_currentSsid) {
-                if (!_currentInternetOk) {
-                    statusEl.innerText = t('Connected, No Internet') || 'Connected, No Internet';
-                    statusEl.style.color = '#FFB866'; // Warning orange
-                } else {
-                    statusEl.innerText = t('connected_high_sig') || 'Connected \u2022 High Signal';
-                    statusEl.style.color = ''; // Reset
-                }
+                statusEl.innerText = _currentInternetOk ? (t('connected_high_sig') || 'Connected \u2022 High Signal') : (t('Connected, No Internet') || 'Connected, No Internet');
+                statusEl.style.color = _currentInternetOk ? '' : '#FFB866';
             } else {
                 statusEl.innerText = t('Disconnected');
                 statusEl.style.color = '';
             }
         }
-    } catch { 
-        if (currEl) currEl.innerText = t('Not connected');
-        const statusEl = document.getElementById('curr-net-status');
-        if (statusEl) {
-            statusEl.innerText = t('Disconnected');
-            statusEl.style.color = '';
-        }
-    }
+    } catch { }
 
-    // Scan available + saved networks
     try {
         const r = await fetch('/api/wifi/networks');
         const data = await r.json();
-        if (!data.success) throw new Error(data.error);
-
         const networks = data.networks || [];
         if (networks.length === 0) {
             list.innerHTML = `<div class="wifi-skeleton">${t('No networks found.')}</div>`;
             return;
         }
-
         list.innerHTML = networks.map(net => {
             const isCurr = net.ssid === _currentSsid;
-            const pwd = net.password || ''; // Assuming API might return password for saved nets
             return `
-                <div class="wifi-item ${isCurr ? 'connected' : ''}" onclick="window._connectToWifi('${net.ssid.replace(/'/g, "\\'")}', ${net.open}, ${net.saved}, '${pwd.replace(/'/g, "\\'")}')">
-                    <span class="material-symbols-rounded" style="color:${isCurr?(_currentInternetOk ? '#64d29a' : '#FFB866'):'inherit'}">
+                <div class="wifi-item ${isCurr ? 'connected' : ''}" onclick="window._connectToWifi('${net.ssid.replace(/'/g, "\\'")}', ${net.open}, ${net.saved}, '${(net.password || '').replace(/'/g, "\\'")}')">
+                    <span class="material-symbols-rounded">
                         ${net.open ? 'wifi' : 'wifi_lock'}
                     </span>
                     <div style="flex:1">
                         <div style="font-weight:500">${net.ssid}</div>
-                        ${net.saved ? `<span class="wifi-badge saved">${t('Saved')}</span>` : ''}
-                        ${isCurr ? `<span class="wifi-badge connected" ${!_currentInternetOk ? 'style="background:rgba(255,184,102,0.15); color:#FFB866"' : ''}>${_currentInternetOk ? t('Connected') : (t('No Internet') || 'No Internet')}</span>` : ''}
                     </div>
-                    <div style="opacity:0.6; font-size:12px">${net.signal}%</div>
                 </div>
             `;
         }).join('');
-    } catch (e) {
-        list.innerHTML = `<div class="wifi-skeleton">Error: ${e.message}</div>`;
-    }
+    } catch (e) { list.innerHTML = 'Error loading wifi'; }
 }
 
-window.handleWifiClick = function(ssid, open, saved, savedPwd) {
-    if (saved && savedPwd) {
-        // Auto-reconnect with saved password
-        _doConnect(ssid, savedPwd);
-    } else if (open) {
-        _doConnect(ssid, '');
-    } else {
-        _showPasswordDialog(ssid);
-    }
-};
-
-window._connectToWifi = function(ssid, open, saved, savedPwd) {
-    if (ssid === _currentSsid) {
-        if (window.showToast) window.showToast(`Already connected to ${ssid}`);
-        return;
-    }
-
-    if (open) {
-        _doConnect(ssid, '');
-    } else {
-        // Use the unified prompt from ui.js
-        if (window.showPasswordPrompt) {
-            window.showPasswordPrompt(ssid, savedPwd || '');
-        } else {
-            // Fallback if ui.js not loaded or prompt not available
-            const pwd = prompt(`Enter password for ${ssid}`, savedPwd || '');
-            if (pwd !== null) _doConnect(ssid, pwd);
-        }
-    }
-};
-
-// Removed _showPasswordDialog and _submitWifiPwd as they are unified in ui.js
-
-window.connectToWifi = _doConnect;
 async function _doConnect(ssid, password) {
-    const currEl = document.getElementById('curr-net-name');
-    const listEl = document.getElementById('available-wifi-list');
-    
-    if (currEl) currEl.innerText = 'Connecting to ' + ssid + '...';
-    if (listEl) listEl.innerHTML = `<div class="wifi-skeleton">Connecting to <b>${ssid}</b>...</div>`;
     if (window.showToast) window.showToast('Connecting to ' + ssid + '...');
-    
     try {
         const r = await fetch('/api/wifi/connect', {
             method: 'POST',
@@ -261,162 +206,36 @@ async function _doConnect(ssid, password) {
         });
         const d = await r.json();
         if (d.success) {
-            _currentSsid = ssid;
-            if (currEl) currEl.innerText = ssid;
-            // Let loadWifiList figure out the internet state when it fires
-            if (window.showToast) window.showToast(t('Connected') + ' ' + ssid);
-            if (window.setWifiState) window.setWifiState(true);
+            if (window.showToast) window.showToast('Connected to ' + ssid);
             setTimeout(loadWifiList, 1000);
         } else {
-            if (currEl) currEl.innerText = _currentSsid || 'Not connected';
-            if (window.showToast) window.showToast('Failed: ' + (d.error || 'Unknown error'));
-            loadWifiList();
+            if (window.showToast) window.showToast('Failed: ' + d.error);
         }
-    } catch(e) {
-        if (currEl) currEl.innerText = _currentSsid || 'Not connected';
-        if (window.showToast) window.showToast('Error: ' + e.message);
-        loadWifiList();
-    }
+    } catch(e) { }
 }
+window._connectToWifi = (ssid, open, saved, savedPwd) => {
+    if (open) _doConnect(ssid, '');
+    else {
+        const pwd = prompt(`Enter password for ${ssid}`, savedPwd || '');
+        if (pwd !== null) _doConnect(ssid, pwd);
+    }
+};
 
-// LOCATION SETTINGS
-const cities = [
-    "Auto",
-    "Yerevan",
-    "Gyumri",
-    "Vanadzor",
-    "Vagharshapat",
-    "Abovyan",
-    "Kapan",
-    "Hrazdan",
-    "Armavir"
-];
-
+// ── LOCATION ────────────────────────────────────────────────────────────────
+const cities = ["Auto", "Yerevan", "Gyumri", "Vanadzor"];
 function loadLocationSettings() {
     const list = document.getElementById('location-list');
     if (!list) return;
-
-    const currentCity = config.location;
-
-    list.innerHTML = cities.map(city => {
-        const selected = city === currentCity;
-        return `
-            <div class="list-item" onclick="selectLocation('${city}')">
-                <div class="item-content">
-                    <h4>${city === 'Auto' ? t('auto_detect') : city}</h4>
-                </div>
-                ${selected ? '<span class="material-symbols-rounded">check</span>' : ''}
-            </div>
-        `;
-    }).join('');
+    list.innerHTML = cities.map(city => `
+        <div class="list-item" onclick="selectLocation('${city}')">
+            <div class="item-content"><h4>${city === 'Auto' ? t('auto_detect') : city}</h4></div>
+        </div>
+    `).join('');
 }
-
-window.selectLocation = function(city) {
+window.selectLocation = (city) => {
     updateSetting('location', city);
-    
-    // Update text in main settings
-    const txt = document.getElementById('current-location-text');
-    if(txt) txt.innerText = city;
-
-    // Refresh list to show checkmark
     loadLocationSettings();
-
-    // Update screensaver
     if (window.initLocation) window.initLocation();
-}
-
-
-import { showModal } from './ui.js';
-
-window.confirmPower = function (action) {
-    const msg = action === 'shutdown'
-        ? 'Are you sure you want to shut down the system?'
-        : 'Are you sure you want to reboot the system?';
-    const title = action === 'shutdown' ? 'Shut Down' : 'Reboot';
-
-    showModal(title, msg, [
-        { text: 'Cancel', primary: false },
-        {
-            text: action === 'shutdown' ? 'Shut Down' : 'Reboot',
-            primary: true,
-            callback: async () => {
-                let seconds = 3;
-                const overlay = document.createElement('div');
-                overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(10px);z-index:999999999;display:flex;align-items:center;justify-content:center;color:#fff;font-family:inherit";
-                
-                const updateOverlay = () => {
-                    const progress = (seconds / 3) * 283; // 2*PI*45 approx 283
-                    overlay.innerHTML = `
-                        <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:24px">
-                            <div style="position:relative; width:100px; height:100px">
-                                <svg viewBox="0 0 100 100" style="transform: rotate(-90deg); width:100px; height:100px">
-                                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
-                                    <circle cx="50" cy="50" r="45" fill="none" stroke="var(--primary)" stroke-width="4" 
-                                            stroke-dasharray="283" stroke-dashoffset="${283 - progress}" 
-                                            style="transition: stroke-dashoffset 1s linear"/>
-                                </svg>
-                                <span class="material-symbols-rounded" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:40px; color:var(--primary)">
-                                    ${action === 'shutdown' ? 'power_settings_new' : 'restart_alt'}
-                                </span>
-                            </div>
-                            <div>
-                                <h1 style="font-size:24px; font-weight:400; margin:0">${action === 'shutdown' ? 'Shutting Down' : 'Rebooting'}</h1>
-                                <p style="font-size:16px; opacity:0.6; margin:8px 0 0">System will ${action === 'shutdown' ? 'power off' : 'restart'} in ${seconds}s</p>
-                            </div>
-                        </div>
-                    `;
-                };
-
-                document.body.appendChild(overlay);
-                updateOverlay();
-
-                const timer = setInterval(async () => {
-                    seconds--;
-                    if (seconds <= 0) {
-                        clearInterval(timer);
-                        overlay.innerHTML = `<h1 style="font-size:20px; font-weight:400; opacity:0.8">${action === 'shutdown' ? 'Shutdown Initiated' : 'Reboot Initiated'}</h1>`;
-                        try {
-                            const route = action === 'shutdown' ? 'shutdown' : 'reboot';
-                            await fetch('/api/system/' + route, { method: 'POST' });
-                        } catch { /* device will go down */ }
-                    } else {
-                        updateOverlay();
-                    }
-                }, 1000);
-            }
-        }
-    ]);
-};
-
-window.selectTimeout = function(minutes, el) {
-    const parent = el.parentElement;
-    if (parent) parent.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    const ms = minutes * 60 * 1000;
-    
-    updateSetting('screenTimeout', ms);
-    
-    if (window.setScreensaverTimeout) window.setScreensaverTimeout(ms);
-};
-
-window.selectBrightness = function(level, el) {
-    const parent = el.parentElement;
-    if (parent) parent.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    // Map percentage to 20–255
-    const raw = Math.round(20 + (level / 100) * 235);
-    fetch('/api/system/brightness', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brightness: raw })
-    }).then(r => r.json()).then(d => {
-        if (d.success) {
-            updateSetting('brightness', raw);
-            if (window.showToast) window.showToast(`Brightness: ${level}%`);
-        } else {
-            if (window.showToast) window.showToast('Brightness change failed');
-        }
-    }).catch(() => { if (window.showToast) window.showToast('Brightness update error'); });
 };
 
 // ── MEMBER SETTINGS ───────────────────────────────────────────────────────────
@@ -443,409 +262,118 @@ window.updateMemberName = async function(index, newName) {
     if (memberData[index]) {
         memberData[index].name = newName;
         renderGrid();
-        
         try {
             await fetch('/api/members/rename', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ index, name: newName })
             });
-        } catch (e) {
-            console.error("Member rename failed", e);
-        }
+        } catch (e) { }
     }
 };
 
-// ── SYSTEM INFO (real device data) ───────────────────────────────────────────
-let sysInfoTimer = null;
-
+// ── SYSTEM INFO ──────────────────────────────────────────────────────────────
 export async function loadSystemInfo() {
     const el = document.getElementById('sys-info-content');
     if (!el) return;
-
-    // Clear any existing timer
     if (sysInfoTimer) clearInterval(sysInfoTimer);
 
     const updateUI = async () => {
         try {
             const r = await fetch('/api/system/status');
             const d = await r.json();
-            
             const formatBytes = (bytes) => {
                 if (bytes === 0) return '0 B';
                 const k = 1024;
-                const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
                 const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + ['B', 'KB', 'MB', 'GB'][i];
             };
-
             el.innerHTML = `
                 <div class="info-group">
-                    <div class="info-row" style="background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:12px">
-                        <span class="info-label">${t('Device Identifier')}</span>
-                        <span class="info-value" style="color:var(--primary); font-family:monospace; font-size:18px">${d.meter_id}</span>
-                    </div>
-                    
-                    <div class="info-row">
-                        <span class="info-label">${t('Local IP Address')}</span>
-                        <span class="info-value">${d.ip_address}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">${t('MAC Address')}</span>
-                        <span class="info-value">${d.mac_address}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">${t('Software Version')}</span>
-                        <span class="info-value">v5.2.0-stable</span>
-                    </div>
+                    <div class="info-row"><span class="info-label">${t('Device Identifier')}</span><span class="info-value">${d.meter_id}</span></div>
+                    <div class="info-row"><span class="info-label">${t('Local IP Address')}</span><span class="info-value">${d.ip_address}</span></div>
                 </div>
-
-                <div style="margin:20px 0 10px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; opacity:0.8">Hardware Metrics</div>
-                
-                <div class="hw-stats" style="margin-bottom: 24px">
+                <div class="hw-stats">
                     <div class="stat-card">
-                        <div class="stat-info">
-                            <span class="stat-label">CPU Utilization</span>
-                            <span class="stat-value">${d.cpu_percent}%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${d.cpu_percent}%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <span class="stat-label">RAM Consumption</span>
-                            <span class="stat-value">${formatBytes(d.ram_used)} / ${formatBytes(d.ram_total)}</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${d.ram_percent}%"></div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <span class="stat-label">System Temperature</span>
-                            <span class="stat-value" style="color: ${d.temperature > 70 ? '#ff5252' : ''}">${d.temperature}°C</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${Math.min(100, (d.temperature / 85) * 100)}%; background: ${d.temperature > 70 ? '#ff5252' : ''}"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin:20px 0 10px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; opacity:0.8">Interface Status</div>
-
-                <div class="hw-grid">
-                    <div class="hw-grid-item ${d.wifi ? 'hw-ok' : 'hw-err'}">
-                        <span class="material-symbols-rounded">wifi</span>
-                        <span class="hw-grid-label">WiFi Module</span>
-                        <span class="hw-grid-status">${d.wifi ? 'Connected' : 'Disconnected'}</span>
-                    </div>
-                    <div class="hw-grid-item ${d.gsm ? 'hw-ok' : 'hw-err'}">
-                        <span class="material-symbols-rounded">cell_tower</span>
-                        <span class="hw-grid-label">GSM Modem</span>
-                        <span class="hw-grid-status">${d.gsm ? 'Ready' : 'Not detected'}</span>
-                    </div>
-                    <div class="hw-grid-item ${d.usb_jack ? 'hw-ok' : 'hw-err'}">
-                        <span class="material-symbols-rounded">usb</span>
-                        <span class="hw-grid-label">USB Audio</span>
-                        <span class="hw-grid-status">${d.usb_jack ? 'Connected' : 'Missing'}</span>
-                    </div>
-                    <div class="hw-grid-item ${d.hdmi_vcc ? 'hw-ok' : 'hw-err'}">
-                        <span class="material-symbols-rounded">tv</span>
-                        <span class="hw-grid-label">HDMI VCC</span>
-                        <span class="hw-grid-status">${d.hdmi_vcc ? 'Signal' : 'No Signal'}</span>
-                    </div>
-                    <div class="hw-grid-item ${d.video_detection ? 'hw-ok' : 'hw-err'}">
-                        <span class="material-symbols-rounded">smart_toy</span>
-                        <span class="hw-grid-label">Video AI</span>
-                        <span class="hw-grid-status">${d.video_detection ? 'Running' : 'Stopped'}</span>
+                        <div class="stat-info"><span>CPU Utilization</span><span>${d.cpu_percent}%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${d.cpu_percent}%"></div></div>
                     </div>
                 </div>
             `;
-        } catch(e) {
-            el.innerHTML = '<div class="wifi-skeleton">Could not load system info.</div>';
-            if (sysInfoTimer) clearInterval(sysInfoTimer);
-        }
+        } catch(e) { clearInterval(sysInfoTimer); }
     };
-
-    // Initial load
     await updateUI();
-
-    // Start refresh loop if panel is still active
-    const panel = document.getElementById('set-system');
-    if (panel && panel.classList.contains('active')) {
-        sysInfoTimer = setInterval(updateUI, 2000);
-    }
+    sysInfoTimer = setInterval(updateUI, 2000);
 }
 
-// Clean up timer when closing settings or switching panels
-const originalCloseSetting = closeSetting;
-export function closeSetting() {
-    if (sysInfoTimer) {
-        clearInterval(sysInfoTimer);
-        sysInfoTimer = null;
-    }
-    originalCloseSetting();
-}
-
-const originalOpenSetting = openSetting;
-export function openSetting(id) {
-    if (sysInfoTimer && id !== 'system' && id !== 'sys-info') {
-        clearInterval(sysInfoTimer);
-        sysInfoTimer = null;
-    }
-    originalOpenSetting(id);
-}
-
-// ── Global exports for HTML onclick handlers ──────────────────────────────────
-window.loadWifiList   = () => loadWifiList();
-window.loadSystemInfo = () => loadSystemInfo();
-window.refreshConnectivityUI = () => {
-    const main = document.getElementById('set-connectivity');
-    if (main && main.classList.contains('active')) {
-        loadWifiList();
-    }
-};
-
-// ── WALLPAPER SETTINGS ────────────────────────────────────────────────────────
+// ── WALLPAPER ───────────────────────────────────────────────────────────────
 async function loadWallpaperSettings() {
-    try {
-        const r = await fetch('/api/wallpaper/status');
-        const d = await r.json();
-
-        const noImg = document.getElementById('wp-no-image');
-        const hasImg = document.getElementById('wp-has-image');
-        const thumb = document.getElementById('wp-thumb');
-        const sizeInfo = document.getElementById('wp-size-info');
-        const resetBtn = document.getElementById('wp-reset-btn');
-        const statusText = document.getElementById('wallpaper-status-text');
-        const titleText = document.getElementById('wp-title-text');
-
-        if (d.hasWallpaper) {
-            if (noImg) noImg.style.display = 'none';
-            if (hasImg) hasImg.style.display = 'flex';
-            if (thumb) thumb.src = `${d.url}&t=${Date.now()}`;
-            if (sizeInfo) sizeInfo.textContent = `${d.sizeKB} KB • ${d.ext.replace('.', '').toUpperCase()} ${t('Active')}`;
-            if (resetBtn) resetBtn.style.display = 'flex';
-            if (statusText) statusText.textContent = t('active_bg');
-            if (titleText) titleText.textContent = t('active_bg');
-        } else {
-            if (noImg) noImg.style.display = 'flex';
-            if (hasImg) hasImg.style.display = 'none';
-            if (resetBtn) resetBtn.style.display = 'none';
-            if (sizeInfo) sizeInfo.textContent = t('no_custom_image_uploaded');
-            if (statusText) statusText.textContent = t('using_sys_default');
-            if (titleText) titleText.textContent = t('sys_default');
-        }
-
-        // QR Code
-        const qrImg = document.getElementById('wp-qr-image');
-        const urlEl = document.getElementById('wp-qr-url');
-        if (qrImg) {
-            const sr = await fetch('/api/system/status');
-            const sd = await sr.json();
-            const ip = sd.ip_address || window.location.hostname;
-            const port = window.location.port ? `:${window.location.port}` : '';
-            const uploadUrl = `http://${ip}${port}/upload`;
-
-            qrImg.src = `/api/wallpaper/qr?content=${encodeURIComponent(uploadUrl)}`;
-            if (urlEl) urlEl.textContent = uploadUrl;
-        }
-    } catch (e) {
-        console.error('Failed to load wallpaper settings', e);
+    const qrImg = document.getElementById('wp-qr-image');
+    if (qrImg) {
+        const sr = await fetch('/api/system/status');
+        const sd = await sr.json();
+        const uploadUrl = `http://${sd.ip_address}:${window.location.port}/upload`;
+        qrImg.src = `/api/wallpaper/qr?content=${encodeURIComponent(uploadUrl)}`;
     }
 }
 
-window.resetWallpaper = async function() {
-    try {
-        const r = await fetch('/api/wallpaper/reset', { method: 'POST' });
-        const d = await r.json();
-        if (d.success) {
-            if (window.showToast) window.showToast('Wallpaper removed');
-            loadWallpaperSettings(); // Refresh panel
-            // Update screensaver immediately
-            if (window.refreshWallpaperOnScreensaver) window.refreshWallpaperOnScreensaver();
-        }
-    } catch (e) {
-        if (window.showToast) window.showToast('Error: ' + e.message);
-    }
-};
-
-// ── AVATAR CAPTURE & QR ──────────────────────────────────────────────────────
-
+// ── AVATAR ──────────────────────────────────────────────────────────────────
 let cameraStream = null;
 let capturedBlob = null;
 
-window.openAvatarCapture = async function() {
+window.openAvatarCapture = async () => {
     const overlay = document.getElementById('camera-overlay');
     const video = document.getElementById('camera-video');
-    if (!overlay || !video) return;
-
     overlay.classList.add('active');
-    
-    // Reset buttons
-    document.getElementById('btn-snap').style.display = 'block';
-    document.getElementById('btn-save-cap').style.display = 'none';
-    document.getElementById('btn-retake').style.display = 'none';
-    document.getElementById('capture-preview').style.display = 'none';
-    video.style.display = 'block';
-
     try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { width: 400, height: 400, facingMode: "user" } 
-        });
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         video.srcObject = cameraStream;
-    } catch (err) {
-        if (window.showToast) window.showToast('Camera access denied or missing');
-        closeCamera();
-    }
+    } catch (err) { closeCamera(); }
 };
-
-window.closeCamera = function() {
-    const overlay = document.getElementById('camera-overlay');
-    if (overlay) overlay.classList.remove('active');
-    
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(t => t.stop());
-        cameraStream = null;
-    }
+window.closeCamera = () => {
+    document.getElementById('camera-overlay').classList.remove('active');
+    if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
 };
-
-window.takeSnapshot = function() {
+window.takeSnapshot = () => {
     const video = document.getElementById('camera-video');
     const canvas = document.getElementById('camera-canvas');
-    const preview = document.getElementById('capture-preview');
-    const previewFrame = document.getElementById('preview-frame');
-    
-    if (!video || !canvas || !preview || !previewFrame) return;
-
-    canvas.width = 400;
-    canvas.height = 400;
-    const ctx = canvas.getContext('2d');
-    
-    // Center crop from video
-    const size = Math.min(video.videoWidth, video.videoHeight);
-    const startX = (video.videoWidth - size) / 2;
-    const startY = (video.videoHeight - size) / 2;
-    
-    ctx.drawImage(video, startX, startY, size, size, 0, 0, 400, 400);
-    
-    previewFrame.src = canvas.toDataURL('image/jpeg', 0.85);
-    preview.style.display = 'block';
-    video.style.display = 'none';
-    
-    document.getElementById('btn-snap').style.display = 'none';
-    document.getElementById('btn-save-cap').style.display = 'block';
-    document.getElementById('btn-retake').style.display = 'block';
-    
-    canvas.toBlob(blob => { capturedBlob = blob; }, 'image/jpeg', 0.85);
+    canvas.getContext('2d').drawImage(video, 0, 0, 400, 400);
+    canvas.toBlob(blob => { capturedBlob = blob; });
+    document.getElementById('capture-preview').style.display = 'block';
 };
-
-window.retakePhoto = function() {
-    document.getElementById('camera-video').style.display = 'block';
-    document.getElementById('capture-preview').style.display = 'none';
-    document.getElementById('btn-snap').style.display = 'block';
-    document.getElementById('btn-save-cap').style.display = 'none';
-    document.getElementById('btn-retake').style.display = 'none';
-    capturedBlob = null;
-};
-
-window.saveCapturedAvatar = async function() {
-    if (!capturedBlob) return;
-    
-    // For local capture, we might need a member selection
-    // Let's assume we use the first member for now or ask user if multiple
-    // Better: let the user select member first in a separate UX or use a target member
-    // For this implementation, we'll prompt for member selection if not specified
-    
-    const members = memberData;
-    if (members.length === 0) {
-        if (window.showToast) window.showToast('No members found');
-        return;
-    }
-
-    // Reuse the select system in settings
-    const memberCode = members[0].member_code; // Default to first for simplicity in this flow
-    // A better way would be a member selection before capture
-    
+window.saveCapturedAvatar = async () => {
     const formData = new FormData();
-    formData.append('file', capturedBlob, 'capture.jpg');
-    formData.append('member_code', memberCode);
-
-    try {
-        const r = await fetch('/api/avatar/upload', { method: 'POST', body: formData });
-        const d = await r.json();
-        if (d.success) {
-            if (window.showToast) window.showToast('Avatar saved');
-            closeCamera();
-            renderGrid();
-        } else {
-            if (window.showToast) window.showToast('Failed to save: ' + d.error);
-        }
-    } catch(e) {
-        if (window.showToast) window.showToast('Network error');
-    }
+    formData.append('file', capturedBlob, 'avatar.jpg');
+    formData.append('member_code', memberData[0].member_code);
+    await fetch('/api/avatar/upload', { method: 'POST', body: formData });
+    closeCamera();
+    renderGrid();
 };
 
-window.openAvatarQr = function() {
-    const overlay = document.getElementById('avatar-qr-overlay');
+window.openAvatarQr = () => {
     const select = document.getElementById('qr-member-select');
-    if (!overlay || !select) return;
-
-    overlay.classList.add('active');
-    
-    // Populate select
     select.innerHTML = '<option value="">Select Member...</option>' + 
         memberData.map(m => `<option value="${m.member_code}">${m.name}</option>`).join('');
-    
-    document.getElementById('avatar-qr-container').style.display = 'none';
+    document.getElementById('avatar-qr-overlay').classList.add('active');
 };
-
-window.closeAvatarQr = function() {
-    const overlay = document.getElementById('avatar-qr-overlay');
-    if (overlay) overlay.classList.remove('active');
-};
-
-window.refreshAvatarQr = async function() {
+window.closeAvatarQr = () => document.getElementById('avatar-qr-overlay').classList.remove('active');
+window.refreshAvatarQr = async () => {
     const val = document.getElementById('qr-member-select').value;
-    const container = document.getElementById('avatar-qr-container');
-    const img = document.getElementById('avatar-qr-img');
-    const urlEl = document.getElementById('avatar-qr-url');
-    
-    if (!val) {
-        container.style.display = 'none';
-        return;
-    }
-
-    try {
-        const sr = await fetch('/api/system/status');
-        const sd = await sr.json();
-        const ip = sd.ip_address || window.location.hostname;
-        const port = window.location.port ? `:${window.location.port}` : '';
-        const uploadUrl = `http://${ip}${port}/avatar_upload?m=${val}`;
-
-        img.src = `/api/avatar/qr?content=${encodeURIComponent(uploadUrl)}`;
-        urlEl.textContent = uploadUrl;
-        container.style.display = 'flex';
-        container.style.flexDirection = 'column';
-        container.style.alignItems = 'center';
-    } catch (e) {
-        console.error('QR refresh failed', e);
-    }
+    if (!val) return;
+    const sr = await fetch('/api/system/status');
+    const sd = await sr.json();
+    const url = `http://${sd.ip_address}:${window.location.port}/avatar_upload?m=${val}`;
+    document.getElementById('avatar-qr-img').src = `/api/avatar/qr?content=${encodeURIComponent(url)}`;
+    document.getElementById('avatar-qr-container').style.display = 'block';
 };
 
-// Expose these to window in case they aren't already
-window.openAvatarCapture = window.openAvatarCapture;
-window.closeCamera = window.closeCamera;
-window.takeSnapshot = window.takeSnapshot;
-window.retakePhoto = window.retakePhoto;
-window.saveCapturedAvatar = window.saveCapturedAvatar;
-window.openAvatarQr = window.openAvatarQr;
-window.closeAvatarQr = window.closeAvatarQr;
-window.refreshAvatarQr = window.refreshAvatarQr;
-
-// Re-export original functions
-window.loadWifiList   = () => loadWifiList();
-window.loadSystemInfo = () => loadSystemInfo();
+// Global exports for navigation.js and HTML
+window.openSetting = openSetting;
+window.closeSetting = closeSetting;
+window.toggleTheme = toggleTheme;
+window.toggleRemoteMode = toggleRemoteMode;
+window.toggleAnimations = toggleAnimations;
+window.selectAvatarStyle = selectAvatarStyle;
+window.loadWifiList = loadWifiList;
+window.loadSystemInfo = loadSystemInfo;
+window.refreshConnectivityUI = () => loadWifiList();

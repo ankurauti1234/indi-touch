@@ -158,7 +158,7 @@ export function getAvatarUrl(m) {
     
     if (style === 'custom') {
         if (m.offline_avatar && !m.offline_avatar.includes('data:image')) {
-            return `/api/wallpaper/avatar_image?code=${m.member_code}&t=${Date.now()}`;
+            return `/api/avatar/image?code=${m.member_code}&t=${Date.now()}`;
         }
         // Fallback to local if no custom image
         return getAvatarUrl({...m, avatarStyle: 'local'});

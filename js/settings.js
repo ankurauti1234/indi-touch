@@ -272,39 +272,138 @@ window.updateMemberName = async function(index, newName) {
     }
 };
 
-// ── SYSTEM INFO ──────────────────────────────────────────────────────────────
+// --- SYSTEM INFO (Full Restoration) ---
 export async function loadSystemInfo() {
     const el = document.getElementById('sys-info-content');
     if (!el) return;
     if (sysInfoTimer) clearInterval(sysInfoTimer);
 
+    const formatBytes = (bytes) => {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + ['B', 'KB', 'MB', 'GB'][i];
+    };
+
+    const renderStatus = (val, label) => `
+        <div class="hw-grid-item ${val ? 'hw-ok' : 'hw-err'}">
+            <span class="material-symbols-rounded">${val ? 'check_circle' : 'cancel'}</span>
+            <span class="hw-grid-label">${label}</span>
+            <span class="hw-grid-status">${val ? 'Ready' : 'Not Detected'}</span>
+        </div>
+    `;
+
     const updateUI = async () => {
         try {
             const r = await fetch('/api/system/status');
             const d = await r.json();
-            const formatBytes = (bytes) => {
-                if (bytes === 0) return '0 B';
-                const k = 1024;
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + ['B', 'KB', 'MB', 'GB'][i];
-            };
+            
             el.innerHTML = `
                 <div class="info-group">
-                    <div class="info-row"><span class="info-label">${t('Device Identifier')}</span><span class="info-value">${d.meter_id}</span></div>
-                    <div class="info-row"><span class="info-label">${t('Local IP Address')}</span><span class="info-value">${d.ip_address}</span></div>
-                </div>
-                <div class="hw-stats">
-                    <div class="stat-card">
-                        <div class="stat-info"><span>CPU Utilization</span><span>${d.cpu_percent}%</span></div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:${d.cpu_percent}%"></div></div>
+                    <div class="info-row" style="background:rgba(100,210,154,0.05); border-radius:12px; margin-bottom:12px; padding:12px">
+                        <span class="info-label" style="color:#64d29a">Device ID</span>
+                        <span class="info-value" style="font-family:monospace; font-weight:600">${d.meter_id}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">MAC Address</span>
+                        <span class="info-value">${d.mac_address || 'Unavailable'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">IP Address</span>
+                        <span class="info-value">${d.ip_address}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Firmware</span>
+                        <span class="info-value">v5.2.0-stable</span>
                     </div>
                 </div>
+
+                <div style="margin:24px 0 12px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; font-weight:600">Hardware Utilization</div>
+                
+                <div class="hw-stats" style="margin-bottom: 24px">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span class="stat-label">CPU Load</span>
+                            <span class="stat-value">${d.cpu_percent}%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width: ${d.cpu_percent}%"></div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span class="stat-label">RAM Usage</span>
+                            <span class="stat-value">${formatBytes(d.ram_used)} / ${formatBytes(d.ram_total)}</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width: ${d.ram_percent}%"></div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span class="stat-label">Core Temp</span>
+                            <span class="stat-value" style="color: ${d.temperature > 70 ? '#ff5252' : ''}">${d.temperature}°C</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:${Math.min(100, (d.temperature / 85) * 100)}%; background:${d.temperature > 70 ? '#ff5252' : ''}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin:24px 0 12px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; font-weight:600">Interface Diagnostics</div>
+
+                <div class="hw-grid">
+                    ${renderStatus(d.wifi, 'WiFi Module')}
+                    ${renderStatus(d.gsm, 'GSM Modem')}
+                    ${renderStatus(d.usb_jack, 'USB Audio')}
+                    ${renderStatus(d.hdmi_vcc, 'HDMI Signal')}
+                    ${renderStatus(d.video_detection, 'Video Engine')}
+                </div>
             `;
-        } catch(e) { clearInterval(sysInfoTimer); }
+        } catch(e) { 
+            console.error("System info refresh failed", e);
+            clearInterval(sysInfoTimer); 
+        }
     };
     await updateUI();
     sysInfoTimer = setInterval(updateUI, 2000);
 }
+
+// ── AVATAR CAPTURE & QR ──────────────────────────────────────────────────────
+let cameraStream = null;
+let capturedBlob = null;
+
+window.openAvatarCapture = async () => {
+    // Check if camera is available first
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (window.showToast) window.showToast("Camera not supported on this device");
+        return;
+    }
+
+    const overlay = document.getElementById('camera-overlay');
+    const video = document.getElementById('camera-video');
+    if (!overlay || !video) return;
+
+    overlay.classList.add('active');
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 400, facingMode: "user" } });
+        video.srcObject = cameraStream;
+    } catch (err) { 
+        if (window.showToast) window.showToast('Camera access denied');
+        closeCamera(); 
+    }
+};
+
+// Check for camera and hide button if missing
+async function checkCameraAvailability() {
+    const btn = document.querySelector('[onclick="openAvatarCapture()"]');
+    if (!btn) return;
+    
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasVideo = devices.some(d => d.kind === 'videoinput');
+        if (!hasVideo) btn.style.display = 'none';
+    } catch (e) {
+        btn.style.display = 'none';
+    }
+}
+setTimeout(checkCameraAvailability, 500);
 
 // ── WALLPAPER ───────────────────────────────────────────────────────────────
 async function loadWallpaperSettings() {
@@ -317,54 +416,93 @@ async function loadWallpaperSettings() {
     }
 }
 
-// ── AVATAR ──────────────────────────────────────────────────────────────────
-let cameraStream = null;
-let capturedBlob = null;
-
-window.openAvatarCapture = async () => {
-    const overlay = document.getElementById('camera-overlay');
-    const video = document.getElementById('camera-video');
-    overlay.classList.add('active');
-    try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        video.srcObject = cameraStream;
-    } catch (err) { closeCamera(); }
-};
-window.closeCamera = () => {
-    document.getElementById('camera-overlay').classList.remove('active');
-    if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
-};
-window.takeSnapshot = () => {
-    const video = document.getElementById('camera-video');
-    const canvas = document.getElementById('camera-canvas');
-    canvas.getContext('2d').drawImage(video, 0, 0, 400, 400);
-    canvas.toBlob(blob => { capturedBlob = blob; });
-    document.getElementById('capture-preview').style.display = 'block';
-};
-window.saveCapturedAvatar = async () => {
-    const formData = new FormData();
-    formData.append('file', capturedBlob, 'avatar.jpg');
-    formData.append('member_code', memberData[0].member_code);
-    await fetch('/api/avatar/upload', { method: 'POST', body: formData });
-    closeCamera();
-    renderGrid();
-};
-
 window.openAvatarQr = () => {
     const select = document.getElementById('qr-member-select');
+    if (!select) return;
     select.innerHTML = '<option value="">Select Member...</option>' + 
         memberData.map(m => `<option value="${m.member_code}">${m.name}</option>`).join('');
     document.getElementById('avatar-qr-overlay').classList.add('active');
 };
-window.closeAvatarQr = () => document.getElementById('avatar-qr-overlay').classList.remove('active');
+
+window.closeAvatarQr = () => {
+    const overlay = document.getElementById('avatar-qr-overlay');
+    if (overlay) overlay.classList.remove('active');
+};
+
 window.refreshAvatarQr = async () => {
     const val = document.getElementById('qr-member-select').value;
     if (!val) return;
-    const sr = await fetch('/api/system/status');
-    const sd = await sr.json();
-    const url = `http://${sd.ip_address}:${window.location.port}/avatar_upload?m=${val}`;
-    document.getElementById('avatar-qr-img').src = `/api/avatar/qr?content=${encodeURIComponent(url)}`;
-    document.getElementById('avatar-qr-container').style.display = 'block';
+    try {
+        const sr = await fetch('/api/system/status');
+        const sd = await sr.json();
+        const ip = sd.ip_address || window.location.hostname;
+        const port = window.location.port ? `:${window.location.port}` : '';
+        const url = `http://${ip}${port}/avatar_upload?m=${val}`;
+        
+        const img = document.getElementById('avatar-qr-img');
+        const container = document.getElementById('avatar-qr-container');
+        if (img) img.src = `/api/avatar/qr?content=${encodeURIComponent(url)}`;
+        if (container) container.style.display = 'block';
+    } catch (e) {
+        console.error("QR refresh failed", e);
+    }
+};
+
+window.closeCamera = () => {
+    document.getElementById('camera-overlay').classList.remove('active');
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+    }
+};
+
+window.takeSnapshot = () => {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    if (!video || !canvas) return;
+    
+    canvas.width = 400;
+    canvas.height = 400;
+    canvas.getContext('2d').drawImage(video, 0, 0, 400, 400);
+    canvas.toBlob(blob => { capturedBlob = blob; }, 'image/jpeg', 0.85);
+    
+    const preview = document.getElementById('capture-preview');
+    const previewImg = document.getElementById('preview-frame');
+    if (previewImg) previewImg.src = canvas.toDataURL('image/jpeg');
+    if (preview) preview.style.display = 'block';
+    
+    document.getElementById('btn-snap').style.display = 'none';
+    document.getElementById('btn-save-cap').style.display = 'block';
+    document.getElementById('btn-retake').style.display = 'block';
+};
+
+window.retakePhoto = () => {
+    document.getElementById('camera-video').style.display = 'block';
+    document.getElementById('capture-preview').style.display = 'none';
+    document.getElementById('btn-snap').style.display = 'block';
+    document.getElementById('btn-save-cap').style.display = 'none';
+    document.getElementById('btn-retake').style.display = 'none';
+    capturedBlob = null;
+};
+
+window.saveCapturedAvatar = async () => {
+    if (!capturedBlob) return;
+    const formData = new FormData();
+    formData.append('file', capturedBlob, 'avatar.jpg');
+    // Default to first member if not specified, but usually we'd want a selection
+    formData.append('member_code', memberData[0].member_code);
+    
+    try {
+        const r = await fetch('/api/avatar/upload', { method: 'POST', body: formData });
+        const d = await r.json();
+        if (d.success) {
+            if (window.showToast) window.showToast('Avatar updated');
+            closeCamera();
+            renderGrid();
+        }
+    } catch (e) {
+        if (window.showToast) window.showToast('Upload failed');
+    }
 };
 
 // Global exports for navigation.js and HTML

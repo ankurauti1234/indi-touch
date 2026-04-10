@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Avatar — Indi Meter</title>
+    <style>
+        :root {
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-on-surface: #E6E1E5;
+            --md-sys-color-surface-variant: #49454F;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header { text-align: center; margin-bottom: 30px; }
+        .card {
+            background: var(--md-sys-color-surface-variant);
+            border-radius: 24px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+        .member-select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            background: #2b2930;
+            color: #fff;
+            border: 1px solid #938F99;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        .upload-zone {
+            border: 2px dashed #938F99;
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(208, 188, 255, 0.05);
+        }
+        .preview-img {
+            width: 100%;
+            border-radius: 20px;
+            max-height: 300px;
+            object-fit: cover;
+            display: none;
+            margin-bottom: 20px;
+        }
+        .btn {
+            width: 100%;
+            height: 48px;
+            border: none;
+            border-radius: 24px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-primary { background: var(--md-sys-color-primary); color: #381E72; }
+        .btn-tonal { background: #4F378B; color: #EADDFF; }
+        .success { color: #B4E197; text-align: center; margin-top: 10px; }
+        .error { color: #F2B8B5; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Assign Avatar</h1>
+        <p>Take or upload a photo for a member</p>
+    </div>
+
+    <div class="card">
+        <select id="member-select" class="member-select">
+            <option value="">Select Member...</option>
+        </select>
+
+        <div id="upload-stage">
+            <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+                <div style="font-size: 40px; margin-bottom: 10px;">📸</div>
+                <div>Tap to Capture or Upload</div>
+            </div>
+            <input type="file" id="file-input" accept="image/*" capture="user">
+        </div>
+
+        <div id="preview-stage" style="display:none">
+            <img id="preview-img" class="preview-img">
+            <button class="btn btn-primary" id="btn-upload">Save Avatar</button>
+            <button class="btn btn-tonal" onclick="resetUI()">Cancel</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const memberSelect = document.getElementById('member-select');
+        const fileInput = document.getElementById('file-input');
+        const previewImg = document.getElementById('preview-img');
+        const uploadStage = document.getElementById('upload-stage');
+        const previewStage = document.getElementById('preview-stage');
+        const btnUpload = document.getElementById('btn-upload');
+        const status = document.getElementById('status');
+
+        let selectedFile = null;
+
+        // Auto-select member from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetMember = urlParams.get('m');
+
+        fetch('/api/avatar/members')
+            .then(r => r.json())
+            .then(d => {
+                d.members.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.member_code;
+                    opt.textContent = m.name;
+                    if(m.member_code === targetMember) opt.selected = true;
+                    memberSelect.appendChild(opt);
+                });
+            });
+
+        fileInput.onchange = () => {
+            if(fileInput.files[0]) {
+                selectedFile = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = e => {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    uploadStage.style.display = 'none';
+                    previewStage.style.display = 'block';
+                };
+                reader.readAsDataURL(selectedFile);
+            }
+        };
+
+        function resetUI() {
+            selectedFile = null;
+            uploadStage.style.display = 'block';
+            previewStage.style.display = 'none';
+            status.textContent = '';
+        }
+
+        btnUpload.onclick = async () => {
+            const memberCode = memberSelect.value;
+            if(!memberCode) { alert('Select a member'); return; }
+
+            btnUpload.disabled = true;
+            btnUpload.textContent = 'Saving...';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('member_code', memberCode);
+
+            try {
+                const r = await fetch('/api/avatar/upload', { method: 'POST', body: formData });
+                const d = await r.json();
+                if(d.success) {
+                    status.className = 'success';
+                    status.textContent = 'Avatar Saved!';
+                    setTimeout(() => window.close(), 2000);
+                } else {
+                    status.className = 'error';
+                    status.textContent = 'Error: ' + d.error;
+                    btnUpload.disabled = false;
+                    btnUpload.textContent = 'Retry Save';
+                }
+            } catch(e) {
+                status.className = 'error';
+                status.textContent = 'Network Error';
+                btnUpload.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

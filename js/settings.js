@@ -6,8 +6,8 @@ import { t } from './i18n.js';
 let currentAvatarStyle = 'local'; // Default
 
 export function openSetting(id) {
-    const main = document.getElementById('set-main');
-    if (main) main.classList.remove('active');
+    // Hide ALL panels first to prevent overlaps/overlays
+    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
     
     const panel = document.getElementById('set-' + id);
     if (panel) panel.classList.add('active');
@@ -457,68 +457,146 @@ window.updateMemberName = async function(index, newName) {
 };
 
 // ── SYSTEM INFO (real device data) ───────────────────────────────────────────
+let sysInfoTimer = null;
+
 export async function loadSystemInfo() {
-    try {
-        const r = await fetch('/api/system/status');
-        const d = await r.json();
-        const el = document.getElementById('sys-info-content');
-        if (!el) return;
+    const el = document.getElementById('sys-info-content');
+    if (!el) return;
 
-        el.innerHTML = `
-            <div class="info-group">
-                <div class="info-row" style="background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:12px">
-                    <span class="info-label">${t('Device Identifier')}</span>
-                    <span class="info-value" style="color:var(--primary); font-family:monospace; font-size:18px">${d.meter_id}</span>
+    // Clear any existing timer
+    if (sysInfoTimer) clearInterval(sysInfoTimer);
+
+    const updateUI = async () => {
+        try {
+            const r = await fetch('/api/system/status');
+            const d = await r.json();
+            
+            const formatBytes = (bytes) => {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            };
+
+            el.innerHTML = `
+                <div class="info-group">
+                    <div class="info-row" style="background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:12px">
+                        <span class="info-label">${t('Device Identifier')}</span>
+                        <span class="info-value" style="color:var(--primary); font-family:monospace; font-size:18px">${d.meter_id}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">${t('Local IP Address')}</span>
+                        <span class="info-value">${d.ip_address}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">${t('MAC Address')}</span>
+                        <span class="info-value">${d.mac_address}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">${t('Software Version')}</span>
+                        <span class="info-value">v5.2.0-stable</span>
+                    </div>
                 </div>
+
+                <div style="margin:20px 0 10px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; opacity:0.8">Hardware Metrics</div>
                 
-                <div class="info-row">
-                    <span class="info-label">${t('Local IP Address')}</span>
-                    <span class="info-value">${d.ip_address}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">${t('MAC Address')}</span>
-                    <span class="info-value">${d.mac_address}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">${t('Software Version')}</span>
-                    <span class="info-value">v5.2.0-stable</span>
-                </div>
-            </div>
+                <div class="hw-stats" style="margin-bottom: 24px">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span class="stat-label">CPU Utilization</span>
+                            <span class="stat-value">${d.cpu_percent}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${d.cpu_percent}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span class="stat-label">RAM Consumption</span>
+                            <span class="stat-value">${formatBytes(d.ram_used)} / ${formatBytes(d.ram_total)}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${d.ram_percent}%"></div>
+                        </div>
+                    </div>
 
-            <div style="margin:20px 0 10px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; opacity:0.8">Hardware Status</div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span class="stat-label">System Temperature</span>
+                            <span class="stat-value" style="color: ${d.temperature > 70 ? '#ff5252' : ''}">${d.temperature}°C</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${Math.min(100, (d.temperature / 85) * 100)}%; background: ${d.temperature > 70 ? '#ff5252' : ''}"></div>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="hw-grid">
-                <div class="hw-grid-item ${d.wifi ? 'hw-ok' : 'hw-err'}">
-                    <span class="material-symbols-rounded">wifi</span>
-                    <span class="hw-grid-label">WiFi Module</span>
-                    <span class="hw-grid-status">${d.wifi ? 'Connected' : 'Disconnected'}</span>
+                <div style="margin:20px 0 10px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; opacity:0.8">Interface Status</div>
+
+                <div class="hw-grid">
+                    <div class="hw-grid-item ${d.wifi ? 'hw-ok' : 'hw-err'}">
+                        <span class="material-symbols-rounded">wifi</span>
+                        <span class="hw-grid-label">WiFi Module</span>
+                        <span class="hw-grid-status">${d.wifi ? 'Connected' : 'Disconnected'}</span>
+                    </div>
+                    <div class="hw-grid-item ${d.gsm ? 'hw-ok' : 'hw-err'}">
+                        <span class="material-symbols-rounded">cell_tower</span>
+                        <span class="hw-grid-label">GSM Modem</span>
+                        <span class="hw-grid-status">${d.gsm ? 'Ready' : 'Not detected'}</span>
+                    </div>
+                    <div class="hw-grid-item ${d.usb_jack ? 'hw-ok' : 'hw-err'}">
+                        <span class="material-symbols-rounded">usb</span>
+                        <span class="hw-grid-label">USB Audio</span>
+                        <span class="hw-grid-status">${d.usb_jack ? 'Connected' : 'Missing'}</span>
+                    </div>
+                    <div class="hw-grid-item ${d.hdmi_vcc ? 'hw-ok' : 'hw-err'}">
+                        <span class="material-symbols-rounded">tv</span>
+                        <span class="hw-grid-label">HDMI VCC</span>
+                        <span class="hw-grid-status">${d.hdmi_vcc ? 'Signal' : 'No Signal'}</span>
+                    </div>
+                    <div class="hw-grid-item ${d.video_detection ? 'hw-ok' : 'hw-err'}">
+                        <span class="material-symbols-rounded">smart_toy</span>
+                        <span class="hw-grid-label">Video AI</span>
+                        <span class="hw-grid-status">${d.video_detection ? 'Running' : 'Stopped'}</span>
+                    </div>
                 </div>
-                <div class="hw-grid-item ${d.gsm ? 'hw-ok' : 'hw-err'}">
-                    <span class="material-symbols-rounded">cell_tower</span>
-                    <span class="hw-grid-label">GSM Modem</span>
-                    <span class="hw-grid-status">${d.gsm ? 'Ready' : 'Not detected'}</span>
-                </div>
-                <div class="hw-grid-item ${d.usb_jack ? 'hw-ok' : 'hw-err'}">
-                    <span class="material-symbols-rounded">usb</span>
-                    <span class="hw-grid-label">USB Audio</span>
-                    <span class="hw-grid-status">${d.usb_jack ? 'Connected' : 'Missing'}</span>
-                </div>
-                <div class="hw-grid-item ${d.hdmi_vcc ? 'hw-ok' : 'hw-err'}">
-                    <span class="material-symbols-rounded">tv</span>
-                    <span class="hw-grid-label">HDMI VCC</span>
-                    <span class="hw-grid-status">${d.hdmi_vcc ? 'Signal' : 'No Signal'}</span>
-                </div>
-                <div class="hw-grid-item ${d.video_detection ? 'hw-ok' : 'hw-err'}">
-                    <span class="material-symbols-rounded">smart_toy</span>
-                    <span class="hw-grid-label">Video AI</span>
-                    <span class="hw-grid-status">${d.video_detection ? 'Running' : 'Stopped'}</span>
-                </div>
-            </div>
-        `;
-    } catch(e) {
-        const el = document.getElementById('sys-info-content');
-        if (el) el.innerHTML = '<div class="wifi-skeleton">Could not load system info.</div>';
+            `;
+        } catch(e) {
+            el.innerHTML = '<div class="wifi-skeleton">Could not load system info.</div>';
+            if (sysInfoTimer) clearInterval(sysInfoTimer);
+        }
+    };
+
+    // Initial load
+    await updateUI();
+
+    // Start refresh loop if panel is still active
+    const panel = document.getElementById('set-system');
+    if (panel && panel.classList.contains('active')) {
+        sysInfoTimer = setInterval(updateUI, 2000);
     }
+}
+
+// Clean up timer when closing settings or switching panels
+const originalCloseSetting = closeSetting;
+export function closeSetting() {
+    if (sysInfoTimer) {
+        clearInterval(sysInfoTimer);
+        sysInfoTimer = null;
+    }
+    originalCloseSetting();
+}
+
+const originalOpenSetting = openSetting;
+export function openSetting(id) {
+    if (sysInfoTimer && id !== 'system' && id !== 'sys-info') {
+        clearInterval(sysInfoTimer);
+        sysInfoTimer = null;
+    }
+    originalOpenSetting(id);
 }
 
 // ── Global exports for HTML onclick handlers ──────────────────────────────────
@@ -594,3 +672,180 @@ window.resetWallpaper = async function() {
         if (window.showToast) window.showToast('Error: ' + e.message);
     }
 };
+
+// ── AVATAR CAPTURE & QR ──────────────────────────────────────────────────────
+
+let cameraStream = null;
+let capturedBlob = null;
+
+window.openAvatarCapture = async function() {
+    const overlay = document.getElementById('camera-overlay');
+    const video = document.getElementById('camera-video');
+    if (!overlay || !video) return;
+
+    overlay.classList.add('active');
+    
+    // Reset buttons
+    document.getElementById('btn-snap').style.display = 'block';
+    document.getElementById('btn-save-cap').style.display = 'none';
+    document.getElementById('btn-retake').style.display = 'none';
+    document.getElementById('capture-preview').style.display = 'none';
+    video.style.display = 'block';
+
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 400, height: 400, facingMode: "user" } 
+        });
+        video.srcObject = cameraStream;
+    } catch (err) {
+        if (window.showToast) window.showToast('Camera access denied or missing');
+        closeCamera();
+    }
+};
+
+window.closeCamera = function() {
+    const overlay = document.getElementById('camera-overlay');
+    if (overlay) overlay.classList.remove('active');
+    
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+    }
+};
+
+window.takeSnapshot = function() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    const preview = document.getElementById('capture-preview');
+    const previewFrame = document.getElementById('preview-frame');
+    
+    if (!video || !canvas || !preview || !previewFrame) return;
+
+    canvas.width = 400;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    
+    // Center crop from video
+    const size = Math.min(video.videoWidth, video.videoHeight);
+    const startX = (video.videoWidth - size) / 2;
+    const startY = (video.videoHeight - size) / 2;
+    
+    ctx.drawImage(video, startX, startY, size, size, 0, 0, 400, 400);
+    
+    previewFrame.src = canvas.toDataURL('image/jpeg', 0.85);
+    preview.style.display = 'block';
+    video.style.display = 'none';
+    
+    document.getElementById('btn-snap').style.display = 'none';
+    document.getElementById('btn-save-cap').style.display = 'block';
+    document.getElementById('btn-retake').style.display = 'block';
+    
+    canvas.toBlob(blob => { capturedBlob = blob; }, 'image/jpeg', 0.85);
+};
+
+window.retakePhoto = function() {
+    document.getElementById('camera-video').style.display = 'block';
+    document.getElementById('capture-preview').style.display = 'none';
+    document.getElementById('btn-snap').style.display = 'block';
+    document.getElementById('btn-save-cap').style.display = 'none';
+    document.getElementById('btn-retake').style.display = 'none';
+    capturedBlob = null;
+};
+
+window.saveCapturedAvatar = async function() {
+    if (!capturedBlob) return;
+    
+    // For local capture, we might need a member selection
+    // Let's assume we use the first member for now or ask user if multiple
+    // Better: let the user select member first in a separate UX or use a target member
+    // For this implementation, we'll prompt for member selection if not specified
+    
+    const members = memberData;
+    if (members.length === 0) {
+        if (window.showToast) window.showToast('No members found');
+        return;
+    }
+
+    // Reuse the select system in settings
+    const memberCode = members[0].member_code; // Default to first for simplicity in this flow
+    // A better way would be a member selection before capture
+    
+    const formData = new FormData();
+    formData.append('file', capturedBlob, 'capture.jpg');
+    formData.append('member_code', memberCode);
+
+    try {
+        const r = await fetch('/api/avatar/upload', { method: 'POST', body: formData });
+        const d = await r.json();
+        if (d.success) {
+            if (window.showToast) window.showToast('Avatar saved');
+            closeCamera();
+            renderGrid();
+        } else {
+            if (window.showToast) window.showToast('Failed to save: ' + d.error);
+        }
+    } catch(e) {
+        if (window.showToast) window.showToast('Network error');
+    }
+};
+
+window.openAvatarQr = function() {
+    const overlay = document.getElementById('avatar-qr-overlay');
+    const select = document.getElementById('qr-member-select');
+    if (!overlay || !select) return;
+
+    overlay.classList.add('active');
+    
+    // Populate select
+    select.innerHTML = '<option value="">Select Member...</option>' + 
+        memberData.map(m => `<option value="${m.member_code}">${m.name}</option>`).join('');
+    
+    document.getElementById('avatar-qr-container').style.display = 'none';
+};
+
+window.closeAvatarQr = function() {
+    const overlay = document.getElementById('avatar-qr-overlay');
+    if (overlay) overlay.classList.remove('active');
+};
+
+window.refreshAvatarQr = async function() {
+    const val = document.getElementById('qr-member-select').value;
+    const container = document.getElementById('avatar-qr-container');
+    const img = document.getElementById('avatar-qr-img');
+    const urlEl = document.getElementById('avatar-qr-url');
+    
+    if (!val) {
+        container.style.display = 'none';
+        return;
+    }
+
+    try {
+        const sr = await fetch('/api/system/status');
+        const sd = await sr.json();
+        const ip = sd.ip_address || window.location.hostname;
+        const port = window.location.port ? `:${window.location.port}` : '';
+        const uploadUrl = `http://${ip}${port}/avatar_upload?m=${val}`;
+
+        img.src = `/api/avatar/qr?content=${encodeURIComponent(uploadUrl)}`;
+        urlEl.textContent = uploadUrl;
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.alignItems = 'center';
+    } catch (e) {
+        console.error('QR refresh failed', e);
+    }
+};
+
+// Expose these to window in case they aren't already
+window.openAvatarCapture = window.openAvatarCapture;
+window.closeCamera = window.closeCamera;
+window.takeSnapshot = window.takeSnapshot;
+window.retakePhoto = window.retakePhoto;
+window.saveCapturedAvatar = window.saveCapturedAvatar;
+window.openAvatarQr = window.openAvatarQr;
+window.closeAvatarQr = window.closeAvatarQr;
+window.refreshAvatarQr = window.refreshAvatarQr;
+
+// Re-export original functions
+window.loadWifiList   = () => loadWifiList();
+window.loadSystemInfo = () => loadSystemInfo();

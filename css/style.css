@@ -2396,3 +2396,124 @@ body.osk-open .main-stage {
     overflow-y: auto;
     padding-bottom: 40px;
 }
+
+/* Hardware Metrics & Statistics */
+.hw-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 4px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--on-surface-variant);
+    opacity: 0.8;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary);
+    font-family: 'Outfit', sans-serif;
+}
+
+.progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom Avatar Styles */
+.custom-avatar-actions {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.camera-card {
+    max-width: 440px;
+    width: 90%;
+}
+
+.camera-stream-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1/1;
+    background: #000;
+    border-radius: 24px;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+#camera-video, #preview-frame {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.camera-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 4px solid var(--primary);
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+}
+
+.capture-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Modal Buttons Styling */
+.modal-btn {
+    height: 44px;
+    padding: 0 24px;
+    border-radius: 22px;
+    border: 1px solid var(--outline);
+    background: none;
+    color: var(--on-surface);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-btn.primary {
+    background: var(--primary);
+    color: var(--on-primary);
+    border: none;
+}
+
+.modal-btn:active {
+    transform: scale(0.96);
+}

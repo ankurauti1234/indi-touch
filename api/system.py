@@ -67,10 +67,12 @@ def get_mac_address():
         pass
     return "00:00:00:00:00:00"
 
+import psutil
+
 # ── GET /api/system/status ────────────────────────────────────────────────────
 @system_bp.route("/status", methods=["GET"])
 def system_status():
-    """Unified status of all /run file indicators + network info."""
+    """Unified status of all /run file indicators + network info + hardware metrics."""
     # Robust WiFi check: check if wlan0 is actually connected via nmcli
     wifi_ok = False
     try:
@@ -95,6 +97,27 @@ def system_status():
         else:
             tv_on = False
 
+    # CPU Temperature logic
+    temp = 0.0
+    try:
+        # psutil.sensors_temperatures() works on many Linux systems
+        temps = psutil.sensors_temperatures()
+        if "cpu_thermal" in temps:
+            temp = temps["cpu_thermal"][0].current
+        elif "thermal_zone0" in temps:
+            temp = temps["thermal_zone0"][0].current
+        else:
+            # Fallback for RPi: read from sysfs directly
+            if os.path.exists("/sys/class/thermal/thermal_zone0/temp"):
+                with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+                    temp = int(f.read().strip()) / 1000.0
+    except:
+        pass
+
+    # RAM and CPU
+    mem = psutil.virtual_memory()
+    cpu_usage = psutil.cpu_percent(interval=None) # Non-blocking
+
     return jsonify({
         "success": True,
         "meter_id":        METER_ID,
@@ -109,6 +132,11 @@ def system_status():
         "ip_address":      get_ip_address(),
         "mac_address":     get_mac_address(),
         "internet":        os.path.exists(SYSTEM_FILES["internet_ok"]),
+        "cpu_percent":     cpu_usage,
+        "ram_total":       mem.total,
+        "ram_used":        mem.used,
+        "ram_percent":     mem.percent,
+        "temperature":     round(temp, 1)
     })
 
 

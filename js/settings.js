@@ -321,32 +321,27 @@ function loadLocationSettings() {
 }
 
 window.selectLocation = async function(city) {
+    const txt = document.getElementById('current-location-text');
+    
     if (city === 'auto') {
-        const txt = document.getElementById('current-location-text');
         if(txt) txt.innerText = t('detecting') || 'Detecting...';
         
         try {
-            // Attempt to fetch location via IP
-            const r = await fetch('/api/system/status');
+            // Real Internet Location Detection
+            const r = await fetch('https://ipapi.co/json/');
             const d = await r.json();
-            // Assuming the backend doesn't have geolocation yet, we'll simulate detection
-            // or if d has it, use it. For now, we'll use a placeholder or check if d.ip_address exists.
-            
-            // In a real scenario, we'd call a geolocation API
-            // For now, we'll "auto-detect" based on system status info if available
-            // but the user wants us to store THIS selected location.
-            const detectedCity = d.city || "Yerevan"; // Default for demo
+            const detectedCity = d.city || "Unknown";
             
             updateSetting('location', 'auto');
-            updateSetting('autoLocation', detectedCity); // Store the detected one too
+            updateSetting('autoLocation', detectedCity);
             if(txt) txt.innerText = "Auto (" + detectedCity + ")";
         } catch (e) {
+            console.warn("Auto-location fetch failed", e);
             updateSetting('location', 'auto');
             if(txt) txt.innerText = "Auto";
         }
     } else {
         updateSetting('location', city);
-        const txt = document.getElementById('current-location-text');
         if(txt) txt.innerText = city;
     }
 
@@ -500,7 +495,7 @@ export async function loadSystemInfo() {
             <div class="info-group">
                 <div class="info-row" style="background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:12px">
                     <span class="info-label">${t('Device Identifier')}</span>
-                    <span class="info-value" style="color:var(--primary); font-family:monospace; font-size:18px">${d.meter_id}</span>
+                    <span class="info-value" style="font-family:monospace; font-size:18px">${d.meter_id}</span>
                 </div>
                 
                 <div class="info-row">

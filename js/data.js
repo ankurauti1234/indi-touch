@@ -8,7 +8,7 @@ export let config = {
     language: 'en',
     screenTimeout: 300000,
     meter_id: 'HUB-IM0000',
-    location: 'Yerevan',
+    location: 'auto',
     remoteMode: false,
     onboardingCompleted: false,
     avatarStyle: 'local',

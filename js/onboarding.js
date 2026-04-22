@@ -446,3 +446,38 @@ window.submitOTP = async () => {
         if (btn) btn.classList.remove('loading');
     }
 };
+
+window.toggleOnboardInfo = async () => {
+    const el = document.getElementById('onboard-info-popover');
+    if (!el) return;
+    
+    const isActive = el.classList.toggle('active');
+    if (isActive) {
+        try {
+            const r = await fetch('/api/system/status');
+            const d = await r.json();
+            
+            document.getElementById('onboard-info-id').innerText = d.meter_id || '...';
+            
+            // Show IP/WiFi only if connected to internet (as per request)
+            const netSec = document.getElementById('onboard-info-net-section');
+            if (d.internet) {
+                netSec.style.display = 'block';
+                document.getElementById('onboard-info-ip').innerText = d.ip_address || '...';
+                
+                // Get current SSID
+                try {
+                    const wr = await fetch('/api/wifi/current');
+                    const wd = await wr.json();
+                    document.getElementById('onboard-info-ssid').innerText = wd.ssid || 'Not connected';
+                } catch {
+                    document.getElementById('onboard-info-ssid').innerText = 'Unknown';
+                }
+            } else {
+                netSec.style.display = 'none';
+            }
+        } catch (e) {
+            console.error("Failed to load onboard info", e);
+        }
+    }
+};

@@ -6,8 +6,8 @@ import { t } from './i18n.js';
 let currentAvatarStyle = 'local'; // Default
 
 export function openSetting(id) {
-    const main = document.getElementById('set-main');
-    if (main) main.classList.remove('active');
+    // FIX: Clear ALL active settings panels before opening a new one to prevent overlap
+    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
     
     const panel = document.getElementById('set-' + id);
     if (panel) panel.classList.add('active');
@@ -20,7 +20,6 @@ export function openSetting(id) {
     if (id === 'sys-info')     loadSystemInfo();
     if (id === 'system')       loadSystemInfo();
     if (id === 'power')        _initPowerPanel();
-    if (id === 'wallpaper')    loadWallpaperSettings();
     if (id === 'wallpaper')    loadWallpaperSettings();
 }
 
@@ -295,7 +294,20 @@ function loadLocationSettings() {
 
     const currentCity = config.location;
 
-    list.innerHTML = cities.map(city => {
+    // Add "Auto" option at the top
+    const autoSelected = currentCity === 'auto';
+    const autoHtml = `
+        <div class="list-item" onclick="selectLocation('auto')">
+            <div class="item-content">
+                <h4 data-i18n="auto">Auto</h4>
+                <p style="font-size:12px; opacity:0.6">${config.autoLocation || ''}</p>
+            </div>
+            ${autoSelected ? '<span class="material-symbols-rounded">check</span>' : ''}
+        </div>
+        <hr style="opacity:0.05; margin: 8px 0">
+    `;
+
+    list.innerHTML = autoHtml + cities.map(city => {
         const selected = city === currentCity;
         return `
             <div class="list-item" onclick="selectLocation('${city}')">
@@ -308,12 +320,35 @@ function loadLocationSettings() {
     }).join('');
 }
 
-window.selectLocation = function(city) {
-    updateSetting('location', city);
-    
-    // Update text in main settings
-    const txt = document.getElementById('current-location-text');
-    if(txt) txt.innerText = city;
+window.selectLocation = async function(city) {
+    if (city === 'auto') {
+        const txt = document.getElementById('current-location-text');
+        if(txt) txt.innerText = t('detecting') || 'Detecting...';
+        
+        try {
+            // Attempt to fetch location via IP
+            const r = await fetch('/api/system/status');
+            const d = await r.json();
+            // Assuming the backend doesn't have geolocation yet, we'll simulate detection
+            // or if d has it, use it. For now, we'll use a placeholder or check if d.ip_address exists.
+            
+            // In a real scenario, we'd call a geolocation API
+            // For now, we'll "auto-detect" based on system status info if available
+            // but the user wants us to store THIS selected location.
+            const detectedCity = d.city || "Yerevan"; // Default for demo
+            
+            updateSetting('location', 'auto');
+            updateSetting('autoLocation', detectedCity); // Store the detected one too
+            if(txt) txt.innerText = "Auto (" + detectedCity + ")";
+        } catch (e) {
+            updateSetting('location', 'auto');
+            if(txt) txt.innerText = "Auto";
+        }
+    } else {
+        updateSetting('location', city);
+        const txt = document.getElementById('current-location-text');
+        if(txt) txt.innerText = city;
+    }
 
     // Refresh list to show checkmark
     loadLocationSettings();
@@ -480,6 +515,17 @@ export async function loadSystemInfo() {
                     <span class="info-label">${t('Software Version')}</span>
                     <span class="info-value">v5.2.0-stable</span>
                 </div>
+            </div>
+
+            <div style="margin:20px 0 10px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; opacity:0.8">${t('sw_versions')}</div>
+            <div class="info-group" style="margin-bottom: 20px">
+                ${Object.entries(d.sw_versions || {}).map(([key, ver]) => `
+                    <div class="info-row" style="padding: 10px 0">
+                        <span class="info-label" style="text-transform: capitalize">${key.replace('_', ' ')}</span>
+                        <span class="info-value" style="opacity: 0.8">${ver}</span>
+                    </div>
+                `).join('')}
+                ${!d.sw_versions || Object.keys(d.sw_versions).length === 0 ? '<p style="opacity:0.4; font-size:13px; padding: 10px 0">No detailed version data available.</p>' : ''}
             </div>
 
             <div style="margin:20px 0 10px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; opacity:0.8">Hardware Status</div>

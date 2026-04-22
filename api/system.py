@@ -95,6 +95,17 @@ def system_status():
         else:
             tv_on = False
 
+    # Software Versions from /var/lib/sw_version.json
+    sw_versions = {}
+    sw_version_path = "/var/lib/sw_version.json"
+    if os.path.exists(sw_version_path):
+        try:
+            import json
+            with open(sw_version_path, "r") as f:
+                sw_versions = json.load(f)
+        except:
+            pass
+
     return jsonify({
         "success": True,
         "meter_id":        METER_ID,
@@ -109,6 +120,7 @@ def system_status():
         "ip_address":      get_ip_address(),
         "mac_address":     get_mac_address(),
         "internet":        os.path.exists(SYSTEM_FILES["internet_ok"]),
+        "sw_versions":     sw_versions,
     })
 
 

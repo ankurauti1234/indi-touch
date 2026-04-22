@@ -29,6 +29,28 @@
 
   <div id="onboarding-layer" style="display: none;">
     <div class="wizard-card">
+      <button class="onboard-info-btn" onclick="toggleOnboardInfo()">
+        <span class="material-symbols-rounded">info</span>
+      </button>
+
+      <div id="onboard-info-popover" class="onboard-info-popover">
+        <h3 data-i18n="device_info">Device Info</h3>
+        <div class="info-row-mini">
+          <span>ID:</span>
+          <span id="onboard-info-id">...</span>
+        </div>
+        <div id="onboard-info-net-section">
+          <div class="info-row-mini">
+            <span>IP:</span>
+            <span id="onboard-info-ip">...</span>
+          </div>
+          <div class="info-row-mini">
+            <span>WiFi:</span>
+            <span id="onboard-info-ssid">...</span>
+          </div>
+        </div>
+      </div>
+
       <div class="step-container">
         <!-- Step 1: Welcome -->
         <div id="step-1" class="step active welcome-step">
@@ -470,6 +492,26 @@
             <div id="avat-lorelei" class="avatar-option" onclick="selectAvatarStyle('lorelei')">
               <img src="https://api.dicebear.com/9.x/lorelei/svg?seed=A" />
               <div class="avatar-label" data-i18n="lorelei">Lorelei</div>
+            </div>
+
+            <div id="avat-pixel-art" class="avatar-option" onclick="selectAvatarStyle('pixel-art')">
+              <img src="https://api.dicebear.com/9.x/pixel-art/svg?seed=A" />
+              <div class="avatar-label" data-i18n="pixel-art">Pixel Art</div>
+            </div>
+
+            <div id="avat-avataaars" class="avatar-option" onclick="selectAvatarStyle('avataaars')">
+              <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=A" />
+              <div class="avatar-label" data-i18n="avataaars">Avataaars</div>
+            </div>
+
+            <div id="avat-micah" class="avatar-option" onclick="selectAvatarStyle('micah')">
+              <img src="https://api.dicebear.com/9.x/micah/svg?seed=A" />
+              <div class="avatar-label" data-i18n="micah">Micah</div>
+            </div>
+
+            <div id="avat-shapes" class="avatar-option" onclick="selectAvatarStyle('shapes')">
+              <img src="https://api.dicebear.com/9.x/shapes/svg?seed=A" />
+              <div class="avatar-label" data-i18n="shapes">Shapes</div>
             </div>
           </div>
 

@@ -7,7 +7,7 @@ import socket
 
 from flask import Blueprint, jsonify, request
 
-from .config import SYSTEM_FILES, METER_ID
+from .config import SYSTEM_FILES, METER_ID, get_device_env
 
 system_bp = Blueprint("system", __name__)
 
@@ -121,6 +121,7 @@ def system_status():
         "mac_address":     get_mac_address(),
         "internet":        os.path.exists(SYSTEM_FILES["internet_ok"]),
         "sw_versions":     sw_versions,
+        "env":             get_device_env(),
     })
 
 

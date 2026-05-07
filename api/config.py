@@ -40,13 +40,32 @@ os.makedirs(AVATAR_DIR, exist_ok=True)
 DEVICE_CONFIG = {
     "device_id_file": f"{VAR_LIB}/device_id.txt",
     "hhid_file":      f"{VAR_LIB}/hhid.txt",
+    "device_env_file": f"{VAR_LIB}/device-env.txt",
     "certs_dir":      "/opt/apm/certs",
 }
 
 DB_PATH = os.path.join(VAR_LIB, "meter.db")
 
+# ── Configuration Files ───────────────────────────────────────────────────────
+DEVICE_CONFIG_FILE = os.path.join(VAR_LIB, "device_configs.txt")
+
+def load_device_config():
+    """Load device configuration from external file."""
+    config_data = {}
+    try:
+        with open(DEVICE_CONFIG_FILE, 'r') as f:
+            for line in f:
+                if '=' in line:
+                    key, value = line.strip().split('=', 1)
+                    config_data[key.strip()] = value.strip().strip('"')
+    except FileNotFoundError:
+        # If config file doesn't exist, use default values
+        pass
+    return config_data
+
 # ── Remote API ────────────────────────────────────────────────────────────────
-API_BASE    = "https://bt72jq8w9i.execute-api.ap-south-1.amazonaws.com/test"
+CONFIG_DATA = load_device_config()
+API_BASE = CONFIG_DATA.get('API_BASE', "https://bt72jq8w9i.execute-api.ap-south-1.amazonaws.com/test")
 INITIATE_URL = f"{API_BASE}/initiate-assignment"
 VERIFY_URL   = f"{API_BASE}/verify-otp"
 MEMBERS_URL  = f"{API_BASE}/members"
@@ -56,10 +75,9 @@ DBUS_INTERFACE       = "collector.Service"
 DBUS_OBJECT_PATH     = "/collector/service"
 DBUS_SIGNAL_EVENT    = "Event"
 
-MQTT_TOPIC           = "indi/AM/meter"
-AWS_IOT_ENDPOINT     = "a3uoz4wfsx2nz3-ats.iot.ap-south-1.amazonaws.com"
+MQTT_TOPIC = CONFIG_DATA.get('MQTT_TOPIC', "indi/AM/meter")
+AWS_IOT_ENDPOINT = CONFIG_DATA.get('AWS_IOT_ENDPOINT', "a3uoz4wfsx2nz3-ats.iot.ap-south-1.amazonaws.com")
 MQTT_PORT            = 8883
-RECONNECT_DELAY      = 5
 MAX_RECONNECT_DELAY  = 60
 HEARTBEAT_INTERVAL   = 3600   # seconds
 
@@ -87,6 +105,19 @@ def load_hhid() -> str:
             return f.read().strip()
     except FileNotFoundError:
         return ""
+
+def get_device_env() -> str:
+    """Read ENV from device-env.txt, default to 'dev'."""
+    try:
+        with open(DEVICE_CONFIG["device_env_file"]) as f:
+            for line in f:
+                if '=' in line:
+                    key, val = line.strip().split('=', 1)
+                    if key.strip().upper() == "ENV":
+                        return val.strip().lower()
+    except FileNotFoundError:
+        pass
+    return "dev"
 
 def save_hhid(hhid: str):
     with open(DEVICE_CONFIG["hhid_file"], "w") as f:

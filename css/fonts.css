@@ -1,42 +1,4 @@
 /* css/fonts.css — Fully offline: all fonts served from assets/fonts/ */
-
-/* ── Roboto ──────────────────────────────────────────────────────────── */
-@font-face {
-    font-family: 'Roboto';
-    font-style: normal;
-    font-weight: 300;
-    font-display: swap;
-    src: url('../assets/fonts/Roboto-300.woff2') format('woff2'),
-        url('../assets/fonts/Roboto-300.ttf') format('truetype');
-}
-
-@font-face {
-    font-family: 'Roboto';
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url('../assets/fonts/Roboto-400.woff2') format('woff2'),
-        url('../assets/fonts/Roboto-400.ttf') format('truetype');
-}
-
-@font-face {
-    font-family: 'Roboto';
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url('../assets/fonts/Roboto-500.woff2') format('woff2'),
-        url('../assets/fonts/Roboto-500.ttf') format('truetype');
-}
-
-@font-face {
-    font-family: 'Roboto';
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url('../assets/fonts/Roboto-700.woff2') format('woff2'),
-        url('../assets/fonts/Roboto-700.ttf') format('truetype');
-}
-
 /* ── Material Symbols Rounded ────────────────────────────────────────── */
 @font-face {
     font-family: 'Material Symbols Rounded';

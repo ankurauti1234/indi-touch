@@ -1,20 +1,20 @@
 @font-face {
     font-family: 'Google Sans';
-    src: url('../fonts/GoogleSans-Regular.ttf') format('truetype');
+    src: url('../assets/fonts/GoogleSans-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Google Sans';
-    src: url('../fonts/GoogleSans-Bold.ttf') format('truetype');
+    src: url('../assets/fonts/GoogleSans-Bold.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Material Symbols Rounded';
-    src: url('../fonts/MaterialSymbolsRounded.ttf') format('truetype');
+    src: url('../assets/fonts/MaterialSymbolsRounded.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
@@ -2395,4 +2395,41 @@ body.osk-open .main-stage {
     flex: 1;
     overflow-y: auto;
     padding-bottom: 40px;
+}
+
+/* ── DEV MODE INDICATORS ────────────────────────────────────────────── */
+body.dev-env::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    border: 10px solid #FFD700; /* Vibrant Yellow */
+    pointer-events: none;
+    z-index: 999999999;
+}
+
+.dev-badge {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 60px;
+    background: #FFD700;
+    color: #000;
+    padding: 8px 16px 12px 16px;
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    border-radius: 0 0 16px 16px;
+    z-index: 1000000000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    letter-spacing: 1px;
+}
+
+body.dev-env .dev-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+body.dev-env .dev-badge span {
+    font-size: 18px !important;
 }

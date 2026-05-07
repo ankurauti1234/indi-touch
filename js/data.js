@@ -13,7 +13,8 @@ export let config = {
     onboardingCompleted: false,
     avatarStyle: 'local',
     reduceAnimations: false,
-    bleAvailable: true
+    bleAvailable: true,
+    env: 'prod'
 };
 
 // --- API Sync Helpers ---
@@ -31,6 +32,7 @@ export async function loadConfig() {
         if (dStatus.success) {
             config.meter_id = dStatus.meter_id || config.meter_id;
             config.onboardingCompleted = dStatus.installation_done;
+            config.env = dStatus.env || 'dev';
         }
         
         const rSettings = await fetch('/api/system/settings');

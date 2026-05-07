@@ -111,6 +111,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGuestList();
     initLocation();
     renderNotifications();
+    
+    // Apply Dev-Mode indicators if env is 'dev'
+    if (config.env === 'dev') {
+        document.body.classList.add('dev-env');
+    }
 
     // 4. Finalize - Hide app loader
     hideAppLoader();

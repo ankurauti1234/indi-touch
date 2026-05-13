@@ -14,6 +14,7 @@ def get_guests():
     guests = load_guests_data()
     return jsonify({"success": True, "guests": guests, "count": len(guests)})
 
+
 @guests_bp.route("/add", methods=["POST"])
 def add_guest():
     data = request.get_json(force=True) or {}
@@ -22,33 +23,39 @@ def add_guest():
         return jsonify({"success": False, "error": "Missing guest"}), 400
 
     guests = load_guests_data()
-    new_guest["id"] = len(guests) + 1
+    # Safer ID assignment: use max existing ID + 1
+    next_id = max([g.get("id", 0) for g in guests], default=0) + 1
+    new_guest["id"] = next_id
     guests.append(new_guest)
     save_guests_data(guests)
 
-    publish_guest_event({"type": "added", "guest": new_guest})
+    publish_guest_event({"guests": guests, "action": "added", "guest": new_guest})
     return jsonify({"success": True, "guest": new_guest, "count": len(guests)})
+
 
 @guests_bp.route("/remove", methods=["POST"])
 def remove_guest():
     data = request.get_json(force=True) or {}
     guest_id = data.get("id")
+    if guest_id is None:
+        return jsonify({"success": False, "error": "Missing guest ID"}), 400
+
     guests = load_guests_data()
     guests = [g for g in guests if g.get("id") != guest_id]
     save_guests_data(guests)
 
-    publish_guest_event({"type": "removed", "id": guest_id})
+    publish_guest_event({"guests": guests, "action": "removed", "id": guest_id})
     return jsonify({"success": True, "count": len(guests)})
 
 
 @guests_bp.route("/update", methods=["POST"])
 def update_guests():
     """Replace guest list and publish to MQTT (Type 4)."""
-    data       = request.get_json(force=True) or {}
+    data = request.get_json(force=True) or {}
     guest_list = data.get("guests") or data.get("Details", {}).get("guests", [])
     try:
         save_guests_data(guest_list)
-        publish_guest_event(guest_list)
+        publish_guest_event({"guests": guest_list, "action": "updated"})
         return jsonify({"success": True, "count": len(guest_list)})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

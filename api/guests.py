@@ -69,7 +69,7 @@ def add_guest():
         print("Publishing guest add event...")
 
         try:
-            publish_guest_event(payload)
+            publish_guest_event(guests)
             print("Guest add event published successfully")
         except Exception as mqtt_error:
             print("MQTT PUBLISH ERROR:", str(mqtt_error))
@@ -118,7 +118,7 @@ def remove_guest():
         print("REMOVE EVENT PAYLOAD:")
         print(payload)
 
-        publish_guest_event(payload)
+        publish_guest_event(guests)
 
         return jsonify({
             "success": True,
@@ -166,7 +166,7 @@ def update_guests():
         print("Publishing guest update event...")
 
         try:
-            publish_guest_event(payload)
+            publish_guest_event(guests)
             print("Guest update event published successfully")
         except Exception as mqtt_error:
             print("MQTT PUBLISH ERROR:", str(mqtt_error))

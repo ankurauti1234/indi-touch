@@ -14,6 +14,32 @@ def get_guests():
     guests = load_guests_data()
     return jsonify({"success": True, "guests": guests, "count": len(guests)})
 
+@guests_bp.route("/add", methods=["POST"])
+def add_guest():
+    data = request.get_json(force=True) or {}
+    new_guest = data.get("guest")
+    if not new_guest:
+        return jsonify({"success": False, "error": "Missing guest"}), 400
+
+    guests = load_guests_data()
+    new_guest["id"] = len(guests) + 1
+    guests.append(new_guest)
+    save_guests_data(guests)
+
+    publish_guest_event({"type": "added", "guest": new_guest})
+    return jsonify({"success": True, "guest": new_guest, "count": len(guests)})
+
+@guests_bp.route("/remove", methods=["POST"])
+def remove_guest():
+    data = request.get_json(force=True) or {}
+    guest_id = data.get("id")
+    guests = load_guests_data()
+    guests = [g for g in guests if g.get("id") != guest_id]
+    save_guests_data(guests)
+
+    publish_guest_event({"type": "removed", "id": guest_id})
+    return jsonify({"success": True, "count": len(guests)})
+
 
 @guests_bp.route("/update", methods=["POST"])
 def update_guests():

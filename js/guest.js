@@ -18,18 +18,18 @@ export async function addGuest() {
     const ageInput = document.getElementById('g-age');
     const age = ageInput.value;
     
-    if(!age) { 
+    if (!age) { 
         showModal(t('guest_wait') || 'Error', t('guest_age_req') || 'Age required');
         return; 
     }
 
     const parsedAge = parseInt(age);
-    if(parsedAge < 1 || parsedAge > 110) {
+    if (parsedAge < 1 || parsedAge > 110) {
         showModal(t('guest_wait') || 'Error', "Age limit is between 1 and 110.");
         return;
     }
 
-    if(guests.length >= 9) {
+    if (guests.length >= 9) {
         showModal(t('guest_wait') || 'Error', "Maximum limit of 9 guests reached.");
         return;
     }
@@ -48,10 +48,10 @@ export async function addGuest() {
     guests.push(newGuest);
     
     try {
-        const r = await fetch('/api/guests/update', {
+        const r = await fetch('/api/guests/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ guests: guests })
+            body: JSON.stringify({ guest: newGuest })
         });
         const res = await r.json();
         if (res.success) {
@@ -59,7 +59,7 @@ export async function addGuest() {
             await loadGuests();
         }
     } catch (e) {
-        console.error("Failed to save guest", e);
+        console.error("Failed to add guest", e);
     }
     
     updateGuestBadge();
@@ -82,12 +82,15 @@ export async function deleteGuest(id) {
         guests.splice(index, 1);
         
         try {
-            await fetch('/api/guests/update', {
+            const r = await fetch('/api/guests/remove', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ guests: guests })
+                body: JSON.stringify({ id })
             });
-            await loadGuests();
+            const res = await r.json();
+            if (res.success) {
+                await loadGuests();
+            }
         } catch (e) {
             console.error("Failed to delete guest", e);
         }

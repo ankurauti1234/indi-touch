@@ -105,34 +105,20 @@ def remove_guest():
 
         guests = load_guests_data()
 
-        removed_guest = next(
-            (g for g in guests if g.get("id") == guest_id),
-            None
-        )
-
         guests = [g for g in guests if g.get("id") != guest_id]
 
         save_guests_data(guests)
 
         payload = {
-            "meter_id": METER_ID,
-            "action": "removed",
-            "removed_guest": removed_guest,
-            "removed_guest_id": guest_id,
             "guests": guests,
-            "count": len(guests)
+            "action": "removed",
+            "id": guest_id
         }
 
-        print("\n========== GUEST REMOVE EVENT ==========")
-        print(json.dumps(payload, indent=2))
-        print("Publishing guest remove event...")
+        print("REMOVE EVENT PAYLOAD:")
+        print(payload)
 
-        try:
-            publish_guest_event(payload)
-            print("Guest remove event published successfully")
-        except Exception as mqtt_error:
-            print("MQTT PUBLISH ERROR:", str(mqtt_error))
-            traceback.print_exc()
+        publish_guest_event(payload)
 
         return jsonify({
             "success": True,
@@ -141,13 +127,11 @@ def remove_guest():
 
     except Exception as e:
         print("REMOVE GUEST ERROR:", str(e))
-        traceback.print_exc()
 
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
-
 
 @guests_bp.route("/update", methods=["POST"])
 def update_guests():

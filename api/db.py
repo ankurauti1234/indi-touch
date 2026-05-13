@@ -244,6 +244,8 @@ def undeclare_all_members_in_db():
 
 # ── Guests ────────────────────────────────────────────────────────────────────
 
+# ── Guests ────────────────────────────────────────────────────────────────────
+
 def load_guests_data() -> list:
     hhid = load_hhid()
 
@@ -255,10 +257,7 @@ def load_guests_data() -> list:
                 id,
                 age,
                 gender,
-                seed,
-                duration,
-                active,
-                created_at
+                active
             FROM guests
             WHERE meter_id = ? AND hhid = ?
             ORDER BY id
@@ -271,10 +270,7 @@ def load_guests_data() -> list:
                 "id": r[0],
                 "age": r[1],
                 "gender": r[2],
-                "seed": r[3],
-                "duration": r[4],
-                "active": bool(r[5]),
-                "created_at": r[6]
+                "active": bool(r[3]),
             })
 
         return guests
@@ -298,21 +294,15 @@ def save_guests_data(guest_list: list):
                     hhid,
                     age,
                     gender,
-                    seed,
-                    duration,
-                    active,
-                    created_at
+                    active
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
             """, (
                 METER_ID,
                 hhid,
                 g.get("age"),
                 g.get("gender"),
-                g.get("seed"),
-                g.get("duration"),
                 int(g.get("active", True)),
-                g.get("created_at") or datetime.now().isoformat()
             ))
 
         conn.commit()

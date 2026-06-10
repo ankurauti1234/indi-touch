@@ -145,5 +145,6 @@
     "Local IP Address": "Local IP Address",
     "MAC Address": "MAC Address",
     "Software Version": "Software Version",
-    "Active": "Active"
+    "Active": "Active",
+    "upload_instructions": "Connect your smartphone to the same Wi-Fi network as this device."
 }

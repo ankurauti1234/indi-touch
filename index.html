@@ -199,9 +199,6 @@
       </div>
     </div>
   </div>
-  </div>
-  </div>
-  </div>
 
   <script type="module">
     import { nextStep, prevStep, selectNet, toggleOnboardPass, refreshWifi } from "./js/onboarding.js";
@@ -465,14 +462,15 @@
               </div>
             </div>
           </div>
-          <div id="set-avatars" class="settings-panel">
-            <div class="page-header">
-              <button class="back-btn" onclick="closeSetting()">
-                <span class="material-symbols-rounded">arrow_back</span>
-              </button>
-              <h2 class="page-title">Avatar Style</h2>
-            </div>
-            <div class="avatar-grid">
+        </div>
+        <div id="set-avatars" class="settings-panel">
+          <div class="page-header">
+            <button class="back-btn" onclick="closeSetting()">
+              <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2 class="page-title">Avatar Style</h2>
+          </div>
+          <div class="avatar-grid">
               <!-- Local (Static) -->
               <div id="avat-local" class="avatar-option selected" onclick="selectAvatarStyle('local')">
                 <img src="assets/images/avatar/male-middle.png" />

@@ -94,7 +94,6 @@
     "ok": "ОК",
     "watching_now": "Сейчас смотрят",
     "display_setting": "Настройки экрана",
-    "night_mode": "Ночной режим",
     "toggle_theme": "Переключить тему",
     "use_remote": "Использовать пульт",
     "arrow_keys_nav": "Навигация стрелками + клик",
@@ -110,7 +109,6 @@
     "sys_default": "По умолчанию",
     "no_custom_image_uploaded": "Пользовательское изображение не загружено",
     "remove_custom_bg": "Удалить пользовательский фон",
-    "default_local": "Локальные",
     "adventurer": "Приключение",
     "bottts": "Роботы",
     "lorelei": "Лорелея",
@@ -135,5 +133,16 @@
     "Local IP Address": "Локальный IP",
     "MAC Address": "MAC-адрес",
     "Software Version": "Версия ПО",
-    "Active": "Активно"
+    "Active": "Активно",
+    "duration_24h": "24 часа",
+    "location": "Местоположение",
+    "shapes": "Фигуры",
+    "auto": "Авто",
+    "detecting": "Определение...",
+    "device_info": "Информация об устройстве",
+    "sw_versions": "Версии программного обеспечения",
+    "pixel-art": "Пиксель-арт",
+    "avataaars": "Avataaars",
+    "micah": "Micah",
+    "night_mode": "Тёмная тема"
 }

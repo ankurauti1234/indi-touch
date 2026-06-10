@@ -94,7 +94,6 @@
     "ok": "Լավ",
     "watching_now": "Հիմա դիտում են",
     "display_setting": "Էկրանի կարգավորումներ",
-    "night_mode": "Գիշերային ռեժիմ",
     "toggle_theme": "Փոխել թեման",
     "use_remote": "Օգտագործել հեռակառավարման վահանակ",
     "arrow_keys_nav": "Սլաքներով + սեղմումով նավիգացիա",
@@ -110,7 +109,6 @@
     "sys_default": "Համակարգի լռելյայն",
     "no_custom_image_uploaded": "Անհատական պատկեր դեռ վերբեռնված չէ",
     "remove_custom_bg": "Հեռացնել անհատական ֆոնը",
-    "default_local": "Լռելյայն տեղական",
     "adventurer": "Արկածախնդիր",
     "bottts": "Ռոբոտներ",
     "lorelei": "Լորելայ",
@@ -135,5 +133,16 @@
     "Local IP Address": "Տեղական IP Հասցե",
     "MAC Address": "MAC Հասցե",
     "Software Version": "Ծրագրային Ապահովման Տարբերակ",
-    "Active": "Ակտիվ"
+    "Active": "Ակտիվ",
+    "duration_24h": "24 ժամ",
+    "location": "Տեղադրություն",
+    "shapes": "Ձևեր",
+    "auto": "Ավտոմատ",
+    "detecting": "Հայտնաբերում...",
+    "device_info": "Սարքի տեղեկություններ",
+    "sw_versions": "Ծրագրային ապահովման տարբերակներ",
+    "pixel-art": "Փիքսելային արվեստ",
+    "avataaars": "Avataaars",
+    "micah": "Micah",
+    "night_mode": "Մուգ թեմա"
 }

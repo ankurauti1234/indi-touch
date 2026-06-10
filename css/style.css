@@ -2352,7 +2352,7 @@ body.osk-open .main-stage {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
 }
 
 .qr-footer {

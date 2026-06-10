@@ -11,6 +11,15 @@ export function openSetting(id) {
     
     const panel = document.getElementById('set-' + id);
     if (panel) panel.classList.add('active');
+
+    // Minimal trace to surface which panel was opened (uses dev overlay if available)
+    try {
+        const msg = `openSetting: ${id} @ ${new Date().toISOString()}`;
+        console.log(msg);
+        if (window && window.__showDevError) window.__showDevError(msg);
+    } catch (e) {
+        console.error('openSetting trace error', e);
+    }
     
     // Trigger specific logic when opening panels
     if (id === 'connectivity') loadWifiList();

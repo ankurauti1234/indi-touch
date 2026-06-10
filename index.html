@@ -436,233 +436,235 @@
                 <img id="wp-qr-image" src="" alt="Scan Me">
                 <div class="qr-url-box" id="wp-qr-url">http://...</div>
               </div>
-            </div>
-
-            <!-- Current Wallpaper Preview -->
-            <div class="wp-preview-card" id="wp-status-card">
-              <div id="wp-no-image" class="wp-empty-state">
-                <span class="material-symbols-rounded">wallpaper</span>
-                <p data-i18n="using_sys_default">Using System Default</p>
+              <div class="qr-footer">
+                <p>Connect your smartphone to the same Wi-Fi network as this device.</p>
               </div>
-              <div id="wp-has-image" class="wp-active-state" style="display:none">
-                <img id="wp-thumb" src="" class="wp-preview-img">
-                <div class="wp-badge" data-i18n="active_bg">Active Background</div>
+
+              <!-- Current Wallpaper Preview -->
+              <div class="wp-preview-card" id="wp-status-card">
+                <div id="wp-no-image" class="wp-empty-state">
+                  <span class="material-symbols-rounded">wallpaper</span>
+                  <p data-i18n="using_sys_default">Using System Default</p>
+                </div>
+                <div id="wp-has-image" class="wp-active-state" style="display:none">
+                  <img id="wp-thumb" src="" class="wp-preview-img">
+                  <div class="wp-badge" data-i18n="active_bg">Active Background</div>
+                </div>
               </div>
-            </div>
 
-            <div class="list-group">
-              <div class="list-item no-click" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-                <h4 id="wp-title-text" style="font-size: 16px;">System Default</h4>
-                <p id="wp-size-info" style="font-size: 13px; opacity: 0.6;">No custom image uploaded yet</p>
-                <button class="action-btn-small" id="wp-reset-btn" onclick="resetWallpaper()"
-                  style="display:none; margin-top: 8px; background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container)">
-                  <span class="material-symbols-rounded">delete</span>
-                  <span data-i18n="remove_custom_bg">Remove Custom Background</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="set-avatars" class="settings-panel">
-          <div class="page-header">
-            <button class="back-btn" onclick="closeSetting()">
-              <span class="material-symbols-rounded">arrow_back</span>
-            </button>
-            <h2 class="page-title">Avatar Style</h2>
-          </div>
-          <div class="avatar-grid">
-            <!-- Local (Static) -->
-            <div id="avat-local" class="avatar-option selected" onclick="selectAvatarStyle('local')">
-              <img src="assets/images/avatar/male-middle.png" />
-              <div class="avatar-label" data-i18n="default_local">Default Local</div>
-            </div>
-
-
-            <!-- DiceBear Styles -->
-            <div id="avat-adventurer" class="avatar-option" onclick="selectAvatarStyle('adventurer')">
-              <img src="https://api.dicebear.com/9.x/adventurer/svg?seed=A" />
-              <div class="avatar-label" data-i18n="adventurer">Adventurer</div>
-            </div>
-
-            <div id="avat-bottts" class="avatar-option" onclick="selectAvatarStyle('bottts')">
-              <img src="https://api.dicebear.com/9.x/bottts/svg?seed=A" />
-              <div class="avatar-label" data-i18n="bottts">Bottts</div>
-            </div>
-
-            <div id="avat-lorelei" class="avatar-option" onclick="selectAvatarStyle('lorelei')">
-              <img src="https://api.dicebear.com/9.x/lorelei/svg?seed=A" />
-              <div class="avatar-label" data-i18n="lorelei">Lorelei</div>
-            </div>
-
-            <div id="avat-pixel-art" class="avatar-option" onclick="selectAvatarStyle('pixel-art')">
-              <img src="https://api.dicebear.com/9.x/pixel-art/svg?seed=A" />
-              <div class="avatar-label" data-i18n="pixel-art">Pixel Art</div>
-            </div>
-
-            <div id="avat-avataaars" class="avatar-option" onclick="selectAvatarStyle('avataaars')">
-              <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=A" />
-              <div class="avatar-label" data-i18n="avataaars">Avataaars</div>
-            </div>
-
-            <div id="avat-micah" class="avatar-option" onclick="selectAvatarStyle('micah')">
-              <img src="https://api.dicebear.com/9.x/micah/svg?seed=A" />
-              <div class="avatar-label" data-i18n="micah">Micah</div>
-            </div>
-
-            <div id="avat-shapes" class="avatar-option" onclick="selectAvatarStyle('shapes')">
-              <img src="https://api.dicebear.com/9.x/shapes/svg?seed=A" />
-              <div class="avatar-label" data-i18n="shapes">Shapes</div>
-            </div>
-          </div>
-
-        </div>
-        <div id="set-members" class="settings-panel">
-          <div class="page-header">
-            <button class="back-btn" onclick="closeSetting()">
-              <span class="material-symbols-rounded">arrow_back</span>
-            </button>
-            <h2 class="page-title">Members</h2>
-          </div>
-          <div class="list-group" id="member-settings-list" style="padding: 0 20px">
-            <!-- Members will be rendered here dynamically -->
-          </div>
-        </div>
-
-        <div id="set-system" class="settings-panel">
-          <div class="page-header">
-            <button class="back-btn" onclick="closeSetting()">
-              <span class="material-symbols-rounded">arrow_back</span>
-            </button>
-            <h2 class="page-title">System Info</h2>
-            <button class="icon-btn-ghost" onclick="loadSystemInfo()" style="margin-left:auto">
-              <span class="material-symbols-rounded">refresh</span>
-            </button>
-          </div>
-          <div class="list-group" id="sys-info-content" style="padding:0 20px">
-            <!-- Populated by loadSystemInfo() in settings.js -->
-            <div class="wifi-skeleton" data-i18n="loading_sys_info">Loading system info...</div>
-          </div>
-        </div>
-
-        <div id="set-connectivity" class="settings-panel">
-          <div class="page-header">
-            <button class="back-btn" onclick="closeSetting()">
-              <span class="material-symbols-rounded">arrow_back</span>
-            </button>
-            <h2 class="page-title">Connectivity</h2>
-            <button class="icon-btn-ghost" onclick="loadWifiList()" style="margin-left:auto">
-              <span class="material-symbols-rounded">refresh</span>
-            </button>
-          </div>
-          <div class="list-group">
-            <div class="list-item active-net">
-              <div class="icon-box">
-                <span class="material-symbols-rounded">wifi</span>
-              </div>
-              <div class="item-content">
-                <h4 id="curr-net-name">Office_Corp_5G</h4>
-                <p id="curr-net-status" data-i18n="connected_high_sig">Connected • High Signal</p>
-              </div>
-            </div>
-            <div class="section-title" data-i18n="avail_networks">Available Networks</div>
-            <div id="available-wifi-list" class="net-list-inline">
-              <!-- Wifi list will be rendered here -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Password Entry Popover (Material 3 style) -->
-        <div id="wifi-password-overlay" class="popover-overlay">
-          <div class="popover-card">
-            <h3 id="net-password-title" data-i18n="enter_pass">Enter Password</h3>
-            <p id="net-password-desc"><span data-i18n="connecting_to">Connecting to</span> Office_Corp_5G</p>
-            <div class="input-field-v2">
-              <input type="password" id="wifi-pass-input" placeholder="Password" />
-              <button class="eye-toggle" onclick="togglePassVisibility()">
-                <span class="material-symbols-rounded" id="pass-eye-icon">visibility</span>
-              </button>
-            </div>
-            <div class="popover-actions">
-              <button class="modal-btn" onclick="closePassPopover()" data-i18n="cancel">Cancel</button>
-              <button class="modal-btn primary" onclick="submitPass()" data-i18n="connect">Connect</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="set-location" class="settings-panel">
-          <div class="page-header">
-            <button class="back-btn" onclick="closeSetting()">
-              <span class="material-symbols-rounded">arrow_back</span>
-            </button>
-            <h2 class="page-title">Location</h2>
-          </div>
-          <div class="list-group" id="location-list" style="padding: 0 20px">
-            <!-- Locations will be injected here -->
-          </div>
-        </div>
-
-        <div id="set-power" class="settings-panel">
-          <div class="page-header">
-            <button class="back-btn" onclick="closeSetting()">
-              <span class="material-symbols-rounded">arrow_back</span>
-            </button>
-            <h2 class="page-title">Power Options</h2>
-          </div>
-          <div class="list-group" style="padding: 0 20px">
-            <div class="list-item" onclick="confirmPower('reboot')">
-              <div class="icon-box" style="background: #2e312e; color: #c4ead1">
-                <span class="material-symbols-rounded">restart_alt</span>
-              </div>
-              <div class="item-content">
-                <h4 data-i18n="reboot">Reboot</h4>
-                <p data-i18n="restart_system">Restart system</p>
-              </div>
-            </div>
-            <div class="list-item no-click">
-              <div class="icon-box">
-                <span class="material-symbols-rounded">timer</span>
-              </div>
-              <div class="item-content" style="flex:1">
-                <h4 data-i18n="screen_timeout">Screen Timeout</h4>
-                <div class="chip-group" style="margin-top: 12px">
-                  <div class="chip" onclick="selectTimeout(0.25, this)">15s</div>
-                  <div class="chip" onclick="selectTimeout(0.5, this)">30s</div>
-                  <div class="chip" onclick="selectTimeout(1, this)">1m</div>
-                  <div class="chip" onclick="selectTimeout(2, this)">2m</div>
-                  <div class="chip selected" onclick="selectTimeout(5, this)">5m</div>
+              <div class="list-group">
+                <div class="list-item no-click" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                  <h4 id="wp-title-text" style="font-size: 16px;">System Default</h4>
+                  <p id="wp-size-info" style="font-size: 13px; opacity: 0.6;">No custom image uploaded yet</p>
+                  <button class="action-btn-small" id="wp-reset-btn" onclick="resetWallpaper()"
+                    style="display:none; margin-top: 8px; background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container)">
+                    <span class="material-symbols-rounded">delete</span>
+                    <span data-i18n="remove_custom_bg">Remove Custom Background</span>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <div id="set-language" class="settings-panel">
-          <div class="page-header">
-            <button class="back-btn" onclick="closeSetting()">
-              <span class="material-symbols-rounded">arrow_back</span>
-            </button>
-            <h2 class="page-title" data-i18n="language">Language</h2>
+          <div id="set-avatars" class="settings-panel">
+            <div class="page-header">
+              <button class="back-btn" onclick="closeSetting()">
+                <span class="material-symbols-rounded">arrow_back</span>
+              </button>
+              <h2 class="page-title">Avatar Style</h2>
+            </div>
+            <div class="avatar-grid">
+              <!-- Local (Static) -->
+              <div id="avat-local" class="avatar-option selected" onclick="selectAvatarStyle('local')">
+                <img src="assets/images/avatar/male-middle.png" />
+                <div class="avatar-label" data-i18n="default_local">Default Local</div>
+              </div>
+
+
+              <!-- DiceBear Styles -->
+              <div id="avat-adventurer" class="avatar-option" onclick="selectAvatarStyle('adventurer')">
+                <img src="https://api.dicebear.com/9.x/adventurer/svg?seed=A" />
+                <div class="avatar-label" data-i18n="adventurer">Adventurer</div>
+              </div>
+
+              <div id="avat-bottts" class="avatar-option" onclick="selectAvatarStyle('bottts')">
+                <img src="https://api.dicebear.com/9.x/bottts/svg?seed=A" />
+                <div class="avatar-label" data-i18n="bottts">Bottts</div>
+              </div>
+
+              <div id="avat-lorelei" class="avatar-option" onclick="selectAvatarStyle('lorelei')">
+                <img src="https://api.dicebear.com/9.x/lorelei/svg?seed=A" />
+                <div class="avatar-label" data-i18n="lorelei">Lorelei</div>
+              </div>
+
+              <div id="avat-pixel-art" class="avatar-option" onclick="selectAvatarStyle('pixel-art')">
+                <img src="https://api.dicebear.com/9.x/pixel-art/svg?seed=A" />
+                <div class="avatar-label" data-i18n="pixel-art">Pixel Art</div>
+              </div>
+
+              <div id="avat-avataaars" class="avatar-option" onclick="selectAvatarStyle('avataaars')">
+                <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=A" />
+                <div class="avatar-label" data-i18n="avataaars">Avataaars</div>
+              </div>
+
+              <div id="avat-micah" class="avatar-option" onclick="selectAvatarStyle('micah')">
+                <img src="https://api.dicebear.com/9.x/micah/svg?seed=A" />
+                <div class="avatar-label" data-i18n="micah">Micah</div>
+              </div>
+
+              <div id="avat-shapes" class="avatar-option" onclick="selectAvatarStyle('shapes')">
+                <img src="https://api.dicebear.com/9.x/shapes/svg?seed=A" />
+                <div class="avatar-label" data-i18n="shapes">Shapes</div>
+              </div>
+            </div>
+
           </div>
-          <div class="list-group" style="padding: 0 20px">
-            <div class="list-item" onclick="changeAppLanguage('en')">
-              <div class="item-content">
-                <h4>English</h4>
-              </div>
-              <span class="material-symbols-rounded" id="lang-check-en">check</span>
+          <div id="set-members" class="settings-panel">
+            <div class="page-header">
+              <button class="back-btn" onclick="closeSetting()">
+                <span class="material-symbols-rounded">arrow_back</span>
+              </button>
+              <h2 class="page-title">Members</h2>
             </div>
-            <div class="list-item" onclick="changeAppLanguage('hy')">
-              <div class="item-content">
-                <h4>Հայերեն</h4>
-              </div>
-              <span class="material-symbols-rounded" id="lang-check-hy" style="display:none">check</span>
-            </div>
-            <div class="list-item" onclick="changeAppLanguage('ru')">
-              <div class="item-content">
-                <h4>Русский</h4>
-              </div>
-              <span class="material-symbols-rounded" id="lang-check-ru" style="display:none">check</span>
+            <div class="list-group" id="member-settings-list" style="padding: 0 20px">
+              <!-- Members will be rendered here dynamically -->
             </div>
           </div>
-        </div>
+
+          <div id="set-system" class="settings-panel">
+            <div class="page-header">
+              <button class="back-btn" onclick="closeSetting()">
+                <span class="material-symbols-rounded">arrow_back</span>
+              </button>
+              <h2 class="page-title">System Info</h2>
+              <button class="icon-btn-ghost" onclick="loadSystemInfo()" style="margin-left:auto">
+                <span class="material-symbols-rounded">refresh</span>
+              </button>
+            </div>
+            <div class="list-group" id="sys-info-content" style="padding:0 20px">
+              <!-- Populated by loadSystemInfo() in settings.js -->
+              <div class="wifi-skeleton" data-i18n="loading_sys_info">Loading system info...</div>
+            </div>
+          </div>
+
+          <div id="set-connectivity" class="settings-panel">
+            <div class="page-header">
+              <button class="back-btn" onclick="closeSetting()">
+                <span class="material-symbols-rounded">arrow_back</span>
+              </button>
+              <h2 class="page-title">Connectivity</h2>
+              <button class="icon-btn-ghost" onclick="loadWifiList()" style="margin-left:auto">
+                <span class="material-symbols-rounded">refresh</span>
+              </button>
+            </div>
+            <div class="list-group">
+              <div class="list-item active-net">
+                <div class="icon-box">
+                  <span class="material-symbols-rounded">wifi</span>
+                </div>
+                <div class="item-content">
+                  <h4 id="curr-net-name">Office_Corp_5G</h4>
+                  <p id="curr-net-status" data-i18n="connected_high_sig">Connected • High Signal</p>
+                </div>
+              </div>
+              <div class="section-title" data-i18n="avail_networks">Available Networks</div>
+              <div id="available-wifi-list" class="net-list-inline">
+                <!-- Wifi list will be rendered here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Entry Popover (Material 3 style) -->
+          <div id="wifi-password-overlay" class="popover-overlay">
+            <div class="popover-card">
+              <h3 id="net-password-title" data-i18n="enter_pass">Enter Password</h3>
+              <p id="net-password-desc"><span data-i18n="connecting_to">Connecting to</span> Office_Corp_5G</p>
+              <div class="input-field-v2">
+                <input type="password" id="wifi-pass-input" placeholder="Password" />
+                <button class="eye-toggle" onclick="togglePassVisibility()">
+                  <span class="material-symbols-rounded" id="pass-eye-icon">visibility</span>
+                </button>
+              </div>
+              <div class="popover-actions">
+                <button class="modal-btn" onclick="closePassPopover()" data-i18n="cancel">Cancel</button>
+                <button class="modal-btn primary" onclick="submitPass()" data-i18n="connect">Connect</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="set-location" class="settings-panel">
+            <div class="page-header">
+              <button class="back-btn" onclick="closeSetting()">
+                <span class="material-symbols-rounded">arrow_back</span>
+              </button>
+              <h2 class="page-title">Location</h2>
+            </div>
+            <div class="list-group" id="location-list" style="padding: 0 20px">
+              <!-- Locations will be injected here -->
+            </div>
+          </div>
+
+          <div id="set-power" class="settings-panel">
+            <div class="page-header">
+              <button class="back-btn" onclick="closeSetting()">
+                <span class="material-symbols-rounded">arrow_back</span>
+              </button>
+              <h2 class="page-title">Power Options</h2>
+            </div>
+            <div class="list-group" style="padding: 0 20px">
+              <div class="list-item" onclick="confirmPower('reboot')">
+                <div class="icon-box" style="background: #2e312e; color: #c4ead1">
+                  <span class="material-symbols-rounded">restart_alt</span>
+                </div>
+                <div class="item-content">
+                  <h4 data-i18n="reboot">Reboot</h4>
+                  <p data-i18n="restart_system">Restart system</p>
+                </div>
+              </div>
+              <div class="list-item no-click">
+                <div class="icon-box">
+                  <span class="material-symbols-rounded">timer</span>
+                </div>
+                <div class="item-content" style="flex:1">
+                  <h4 data-i18n="screen_timeout">Screen Timeout</h4>
+                  <div class="chip-group" style="margin-top: 12px">
+                    <div class="chip" onclick="selectTimeout(0.25, this)">15s</div>
+                    <div class="chip" onclick="selectTimeout(0.5, this)">30s</div>
+                    <div class="chip" onclick="selectTimeout(1, this)">1m</div>
+                    <div class="chip" onclick="selectTimeout(2, this)">2m</div>
+                    <div class="chip selected" onclick="selectTimeout(5, this)">5m</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="set-language" class="settings-panel">
+            <div class="page-header">
+              <button class="back-btn" onclick="closeSetting()">
+                <span class="material-symbols-rounded">arrow_back</span>
+              </button>
+              <h2 class="page-title" data-i18n="language">Language</h2>
+            </div>
+            <div class="list-group" style="padding: 0 20px">
+              <div class="list-item" onclick="changeAppLanguage('en')">
+                <div class="item-content">
+                  <h4>English</h4>
+                </div>
+                <span class="material-symbols-rounded" id="lang-check-en">check</span>
+              </div>
+              <div class="list-item" onclick="changeAppLanguage('hy')">
+                <div class="item-content">
+                  <h4>Հայերեն</h4>
+                </div>
+                <span class="material-symbols-rounded" id="lang-check-hy" style="display:none">check</span>
+              </div>
+              <div class="list-item" onclick="changeAppLanguage('ru')">
+                <div class="item-content">
+                  <h4>Русский</h4>
+                </div>
+                <span class="material-symbols-rounded" id="lang-check-ru" style="display:none">check</span>
+              </div>
+            </div>
+          </div>
       </section>
 
       <section id="view-guest-add" class="view">
@@ -673,26 +675,14 @@
           <h2 class="page-title" data-i18n="add_guest">Add Guest</h2>
         </div>
         <div class="form-area" style="flex: 0">
-          <input
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            id="g-age"
-            class="input-box"
-            placeholder="Guest Age"
-            data-i18n="guest_age"
-            maxlength="3"
-            autocomplete="off"
-            autocorrect="off"
-            spellcheck="false"
-            style="direction:ltr; text-align:left;"
-            oninput="
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="g-age" class="input-box" placeholder="Guest Age"
+            data-i18n="guest_age" maxlength="3" autocomplete="off" autocorrect="off" spellcheck="false"
+            style="direction:ltr; text-align:left;" oninput="
               this.value = this.value.replace(/[^0-9]/g, '');
               if(this.value.length > 3) {
                 this.value = this.value.slice(0,3);
               }
-            "
-          />
+            " />
           <div class="chip-group">
             <div class="chip selected" onclick="selectChip(this, 'gender')" data-i18n="male">
               Male

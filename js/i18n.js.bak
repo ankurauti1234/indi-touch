@@ -38,22 +38,14 @@ export function applyTranslations() {
         if (el.tagName === 'INPUT' && el.getAttribute('placeholder')) {
             el.placeholder = translation;
         } else {
-            // Preserve child elements; update only textual content
-            let textEl = el.querySelector('.i18n-text');
-            if (textEl) {
-                textEl.textContent = translation;
+            // Preservation of icons if they are inside the element
+            const icon = el.querySelector('.material-symbols-rounded');
+            if (icon) {
+                const iconClone = icon.cloneNode(true);
+                el.innerText = translation;
+                el.prepend(iconClone);
             } else {
-                // Try to find a text node to replace (ignore icon spans)
-                const textNode = Array.from(el.childNodes).find(n => n.nodeType === Node.TEXT_NODE && n.textContent && n.textContent.trim().length > 0);
-                if (textNode) {
-                    textNode.textContent = translation;
-                } else {
-                    // No text node found — append a dedicated span for translation
-                    const span = document.createElement('span');
-                    span.className = 'i18n-text';
-                    span.textContent = translation;
-                    el.appendChild(span);
-                }
+                el.innerText = translation;
             }
         }
     });

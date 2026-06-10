@@ -107,6 +107,7 @@
     "no_wallpaper_set": "No wallpaper set",
     "upload_from_phone": "Upload from Phone",
     "scan_to_upload": "Scan to upload JPG/PNG/WebP",
+    "upload_instructions": "Connect your smartphone to the same Wi-Fi network as this device.",
     "using_sys_default": "Using System Default",
     "active_bg": "Active Background",
     "sys_default": "System Default",

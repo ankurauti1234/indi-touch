@@ -17,6 +17,16 @@ export function openSetting(id) {
         const msg = `openSetting: ${id} @ ${new Date().toISOString()}`;
         console.log(msg);
         if (window && window.__showDevError) window.__showDevError(msg);
+
+        // Additional diagnostics: panel html length and child count to detect empty DOM
+        if (panel) {
+            const htmlLen = panel.innerHTML ? panel.innerHTML.trim().length : 0;
+            const childCount = panel.children ? panel.children.length : 0;
+            const childTags = Array.from(panel.children || []).slice(0,6).map(c => c.tagName).join(', ');
+            const extra = `panel htmlLen=${htmlLen}, children=${childCount}, tags=${childTags}`;
+            console.log('openSetting-diagnostics:', extra);
+            if (window && window.__showDevError) window.__showDevError(extra);
+        }
     } catch (e) {
         console.error('openSetting trace error', e);
     }

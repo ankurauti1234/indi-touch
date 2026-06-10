@@ -30,47 +30,51 @@ export function t(key) {
 }
 
 export function applyTranslations() {
-    // Helper to display errors visibly on the page for debugging
-    function showDevError(msg) {
-        console.error(msg);
-        try {
-            let el = document.getElementById('dev-error-overlay');
-            if (!el) {
-                el = document.createElement('div');
-                el.id = 'dev-error-overlay';
-                el.style.cssText = 'position:fixed;right:12px;top:12px;z-index:9999999;background:rgba(51,0,0,0.95);color:#fff;padding:12px;border-radius:8px;max-width:40vw;font-family:monospace;font-size:13px;white-space:pre-wrap;box-shadow:0 6px 18px rgba(0,0,0,0.6);';
-                document.body.appendChild(el);
-            }
-            el.textContent = typeof msg === 'string' ? msg : (msg.stack || String(msg));
-        } catch(e) { /* ignore overlay errors */ }
-    }
-    // Expose for other modules
-    window.__showDevError = showDevError;
-
     const elements = document.querySelectorAll('[data-i18n]');
-    try {
-        elements.forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            const translation = t(key);
-            
+    elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const translation = t(key);
+
+        try {
             if (el.tagName === 'INPUT' && el.getAttribute('placeholder')) {
                 el.placeholder = translation;
-            } else {
-                // Preservation of icons if they are inside the element
-                const icon = el.querySelector('.material-symbols-rounded');
-                if (icon) {
-                    const iconClone = icon.cloneNode(true);
-                    el.innerText = translation;
-                    el.prepend(iconClone);
-                } else {
-                    el.innerText = translation;
-                }
+                return;
             }
-        });
-    } catch (e) {
-        showDevError('i18n.applyTranslations error:\n' + (e.stack || e.message));
-        console.error('i18n.applyTranslations error', e);
-    }
+
+            // If there's an explicit container for i18n text, use it.
+            const textContainer = el.querySelector('.i18n-text');
+            if (textContainer) {
+                textContainer.textContent = translation;
+                return;
+            }
+
+            // Use a TreeWalker to find the first visible text node child and replace it.
+            const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+                acceptNode: function(node) {
+                    if (!node || !node.nodeValue) return NodeFilter.FILTER_REJECT;
+                    const txt = node.nodeValue.trim();
+                    if (!txt) return NodeFilter.FILTER_REJECT;
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            });
+
+            const firstText = walker.nextNode();
+            if (firstText) {
+                firstText.nodeValue = translation;
+                return;
+            }
+
+            // No text node found — append a dedicated span for translation to preserve structure
+            const span = document.createElement('span');
+            span.className = 'i18n-text';
+            span.textContent = translation;
+            el.appendChild(span);
+
+        } catch (e) {
+            // Fail silently but log — avoid breaking the UI flow
+            console.error('applyTranslations error for key', key, e);
+        }
+    });
 
     // Update specific dynamic elements if needed
     document.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang: currentLang } }));

@@ -21,6 +21,7 @@ export function openSetting(id) {
     if (id === 'system')       loadSystemInfo();
     if (id === 'power')        _initPowerPanel();
     if (id === 'wallpaper')    loadWallpaperSettings();
+    if (id === 'language')     initLanguageSettings();
 }
 
 function _initPowerPanel() {
@@ -31,6 +32,17 @@ function _initPowerPanel() {
         const val = parseInt(c.dataset.min || c.innerText);
         if (val === min) c.classList.add('selected');
         else c.classList.remove('selected');
+    });
+}
+
+function initLanguageSettings() {
+    // Highlight the current language check mark
+    const currentLang = config.language || 'en';
+    ['en', 'hy', 'ru'].forEach(lang => {
+        const check = document.getElementById('lang-check-' + lang);
+        if (check) {
+            check.style.display = (lang === currentLang) ? 'block' : 'none';
+        }
     });
 }
 

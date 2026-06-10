@@ -2359,7 +2359,7 @@ body.osk-open .main-stage {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
 #wp-qr-image {

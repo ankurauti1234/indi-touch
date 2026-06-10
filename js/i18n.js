@@ -30,33 +30,47 @@ export function t(key) {
 }
 
 export function applyTranslations() {
+    // Helper to display errors visibly on the page for debugging
+    function showDevError(msg) {
+        console.error(msg);
+        try {
+            let el = document.getElementById('dev-error-overlay');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'dev-error-overlay';
+                el.style.cssText = 'position:fixed;right:12px;top:12px;z-index:9999999;background:rgba(51,0,0,0.95);color:#fff;padding:12px;border-radius:8px;max-width:40vw;font-family:monospace;font-size:13px;white-space:pre-wrap;box-shadow:0 6px 18px rgba(0,0,0,0.6);';
+                document.body.appendChild(el);
+            }
+            el.textContent = typeof msg === 'string' ? msg : (msg.stack || String(msg));
+        } catch(e) { /* ignore overlay errors */ }
+    }
+    // Expose for other modules
+    window.__showDevError = showDevError;
+
     const elements = document.querySelectorAll('[data-i18n]');
-    elements.forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        const translation = t(key);
-        
-        if (el.tagName === 'INPUT' && el.getAttribute('placeholder')) {
-            el.placeholder = translation;
-        } else {
-            // Preserve child elements; update only textual content
-            let textEl = el.querySelector('.i18n-text');
-            if (textEl) {
-                textEl.textContent = translation;
+    try {
+        elements.forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            const translation = t(key);
+            
+            if (el.tagName === 'INPUT' && el.getAttribute('placeholder')) {
+                el.placeholder = translation;
             } else {
-                // Try to find a text node to replace (ignore icon spans)
-                const textNode = Array.from(el.childNodes).find(n => n.nodeType === Node.TEXT_NODE && n.textContent && n.textContent.trim().length > 0);
-                if (textNode) {
-                    textNode.textContent = translation;
+                // Preservation of icons if they are inside the element
+                const icon = el.querySelector('.material-symbols-rounded');
+                if (icon) {
+                    const iconClone = icon.cloneNode(true);
+                    el.innerText = translation;
+                    el.prepend(iconClone);
                 } else {
-                    // No text node found — append a dedicated span for translation
-                    const span = document.createElement('span');
-                    span.className = 'i18n-text';
-                    span.textContent = translation;
-                    el.appendChild(span);
+                    el.innerText = translation;
                 }
             }
-        }
-    });
+        });
+    } catch (e) {
+        showDevError('i18n.applyTranslations error:\n' + (e.stack || e.message));
+        console.error('i18n.applyTranslations error', e);
+    }
 
     // Update specific dynamic elements if needed
     document.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang: currentLang } }));

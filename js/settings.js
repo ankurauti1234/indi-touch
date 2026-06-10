@@ -6,21 +6,30 @@ import { t } from './i18n.js';
 let currentAvatarStyle = 'local'; // Default
 
 export function openSetting(id) {
-    // FIX: Clear ALL active settings panels before opening a new one to prevent overlap
-    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
-    
-    const panel = document.getElementById('set-' + id);
-    if (panel) panel.classList.add('active');
-    
-    // Trigger specific logic when opening panels
-    if (id === 'connectivity') loadWifiList();
-    if (id === 'members')      loadMemberSettings();
-    if (id === 'location')     loadLocationSettings();
-    if (id === 'display')      initDisplaySettings();
-    if (id === 'sys-info')     loadSystemInfo();
-    if (id === 'system')       loadSystemInfo();
-    if (id === 'power')        _initPowerPanel();
-    if (id === 'wallpaper')    loadWallpaperSettings();
+    try {
+        // FIX: Clear ALL active settings panels before opening a new one to prevent overlap
+        document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+        
+        const panel = document.getElementById('set-' + id);
+        if (panel) panel.classList.add('active');
+        
+        // Trigger specific logic when opening panels
+        if (id === 'connectivity') loadWifiList();
+        if (id === 'members')      loadMemberSettings();
+        if (id === 'location')     loadLocationSettings();
+        if (id === 'display')      initDisplaySettings();
+        if (id === 'sys-info')     loadSystemInfo();
+        if (id === 'system')       loadSystemInfo();
+        if (id === 'power')        _initPowerPanel();
+        if (id === 'wallpaper')    loadWallpaperSettings();
+    } catch (e) {
+        // Surface error visibly for debugging without altering other behavior
+        if (window.__showDevError) window.__showDevError('openSetting error:\n' + (e.stack || e.message));
+        else {
+            try { alert('openSetting error: ' + (e.message || e)); } catch(e){}
+        }
+        console.error('openSetting error', e);
+    }
 }
 
 function _initPowerPanel() {

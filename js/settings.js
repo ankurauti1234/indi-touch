@@ -8,43 +8,24 @@ let currentAvatarStyle = 'local'; // Default
 export function openSetting(id) {
     // FIX: Clear ALL active settings panels before opening a new one to prevent overlap
     document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
-    
+
     const panel = document.getElementById('set-' + id);
     if (panel) panel.classList.add('active');
 
-    // Minimal trace to surface which panel was opened (uses dev overlay if available)
-    try {
-        const msg = `openSetting: ${id} @ ${new Date().toISOString()}`;
-        console.log(msg);
-        if (window && window.__showDevError) window.__showDevError(msg);
-
-        // Additional diagnostics: panel html length and child count to detect empty DOM
-        if (panel) {
-            const htmlLen = panel.innerHTML ? panel.innerHTML.trim().length : 0;
-            const childCount = panel.children ? panel.children.length : 0;
-            const childTags = Array.from(panel.children || []).slice(0,6).map(c => c.tagName).join(', ');
-            const extra = `panel htmlLen=${htmlLen}, children=${childCount}, tags=${childTags}`;
-            console.log('openSetting-diagnostics:', extra);
-            if (window && window.__showDevError) window.__showDevError(extra);
-        }
-    } catch (e) {
-        console.error('openSetting trace error', e);
-    }
-    
     // Trigger specific logic when opening panels
     if (id === 'connectivity') loadWifiList();
-    if (id === 'members')      loadMemberSettings();
-    if (id === 'location')     loadLocationSettings();
-    if (id === 'display')      initDisplaySettings();
-    if (id === 'sys-info')     loadSystemInfo();
-    if (id === 'system')       loadSystemInfo();
-    if (id === 'power')        _initPowerPanel();
-    if (id === 'wallpaper')    loadWallpaperSettings();
+    if (id === 'members') loadMemberSettings();
+    if (id === 'location') loadLocationSettings();
+    if (id === 'display') initDisplaySettings();
+    if (id === 'sys-info') loadSystemInfo();
+    if (id === 'system') loadSystemInfo();
+    if (id === 'power') _initPowerPanel();
+    if (id === 'wallpaper') loadWallpaperSettings();
 }
 
 function _initPowerPanel() {
     // Highlight the current screen timeout chip
-    const ms  = (config && config.screenTimeout) || 300000;
+    const ms = (config && config.screenTimeout) || 300000;
     const min = Math.round(ms / 60000);
     document.querySelectorAll('#set-power .chip').forEach(c => {
         const val = parseInt(c.dataset.min || c.innerText);
@@ -88,7 +69,7 @@ export function toggleTheme() {
     body.classList.toggle('light-mode');
     const isLight = body.classList.contains('light-mode');
     updateSetting('theme', isLight ? 'light' : 'dark');
-    
+
     const switchEl = document.getElementById('theme-switch');
     if (switchEl) {
         if (isLight) switchEl.classList.add('on');
@@ -113,7 +94,7 @@ export function toggleRemoteMode() {
 export function toggleAnimations() {
     const newVal = !config.reduceAnimations;
     updateSetting('reduceAnimations', newVal);
-    
+
     if (newVal) document.body.classList.add('reduce-animations');
     else document.body.classList.remove('reduce-animations');
 
@@ -129,17 +110,17 @@ export function toggleAnimations() {
 export async function selectAvatarStyle(style) {
     currentAvatarStyle = style;
     updateSetting('avatarStyle', style);
-    
+
     // Update UI Selection
     document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
     const selectedOpt = document.getElementById('avat-' + style);
     if (selectedOpt) {
         selectedOpt.classList.add('selected');
     }
-    
+
     // Save to global state used by Grid
-    window.globalAvatarStyle = style; 
-    
+    window.globalAvatarStyle = style;
+
     // Re-render grid to show new avatars
     renderGrid();
 }
@@ -161,13 +142,13 @@ async function loadWifiList() {
     try {
         const cr = await fetch('/api/wifi/current');
         const cd = await cr.json();
-        
+
         const sysR = await fetch('/api/system/status');
         const sysD = await sysR.json();
-        
+
         _currentSsid = cd.connected ? cd.ssid : null;
         _currentInternetOk = sysD.internet !== false; // Default true if property doesn't exist
-        
+
         if (currEl) currEl.innerText = _currentSsid || t('Not connected');
         const statusEl = document.getElementById('curr-net-status');
         if (statusEl) {
@@ -184,7 +165,7 @@ async function loadWifiList() {
                 statusEl.style.color = '';
             }
         }
-    } catch { 
+    } catch {
         if (currEl) currEl.innerText = t('Not connected');
         const statusEl = document.getElementById('curr-net-status');
         if (statusEl) {
@@ -210,7 +191,7 @@ async function loadWifiList() {
             const pwd = net.password || ''; // Assuming API might return password for saved nets
             return `
                 <div class="wifi-item ${isCurr ? 'connected' : ''}" onclick="window._connectToWifi('${net.ssid.replace(/'/g, "\\'")}', ${net.open}, ${net.saved}, '${pwd.replace(/'/g, "\\'")}')">
-                    <span class="material-symbols-rounded" style="color:${isCurr?(_currentInternetOk ? '#64d29a' : '#FFB866'):'inherit'}">
+                    <span class="material-symbols-rounded" style="color:${isCurr ? (_currentInternetOk ? '#64d29a' : '#FFB866') : 'inherit'}">
                         ${net.open ? 'wifi' : 'wifi_lock'}
                     </span>
                     <div style="flex:1">
@@ -227,7 +208,7 @@ async function loadWifiList() {
     }
 }
 
-window.handleWifiClick = function(ssid, open, saved, savedPwd) {
+window.handleWifiClick = function (ssid, open, saved, savedPwd) {
     if (saved && savedPwd) {
         // Auto-reconnect with saved password
         _doConnect(ssid, savedPwd);
@@ -238,7 +219,7 @@ window.handleWifiClick = function(ssid, open, saved, savedPwd) {
     }
 };
 
-window._connectToWifi = function(ssid, open, saved, savedPwd) {
+window._connectToWifi = function (ssid, open, saved, savedPwd) {
     if (ssid === _currentSsid) {
         if (window.showToast) window.showToast(`Already connected to ${ssid}`);
         return;
@@ -264,11 +245,11 @@ window.connectToWifi = _doConnect;
 async function _doConnect(ssid, password) {
     const currEl = document.getElementById('curr-net-name');
     const listEl = document.getElementById('available-wifi-list');
-    
+
     if (currEl) currEl.innerText = 'Connecting to ' + ssid + '...';
     if (listEl) listEl.innerHTML = `<div class="wifi-skeleton">Connecting to <b>${ssid}</b>...</div>`;
     if (window.showToast) window.showToast('Connecting to ' + ssid + '...');
-    
+
     try {
         const r = await fetch('/api/wifi/connect', {
             method: 'POST',
@@ -288,7 +269,7 @@ async function _doConnect(ssid, password) {
             if (window.showToast) window.showToast('Failed: ' + (d.error || 'Unknown error'));
             loadWifiList();
         }
-    } catch(e) {
+    } catch (e) {
         if (currEl) currEl.innerText = _currentSsid || 'Not connected';
         if (window.showToast) window.showToast('Error: ' + e.message);
         loadWifiList();
@@ -339,29 +320,29 @@ function loadLocationSettings() {
     }).join('');
 }
 
-window.selectLocation = async function(city) {
+window.selectLocation = async function (city) {
     const txt = document.getElementById('current-location-text');
-    
+
     if (city === 'auto') {
-        if(txt) txt.innerText = t('detecting') || 'Detecting...';
-        
+        if (txt) txt.innerText = t('detecting') || 'Detecting...';
+
         try {
             // Real Internet Location Detection
             const r = await fetch('https://ipapi.co/json/');
             const d = await r.json();
             const detectedCity = d.city || "Unknown";
-            
+
             updateSetting('location', 'auto');
             updateSetting('autoLocation', detectedCity);
-            if(txt) txt.innerText = "Auto (" + detectedCity + ")";
+            if (txt) txt.innerText = "Auto (" + detectedCity + ")";
         } catch (e) {
             console.warn("Auto-location fetch failed", e);
             updateSetting('location', 'auto');
-            if(txt) txt.innerText = "Auto";
+            if (txt) txt.innerText = "Auto";
         }
     } else {
         updateSetting('location', city);
-        if(txt) txt.innerText = city;
+        if (txt) txt.innerText = city;
     }
 
     // Refresh list to show checkmark
@@ -389,7 +370,7 @@ window.confirmPower = function (action) {
                 let seconds = 3;
                 const overlay = document.createElement('div');
                 overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(10px);z-index:999999999;display:flex;align-items:center;justify-content:center;color:#fff;font-family:inherit";
-                
+
                 const updateOverlay = () => {
                     const progress = (seconds / 3) * 283; // 2*PI*45 approx 283
                     overlay.innerHTML = `
@@ -434,18 +415,18 @@ window.confirmPower = function (action) {
     ]);
 };
 
-window.selectTimeout = function(minutes, el) {
+window.selectTimeout = function (minutes, el) {
     const parent = el.parentElement;
     if (parent) parent.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
     const ms = minutes * 60 * 1000;
-    
+
     updateSetting('screenTimeout', ms);
-    
+
     if (window.setScreensaverTimeout) window.setScreensaverTimeout(ms);
 };
 
-window.selectBrightness = function(level, el) {
+window.selectBrightness = function (level, el) {
     const parent = el.parentElement;
     if (parent) parent.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
@@ -485,11 +466,11 @@ function loadMemberSettings() {
     `).join('');
 }
 
-window.updateMemberName = async function(index, newName) {
+window.updateMemberName = async function (index, newName) {
     if (memberData[index]) {
         memberData[index].name = newName;
         renderGrid();
-        
+
         try {
             await fetch('/api/members/rename', {
                 method: 'POST',
@@ -572,14 +553,14 @@ export async function loadSystemInfo() {
                 </div>
             </div>
         `;
-    } catch(e) {
+    } catch (e) {
         const el = document.getElementById('sys-info-content');
         if (el) el.innerHTML = '<div class="wifi-skeleton">Could not load system info.</div>';
     }
 }
 
 // ── Global exports for HTML onclick handlers ──────────────────────────────────
-window.loadWifiList   = () => loadWifiList();
+window.loadWifiList = () => loadWifiList();
 window.loadSystemInfo = () => loadSystemInfo();
 window.refreshConnectivityUI = () => {
     const main = document.getElementById('set-connectivity');
@@ -637,7 +618,7 @@ async function loadWallpaperSettings() {
     }
 }
 
-window.resetWallpaper = async function() {
+window.resetWallpaper = async function () {
     try {
         const r = await fetch('/api/wallpaper/reset', { method: 'POST' });
         const d = await r.json();

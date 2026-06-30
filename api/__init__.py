@@ -20,6 +20,7 @@ def create_app() -> Flask:
     from .system     import system_bp
     from .notifications import notifications_bp
     from .wallpaper    import wallpaper_bp
+    from .groups       import groups_bp
 
     app.register_blueprint(wifi_bp,       url_prefix="/api/wifi")
     app.register_blueprint(members_bp,    url_prefix="/api/members")
@@ -28,6 +29,7 @@ def create_app() -> Flask:
     app.register_blueprint(system_bp,     url_prefix="/api/system")
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(wallpaper_bp,  url_prefix="/api/wallpaper")
+    app.register_blueprint(groups_bp,     url_prefix="/api/groups")
 
     # ── Serve frontend ─────────────────────────────────────────────────────────
     @app.route("/")

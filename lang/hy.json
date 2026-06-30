@@ -135,5 +135,11 @@
     "Local IP Address": "Տեղական IP Հասցե",
     "MAC Address": "MAC Հասցե",
     "Software Version": "Ծրագրային Ապահովման Տարբերակ",
-    "Active": "Ակտիվ"
+    "Active": "Ակտիվ",
+    "groups": "Խմբեր",
+    "create_group": "Ստեղծել խումբ",
+    "edit_group": "Խմբագրել խումբը",
+    "delete_group": "Ջնջել խումբը",
+    "group_name": "Խմբի անվանումը",
+    "select_members": "Ընտրել անդամներին"
 }

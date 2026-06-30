@@ -2396,3 +2396,217 @@ body.osk-open .main-stage {
     overflow-y: auto;
     padding-bottom: 40px;
 }
+
+/* --- Member Groups Styling --- */
+.group-card {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+    height: calc((100% - (var(--gap) * (var(--rows) - 1))) / var(--rows));
+    flex-basis: calc((100% - (var(--gap) * (var(--cols) - 1))) / var(--cols));
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+}
+
+.group-card:not(.inactive) {
+    box-shadow: 0 4px 12px rgba(100, 210, 154, 0.25);
+    border: 4px solid #64d29a;
+    background: rgba(100, 210, 154, 0.05);
+}
+
+.group-card.inactive {
+    filter: grayscale(80%) brightness(0.85);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    opacity: 0.7;
+}
+
+.group-card.local-avatar:not(.inactive) {
+    background: #64d29a !important;
+}
+
+.group-card.local-avatar.inactive {
+    background: #4a4a4a !important;
+    filter: grayscale(80%) brightness(0.8) !important;
+}
+
+.group-edit-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.group-edit-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.05);
+}
+
+.group-edit-btn span {
+    font-size: 18px;
+}
+
+.group-avatars-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding-bottom: 40px;
+    box-sizing: border-box;
+}
+
+.group-avatar-stacked {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid var(--bg-card);
+    object-fit: cover;
+    margin-left: -15px;
+    transition: transform 0.2s, border-color 0.3s;
+    background: #333;
+}
+
+.group-avatar-stacked:first-child {
+    margin-left: 0;
+}
+
+.group-card:not(.inactive) .group-avatar-stacked {
+    border-color: rgba(100, 210, 154, 0.2);
+}
+
+.group-card.local-avatar:not(.inactive) .group-avatar-stacked {
+    border-color: #64d29a;
+}
+
+.group-avatar-more {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid var(--bg-card);
+    background: #444;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    margin-left: -15px;
+    z-index: 1;
+}
+
+.group-card:not(.inactive) .group-avatar-more {
+    border-color: rgba(100, 210, 154, 0.2);
+    background: #2e7d32;
+}
+
+.group-card.create-card {
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.02);
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.group-card.create-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.group-card.create-card span {
+    font-size: 40px;
+}
+
+.group-card.create-card .create-label {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+#group-members-list {
+    max-height: 250px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding-right: 4px;
+}
+
+#group-members-list::-webkit-scrollbar {
+    width: 6px;
+}
+#group-members-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+#group-members-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.group-member-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    border: 1px solid transparent;
+}
+
+.group-member-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.group-member-item.selected {
+    background: rgba(100, 210, 154, 0.1);
+    border-color: rgba(100, 210, 154, 0.3);
+}
+
+.group-member-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    background: #333;
+}
+
+.group-member-name {
+    flex-grow: 1;
+    font-size: 1rem;
+    font-weight: 500;
+    color: white;
+}
+
+.group-member-item .check-icon {
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.4);
+    user-select: none;
+}
+
+.group-member-item.selected .check-icon {
+    color: #64d29a;
+}

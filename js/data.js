@@ -103,6 +103,7 @@ export function updateMemberData(newList) {
     memberData.push(...newList);
     if (window.renderGrid) window.renderGrid();
     if (window.renderScreensaverMembers) window.renderScreensaverMembers();
+    if (window.renderGroupsGrid) window.renderGroupsGrid();
 }
 window.updateMemberData = updateMemberData;
 window.loadMembers = loadMembers;

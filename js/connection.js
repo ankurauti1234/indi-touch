@@ -267,6 +267,7 @@ async function _pollStatus() {
                     console.log("Data reloaded after TV status change.");
                     if (window.renderGrid) window.renderGrid();
                     if (window.renderGuestList) window.renderGuestList();
+                    if (window.renderGroupsGrid) window.renderGroupsGrid();
                 });
 
                 // Reset idle timer to wake up or restart screensaver

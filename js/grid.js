@@ -94,6 +94,9 @@ window.updateTvUI = function(tvOn) {
     if (overlay) {
         overlay.style.display = tvOn ? 'none' : 'flex';
     }
+    if (window.updateTvUI_groups) {
+        window.updateTvUI_groups(tvOn);
+    }
     // If TV is off, clear focus to prevent accidental toggles
     if (!tvOn) clearGridFocus();
 }

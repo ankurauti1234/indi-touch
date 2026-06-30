@@ -6,6 +6,7 @@ export function navTo(viewId) {
     
     let btnId = '';
     if(viewId === 'home') btnId = 'btn-home';
+    else if(viewId === 'groups') btnId = 'btn-groups';
     else if(viewId === 'notifications') btnId = 'btn-notif';
     else if(viewId === 'settings') btnId = 'btn-settings';
     else if(viewId === 'guest-add') btnId = 'btn-guest';

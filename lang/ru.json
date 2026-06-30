@@ -135,5 +135,11 @@
     "Local IP Address": "Локальный IP",
     "MAC Address": "MAC-адрес",
     "Software Version": "Версия ПО",
-    "Active": "Активно"
+    "Active": "Активно",
+    "groups": "Группы",
+    "create_group": "Создать группу",
+    "edit_group": "Редактировать группу",
+    "delete_group": "Удалить группу",
+    "group_name": "Имя группы",
+    "select_members": "Выберите участников"
 }

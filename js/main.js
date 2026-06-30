@@ -11,6 +11,7 @@ import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
+import { loadGroups, renderGroupsGrid } from './groups.js';
 
 
 // Expose functions globally for HTML inline event handlers
@@ -108,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await checkOnboardingStatus();
     initOSK();
     renderGrid();
+    await loadGroups();
     renderGuestList();
     initLocation();
     renderNotifications();
@@ -127,6 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyTranslations();
             updateLanguageUI(lang);
             renderGrid(); // Refresh grid for active status texts if any
+            renderGroupsGrid(); // Refresh groups grid
             renderNotifications(); // Refresh notifications
         }
     };

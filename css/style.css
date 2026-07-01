@@ -2398,6 +2398,32 @@ body.osk-open .main-stage {
 }
 
 /* --- Member Groups Styling --- */
+#groups-grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    width: 100%;
+}
+
+.groups-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+    padding-bottom: 40px;
+}
+
+.groups-scroll-area::-webkit-scrollbar {
+    width: 6px;
+}
+.groups-scroll-area::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+.groups-scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
 .group-card {
     background-color: var(--bg-card);
     border-radius: var(--radius-card);
@@ -2407,13 +2433,10 @@ body.osk-open .main-stage {
     transition: all 0.3s ease;
     cursor: pointer;
     border: 2px solid transparent;
-    height: calc((100% - (var(--gap) * (var(--rows) - 1))) / var(--rows));
-    flex-basis: calc((100% - (var(--gap) * (var(--cols) - 1))) / var(--cols));
-    flex-grow: 1;
+    height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 140px;
 }
 
 .group-card:not(.inactive) {
@@ -2609,4 +2632,84 @@ body.osk-open .main-stage {
 
 .group-member-item.selected .check-icon {
     color: #64d29a;
+}
+
+/* Suggestion Banner Styling */
+.suggestion-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(100, 210, 154, 0.08);
+    border: 1px solid rgba(100, 210, 154, 0.25);
+    padding: 16px 24px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    gap: 16px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.suggestion-icon-text {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.suggestion-icon {
+    font-size: 32px;
+    color: #64d29a;
+    background: rgba(100, 210, 154, 0.15);
+    padding: 8px;
+    border-radius: 12px;
+}
+
+.suggestion-info-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.suggestion-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.suggestion-desc {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.suggestion-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #64d29a;
+    color: #0b1f13;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    white-space: nowrap;
+}
+
+.suggestion-action-btn:hover {
+    background: #54b885;
+}
+
+.suggestion-action-btn:active {
+    transform: scale(0.96);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

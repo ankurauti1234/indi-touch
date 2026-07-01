@@ -40,13 +40,6 @@ export function renderGroupsGrid() {
                 return;
             }
             
-            // Check if create card was clicked
-            const createCard = e.target.closest('.group-card.create-card');
-            if (createCard) {
-                openCreateGroupModal();
-                return;
-            }
-
             // Check if normal group card was clicked
             const card = e.target.closest('.group-card');
             if (card) {
@@ -60,15 +53,21 @@ export function renderGroupsGrid() {
     const count = groupsData.length;
     const style = config.avatarStyle || 'local';
 
-    // Same grid size calculation as members grid, but we include 1 extra slot for the "+" card
-    const totalSlots = count + 1;
-    let rows = 1;
-    if (totalSlots > 3) rows = 2;
-    if (totalSlots > 8) rows = 3;
-    const cols = Math.ceil(totalSlots / rows);
-
-    container.style.setProperty('--cols', cols);
-    container.style.setProperty('--rows', rows);
+    if (count === 0) {
+        container.innerHTML = `
+            <div class="empty-state-container" style="grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; color: rgba(255,255,255,0.4); text-align: center; gap: 16px; width: 100%;">
+                <span class="material-symbols-rounded" style="font-size: 64px; color: rgba(255,255,255,0.2);">group</span>
+                <p style="font-size: 1.1rem; font-weight: 500; margin: 0;">No groups created yet</p>
+                <button class="action-btn-small" onclick="openCreateGroupModal()" style="margin-top: 8px;">
+                    <span class="material-symbols-rounded">group_add</span>
+                    <span data-i18n="create_group">Create Group</span>
+                </button>
+            </div>
+        `;
+        applyTranslations();
+        checkActiveMembersGroupSuggestion();
+        return;
+    }
 
     const avatarStyleClass = style === 'local' ? 'local-avatar' : '';
 
@@ -104,17 +103,63 @@ export function renderGroupsGrid() {
         </div>`;
     }).join('');
 
-    // Append the special dashed "+" create group card at the end
-    html += `
-    <div class="group-card create-card">
-        <span class="material-symbols-rounded">group_add</span>
-        <div class="create-label" data-i18n="create_group">Create Group</div>
-    </div>`;
-
     container.innerHTML = html;
 
-    // Apply translations to the newly generated "+" card and other static text
+    // Apply translations and check for active members suggestion
     applyTranslations();
+    checkActiveMembersGroupSuggestion();
+}
+
+export function checkActiveMembersGroupSuggestion() {
+    const container = document.getElementById('group-suggestion-container');
+    if (!container) return;
+
+    const activeMembers = memberData.filter(m => m.active);
+
+    if (activeMembers.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const activeCodes = activeMembers.map(m => m.member_code).sort();
+    
+    // Check if a group already matches this exact set of member codes
+    const hasMatchingGroup = groupsData.some(g => {
+        const gCodes = (g.member_codes || []).slice().sort();
+        if (gCodes.length !== activeCodes.length) return false;
+        return gCodes.every((code, idx) => code === activeCodes[idx]);
+    });
+
+    if (hasMatchingGroup) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // No group matches these active members. Display suggestion banner!
+    const namesText = activeMembers.map(m => m.name).join(', ');
+    
+    container.innerHTML = `
+        <div class="suggestion-banner">
+            <div class="suggestion-icon-text">
+                <span class="material-symbols-rounded suggestion-icon">lightbulb</span>
+                <div class="suggestion-info-text">
+                    <span class="suggestion-title">Save Active Selection as Group?</span>
+                    <span class="suggestion-desc">Save active selection (${namesText}) as a predefined group.</span>
+                </div>
+            </div>
+            <button class="suggestion-action-btn" id="btn-create-active-group">
+                <span class="material-symbols-rounded">group_add</span>
+                <span>Create Group</span>
+            </button>
+        </div>
+    `;
+
+    const btn = document.getElementById('btn-create-active-group');
+    if (btn) {
+        btn.onclick = () => {
+            openCreateGroupModalWithMembers(activeCodes);
+        };
+    }
 }
 
 export async function toggleGroup(groupId) {
@@ -145,6 +190,10 @@ export async function toggleGroup(groupId) {
 
 // Modal management
 export async function openCreateGroupModal() {
+    await openCreateGroupModalWithMembers([]);
+}
+
+export async function openCreateGroupModalWithMembers(preselectedCodes = []) {
     editingGroupId = null;
     
     const titleEl = document.getElementById('group-modal-title');
@@ -155,7 +204,7 @@ export async function openCreateGroupModal() {
     if (nameInput) nameInput.value = '';
     if (deleteBtn) deleteBtn.style.display = 'none';
 
-    await renderMembersSelectionList([]);
+    await renderMembersSelectionList(preselectedCodes);
     
     const overlay = document.getElementById('group-modal-overlay');
     if (overlay) {
@@ -287,6 +336,8 @@ export async function deleteGroup() {
 
 // Window/global exposed triggers
 window.renderGroupsGrid = renderGroupsGrid;
+window.openCreateGroupModal = openCreateGroupModal;
+window.openCreateGroupModalWithMembers = openCreateGroupModalWithMembers;
 window.closeGroupModal = closeGroupModal;
 window.submitGroup = submitGroup;
 window.deleteGroup = deleteGroup;

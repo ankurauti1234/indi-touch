@@ -252,7 +252,20 @@
       </section>
 
       <section id="view-groups" class="view">
-        <div id="groups-grid-container"></div>
+        <div class="page-header">
+          <h2 class="page-title" data-i18n="groups">Groups</h2>
+          <button class="action-btn-small" onclick="openCreateGroupModal()">
+            <span class="material-symbols-rounded">group_add</span>
+            <span data-i18n="create_group">Create Group</span>
+          </button>
+        </div>
+
+        <div id="group-suggestion-container"></div>
+
+        <div class="groups-scroll-area">
+          <div id="groups-grid-container"></div>
+        </div>
+
         <div id="tv-off-overlay-groups" class="grid-lock-overlay tv-only" style="display: none;">
           <div class="lock-content">
             <span class="material-symbols-rounded lock-icon">tv_off</span>

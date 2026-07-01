@@ -125,16 +125,10 @@ export async function toggleGroup(groupId) {
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
     // --- 1. VISUALLY UPDATE THE GROUP CARDS ---
-    // Update the local data so it remembers this group is active
     groupsData.forEach(g => {
-        if (g.id === groupId) {
-            g.active = true;  // Turn clicked group ON
-        } else {
-            g.active = false; // Turn others OFF
-        }
+        g.active = (g.id === groupId); // Only the clicked group becomes true, others false
     });
 
-    // Instantly update the CSS so the card lights up immediately
     const allCards = document.querySelectorAll('.group-card:not(.create-card)');
     allCards.forEach(card => {
         const cardId = parseInt(card.dataset.groupId);
@@ -147,44 +141,49 @@ export async function toggleGroup(groupId) {
         }
     });
 
-    // --- 2. SAFELY ACTIVATE THE MEMBERS ---
+    // --- 2. LOGICAL MATCHING & SYNCING ---
     const group = groupsData.find(g => g.id === groupId);
     if (!group) return;
 
+    // Create a quick list of all member codes that belong to this group
+    const groupMemberCodes = group.members.map(m => m.member_code);
+
     try {
-        for (const groupMember of group.members) {
-            // Find this specific member in the main data
-            const globalIndex = memberData.findIndex(m => m.member_code === groupMember.member_code);
+        // Loop through the entire global member list
+        for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
+            const actualMember = memberData[globalIndex];
+            const isMemberInGroup = groupMemberCodes.includes(actualMember.member_code);
 
-            if (globalIndex !== -1) {
-                const actualMember = memberData[globalIndex];
-
-                // ONLY activate if they are currently OFF. 
-                // This guarantees we never accidentally deactivate someone!
-                if (!actualMember.active) {
-
-                    actualMember.active = true; // Update local state for speed
-
-                    // Tell backend to flip them ON
-                    await fetch('/api/members/toggle', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ index: globalIndex })
-                    });
-                }
+            if (isMemberInGroup && !actualMember.active) {
+                // Condition A: Should be ON, but is currently OFF -> Turn ON
+                actualMember.active = true;
+                await fetch('/api/members/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index: globalIndex })
+                });
+            } else if (!isMemberInGroup && actualMember.active) {
+                // Condition B: Should be OFF, but is currently ON -> Turn OFF
+                actualMember.active = false;
+                await fetch('/api/members/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index: globalIndex })
+                });
             }
         }
 
         // --- 3. REFRESH MAIN GRID VISUALS ---
         if (window.renderGrid) window.renderGrid();
 
-        // Fetch final safe state from server
+        // Final truth sync from the database
         await loadMembers();
 
     } catch (e) {
-        console.error("Group member activation failed:", e);
+        console.error("Group exclusive alignment failed:", e);
     }
 }
+
 // Modal management
 export async function openCreateGroupModal() {
     editingGroupId = null;

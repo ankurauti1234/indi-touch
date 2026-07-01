@@ -3,6 +3,7 @@
 import { config, memberData, tvState, loadMembers, getAvatarUrl } from './data.js';
 import { t, applyTranslations } from './i18n.js';
 import { timers } from './utils.js';
+import { renderGrid } from './grid.js';
 
 export let groupsData = [];
 let toggleDebounceTimer = null;
@@ -119,14 +120,19 @@ export function renderGroupsGrid() {
 
 export async function toggleGroup(groupId) {
     if (!tvState.on) return;
-    if (toggleDebounceTimer) return;
-    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
-    groupsData.forEach(g => {
-        g.active = (g.id === groupId) ? !g.active : false;
+    // Instant UI update for group cards
+    const allCards = document.querySelectorAll('.group-card:not(.create-card)');
+    allCards.forEach(card => {
+        card.classList.add('inactive');
+        card.classList.remove('active');
     });
 
-    renderGroupsGrid();
+    const clickedCard = document.querySelector(`.group-card[data-group-id="${groupId}"]`);
+    if (clickedCard) {
+        clickedCard.classList.remove('inactive');
+        clickedCard.classList.add('active');
+    }
 
     try {
         await fetch('/api/groups/toggle', {
@@ -134,9 +140,14 @@ export async function toggleGroup(groupId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: groupId })
         });
+
+        // Fetch new state
         await loadMembers();
+
+        // SYNC MAIN PAGE CARDS
+        renderGrid();
     } catch (e) {
-        console.error("Sync failed:", e);
+        console.error("API Sync failed:", e);
     }
 }
 

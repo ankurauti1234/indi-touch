@@ -2408,7 +2408,7 @@ body.osk-open .main-stage {
     cursor: pointer;
     border: 2px solid transparent;
     height: 160px;
-    flex-basis: calc((100% - (var(--gap) * (var(--cols) - 1))) / var(--cols));
+    flex-basis: calc((100% - (var(--gap, 16px) * 2)) / 3);
     flex-grow: 1;
     display: flex;
     align-items: center;

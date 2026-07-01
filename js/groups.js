@@ -39,7 +39,7 @@ export function renderGroupsGrid() {
                 }
                 return;
             }
-            
+
             // Check if create card was clicked
             const createCard = e.target.closest('.group-card.create-card');
             if (createCard) {
@@ -75,7 +75,7 @@ export function renderGroupsGrid() {
     // Build the grid HTML
     let html = groupsData.map((g) => {
         const activeClass = g.active ? 'active' : 'inactive';
-        
+
         // Render stacked avatars
         const maxAvatars = 4;
         const displayMembers = g.members.slice(0, maxAvatars);
@@ -126,16 +126,29 @@ export async function toggleGroup(groupId) {
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
     try {
+        // 1. Find any groups that are CURRENTLY active, EXCLUDING the one you just clicked
+        const activeGroups = groupsData.filter(g => g.active && g.id !== groupId);
+
+        // 2. Loop through and turn off the active ones to enforce "one at a time"
+        for (const group of activeGroups) {
+            await fetch('/api/groups/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: group.id })
+            });
+        }
+
+        // 3. Now toggle the group the user actually clicked
         const r = await fetch('/api/groups/toggle', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: groupId })
         });
         const res = await r.json();
+
         if (res.success) {
-            // 1. Reload members (this updates members grid & screensaver)
+            // 4. Reload data to reflect the changes visually
             await loadMembers();
-            // 2. Reload and render groups grid
             await loadGroups();
         }
     } catch (e) {
@@ -146,17 +159,17 @@ export async function toggleGroup(groupId) {
 // Modal management
 export async function openCreateGroupModal() {
     editingGroupId = null;
-    
+
     const titleEl = document.getElementById('group-modal-title');
     const nameInput = document.getElementById('group-name-input');
     const deleteBtn = document.getElementById('btn-group-delete');
-    
+
     if (titleEl) titleEl.setAttribute('data-i18n', 'create_group');
     if (nameInput) nameInput.value = '';
     if (deleteBtn) deleteBtn.style.display = 'none';
 
     await renderMembersSelectionList([]);
-    
+
     const overlay = document.getElementById('group-modal-overlay');
     if (overlay) {
         overlay.classList.add('active');
@@ -172,13 +185,13 @@ export async function openEditGroupModal(groupId) {
     const titleEl = document.getElementById('group-modal-title');
     const nameInput = document.getElementById('group-name-input');
     const deleteBtn = document.getElementById('btn-group-delete');
-    
+
     if (titleEl) titleEl.setAttribute('data-i18n', 'edit_group');
     if (nameInput) nameInput.value = group.name;
     if (deleteBtn) deleteBtn.style.display = 'block';
 
     await renderMembersSelectionList(group.member_codes || []);
-    
+
     const overlay = document.getElementById('group-modal-overlay');
     if (overlay) {
         overlay.classList.add('active');
@@ -199,20 +212,20 @@ async function renderMembersSelectionList(selectedCodes = []) {
     listContainer.innerHTML = '';
 
     const allMembers = memberData.length > 0 ? memberData : await loadMembers();
-    
+
     allMembers.forEach(member => {
         const isSelected = selectedCodes.includes(member.member_code);
         const item = document.createElement('div');
         item.className = `group-member-item ${isSelected ? 'selected' : ''}`;
         item.dataset.code = member.member_code;
-        
+
         const avatarUrl = getAvatarUrl(member);
         item.innerHTML = `
             <img src="${avatarUrl}" class="group-member-avatar" onerror="this.src='/img/avatars/default.png'" />
             <span class="group-member-name">${member.name}</span>
             <span class="material-symbols-rounded check-icon">${isSelected ? 'check_box' : 'check_box_outline_blank'}</span>
         `;
-        
+
         item.onclick = () => {
             const nowSelected = item.classList.toggle('selected');
             const icon = item.querySelector('.check-icon');
@@ -220,7 +233,7 @@ async function renderMembersSelectionList(selectedCodes = []) {
                 icon.textContent = nowSelected ? 'check_box' : 'check_box_outline_blank';
             }
         };
-        
+
         listContainer.appendChild(item);
     });
 }
@@ -263,7 +276,7 @@ export async function submitGroup() {
 
 export async function deleteGroup() {
     if (!editingGroupId) return;
-    
+
     if (!confirm("Are you sure you want to delete this group?")) {
         return;
     }
@@ -291,7 +304,7 @@ window.closeGroupModal = closeGroupModal;
 window.submitGroup = submitGroup;
 window.deleteGroup = deleteGroup;
 
-window.updateTvUI_groups = function(tvOn) {
+window.updateTvUI_groups = function (tvOn) {
     const overlay = document.getElementById('tv-off-overlay-groups');
     if (overlay) {
         overlay.style.display = tvOn ? 'none' : 'flex';

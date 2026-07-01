@@ -21,4 +21,9 @@ export function navTo(viewId) {
     // 3. Show correct view
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + viewId).classList.add('active');
+
+    // 4. Update dynamic components when navigating to groups
+    if (viewId === 'groups' && window.checkActiveMembersGroupSuggestion) {
+        window.checkActiveMembersGroupSuggestion();
+    }
 }

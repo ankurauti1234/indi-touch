@@ -114,7 +114,7 @@ export function checkActiveMembersGroupSuggestion() {
     const container = document.getElementById('group-suggestion-container');
     if (!container) return;
 
-    const activeMembers = memberData.filter(m => m.active);
+    const activeMembers = memberData.filter(m => m.active === true || m.active === 1 || m.active === 'true' || m.active === '1');
 
     if (activeMembers.length === 0) {
         container.innerHTML = '';
@@ -341,6 +341,7 @@ window.openCreateGroupModalWithMembers = openCreateGroupModalWithMembers;
 window.closeGroupModal = closeGroupModal;
 window.submitGroup = submitGroup;
 window.deleteGroup = deleteGroup;
+window.checkActiveMembersGroupSuggestion = checkActiveMembersGroupSuggestion;
 
 window.updateTvUI_groups = function(tvOn) {
     const overlay = document.getElementById('tv-off-overlay-groups');

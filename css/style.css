@@ -1,16 +1,32 @@
-/* Nuke the scrollbars completely for the whole app */
+/* --- Fix 1: Scrollbar Nuke --- */
 ::-webkit-scrollbar {
     width: 0px !important;
     height: 0px !important;
     display: none !important;
 }
 
-::-webkit-scrollbar-track {
-    background: transparent !important;
+/* --- Fix 2: Body/HTML Locking --- */
+html,
+body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+    background-color: #121212;
+    /* Match your app's main dark theme color */
 }
 
-::-webkit-scrollbar-thumb {
-    background: transparent !important;
+/* --- Fix 3: GPU Acceleration --- */
+/* Add this for the containers that hold your different page/section views */
+#view-home,
+#view-settings,
+#view-groups,
+.view {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: opacity, transform;
 }
 
 @font-face {
@@ -428,22 +444,39 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    /* Changed from 100% to 100vw to lock to viewport */
+    height: 100vh;
+    /* Changed from 100% to 100vh to lock to viewport */
     display: flex;
     flex-direction: column;
     opacity: 0;
     pointer-events: none;
+
+    /* Optimized Transition */
     transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0, 0, 1);
     transform: translateY(20px);
     padding: 24px 24px 0 24px;
+
+    /* --- THE FIXES --- */
+    box-sizing: border-box;
+    /* Ensures padding doesn't push width over 100% */
+    backface-visibility: hidden;
+    will-change: opacity, transform;
+    overflow: hidden;
+    /* Stops internal content from causing layout shifts */
 }
 
 .view.active {
     opacity: 1;
-    pointer-events: all;
+    pointer-events: auto;
+    /* 'auto' is the standard; 'all' is okay but 'auto' is safer */
     transform: translateY(0);
     z-index: 10;
+
+    /* Force GPU state */
+    backface-visibility: hidden;
+    will-change: opacity, transform;
 }
 
 /* GRID */

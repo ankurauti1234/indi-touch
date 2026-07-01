@@ -1,3 +1,18 @@
+/* Nuke the scrollbars completely for the whole app */
+::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    display: none !important;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background: transparent !important;
+}
+
 @font-face {
     font-family: 'Google Sans';
     src: url('../fonts/GoogleSans-Regular.ttf') format('truetype');

@@ -198,7 +198,27 @@ def toggle_member_in_db(index: int) -> tuple:
     if not (0 <= index < len(members)):
         raise IndexError("Member index out of range")
 
-    members[index]["active"] = not members[index].get("active", False)
+    current_active = members[index].get("active", False)
+    target_active = not current_active
+
+    if target_active:
+        # Check if any group was active prior to this toggle
+        groups = load_groups_data()
+        if any(g.get("active", False) for g in groups):
+            # Deactivate all other members
+            for i, m in enumerate(members):
+                if i != index:
+                    members[i]["active"] = False
+            # Deactivate (delete) all guests
+            hhid = load_hhid()
+            with get_conn() as conn:
+                conn.execute(
+                    "DELETE FROM guests WHERE meter_id = ? AND hhid = ?",
+                    (METER_ID, hhid)
+                )
+                conn.commit()
+
+    members[index]["active"] = target_active
 
     save_members_data(data)
 
@@ -511,6 +531,17 @@ def toggle_group_in_db(group_id: int) -> bool:
     
     # Update active states of members in database
     with get_conn() as conn:
+        if target_state:
+            # Activating the group: first deactivate all members
+            conn.execute(
+                "UPDATE members SET active = 0 WHERE meter_id = ? AND hhid = ?",
+                (METER_ID, load_hhid())
+            )
+            # Deactivate (delete) all guests
+            conn.execute(
+                "DELETE FROM guests WHERE meter_id = ? AND hhid = ?",
+                (METER_ID, load_hhid())
+            )
         for code in member_codes:
             conn.execute(
                 "UPDATE members SET active = ? WHERE member_code = ? AND meter_id = ? AND hhid = ?",

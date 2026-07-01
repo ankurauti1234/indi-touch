@@ -178,10 +178,12 @@ export async function toggleGroup(groupId) {
         });
         const res = await r.json();
         if (res.success) {
-            // 1. Reload members (this updates members grid & screensaver)
-            await loadMembers();
+            // 1. Reload members and guests
+            const { loadGuests } = await import('./data.js');
+            await Promise.all([loadMembers(), loadGuests()]);
             // 2. Reload and render groups grid
             await loadGroups();
+            if (window.renderGuestList) window.renderGuestList();
         }
     } catch (e) {
         console.error("Toggle group failed:", e);

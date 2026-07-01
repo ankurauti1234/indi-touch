@@ -179,11 +179,12 @@ export async function toggleMember(index) {
             });
             const res = await r.json();
             if (res.success) {
-                // Update local state and redraw
-                memberData[index].active = res.active;
+                // Since toggling a member might deactivate other members (if a group was active)
+                // or guests, reload all data to ensure local state aligns with DB.
+                const dataModule = await import('./data.js');
+                await Promise.all([loadMembers(), dataModule.loadGuests()]);
                 renderGrid();
-                
-                // Also update saver if active (using the shared global function if available)
+                if (window.renderGuestList) window.renderGuestList();
                 if (window.renderScreensaverMembers) window.renderScreensaverMembers();
             }
         } catch (e) {

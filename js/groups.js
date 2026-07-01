@@ -3,7 +3,6 @@
 import { config, memberData, tvState, loadMembers, getAvatarUrl } from './data.js';
 import { t, applyTranslations } from './i18n.js';
 import { timers } from './utils.js';
-import { renderGrid } from './grid.js';
 
 export let groupsData = [];
 let toggleDebounceTimer = null;
@@ -177,7 +176,7 @@ export async function toggleGroup(groupId) {
         }
 
         // --- 3. REFRESH MAIN GRID VISUALS ---
-        renderGrid();
+        if (window.renderGrid) window.renderGrid();
 
         // Fetch final safe state from server
         await loadMembers();

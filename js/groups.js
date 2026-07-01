@@ -118,41 +118,39 @@ export function renderGroupsGrid() {
 }
 
 export async function toggleGroup(groupId) {
-    if (!tvState.on) {
-        console.warn("Toggle group ignored: TV is OFF");
-        return;
+    if (!tvState.on) return;
+
+    // --- 1. INSTANT VISUAL UPDATE (The Simple Fix) ---
+    // Grab every group card on the page (except the create button)
+    const allCards = document.querySelectorAll('.group-card:not(.create-card)');
+
+    // Force EVERY card to be inactive
+    allCards.forEach(card => {
+        card.classList.add('inactive');
+        card.classList.remove('active');
+    });
+
+    // Find the exact card you just clicked and make ONLY that one active
+    const clickedCard = document.querySelector(`.group-card[data-group-id="${groupId}"]`);
+    if (clickedCard) {
+        clickedCard.classList.remove('inactive');
+        clickedCard.classList.add('active');
     }
-    if (toggleDebounceTimer) return;
-    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
+    // --- 2. BACKGROUND SERVER SYNC ---
+    // Now tell the server what you clicked, quietly in the background.
     try {
-        // 1. Find any groups that are CURRENTLY active, EXCLUDING the one you just clicked
-        const activeGroups = groupsData.filter(g => g.active && g.id !== groupId);
-
-        // 2. Loop through and turn off the active ones to enforce "one at a time"
-        for (const group of activeGroups) {
-            await fetch('/api/groups/toggle', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: group.id })
-            });
-        }
-
-        // 3. Now toggle the group the user actually clicked
-        const r = await fetch('/api/groups/toggle', {
+        await fetch('/api/groups/toggle', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: groupId })
         });
-        const res = await r.json();
 
-        if (res.success) {
-            // 4. Reload data to reflect the changes visually
-            await loadMembers();
-            await loadGroups();
-        }
+        // Update the members based on the new group.
+        // Notice we REMOVED await loadGroups() here so the grid doesn't redraw and mess up our clean CSS state!
+        await loadMembers();
     } catch (e) {
-        console.error("Toggle group failed:", e);
+        console.error("API Sync failed:", e);
     }
 }
 

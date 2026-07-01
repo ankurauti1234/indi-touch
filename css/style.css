@@ -1,4 +1,32 @@
+/* --- Fix 1: Scrollbar Nuke --- */
+::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    display: none !important;
+}
 
+/* --- Fix 2: Updated Body/HTML Locking --- */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+    background-color: #121212;
+}
+
+/* --- Fix 3: GPU Acceleration --- */
+/* Add this for the containers that hold your different page/section views */
+#view-home,
+#view-settings,
+#view-groups,
+.view {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: opacity, transform;
+}
 
 @font-face {
     font-family: 'Google Sans';
@@ -407,35 +435,37 @@ body {
 .main-stage {
     flex: 1;
     position: relative;
+    /* This is crucial for absolute positioning to work inside */
     overflow: hidden;
     background: var(--bg-app);
+    width: 100%;
+    height: 100%;
 }
 
 .view {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100vw;
-    /* Changed from 100% to 100vw to lock to viewport */
-    height: 100vh;
-    /* Changed from 100% to 100vh to lock to viewport */
+    /* CHANGE THIS: 100% respects the parent container's box model */
+    width: 100%;
+    height: 100%;
+
     display: flex;
     flex-direction: column;
     opacity: 0;
     pointer-events: none;
 
-    /* Optimized Transition */
     transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0, 0, 1);
     transform: translateY(20px);
+
+    /* Keep your padding */
     padding: 24px 24px 0 24px;
 
-    /* --- THE FIXES --- */
+    /* These keep it contained */
     box-sizing: border-box;
-    /* Ensures padding doesn't push width over 100% */
     backface-visibility: hidden;
     will-change: opacity, transform;
     overflow: hidden;
-    /* Stops internal content from causing layout shifts */
 }
 
 .view.active {

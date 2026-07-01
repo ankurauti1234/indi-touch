@@ -2636,8 +2636,4 @@ body.osk-open .main-stage {
 /* Special formatting for the 'All Members' card */
 .group-card.all-members-card {
     flex-basis: 100%;
-    /* Forces the card to span the entire row */
-    height: 120px;
-    /* Slightly slimmer than a normal group card */
-    min-height: 120px;
 }

@@ -2636,6 +2636,6 @@ body.osk-open .main-stage {
 
 .group-card.all-members-card {
     grid-column: span 3;
-    height: 120px;
+    height: 160px;
     /* Overrides the standard height */
 }

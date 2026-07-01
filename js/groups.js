@@ -120,34 +120,50 @@ export function renderGroupsGrid() {
 
 export async function toggleGroup(groupId) {
     if (!tvState.on) return;
+    if (toggleDebounceTimer) return;
+    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
-    // Instant UI update for group cards
-    const allCards = document.querySelectorAll('.group-card:not(.create-card)');
-    allCards.forEach(card => {
-        card.classList.add('inactive');
-        card.classList.remove('active');
+    // 1. Instantly update local data state directly to prevent visual mismatches
+    let targetState = false;
+    groupsData.forEach(g => {
+        if (g.id === groupId) {
+            g.active = !g.active;
+            targetState = g.active; // Track if we turned it ON or OFF
+        } else {
+            g.active = false; // Turn off everything else completely
+        }
     });
 
-    const clickedCard = document.querySelector(`.group-card[data-group-id="${groupId}"]`);
-    if (clickedCard) {
-        clickedCard.classList.remove('inactive');
-        clickedCard.classList.add('active');
-    }
+    // 2. Immediately reflect this local clean state in the DOM elements smoothly
+    const allCards = document.querySelectorAll('.group-card:not(.create-card)');
+    allCards.forEach(card => {
+        const cardId = parseInt(card.dataset.groupId);
+        if (cardId === groupId && targetState) {
+            card.classList.remove('inactive');
+            card.classList.add('active');
+        } else {
+            card.classList.remove('active');
+            card.classList.add('inactive');
+        }
+    });
 
+    // 3. Sync to the server and update your main members grid layout
     try {
-        await fetch('/api/groups/toggle', {
+        const r = await fetch('/api/groups/toggle', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: groupId })
         });
+        const res = await r.json();
 
-        // Fetch new state
-        await loadMembers();
-
-        // SYNC MAIN PAGE CARDS
-        renderGrid();
+        if (res.success) {
+            // Update the underlying member array values from the server
+            await loadMembers();
+            // Trigger a UI recalculation and partial DOM redraw for the single cards page
+            renderGrid();
+        }
     } catch (e) {
-        console.error("API Sync failed:", e);
+        console.error("Group toggle synchronization failed:", e);
     }
 }
 

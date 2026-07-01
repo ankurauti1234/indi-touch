@@ -3,6 +3,7 @@
 import { config, memberData, tvState, loadMembers, getAvatarUrl } from './data.js';
 import { t, applyTranslations } from './i18n.js';
 import { timers } from './utils.js';
+import { renderGrid } from './grid.js';
 
 export let groupsData = [];
 let toggleDebounceTimer = null;
@@ -25,10 +26,8 @@ export function renderGroupsGrid() {
     const container = document.getElementById('groups-grid-container');
     if (!container) return;
 
-    // 1. Setup delegation if not already done
     if (!container._delegated) {
         container.addEventListener('click', (e) => {
-            // Check if edit button was clicked
             const editBtn = e.target.closest('.group-edit-btn');
             if (editBtn) {
                 e.stopPropagation();
@@ -40,44 +39,59 @@ export function renderGroupsGrid() {
                 return;
             }
 
-            // Check if create card was clicked
             const createCard = e.target.closest('.group-card.create-card');
             if (createCard) {
                 openCreateGroupModal();
                 return;
             }
 
-            // Check if normal group card was clicked
             const card = e.target.closest('.group-card');
             if (card) {
-                const id = parseInt(card.dataset.groupId);
+                // Check if it's the "all" string, otherwise parse it as an ID
+                let id = card.dataset.groupId;
+                if (id !== 'all') id = parseInt(id);
                 toggleGroup(id);
             }
         });
         container._delegated = true;
     }
 
-    const count = groupsData.length;
     const style = config.avatarStyle || 'local';
-
-    // Same grid size calculation as members grid, but we include 1 extra slot for the "+" card
-    const totalSlots = count + 1;
-    let rows = 1;
-    if (totalSlots > 3) rows = 2;
-    if (totalSlots > 8) rows = 3;
-    const cols = Math.ceil(totalSlots / rows);
-
-    container.style.setProperty('--cols', cols);
-    container.style.setProperty('--rows', rows);
-
     const avatarStyleClass = style === 'local' ? 'local-avatar' : '';
 
-    // Build the grid HTML
-    let html = groupsData.map((g) => {
-        const activeClass = g.active ? 'active' : 'inactive';
+    // --- BUILD THE "ALL MEMBERS" CARD FIRST ---
+    // Check if every single member is active
+    const isAllActive = memberData.length > 0 && memberData.every(m => m.active);
+    const allActiveClass = isAllActive ? 'active' : 'inactive';
 
-        // Render stacked avatars
-        const maxAvatars = 4;
+    const maxAvatars = 4;
+    const displayAllMembers = memberData.slice(0, maxAvatars);
+    const excessAllCount = memberData.length - maxAvatars;
+
+    const allAvatarsHtml = displayAllMembers.map(m => {
+        const url = getAvatarUrl(m);
+        return `<img src="${url}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`;
+    }).join('');
+
+    const allExcessHtml = excessAllCount > 0 ? `<div class="group-avatar-more">+${excessAllCount}</div>` : '';
+
+    let html = `
+    <div class="group-card all-members-card ${allActiveClass} ${avatarStyleClass}" data-group-id="all">
+        <div class="group-avatars-container">
+            ${allAvatarsHtml}
+            ${allExcessHtml}
+        </div>
+        <div class="member-overlay">
+            <span class="m-name g-name" style="font-size:1.2rem; font-weight:500;">All Members</span>
+            <span class="m-info g-info" style="font-size:0.9rem; opacity:0.8;">${memberData.length} ${memberData.length === 1 ? 'Member' : 'Members'}</span>
+        </div>
+    </div>`;
+
+    // --- APPEND REGULAR GROUPS ---
+    html += groupsData.map((g) => {
+        // If the 'All' card is active, regular groups should visually appear inactive
+        const activeClass = (g.active && !isAllActive) ? 'active' : 'inactive';
+
         const displayMembers = g.members.slice(0, maxAvatars);
         const excessCount = g.members.length - maxAvatars;
 
@@ -104,7 +118,7 @@ export function renderGroupsGrid() {
         </div>`;
     }).join('');
 
-    // Append the special dashed "+" create group card at the end
+    // --- APPEND CREATE CARD ---
     html += `
     <div class="group-card create-card">
         <span class="material-symbols-rounded">group_add</span>
@@ -112,27 +126,24 @@ export function renderGroupsGrid() {
     </div>`;
 
     container.innerHTML = html;
-
-    // Apply translations to the newly generated "+" card and other static text
     applyTranslations();
 }
 
-import { renderGrid } from './grid.js';
 
 export async function toggleGroup(groupId) {
     if (!tvState.on) return;
     if (toggleDebounceTimer) return;
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
-    // --- 1. VISUALLY UPDATE THE GROUP CARDS ---
+    // --- 1. VISUALLY UPDATE ALL GROUP CARDS INSTANTLY ---
     groupsData.forEach(g => {
-        g.active = (g.id === groupId); // Only the clicked group becomes true, others false
+        g.active = (g.id === groupId);
     });
 
     const allCards = document.querySelectorAll('.group-card:not(.create-card)');
     allCards.forEach(card => {
-        const cardId = parseInt(card.dataset.groupId);
-        if (cardId === groupId) {
+        // Use double equals (==) so the string 'all' or integer IDs match easily
+        if (card.dataset.groupId == groupId) {
             card.classList.remove('inactive');
             card.classList.add('active');
         } else {
@@ -142,41 +153,52 @@ export async function toggleGroup(groupId) {
     });
 
     // --- 2. LOGICAL MATCHING & SYNCING ---
-    const group = groupsData.find(g => g.id === groupId);
-    if (!group) return;
-
-    // Create a quick list of all member codes that belong to this group
-    const groupMemberCodes = group.members.map(m => m.member_code);
-
     try {
-        // Loop through the entire global member list
-        for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
-            const actualMember = memberData[globalIndex];
-            const isMemberInGroup = groupMemberCodes.includes(actualMember.member_code);
+        if (groupId === 'all') {
+            // "ALL MEMBERS" LOGIC: Turn every single member ON
+            for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
+                const actualMember = memberData[globalIndex];
+                if (!actualMember.active) {
+                    actualMember.active = true;
+                    await fetch('/api/members/toggle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ index: globalIndex })
+                    });
+                }
+            }
+        } else {
+            // REGULAR GROUP LOGIC: Isolate the group
+            const group = groupsData.find(g => g.id == groupId);
+            if (!group) return;
+            const groupMemberCodes = group.members.map(m => m.member_code);
 
-            if (isMemberInGroup && !actualMember.active) {
-                // Condition A: Should be ON, but is currently OFF -> Turn ON
-                actualMember.active = true;
-                await fetch('/api/members/toggle', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ index: globalIndex })
-                });
-            } else if (!isMemberInGroup && actualMember.active) {
-                // Condition B: Should be OFF, but is currently ON -> Turn OFF
-                actualMember.active = false;
-                await fetch('/api/members/toggle', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ index: globalIndex })
-                });
+            for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
+                const actualMember = memberData[globalIndex];
+                const isMemberInGroup = groupMemberCodes.includes(actualMember.member_code);
+
+                if (isMemberInGroup && !actualMember.active) {
+                    actualMember.active = true;
+                    await fetch('/api/members/toggle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ index: globalIndex })
+                    });
+                } else if (!isMemberInGroup && actualMember.active) {
+                    actualMember.active = false;
+                    await fetch('/api/members/toggle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ index: globalIndex })
+                    });
+                }
             }
         }
 
         // --- 3. REFRESH MAIN GRID VISUALS ---
         if (window.renderGrid) window.renderGrid();
 
-        // Final truth sync from the database
+        // Final truth sync from the database to ensure UI is perfect
         await loadMembers();
 
     } catch (e) {

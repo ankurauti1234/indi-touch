@@ -123,47 +123,47 @@ export async function toggleGroup(groupId) {
     if (toggleDebounceTimer) return;
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
-    // 1. Instantly update local data state directly to prevent visual mismatches
-    let targetState = false;
-    groupsData.forEach(g => {
-        if (g.id === groupId) {
-            g.active = !g.active;
-            targetState = g.active; // Track if we turned it ON or OFF
-        } else {
-            g.active = false; // Turn off everything else completely
-        }
-    });
+    // 1. Find the group the user clicked
+    const group = groupsData.find(g => g.id === groupId);
+    if (!group) return;
 
-    // 2. Immediately reflect this local clean state in the DOM elements smoothly
-    const allCards = document.querySelectorAll('.group-card:not(.create-card)');
-    allCards.forEach(card => {
-        const cardId = parseInt(card.dataset.groupId);
-        if (cardId === groupId && targetState) {
-            card.classList.remove('inactive');
-            card.classList.add('active');
-        } else {
-            card.classList.remove('active');
-            card.classList.add('inactive');
-        }
-    });
-
-    // 3. Sync to the server and update your main members grid layout
     try {
-        const r = await fetch('/api/groups/toggle', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: groupId })
-        });
-        const res = await r.json();
+        // 2. Loop through every member in this group
+        for (const groupMember of group.members) {
 
-        if (res.success) {
-            // Update the underlying member array values from the server
-            await loadMembers();
-            // Trigger a UI recalculation and partial DOM redraw for the single cards page
-            renderGrid();
+            // Find this specific member's index in the main memberData array
+            // (Assuming they share a unique ID like member_code)
+            const globalIndex = memberData.findIndex(m => m.member_code === groupMember.member_code);
+
+            if (globalIndex !== -1) {
+                const actualMember = memberData[globalIndex];
+
+                // 3. THE FIX: Only toggle them if they are CURRENTLY INACTIVE (OFF).
+                // If they are already active, we do nothing so they stay on!
+                if (!actualMember.active) {
+
+                    // Optimistically update local state for speed
+                    actualMember.active = true;
+
+                    // Tell the backend to flip the switch
+                    await fetch('/api/members/toggle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ index: globalIndex })
+                    });
+                }
+            }
         }
+
+        // 4. Force the UI to visually update
+        renderGrid(); // Updates the main single-member cards
+        renderGroupsGrid(); // Updates the group cards
+
+        // 5. Fetch the final truth from the server just to be safe
+        await loadMembers();
+
     } catch (e) {
-        console.error("Group toggle synchronization failed:", e);
+        console.error("Group member activation failed:", e);
     }
 }
 

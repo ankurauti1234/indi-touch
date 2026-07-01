@@ -2401,19 +2401,17 @@ body.osk-open .main-stage {
 .group-card {
     background-color: var(--bg-card);
     border-radius: var(--radius-card);
-    overflow: hidden;
     position: relative;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
     cursor: pointer;
     border: 2px solid transparent;
-    height: 160px;
-    flex-basis: calc((100% - (var(--gap, 16px) * 2)) / 3);
-    flex-grow: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 140px;
+    overflow: hidden;
+
+    /* Takes up 1 column by default */
+    grid-column: span 1;
 }
 
 .group-card:not(.inactive) {
@@ -2617,23 +2615,27 @@ body.osk-open .main-stage {
 /* some extra stuff */
 
 #groups-grid-container {
-    display: flex;
-    flex-wrap: wrap;
-    /* Allows cards to wrap to the next line naturally */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    /* Strictly 3 equal columns */
+    grid-auto-rows: 160px;
+    /* Locks the height of all cards */
     gap: var(--gap, 16px);
 
-    /* Crucial for scrolling */
     max-height: 100%;
     overflow-y: auto;
     padding-bottom: 20px;
-    /* Gives some breathing room at the bottom */
 
-    /* Optimizes touch dragging on Raspberry Pi screens */
-    touch-action: pan-y;
-    -webkit-overflow-scrolling: touch;
+    /* Auto-dense packing makes sure smaller cards fill in any empty gaps left by bigger cards! */
+    grid-auto-flow: dense;
 }
 
-/* Special formatting for the 'All Members' card */
+.group-card.wide-card {
+    grid-column: span 2;
+}
+
 .group-card.all-members-card {
-    flex-basis: 100%;
+    grid-column: span 3;
+    height: 120px;
+    /* Overrides the standard height */
 }

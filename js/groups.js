@@ -92,6 +92,9 @@ export function renderGroupsGrid() {
         // If the 'All' card is active, regular groups should visually appear inactive
         const activeClass = (g.active && !isAllActive) ? 'active' : 'inactive';
 
+        // BENTO LOGIC: If more than 4 members, make the card span 2 columns!
+        const bentoClass = g.members.length > 4 ? 'wide-card' : '';
+
         const displayMembers = g.members.slice(0, maxAvatars);
         const excessCount = g.members.length - maxAvatars;
 
@@ -103,7 +106,7 @@ export function renderGroupsGrid() {
         const excessHtml = excessCount > 0 ? `<div class="group-avatar-more">+${excessCount}</div>` : '';
 
         return `
-        <div class="group-card ${activeClass} ${avatarStyleClass}" data-group-id="${g.id}">
+        <div class="group-card ${activeClass} ${avatarStyleClass} ${bentoClass}" data-group-id="${g.id}">
             <button class="group-edit-btn" title="Edit Group">
                 <span class="material-symbols-rounded">edit</span>
             </button>

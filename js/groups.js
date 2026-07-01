@@ -119,38 +119,24 @@ export function renderGroupsGrid() {
 
 export async function toggleGroup(groupId) {
     if (!tvState.on) return;
+    if (toggleDebounceTimer) return;
+    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
-    // --- 1. INSTANT VISUAL UPDATE (The Simple Fix) ---
-    // Grab every group card on the page (except the create button)
-    const allCards = document.querySelectorAll('.group-card:not(.create-card)');
-
-    // Force EVERY card to be inactive
-    allCards.forEach(card => {
-        card.classList.add('inactive');
-        card.classList.remove('active');
+    groupsData.forEach(g => {
+        g.active = (g.id === groupId) ? !g.active : false;
     });
 
-    // Find the exact card you just clicked and make ONLY that one active
-    const clickedCard = document.querySelector(`.group-card[data-group-id="${groupId}"]`);
-    if (clickedCard) {
-        clickedCard.classList.remove('inactive');
-        clickedCard.classList.add('active');
-    }
+    renderGroupsGrid();
 
-    // --- 2. BACKGROUND SERVER SYNC ---
-    // Now tell the server what you clicked, quietly in the background.
     try {
         await fetch('/api/groups/toggle', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: groupId })
         });
-
-        // Update the members based on the new group.
-        // Notice we REMOVED await loadGroups() here so the grid doesn't redraw and mess up our clean CSS state!
         await loadMembers();
     } catch (e) {
-        console.error("API Sync failed:", e);
+        console.error("Sync failed:", e);
     }
 }
 

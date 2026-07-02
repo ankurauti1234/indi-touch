@@ -5,6 +5,9 @@ let idleTimer;
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
+
+    // Use only classList to manage visibility. 
+    // CSS handles the pointer-events and opacity transition.
     s.classList.remove('active');
     clearTimeout(idleTimer);
 
@@ -28,6 +31,7 @@ export function resetIdle(isPriority = false) {
     idleTimer = setTimeout(() => {
         if (s) {
             console.log("Screensaver activating now...");
+            // Adding 'active' class triggers CSS: pointer-events: auto; opacity: 1;
             s.classList.add('active');
             applyWallpaper(); // Fetch latest wallpaper state
             renderScreensaverMembers();
@@ -65,16 +69,22 @@ export function updateClock() {
     if (dateEl) dateEl.innerText = dateStr;
 }
 
-// Add this function to screensaver.js
 export function initScreensaverInteraction() {
     const s = document.getElementById('screensaver');
     if (!s) return;
 
-    // This prevents the click/touch from "passing through" to the grid behind
-    s.addEventListener('click', (e) => {
-        e.stopPropagation(); // Stops the event from hitting the grid
-        resetIdle();         // This will trigger the hide logic
-    }, true); // Use capture phase
+    // We use a capture listener so it catches the click 
+    // before the grid even knows it happened.
+    const killEvent = (e) => {
+        if (s.classList.contains('active')) {
+            e.preventDefault();
+            e.stopPropagation();
+            resetIdle();
+        }
+    };
+
+    s.addEventListener('touchstart', killEvent, true);
+    s.addEventListener('click', killEvent, true);
 }
 
 // OpenWeatherMap Integration

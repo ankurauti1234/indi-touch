@@ -1292,12 +1292,20 @@ body {
     height: 100vh;
     background: #000;
     z-index: 9999;
-    display: none;
+
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.5s ease;
+
     will-change: opacity;
     padding: 0;
     overflow: hidden;
+}
+
+#screensaver.active {
+    opacity: 1;
+    pointer-events: auto;
+    /* Now it catches all clicks! */
 }
 
 @keyframes premiumFadeIn {

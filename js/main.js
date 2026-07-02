@@ -186,7 +186,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGuestList();
     initLocation();
     renderNotifications();
-    initScreensaverInteraction(); // Added here
+    // CRITICAL CHANGE: Do NOT await this, and wrap it in a try-catch
+    try {
+        initScreensaverInteraction();
+    } catch (e) {
+        console.log("Screensaver init failed, skipping...");
+    }
 
     // 3. Finalize - Hide app loader
     hideAppLoader();

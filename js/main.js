@@ -38,7 +38,7 @@ window.refreshWallpaperOnScreensaver = refreshWallpaperOnScreensaver;
 window.renderGrid = renderGrid;
 
 // Define your vertical tab order
-const tabOrder = ['home', 'groups', 'notifications', 'guest-add', 'settings'];
+const tabOrder = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
 
 let startY = 0;
 

@@ -44,6 +44,7 @@ let startY = 0;
 let startedAtTop = false;
 let startedAtBottom = false;
 let isScrollableContext = false;
+let consumeNextClick = false;
 
 document.addEventListener('touchstart', e => {
 
@@ -61,6 +62,7 @@ document.addEventListener('touchstart', e => {
         startedAtTop = false;
         startedAtBottom = false;
         isScrollableContext = false;
+        consumeNextClick = true;
 
         return;
     }
@@ -144,6 +146,20 @@ document.addEventListener('touchend', e => {
     }
 
 });
+
+document.addEventListener('click', (e) => {
+
+    if (!consumeNextClick) {
+        return;
+    }
+
+    consumeNextClick = false;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+}, true);
 
 // ─── Phase 2 Refinements ──────────────────────────────────────────────────────
 export function resetHomeTimer() {

@@ -2,7 +2,7 @@ import { navTo } from './navigation.js';
 import { renderGrid, toggleMember } from './grid.js';
 import { openSetting, closeSetting, toggleTheme, selectAvatarStyle, toggleRemoteMode, toggleAnimations } from './settings.js';
 import { selectChip, addGuest, renderGuestList } from './guest.js';
-import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver } from './screensaver.js';
+import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver, initScreensaverInteraction } from './screensaver.js';
 import { initOSK } from './keyboard.js';
 import { checkOnboardingStatus } from './onboarding.js';
 import { showToast } from './ui.js';
@@ -168,13 +168,11 @@ import { tvState, memberData, save as legacySave, initData, config } from './dat
 import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Initialize Localization
+    // 1. Initialize Localization & Data
     await initI18n();
-
-    // 2. Initialize Data Layer (from API)
     await initData();
 
-    // 3. Initialize Components
+    // 2. Initialize Components (Call these ONCE)
     await checkOnboardingStatus();
     initOSK();
     renderGrid();
@@ -182,12 +180,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGuestList();
     initLocation();
     renderNotifications();
+    initScreensaverInteraction(); // Added here
 
-    // 4. Finalize - Hide app loader
+    // 3. Finalize - Hide app loader
     hideAppLoader();
 
-
-    // 3. Start Background Services
+    // 4. Background Services & Logic
     timers.setInterval(updateClock, 1000);
     updateClock();
 
@@ -294,26 +292,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Disable right-click context menu
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // 3. Unified User Interaction Tracking
+    // 5. Unified User Interaction Tracking
     const activityEvents = ['touchstart', 'touchmove', 'click', 'scroll', 'keydown'];
-
     function handleUserActivity() {
         resetIdle();
         resetHomeTimer();
     }
-
     activityEvents.forEach(eventType => {
         document.addEventListener(eventType, handleUserActivity, { passive: true });
     });
-
-    // Initial call
     handleUserActivity();
 
-    // 4. Remote Control System
+    // 6. Systems
     initRemote();
-
-    // 5. Connection state monitoring
     initConnectionMonitor();
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
     console.log("System initialized.");
 });

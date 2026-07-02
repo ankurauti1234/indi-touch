@@ -73,12 +73,12 @@ export function initScreensaverInteraction() {
     const s = document.getElementById('screensaver');
     if (!s) return;
 
-    // We use a capture listener so it catches the click 
-    // before the grid even knows it happened.
+    // Use a capture listener with stopImmediatePropagation
     const killEvent = (e) => {
         if (s.classList.contains('active')) {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation(); // This stops main.js from seeing it!
             resetIdle();
         }
     };

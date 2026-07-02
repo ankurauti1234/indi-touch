@@ -294,7 +294,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Unified User Interaction Tracking
     const activityEvents = ['touchstart', 'touchmove', 'click', 'scroll', 'keydown'];
-    function handleUserActivity() {
+    
+    function handleUserActivity(e) {
+        // If the screensaver is active, DON'T process navigation logic
+        const s = document.getElementById('screensaver');
+        if (s && s.classList.contains('active')) return;
+
         resetIdle();
         resetHomeTimer();
     }

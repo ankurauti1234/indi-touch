@@ -37,12 +37,41 @@ window.renderScreensaverMembers = renderScreensaverMembers;
 window.refreshWallpaperOnScreensaver = refreshWallpaperOnScreensaver;
 window.renderGrid = renderGrid;
 
+// Define your vertical tab order
+const tabOrder = ['home', 'groups', 'settings'];
+
+let startY = 0;
+
+document.addEventListener('touchstart', e => {
+    startY = e.touches[0].clientY;
+});
+
+document.addEventListener('touchend', e => {
+    const deltaY = startY - e.changedTouches[0].clientY;
+
+    // Ignore small swipes
+    if (Math.abs(deltaY) < 50) return;
+
+    const activeView = document.querySelector('.view.active');
+    if (!activeView) return;
+
+    const currentId = activeView.id.replace('view-', '');
+    const currentIndex = tabOrder.indexOf(currentId);
+    if (currentIndex === -1) return;
+
+    if (deltaY > 0 && currentIndex < tabOrder.length - 1) {
+        navTo(tabOrder[currentIndex + 1]); // Swipe Up -> Next
+    } else if (deltaY < 0 && currentIndex > 0) {
+        navTo(tabOrder[currentIndex - 1]); // Swipe Down -> Previous
+    }
+});
+
 // ─── Phase 2 Refinements ──────────────────────────────────────────────────────
 export function resetHomeTimer() {
     if (typeof homeTimer !== 'undefined') clearTimeout(homeTimer);
     const onboardingLayer = document.getElementById('onboarding-layer');
     const isOnboarding = onboardingLayer && !onboardingLayer.classList.contains('hidden') && onboardingLayer.style.display !== 'none';
-    
+
     if (config.onboardingCompleted && !isOnboarding && !document.getElementById('view-home').classList.contains('active')) {
         timers.clearTimeout(window.homeTimerId); // Track specifically if needed
         window.homeTimerId = timers.setTimeout(() => {
@@ -69,7 +98,7 @@ let eggTimer;
 window.triggerEasterEgg = () => {
     eggClicks++;
     clearTimeout(eggTimer);
-    
+
     if (eggClicks === 7) {
         document.getElementById('author-overlay').classList.add('active');
         eggClicks = 0;
@@ -117,7 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 4. Finalize - Hide app loader
     hideAppLoader();
 
-    
+
     // 3. Start Background Services
     timers.setInterval(updateClock, 1000);
     updateClock();

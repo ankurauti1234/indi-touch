@@ -151,10 +151,13 @@ export async function toggleGroup(groupId) {
     try {
         // --- 1. DETERMINE CURRENT STATE ---
         let isCurrentlyActive = false;
-        let targetGroupCodes = []; // Who should be ON after this click?
+        let targetGroupCodes = [];
+
+        // Check if the entire board is currently active
+        const isAllActive = memberData.length > 0 && memberData.every(m => m.active);
 
         if (groupId === 'all') {
-            isCurrentlyActive = memberData.length > 0 && memberData.every(m => m.active);
+            isCurrentlyActive = isAllActive;
             if (!isCurrentlyActive) {
                 // If it wasn't active, target is EVERYONE
                 targetGroupCodes = memberData.map(m => m.member_code);
@@ -164,18 +167,22 @@ export async function toggleGroup(groupId) {
             if (!group) return;
 
             const groupMemberCodes = group.members.map(m => m.member_code);
-            isCurrentlyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
+
+            // Are this specific group's members fully active right now?
+            const isGroupFullyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
                 const actualMember = memberData.find(m => m.member_code === code);
                 return actualMember && actualMember.active;
             });
+
+            // THE FIX: A custom group is only "active" (ready to be toggled off) 
+            // if 'All Members' is NOT currently active.
+            isCurrentlyActive = isGroupFullyActive && !isAllActive;
 
             if (!isCurrentlyActive) {
                 // If it wasn't active, target is ONLY THIS GROUP
                 targetGroupCodes = groupMemberCodes;
             }
         }
-        // *NOTE*: If `isCurrentlyActive` is true, `targetGroupCodes` remains empty. 
-        // This flawlessly achieves your rule: "deactivate all members".
 
         // --- 2. PREPARE CHANGES & OPTIMISTIC UI UPDATE ---
         const pendingApiIndexes = [];
@@ -183,20 +190,17 @@ export async function toggleGroup(groupId) {
         for (let i = 0; i < memberData.length; i++) {
             const shouldBeActive = targetGroupCodes.includes(memberData[i].member_code);
 
-            // Only update if the state actually needs to change
             if (memberData[i].active !== shouldBeActive) {
-                memberData[i].active = shouldBeActive; // Update local memory instantly
-                pendingApiIndexes.push(i); // Queue for backend
+                memberData[i].active = shouldBeActive;
+                pendingApiIndexes.push(i);
             }
         }
 
-        // Force the UI to instantly snap to the new state (zero lag)
+        // Force the UI to instantly snap to the new state
         if (window.renderGrid) window.renderGrid();
         renderGroupsGrid();
 
         // --- 3. SAFE BACKGROUND SYNC ---
-        // We use a sequential loop (awaiting one by one) instead of parallel Promise.all()
-        // This prevents flooding the Raspberry Pi backend and stops the "glitching" completely.
         for (const index of pendingApiIndexes) {
             await fetch('/api/members/toggle', {
                 method: 'POST',
@@ -206,7 +210,6 @@ export async function toggleGroup(groupId) {
         }
 
         // --- 4. FINAL VERIFICATION ---
-        // Once the backend is safely finished, sync the final truth just in case
         await loadMembers();
 
     } catch (e) {

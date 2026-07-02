@@ -89,8 +89,18 @@ export function renderGroupsGrid() {
 
     // --- APPEND REGULAR GROUPS ---
     html += groupsData.map((g) => {
-        // If the 'All' card is active, regular groups should visually appear inactive
-        const activeClass = (g.active && !isAllActive) ? 'active' : 'inactive';
+        // 1. Get all member codes for this specific group
+        const groupMemberCodes = g.members.map(m => m.member_code);
+
+        // 2. Check the real truth in memberData: are ALL of these specific members active right now?
+        const isGroupFullyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
+            const actualMember = memberData.find(m => m.member_code === code);
+            return actualMember && actualMember.active;
+        });
+
+        // 3. If the 'All Members' card is active, regular groups should visually dim out to avoid confusion.
+        // Otherwise, this group is active ONLY IF every single member inside it is currently active.
+        const activeClass = (isGroupFullyActive && !isAllActive) ? 'active' : 'inactive';
 
         // BENTO LOGIC: If more than 4 members, make the card span 2 columns!
         const bentoClass = g.members.length > 4 ? 'wide-card' : '';

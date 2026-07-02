@@ -71,26 +71,20 @@ export function updateClock() {
 
 export function initScreensaverInteraction() {
     const s = document.getElementById('screensaver');
-    
-    // Safety check: Don't crash if the element is missing
-    if (!s) {
-        console.warn("Screensaver element not found, skipping interaction setup.");
-        return; 
-    }
+    if (!s) return;
 
-    // Your existing logic...
+    // Use a capture listener with stopImmediatePropagation
     const killEvent = (e) => {
         if (s.classList.contains('active')) {
             e.preventDefault();
             e.stopPropagation();
-            e.stopImmediatePropagation();
+            e.stopImmediatePropagation(); // This stops main.js from seeing it!
             resetIdle();
         }
     };
 
-    s.addEventListener('touchstart', killEvent, { capture: true, passive: false });
-    s.addEventListener('touchend', killEvent, { capture: true, passive: false });
-    s.addEventListener('click', killEvent, { capture: true, passive: false });
+    s.addEventListener('touchstart', killEvent, true);
+    s.addEventListener('click', killEvent, true);
 }
 
 // OpenWeatherMap Integration

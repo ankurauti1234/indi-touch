@@ -2,7 +2,7 @@ import { navTo } from './navigation.js';
 import { renderGrid, toggleMember } from './grid.js';
 import { openSetting, closeSetting, toggleTheme, selectAvatarStyle, toggleRemoteMode, toggleAnimations } from './settings.js';
 import { selectChip, addGuest, renderGuestList } from './guest.js';
-import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver, initScreensaverInteraction, isScreensaverActive } from './screensaver.js';
+import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver, initScreensaverInteraction } from './screensaver.js';
 import { initOSK } from './keyboard.js';
 import { checkOnboardingStatus } from './onboarding.js';
 import { showToast } from './ui.js';
@@ -46,9 +46,6 @@ let startedAtBottom = false;
 let isScrollableContext = false;
 
 document.addEventListener('touchstart', e => {
-    // 1. Use your established function to guard the swipe
-    if (isScreensaverActive()) return;
-
     startY = e.touches[0].clientY;
 
     // Reset states for this new touch
@@ -78,9 +75,6 @@ document.addEventListener('touchstart', e => {
 }, { passive: true });
 
 document.addEventListener('touchend', e => {
-    // 1. Use your established function to guard the swipe
-    if (isScreensaverActive()) return;
-
     const endY = e.changedTouches[0].clientY;
     const deltaY = startY - endY;
 
@@ -186,12 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGuestList();
     initLocation();
     renderNotifications();
-    // CRITICAL CHANGE: Do NOT await this, and wrap it in a try-catch
-    try {
-        initScreensaverInteraction();
-    } catch (e) {
-        console.log("Screensaver init failed, skipping...");
-    }
+    initScreensaverInteraction(); // Added here
 
     // 3. Finalize - Hide app loader
     hideAppLoader();
@@ -305,7 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Unified User Interaction Tracking
     const activityEvents = ['touchstart', 'touchmove', 'click', 'scroll', 'keydown'];
-
+    
     function handleUserActivity(e) {
         // If the screensaver is active, DON'T process navigation logic
         const s = document.getElementById('screensaver');

@@ -149,24 +149,42 @@ export async function toggleGroup(groupId) {
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
     try {
-        // Collect promises to run API updates in parallel for a faster UI feel
         const fetchPromises = [];
+
+        // Helper function: Sweeps the board and turns everyone OFF
+        const deactivateAllMembers = () => {
+            for (let i = 0; i < memberData.length; i++) {
+                if (memberData[i].active) {
+                    memberData[i].active = false;
+                    const p = fetch('/api/members/toggle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ index: i })
+                    });
+                    fetchPromises.push(p);
+                }
+            }
+        };
 
         if (groupId === 'all') {
             // "ALL MEMBERS" LOGIC
             const isAllActive = memberData.length > 0 && memberData.every(m => m.active);
-            const targetState = !isAllActive; // If all active, turn OFF. Else, turn ON.
 
-            for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
-                const actualMember = memberData[globalIndex];
-                if (actualMember.active !== targetState) {
-                    actualMember.active = targetState;
-                    const p = fetch('/api/members/toggle', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ index: globalIndex })
-                    });
-                    fetchPromises.push(p);
+            if (isAllActive) {
+                // If everyone is on, turn everyone off
+                deactivateAllMembers();
+            } else {
+                // Turn everyone ON
+                for (let i = 0; i < memberData.length; i++) {
+                    if (!memberData[i].active) {
+                        memberData[i].active = true;
+                        const p = fetch('/api/members/toggle', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ index: i })
+                        });
+                        fetchPromises.push(p);
+                    }
                 }
             }
         } else {
@@ -182,39 +200,27 @@ export async function toggleGroup(groupId) {
             });
 
             if (isGroupFullyActive) {
-                // TOGGLE OFF: The group is active, so tapping it turns its members OFF
-                for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
-                    const actualMember = memberData[globalIndex];
-                    if (groupMemberCodes.includes(actualMember.member_code) && actualMember.active) {
-                        actualMember.active = false;
-                        const p = fetch('/api/members/toggle', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ index: globalIndex })
-                        });
-                        fetchPromises.push(p);
-                    }
-                }
+                // USER'S SIMPLE RULE: If clicking an active group, deactivate EVERYONE
+                deactivateAllMembers();
             } else {
                 // TOGGLE ON (ISOLATE): Turn group members ON, and non-group members OFF
-                for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
-                    const actualMember = memberData[globalIndex];
-                    const isMemberInGroup = groupMemberCodes.includes(actualMember.member_code);
+                for (let i = 0; i < memberData.length; i++) {
+                    const isMemberInGroup = groupMemberCodes.includes(memberData[i].member_code);
 
-                    if (isMemberInGroup && !actualMember.active) {
-                        actualMember.active = true;
+                    if (isMemberInGroup && !memberData[i].active) {
+                        memberData[i].active = true;
                         const p = fetch('/api/members/toggle', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ index: globalIndex })
+                            body: JSON.stringify({ index: i })
                         });
                         fetchPromises.push(p);
-                    } else if (!isMemberInGroup && actualMember.active) {
-                        actualMember.active = false;
+                    } else if (!isMemberInGroup && memberData[i].active) {
+                        memberData[i].active = false;
                         const p = fetch('/api/members/toggle', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ index: globalIndex })
+                            body: JSON.stringify({ index: i })
                         });
                         fetchPromises.push(p);
                     }
@@ -222,22 +228,19 @@ export async function toggleGroup(groupId) {
             }
         }
 
-        // --- INSTANT UI REFRESH (Optimistic Rendering) ---
-        // Refresh the UI immediately based on local state before the API finishes
+        // --- INSTANT UI REFRESH ---
         if (window.renderGrid) window.renderGrid();
         renderGroupsGrid();
 
         // --- PUSH CHANGES TO SERVER ---
-        // Wait for all the toggles to finish communicating with the backend
         if (fetchPromises.length > 0) {
             await Promise.all(fetchPromises);
         }
 
-        // Final truth sync from the database to ensure UI is perfectly aligned with the backend
         await loadMembers();
 
     } catch (e) {
-        console.error("Group exclusive alignment failed:", e);
+        console.error("Group toggle failed:", e);
     }
 }
 

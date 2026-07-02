@@ -50,7 +50,7 @@ document.addEventListener('touchend', e => {
     const endY = e.changedTouches[0].clientY;
     const deltaY = startY - endY;
 
-    // Ignore small touches (less than 50px)
+    // Ignore small touches
     if (Math.abs(deltaY) < 50) return;
 
     const activeView = document.querySelector('.view.active');
@@ -60,15 +60,19 @@ document.addEventListener('touchend', e => {
     let isAtTop = true;
     let isAtBottom = true;
 
-    // Climb up the tree to find the scrolling container
+    // Climb up the tree to find an ACTUAL scrolling container
     while (currentEl && currentEl !== document.body && currentEl !== document.documentElement) {
-        if (currentEl.scrollHeight > currentEl.clientHeight) {
-            // Found scrollable area!
-            isAtTop = currentEl.scrollTop <= 0;
+        const style = window.getComputedStyle(currentEl);
+        const overflowY = style.overflowY;
 
-            // FIX: Added a 5px tolerance. Math.ceil helps prevent fractional pixel bugs!
-            isAtBottom = (Math.ceil(currentEl.scrollTop) + currentEl.clientHeight) >= (currentEl.scrollHeight - 5);
-            break;
+        // Only check elements that the browser actually allows to scroll
+        if ((overflowY === 'auto' || overflowY === 'scroll') && currentEl.scrollHeight > currentEl.clientHeight) {
+
+            isAtTop = currentEl.scrollTop <= 0;
+            // 2px tolerance for fractional pixel rounding errors
+            isAtBottom = Math.abs(currentEl.scrollHeight - currentEl.clientHeight - currentEl.scrollTop) <= 2;
+
+            break; // Found the scroll container, stop looking up
         }
         currentEl = currentEl.parentElement;
     }
@@ -77,17 +81,17 @@ document.addEventListener('touchend', e => {
     const currentIndex = tabOrder.indexOf(currentId);
     if (currentIndex === -1) return;
 
-    // --- SWIPE LOGIC ---
+    // --- NATURAL SWIPE LOGIC ---
 
-    if (deltaY > 50 && isAtTop && currentIndex > 0) {
-        // 1. Swipe UP (Finger moves UP) -> Go to PREVIOUS Tab
-        // (Only allowed if you are at the TOP of the current scroll)
-        navTo(tabOrder[currentIndex - 1]);
-
-    } else if (deltaY < -50 && isAtBottom && currentIndex < tabOrder.length - 1) {
-        // 2. Swipe DOWN (Finger moves DOWN) -> Go to NEXT Tab
-        // (Only allowed if you are at the BOTTOM of the current scroll)
+    // 1. Swipe UP (finger moves up) -> Page content goes down.
+    // Transition to NEXT tab ONLY if we are at the BOTTOM of the scroll.
+    if (deltaY > 50 && isAtBottom && currentIndex < tabOrder.length - 1) {
         navTo(tabOrder[currentIndex + 1]);
+    }
+    // 2. Swipe DOWN (finger moves down) -> Page content goes up.
+    // Transition to PREVIOUS tab ONLY if we are at the TOP of the scroll.
+    else if (deltaY < -50 && isAtTop && currentIndex > 0) {
+        navTo(tabOrder[currentIndex - 1]);
     }
 });
 

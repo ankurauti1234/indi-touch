@@ -46,38 +46,57 @@ let startedAtBottom = false;
 let isScrollableContext = false;
 
 document.addEventListener('touchstart', e => {
-    // Check global flag
-    if (window.isScreensaverShowing) return;
+
+    const screensaver = document.getElementById('screensaver');
+    if (screensaver?.classList.contains('active')) {
+        return;
+    }
 
     startY = e.touches[0].clientY;
 
+    // Reset states for this new touch
     startedAtTop = true;
     startedAtBottom = true;
     isScrollableContext = false;
 
     let currentEl = e.target;
 
+    // Check where the scroll bar is AT THE EXACT MOMENT the finger touches the screen
     while (currentEl && currentEl !== document.body && currentEl !== document.documentElement) {
         const style = window.getComputedStyle(currentEl);
         const overflowY = style.overflowY;
 
         if ((overflowY === 'auto' || overflowY === 'scroll') && currentEl.scrollHeight > currentEl.clientHeight) {
             isScrollableContext = true;
+
             startedAtTop = currentEl.scrollTop <= 0;
-            startedAtBottom = Math.abs(currentEl.scrollHeight - currentEl.clientHeight - currentEl.scrollTop) <= 5;
+
+            startedAtBottom =
+                Math.abs(
+                    currentEl.scrollHeight -
+                    currentEl.clientHeight -
+                    currentEl.scrollTop
+                ) <= 5;
+
             break;
         }
+
         currentEl = currentEl.parentElement;
     }
+
 }, { passive: true });
 
 document.addEventListener('touchend', e => {
-    // Check global flag
-    if (window.isScreensaverShowing) return;
+
+    const screensaver = document.getElementById('screensaver');
+    if (screensaver?.classList.contains('active')) {
+        return;
+    }
 
     const endY = e.changedTouches[0].clientY;
     const deltaY = startY - endY;
 
+    // Ignore small touches
     if (Math.abs(deltaY) < 50) return;
 
     const activeView = document.querySelector('.view.active');
@@ -87,16 +106,20 @@ document.addEventListener('touchend', e => {
     const currentIndex = tabOrder.indexOf(currentId);
     if (currentIndex === -1) return;
 
+    // Swipe UP -> NEXT tab
     if (deltaY > 50 && currentIndex < tabOrder.length - 1) {
         if (!isScrollableContext || startedAtBottom) {
             navTo(tabOrder[currentIndex + 1]);
         }
     }
+
+    // Swipe DOWN -> PREVIOUS tab
     else if (deltaY < -50 && currentIndex > 0) {
         if (!isScrollableContext || startedAtTop) {
             navTo(tabOrder[currentIndex - 1]);
         }
     }
+
 });
 
 // ─── Phase 2 Refinements ──────────────────────────────────────────────────────
@@ -287,7 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Unified User Interaction Tracking
     const activityEvents = ['touchstart', 'touchmove', 'click', 'scroll', 'keydown'];
-
+    
     function handleUserActivity(e) {
         // If the screensaver is active, DON'T process navigation logic
         const s = document.getElementById('screensaver');

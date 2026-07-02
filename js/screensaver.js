@@ -77,17 +77,22 @@ export function initScreensaverInteraction() {
     const s = document.getElementById('screensaver');
     if (!s) return;
 
-    const killEvent = (e) => {
-        if (s.classList.contains('active')) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            resetIdle();
+    const intercept = (e) => {
+        if (!s.classList.contains('active')) {
+            return;
         }
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        resetIdle();
     };
 
-    s.addEventListener('touchstart', killEvent, true);
-    s.addEventListener('click', killEvent, true);
+    s.addEventListener('touchstart', intercept, { capture: true });
+    s.addEventListener('touchmove', intercept, { capture: true });
+    s.addEventListener('touchend', intercept, { capture: true });
+    s.addEventListener('click', intercept, { capture: true });
 }
 
 // OpenWeatherMap Integration

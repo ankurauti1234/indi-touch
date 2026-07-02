@@ -47,6 +47,24 @@ let isScrollableContext = false;
 
 document.addEventListener('touchstart', e => {
 
+    if (document.body.dataset.screensaverWakeLock === '1') {
+
+        delete document.body.dataset.screensaverWakeLock;
+
+        const screensaver = document.getElementById('screensaver');
+
+        if (screensaver?.classList.contains('active')) {
+            resetIdle(true);
+        }
+
+        startY = 0;
+        startedAtTop = false;
+        startedAtBottom = false;
+        isScrollableContext = false;
+
+        return;
+    }
+
     const screensaver = document.getElementById('screensaver');
     if (screensaver?.classList.contains('active')) {
         return;
@@ -87,6 +105,11 @@ document.addEventListener('touchstart', e => {
 }, { passive: true });
 
 document.addEventListener('touchend', e => {
+
+    if (startY === 0) {
+        startY = -1;
+        return;
+    }
 
     const screensaver = document.getElementById('screensaver');
     if (screensaver?.classList.contains('active')) {
@@ -196,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGuestList();
     initLocation();
     renderNotifications();
-    initScreensaverInteraction(); // Added here
+    // initScreensaverInteraction(); // Added here
 
     // 3. Finalize - Hide app loader
     hideAppLoader();
@@ -310,7 +333,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Unified User Interaction Tracking
     const activityEvents = ['touchstart', 'touchmove', 'click', 'scroll', 'keydown'];
-    
+
     function handleUserActivity(e) {
         // If the screensaver is active, DON'T process navigation logic
         const s = document.getElementById('screensaver');

@@ -8,10 +8,11 @@ export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
 
-    // --- MODIFICATION START ---
     s.classList.remove('active');
-    window.isScreensaverShowing = false; // Set to false when deactivated
-    // --- MODIFICATION END ---
+    window.isScreensaverShowing = false;
+
+    // Clear wake-lock whenever screensaver is hidden
+    delete document.body.dataset.screensaverWakeLock;
 
     clearTimeout(idleTimer);
 
@@ -22,6 +23,7 @@ export function resetIdle(isPriority = false) {
             !onboardingLayer.classList.contains('hidden') &&
             onboardingLayer.style.display !== 'none' &&
             onboardingLayer.style.opacity !== '0';
+
         if (isVisible) {
             console.log("Screensaver blocked by Onboarding Layer visibility");
             return;
@@ -33,10 +35,14 @@ export function resetIdle(isPriority = false) {
     idleTimer = setTimeout(() => {
         if (s) {
             console.log("Screensaver activating now...");
+
             s.classList.add('active');
-            // --- MODIFICATION START ---
-            window.isScreensaverShowing = true; // Set to true when activated
-            // --- MODIFICATION END ---
+
+            // Wake-lock flag: first touch after screensaver is consumed
+            document.body.dataset.screensaverWakeLock = '1';
+
+            window.isScreensaverShowing = true;
+
             applyWallpaper();
             renderScreensaverMembers();
         }
@@ -44,7 +50,6 @@ export function resetIdle(isPriority = false) {
 }
 
 window.setScreensaverTimeout = (ms) => {
-    // This allows immediate update from settings
     clearTimeout(idleTimer);
     resetIdle();
 };

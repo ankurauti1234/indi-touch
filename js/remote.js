@@ -49,8 +49,9 @@ function isOnboarding() {
     return !!(o && !o.classList.contains('hidden') && o.style.display !== 'none');
 }
 
-export function isScreensaverActive() {
-    return !!document.getElementById('screensaver')?.classList.contains('active');
+function isScreensaverActive() {
+    const s = document.getElementById('screensaver');
+    return Boolean(s?.classList.contains('active'));
 }
 
 function getOverlayItems() {

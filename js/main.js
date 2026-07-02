@@ -46,6 +46,10 @@ let startedAtBottom = false;
 let isScrollableContext = false;
 
 document.addEventListener('touchstart', e => {
+    // 1. SCREENSAVER GUARD: Do nothing if screensaver is active
+    const s = document.getElementById('screensaver');
+    if (s && s.classList.contains('active')) return;
+
     startY = e.touches[0].clientY;
 
     // Reset states for this new touch
@@ -75,6 +79,10 @@ document.addEventListener('touchstart', e => {
 }, { passive: true });
 
 document.addEventListener('touchend', e => {
+    // 1. SCREENSAVER GUARD: Do nothing if screensaver is active
+    const s = document.getElementById('screensaver');
+    if (s && s.classList.contains('active')) return;
+
     const endY = e.changedTouches[0].clientY;
     const deltaY = startY - endY;
 
@@ -294,7 +302,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Unified User Interaction Tracking
     const activityEvents = ['touchstart', 'touchmove', 'click', 'scroll', 'keydown'];
-    
+
     function handleUserActivity(e) {
         // If the screensaver is active, DON'T process navigation logic
         const s = document.getElementById('screensaver');

@@ -149,94 +149,64 @@ export async function toggleGroup(groupId) {
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
     try {
-        const fetchPromises = [];
-
-        // Helper function: Sweeps the board and turns everyone OFF
-        const deactivateAllMembers = () => {
-            for (let i = 0; i < memberData.length; i++) {
-                if (memberData[i].active) {
-                    memberData[i].active = false;
-                    const p = fetch('/api/members/toggle', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ index: i })
-                    });
-                    fetchPromises.push(p);
-                }
-            }
-        };
+        // --- 1. DETERMINE CURRENT STATE ---
+        let isCurrentlyActive = false;
+        let targetGroupCodes = []; // Who should be ON after this click?
 
         if (groupId === 'all') {
-            // "ALL MEMBERS" LOGIC
-            const isAllActive = memberData.length > 0 && memberData.every(m => m.active);
-
-            if (isAllActive) {
-                // If everyone is on, turn everyone off
-                deactivateAllMembers();
-            } else {
-                // Turn everyone ON
-                for (let i = 0; i < memberData.length; i++) {
-                    if (!memberData[i].active) {
-                        memberData[i].active = true;
-                        const p = fetch('/api/members/toggle', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ index: i })
-                        });
-                        fetchPromises.push(p);
-                    }
-                }
+            isCurrentlyActive = memberData.length > 0 && memberData.every(m => m.active);
+            if (!isCurrentlyActive) {
+                // If it wasn't active, target is EVERYONE
+                targetGroupCodes = memberData.map(m => m.member_code);
             }
         } else {
-            // REGULAR GROUP LOGIC
             const group = groupsData.find(g => g.id == groupId);
             if (!group) return;
-            const groupMemberCodes = group.members.map(m => m.member_code);
 
-            // Check if this group is CURRENTLY fully active
-            const isGroupFullyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
+            const groupMemberCodes = group.members.map(m => m.member_code);
+            isCurrentlyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
                 const actualMember = memberData.find(m => m.member_code === code);
                 return actualMember && actualMember.active;
             });
 
-            if (isGroupFullyActive) {
-                // USER'S SIMPLE RULE: If clicking an active group, deactivate EVERYONE
-                deactivateAllMembers();
-            } else {
-                // TOGGLE ON (ISOLATE): Turn group members ON, and non-group members OFF
-                for (let i = 0; i < memberData.length; i++) {
-                    const isMemberInGroup = groupMemberCodes.includes(memberData[i].member_code);
+            if (!isCurrentlyActive) {
+                // If it wasn't active, target is ONLY THIS GROUP
+                targetGroupCodes = groupMemberCodes;
+            }
+        }
+        // *NOTE*: If `isCurrentlyActive` is true, `targetGroupCodes` remains empty. 
+        // This flawlessly achieves your rule: "deactivate all members".
 
-                    if (isMemberInGroup && !memberData[i].active) {
-                        memberData[i].active = true;
-                        const p = fetch('/api/members/toggle', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ index: i })
-                        });
-                        fetchPromises.push(p);
-                    } else if (!isMemberInGroup && memberData[i].active) {
-                        memberData[i].active = false;
-                        const p = fetch('/api/members/toggle', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ index: i })
-                        });
-                        fetchPromises.push(p);
-                    }
-                }
+        // --- 2. PREPARE CHANGES & OPTIMISTIC UI UPDATE ---
+        const pendingApiIndexes = [];
+
+        for (let i = 0; i < memberData.length; i++) {
+            const shouldBeActive = targetGroupCodes.includes(memberData[i].member_code);
+
+            // Only update if the state actually needs to change
+            if (memberData[i].active !== shouldBeActive) {
+                memberData[i].active = shouldBeActive; // Update local memory instantly
+                pendingApiIndexes.push(i); // Queue for backend
             }
         }
 
-        // --- INSTANT UI REFRESH ---
+        // Force the UI to instantly snap to the new state (zero lag)
         if (window.renderGrid) window.renderGrid();
         renderGroupsGrid();
 
-        // --- PUSH CHANGES TO SERVER ---
-        if (fetchPromises.length > 0) {
-            await Promise.all(fetchPromises);
+        // --- 3. SAFE BACKGROUND SYNC ---
+        // We use a sequential loop (awaiting one by one) instead of parallel Promise.all()
+        // This prevents flooding the Raspberry Pi backend and stops the "glitching" completely.
+        for (const index of pendingApiIndexes) {
+            await fetch('/api/members/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index: index })
+            });
         }
 
+        // --- 4. FINAL VERIFICATION ---
+        // Once the backend is safely finished, sync the final truth just in case
         await loadMembers();
 
     } catch (e) {

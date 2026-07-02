@@ -178,17 +178,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initI18n();
     await initData();
 
-    // 2. Initialize Components (Call these ONCE)
-    await checkOnboardingStatus();
-    initOSK();
-    renderGrid();
-    await loadGroups();
-    renderGuestList();
-    initLocation();
-    renderNotifications();
-    initScreensaverInteraction(); // Added here
+    // 2. Initialize Components
+    try {
+        await checkOnboardingStatus();
+        initOSK();
+        renderGrid();
+        await loadGroups();
+        renderGuestList();
+        initLocation();
+        renderNotifications();
+        initScreensaverInteraction();
+    } catch (e) {
+        console.error("Component Init Failed, continuing anyway:", e);
+    }
 
-    // 3. Finalize - Hide app loader
+    // 3. Finalize - Hide app loader (This WILL run now)
     hideAppLoader();
 
     // 4. Background Services & Logic

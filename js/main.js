@@ -2,7 +2,7 @@ import { navTo } from './navigation.js';
 import { renderGrid, toggleMember } from './grid.js';
 import { openSetting, closeSetting, toggleTheme, selectAvatarStyle, toggleRemoteMode, toggleAnimations } from './settings.js';
 import { selectChip, addGuest, renderGuestList } from './guest.js';
-import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver, initScreensaverInteraction } from './screensaver.js';
+import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver, initScreensaverInteraction, isScreensaverActive } from './screensaver.js';
 import { initOSK } from './keyboard.js';
 import { checkOnboardingStatus } from './onboarding.js';
 import { showToast } from './ui.js';
@@ -46,9 +46,8 @@ let startedAtBottom = false;
 let isScrollableContext = false;
 
 document.addEventListener('touchstart', e => {
-    // 1. SCREENSAVER GUARD: Do nothing if screensaver is active
-    const s = document.getElementById('screensaver');
-    if (s && s.classList.contains('active')) return;
+    // 1. Use your established function to guard the swipe
+    if (isScreensaverActive()) return;
 
     startY = e.touches[0].clientY;
 
@@ -79,9 +78,8 @@ document.addEventListener('touchstart', e => {
 }, { passive: true });
 
 document.addEventListener('touchend', e => {
-    // 1. SCREENSAVER GUARD: Do nothing if screensaver is active
-    const s = document.getElementById('screensaver');
-    if (s && s.classList.contains('active')) return;
+    // 1. Use your established function to guard the swipe
+    if (isScreensaverActive()) return;
 
     const endY = e.changedTouches[0].clientY;
     const deltaY = startY - endY;

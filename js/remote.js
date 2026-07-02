@@ -49,7 +49,7 @@ function isOnboarding() {
     return !!(o && !o.classList.contains('hidden') && o.style.display !== 'none');
 }
 
-function isScreensaverActive() {
+export function isScreensaverActive() {
     return !!document.getElementById('screensaver')?.classList.contains('active');
 }
 
@@ -78,9 +78,9 @@ function getOverlayItems() {
 
 function isHomeGrid() {
     return !isOnboarding() &&
-           !isScreensaverActive() &&
-           getOverlayItems() === null &&
-           !!document.getElementById('view-home')?.classList.contains('active');
+        !isScreensaverActive() &&
+        getOverlayItems() === null &&
+        !!document.getElementById('view-home')?.classList.contains('active');
 }
 
 // ─── Nav rail ─────────────────────────────────────────────────────────────────
@@ -238,7 +238,7 @@ function navigate(direction) {
     if (document.getElementById('osk-container')?.classList.contains('visible')) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
-        
+
         const curBox = curEl.getBoundingClientRect();
         let bestIdx = -1;
         let bestDist = Infinity;
@@ -246,7 +246,7 @@ function navigate(direction) {
         items.forEach((item, i) => {
             if (i === contentFocusIdx) return;
             const box = item.getBoundingClientRect();
-            
+
             // Filter by direction
             let isCorrectDir = false;
             let dist = 0;
@@ -256,10 +256,10 @@ function navigate(direction) {
             const targetCX = box.left + box.width / 2;
             const targetCY = box.top + box.height / 2;
 
-            if (direction === 'up' && targetCY < curCY - curBox.height/2) {
+            if (direction === 'up' && targetCY < curCY - curBox.height / 2) {
                 isCorrectDir = true;
                 dist = Math.pow(targetCY - curCY, 2) * 2 + Math.pow(targetCX - curCX, 2);
-            } else if (direction === 'down' && targetCY > curCY + curBox.height/2) {
+            } else if (direction === 'down' && targetCY > curCY + curBox.height / 2) {
                 isCorrectDir = true;
                 dist = Math.pow(targetCY - curCY, 2) * 2 + Math.pow(targetCX - curCX, 2);
             } else if (direction === 'left' && targetCX < curBox.left) {
@@ -368,7 +368,7 @@ export function initRemote() {
     // ── Arrow keys ──────────────────────────────────────────────────────────
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
-        
+
         // Restore highlights if they were hidden by mouse movement
         if (!remoteFocusEl && !isHomeGrid()) {
             enterContentZone();
@@ -377,11 +377,11 @@ export function initRemote() {
         }
 
         switch (e.key) {
-            case 'ArrowDown':  e.preventDefault(); navigate('down');  break;
-            case 'ArrowUp':    e.preventDefault(); navigate('up');    break;
+            case 'ArrowDown': e.preventDefault(); navigate('down'); break;
+            case 'ArrowUp': e.preventDefault(); navigate('up'); break;
             case 'ArrowRight': e.preventDefault(); navigate('right'); break;
-            case 'ArrowLeft':  e.preventDefault(); navigate('left');  break;
-            case 'Enter':      e.preventDefault(); activate();        break;
+            case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
+            case 'Enter': e.preventDefault(); activate(); break;
         }
     });
 

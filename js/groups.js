@@ -148,70 +148,92 @@ export async function toggleGroup(groupId) {
     if (toggleDebounceTimer) return;
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
-    // --- 1. VISUALLY UPDATE ALL GROUP CARDS INSTANTLY ---
-    groupsData.forEach(g => {
-        g.active = (g.id === groupId);
-    });
-
-    const allCards = document.querySelectorAll('.group-card:not(.create-card)');
-    allCards.forEach(card => {
-        // Use double equals (==) so the string 'all' or integer IDs match easily
-        if (card.dataset.groupId == groupId) {
-            card.classList.remove('inactive');
-            card.classList.add('active');
-        } else {
-            card.classList.remove('active');
-            card.classList.add('inactive');
-        }
-    });
-
-    // --- 2. LOGICAL MATCHING & SYNCING ---
     try {
+        // Collect promises to run API updates in parallel for a faster UI feel
+        const fetchPromises = [];
+
         if (groupId === 'all') {
-            // "ALL MEMBERS" LOGIC: Turn every single member ON
+            // "ALL MEMBERS" LOGIC
+            const isAllActive = memberData.length > 0 && memberData.every(m => m.active);
+            const targetState = !isAllActive; // If all active, turn OFF. Else, turn ON.
+
             for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
                 const actualMember = memberData[globalIndex];
-                if (!actualMember.active) {
-                    actualMember.active = true;
-                    await fetch('/api/members/toggle', {
+                if (actualMember.active !== targetState) {
+                    actualMember.active = targetState;
+                    const p = fetch('/api/members/toggle', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ index: globalIndex })
                     });
+                    fetchPromises.push(p);
                 }
             }
         } else {
-            // REGULAR GROUP LOGIC: Isolate the group
+            // REGULAR GROUP LOGIC
             const group = groupsData.find(g => g.id == groupId);
             if (!group) return;
             const groupMemberCodes = group.members.map(m => m.member_code);
 
-            for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
-                const actualMember = memberData[globalIndex];
-                const isMemberInGroup = groupMemberCodes.includes(actualMember.member_code);
+            // Check if this group is CURRENTLY fully active
+            const isGroupFullyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
+                const actualMember = memberData.find(m => m.member_code === code);
+                return actualMember && actualMember.active;
+            });
 
-                if (isMemberInGroup && !actualMember.active) {
-                    actualMember.active = true;
-                    await fetch('/api/members/toggle', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ index: globalIndex })
-                    });
-                } else if (!isMemberInGroup && actualMember.active) {
-                    actualMember.active = false;
-                    await fetch('/api/members/toggle', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ index: globalIndex })
-                    });
+            if (isGroupFullyActive) {
+                // TOGGLE OFF: The group is active, so tapping it turns its members OFF
+                for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
+                    const actualMember = memberData[globalIndex];
+                    if (groupMemberCodes.includes(actualMember.member_code) && actualMember.active) {
+                        actualMember.active = false;
+                        const p = fetch('/api/members/toggle', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ index: globalIndex })
+                        });
+                        fetchPromises.push(p);
+                    }
+                }
+            } else {
+                // TOGGLE ON (ISOLATE): Turn group members ON, and non-group members OFF
+                for (let globalIndex = 0; globalIndex < memberData.length; globalIndex++) {
+                    const actualMember = memberData[globalIndex];
+                    const isMemberInGroup = groupMemberCodes.includes(actualMember.member_code);
+
+                    if (isMemberInGroup && !actualMember.active) {
+                        actualMember.active = true;
+                        const p = fetch('/api/members/toggle', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ index: globalIndex })
+                        });
+                        fetchPromises.push(p);
+                    } else if (!isMemberInGroup && actualMember.active) {
+                        actualMember.active = false;
+                        const p = fetch('/api/members/toggle', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ index: globalIndex })
+                        });
+                        fetchPromises.push(p);
+                    }
                 }
             }
         }
 
-        // --- 3. REFRESH MAIN GRID VISUALS ---
+        // --- INSTANT UI REFRESH (Optimistic Rendering) ---
+        // Refresh the UI immediately based on local state before the API finishes
         if (window.renderGrid) window.renderGrid();
+        renderGroupsGrid();
 
-        // Final truth sync from the database to ensure UI is perfect
+        // --- PUSH CHANGES TO SERVER ---
+        // Wait for all the toggles to finish communicating with the backend
+        if (fetchPromises.length > 0) {
+            await Promise.all(fetchPromises);
+        }
+
+        // Final truth sync from the database to ensure UI is perfectly aligned with the backend
         await loadMembers();
 
     } catch (e) {

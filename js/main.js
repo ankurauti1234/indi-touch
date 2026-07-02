@@ -44,25 +44,47 @@ let startY = 0;
 
 document.addEventListener('touchstart', e => {
     startY = e.touches[0].clientY;
-});
+}, { passive: true });
 
 document.addEventListener('touchend', e => {
-    const deltaY = startY - e.changedTouches[0].clientY;
+    const endY = e.changedTouches[0].clientY;
+    const deltaY = startY - endY;
 
-    // Ignore small swipes
+    // Ignore small touches (less than 50px)
     if (Math.abs(deltaY) < 50) return;
 
     const activeView = document.querySelector('.view.active');
     if (!activeView) return;
 
+    // 1. Detect if the element we are touching is inside a scrollable container
+    let currentEl = e.target;
+    let isAtTop = true;
+    let isAtBottom = true;
+
+    // Climb up the HTML tree to find the scrolling container
+    while (currentEl && currentEl !== document.body && currentEl !== document.documentElement) {
+        // Check if this specific element has a scrollbar
+        if (currentEl.scrollHeight > currentEl.clientHeight) {
+            // We found the scrollable area! Check its boundaries.
+            isAtTop = currentEl.scrollTop <= 0;
+            // Using a 2px tolerance for devices with fractional pixel scaling
+            isAtBottom = Math.abs(currentEl.scrollHeight - currentEl.clientHeight - currentEl.scrollTop) <= 2;
+            break; // Stop looking further up
+        }
+        currentEl = currentEl.parentElement;
+    }
+
     const currentId = activeView.id.replace('view-', '');
     const currentIndex = tabOrder.indexOf(currentId);
     if (currentIndex === -1) return;
 
-    if (deltaY > 0 && currentIndex < tabOrder.length - 1) {
-        navTo(tabOrder[currentIndex + 1]); // Swipe Up -> Next
-    } else if (deltaY < 0 && currentIndex > 0) {
-        navTo(tabOrder[currentIndex - 1]); // Swipe Down -> Previous
+    // 2. Execute Tab Switch ONLY if at the scroll boundaries
+    if (deltaY > 50 && isAtBottom && currentIndex < tabOrder.length - 1) {
+        // Swipe Up (finger goes up) + At Bottom of scroll -> Go to Next Tab
+        navTo(tabOrder[currentIndex + 1]);
+    } else if (deltaY < -50 && isAtTop && currentIndex > 0) {
+        // Swipe Down (finger goes down) + At Top of scroll -> Go to Previous Tab
+        navTo(tabOrder[currentIndex - 1]);
     }
 });
 

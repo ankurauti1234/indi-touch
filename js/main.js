@@ -41,9 +41,37 @@ window.renderGrid = renderGrid;
 const tabOrder = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
 
 let startY = 0;
+let startedAtTop = false;
+let startedAtBottom = false;
+let isScrollableContext = false;
 
 document.addEventListener('touchstart', e => {
     startY = e.touches[0].clientY;
+
+    // Reset states for this new touch
+    startedAtTop = true;
+    startedAtBottom = true;
+    isScrollableContext = false;
+
+    let currentEl = e.target;
+
+    // Check where the scroll bar is AT THE EXACT MOMENT the finger touches the screen
+    while (currentEl && currentEl !== document.body && currentEl !== document.documentElement) {
+        const style = window.getComputedStyle(currentEl);
+        const overflowY = style.overflowY;
+
+        if ((overflowY === 'auto' || overflowY === 'scroll') && currentEl.scrollHeight > currentEl.clientHeight) {
+            isScrollableContext = true;
+
+            // Lock logic: Record if we are already at the boundaries
+            startedAtTop = currentEl.scrollTop <= 0;
+            // Using 5px tolerance to prevent fractional pixel bugs
+            startedAtBottom = Math.abs(currentEl.scrollHeight - currentEl.clientHeight - currentEl.scrollTop) <= 5;
+
+            break;
+        }
+        currentEl = currentEl.parentElement;
+    }
 }, { passive: true });
 
 document.addEventListener('touchend', e => {
@@ -56,42 +84,25 @@ document.addEventListener('touchend', e => {
     const activeView = document.querySelector('.view.active');
     if (!activeView) return;
 
-    let currentEl = e.target;
-    let isAtTop = true;
-    let isAtBottom = true;
-
-    // Climb up the tree to find an ACTUAL scrolling container
-    while (currentEl && currentEl !== document.body && currentEl !== document.documentElement) {
-        const style = window.getComputedStyle(currentEl);
-        const overflowY = style.overflowY;
-
-        // Only check elements that the browser actually allows to scroll
-        if ((overflowY === 'auto' || overflowY === 'scroll') && currentEl.scrollHeight > currentEl.clientHeight) {
-
-            isAtTop = currentEl.scrollTop <= 0;
-            // 2px tolerance for fractional pixel rounding errors
-            isAtBottom = Math.abs(currentEl.scrollHeight - currentEl.clientHeight - currentEl.scrollTop) <= 2;
-
-            break; // Found the scroll container, stop looking up
-        }
-        currentEl = currentEl.parentElement;
-    }
-
     const currentId = activeView.id.replace('view-', '');
     const currentIndex = tabOrder.indexOf(currentId);
     if (currentIndex === -1) return;
 
-    // --- NATURAL SWIPE LOGIC ---
+    // --- SWIPE LOGIC WITH BOUNDARY LOCK ---
 
-    // 1. Swipe UP (finger moves up) -> Page content goes down.
-    // Transition to NEXT tab ONLY if we are at the BOTTOM of the scroll.
-    if (deltaY > 50 && isAtBottom && currentIndex < tabOrder.length - 1) {
-        navTo(tabOrder[currentIndex + 1]);
+    // 1. Swipe UP -> Transition to NEXT tab
+    if (deltaY > 50 && currentIndex < tabOrder.length - 1) {
+        // Only switch if we are NOT in a scrollable area, OR if we started the swipe already at the bottom
+        if (!isScrollableContext || startedAtBottom) {
+            navTo(tabOrder[currentIndex + 1]);
+        }
     }
-    // 2. Swipe DOWN (finger moves down) -> Page content goes up.
-    // Transition to PREVIOUS tab ONLY if we are at the TOP of the scroll.
-    else if (deltaY < -50 && isAtTop && currentIndex > 0) {
-        navTo(tabOrder[currentIndex - 1]);
+    // 2. Swipe DOWN -> Transition to PREVIOUS tab
+    else if (deltaY < -50 && currentIndex > 0) {
+        // Only switch if we are NOT in a scrollable area, OR if we started the swipe already at the top
+        if (!isScrollableContext || startedAtTop) {
+            navTo(tabOrder[currentIndex - 1]);
+        }
     }
 });
 

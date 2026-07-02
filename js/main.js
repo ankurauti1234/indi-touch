@@ -294,11 +294,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Disable right-click context menu
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // 3. User Interaction Tracking
-    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
-    document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
-    resetIdle();
-    resetHomeTimer();
+    // 3. Unified User Interaction Tracking
+    const activityEvents = ['touchstart', 'touchmove', 'click', 'scroll', 'keydown'];
+
+    function handleUserActivity() {
+        resetIdle();
+        resetHomeTimer();
+    }
+
+    activityEvents.forEach(eventType => {
+        document.addEventListener(eventType, handleUserActivity, { passive: true });
+    });
+
+    // Initial call
+    handleUserActivity();
 
     // 4. Remote Control System
     initRemote();

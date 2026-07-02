@@ -2,13 +2,17 @@ import { config, memberData, tvState, getAvatarUrl } from './data.js';
 
 let idleTimer;
 
+window.isScreensaverShowing = false;
+
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
 
-    // Use only classList to manage visibility. 
-    // CSS handles the pointer-events and opacity transition.
+    // --- MODIFICATION START ---
     s.classList.remove('active');
+    window.isScreensaverShowing = false; // Set to false when deactivated
+    // --- MODIFICATION END ---
+
     clearTimeout(idleTimer);
 
     // Disable screensaver only during ACTIVE onboarding
@@ -24,16 +28,16 @@ export function resetIdle(isPriority = false) {
         }
     }
 
-    // Use 5s if priority (e.g. TV Off), otherwise use config or 15s default
     const timeout = isPriority ? 5000 : (config.screenTimeout || 15000);
-    console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
 
     idleTimer = setTimeout(() => {
         if (s) {
             console.log("Screensaver activating now...");
-            // Adding 'active' class triggers CSS: pointer-events: auto; opacity: 1;
             s.classList.add('active');
-            applyWallpaper(); // Fetch latest wallpaper state
+            // --- MODIFICATION START ---
+            window.isScreensaverShowing = true; // Set to true when activated
+            // --- MODIFICATION END ---
+            applyWallpaper();
             renderScreensaverMembers();
         }
     }, timeout);
@@ -73,12 +77,11 @@ export function initScreensaverInteraction() {
     const s = document.getElementById('screensaver');
     if (!s) return;
 
-    // Use a capture listener with stopImmediatePropagation
     const killEvent = (e) => {
         if (s.classList.contains('active')) {
             e.preventDefault();
             e.stopPropagation();
-            e.stopImmediatePropagation(); // This stops main.js from seeing it!
+            e.stopImmediatePropagation();
             resetIdle();
         }
     };

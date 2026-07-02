@@ -46,28 +46,25 @@ let startedAtBottom = false;
 let isScrollableContext = false;
 
 document.addEventListener('touchstart', e => {
+    // Check global flag
+    if (window.isScreensaverShowing) return;
+
     startY = e.touches[0].clientY;
 
-    // Reset states for this new touch
     startedAtTop = true;
     startedAtBottom = true;
     isScrollableContext = false;
 
     let currentEl = e.target;
 
-    // Check where the scroll bar is AT THE EXACT MOMENT the finger touches the screen
     while (currentEl && currentEl !== document.body && currentEl !== document.documentElement) {
         const style = window.getComputedStyle(currentEl);
         const overflowY = style.overflowY;
 
         if ((overflowY === 'auto' || overflowY === 'scroll') && currentEl.scrollHeight > currentEl.clientHeight) {
             isScrollableContext = true;
-
-            // Lock logic: Record if we are already at the boundaries
             startedAtTop = currentEl.scrollTop <= 0;
-            // Using 5px tolerance to prevent fractional pixel bugs
             startedAtBottom = Math.abs(currentEl.scrollHeight - currentEl.clientHeight - currentEl.scrollTop) <= 5;
-
             break;
         }
         currentEl = currentEl.parentElement;
@@ -75,10 +72,12 @@ document.addEventListener('touchstart', e => {
 }, { passive: true });
 
 document.addEventListener('touchend', e => {
+    // Check global flag
+    if (window.isScreensaverShowing) return;
+
     const endY = e.changedTouches[0].clientY;
     const deltaY = startY - endY;
 
-    // Ignore small touches
     if (Math.abs(deltaY) < 50) return;
 
     const activeView = document.querySelector('.view.active');
@@ -88,18 +87,12 @@ document.addEventListener('touchend', e => {
     const currentIndex = tabOrder.indexOf(currentId);
     if (currentIndex === -1) return;
 
-    // --- SWIPE LOGIC WITH BOUNDARY LOCK ---
-
-    // 1. Swipe UP -> Transition to NEXT tab
     if (deltaY > 50 && currentIndex < tabOrder.length - 1) {
-        // Only switch if we are NOT in a scrollable area, OR if we started the swipe already at the bottom
         if (!isScrollableContext || startedAtBottom) {
             navTo(tabOrder[currentIndex + 1]);
         }
     }
-    // 2. Swipe DOWN -> Transition to PREVIOUS tab
     else if (deltaY < -50 && currentIndex > 0) {
-        // Only switch if we are NOT in a scrollable area, OR if we started the swipe already at the top
         if (!isScrollableContext || startedAtTop) {
             navTo(tabOrder[currentIndex - 1]);
         }
@@ -294,7 +287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Unified User Interaction Tracking
     const activityEvents = ['touchstart', 'touchmove', 'click', 'scroll', 'keydown'];
-    
+
     function handleUserActivity(e) {
         // If the screensaver is active, DON'T process navigation logic
         const s = document.getElementById('screensaver');

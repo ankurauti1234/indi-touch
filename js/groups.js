@@ -82,7 +82,7 @@ export function renderGroupsGrid() {
     const allExcessHtml = excessAllCount > 0 ? `<div class="group-avatar-more">+${excessAllCount}</div>` : '';
 
     let html = `
-    <div class="group-card all-members-card ${allActiveClass} ${avatarStyleClass}" data-group-id="all" tabindex="0">
+    <button class="group-card all-members-card ${allActiveClass} ${avatarStyleClass}" data-group-id="all" tabindex="0">
         <div class="group-avatars-container">
             ${allAvatarsHtml}
             ${allExcessHtml}
@@ -91,7 +91,7 @@ export function renderGroupsGrid() {
             <span class="m-name g-name" style="font-size:1.2rem; font-weight:500;">All Members</span>
             <span class="m-info g-info" style="font-size:0.9rem; opacity:0.8;">${memberData.length} ${memberData.length === 1 ? 'Member' : 'Members'}</span>
         </div>
-    </div>`;
+    </button>`;
 
     // --- APPEND REGULAR GROUPS ---
     html += groupsData.map((g) => {

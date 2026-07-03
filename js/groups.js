@@ -340,13 +340,17 @@ export function deleteGroup() {
     const modal = document.createElement('div');
     modal.id = 'delete-confirm-modal';
     modal.className = 'modal-overlay active';
+
+    // Forces popup to float over everything and center content
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+
     modal.innerHTML = `
         <div class="modal-content">
             <h2 style="color: #ff5252;">Delete Group</h2>
             <p id="delete-confirm-text">Are you sure?</p>
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button class="modal-btn" onclick="closeDeleteModal()">Cancel</button>
-                <button class="modal-btn" style="background: #ff5252; color: white;" onclick="executeDelete()">Delete</button>
+                <button class="modal-btn" style="background: #ff5252; color: white; border: none;" onclick="executeDelete()">Delete</button>
             </div>
         </div>
     `;

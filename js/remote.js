@@ -94,6 +94,24 @@ function getNavItems() {
     return [...document.querySelectorAll('#app-frame .nav-btn')].filter(isVisible);
 }
 
+function triggerTabSwitch(dir) {
+    const navs = getNavItems();
+    if (!navs.length) return;
+
+    // Find currently active tab, fallback to last known focus
+    let currentIdx = navs.findIndex(n => n.classList.contains('active'));
+    if (currentIdx === -1) currentIdx = navFocusIdx;
+
+    // Calculate previous/next index (wraps around)
+    const nextIdx = dir === 'prev'
+        ? (currentIdx - 1 + navs.length) % navs.length
+        : (currentIdx + 1) % navs.length;
+
+    navFocusIdx = nextIdx;
+    navs[nextIdx].click(); // This safely triggers your existing tab-switch animation and focus reset!
+}
+
+
 // ─── Content items for current view (never includes nav rail) ─────────────────
 function getContentItems() {
     // 1. Overlays take priority
@@ -222,11 +240,11 @@ function navigate(direction) {
             }
         }
         if (direction === 'up') {
-            // At top row → jump to nav zone
+            // At top row → jump to PREVIOUS TAB instead of side nav
             const cols = getGridCols();
             const idx = getFocusedGridIndex();
             if (idx < cols) {
-                enterNavZone();
+                triggerTabSwitch('prev');
                 return;
             }
         }
@@ -237,7 +255,7 @@ function navigate(direction) {
 
     // ── CONTENT ZONE – LINEAR LIST & 2D GRIDS ────────────────────────────────
     const activeView = document.querySelector('#app-frame .view.active');
-    const isGroupsView = activeView && activeView.id === 'view-groups'; // <-- Use your actual view ID
+    const isGroupsView = activeView && activeView.id === 'view-groups';
     const isOskVisible = document.getElementById('osk-container')?.classList.contains('visible');
 
     // Left escapes to nav zone, UNLESS OSK is open OR we are in the Groups grid
@@ -293,18 +311,31 @@ function navigate(direction) {
         if (bestIdx !== -1) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
-        } else if (direction === 'left' && isGroupsView) {
-            // If we pressed left and there's no card to the left, we are at the edge! Jump to Nav.
-            enterNavZone();
+        } else {
+            // EDGE HIT! We reached the boundary of the grid.
+            if (direction === 'left' && isGroupsView) {
+                enterNavZone();
+            } else if (direction === 'up' && !isOskVisible) {
+                triggerTabSwitch('prev');
+            } else if (direction === 'down' && !isOskVisible) {
+                triggerTabSwitch('next');
+            }
         }
         return;
     }
 
     // -- Default Linear List Navigation --
-    // Up → previous; Down / Right → next
     if (direction === 'up') {
+        if (contentFocusIdx === 0) {
+            triggerTabSwitch('prev'); // Reached absolute top
+            return;
+        }
         contentFocusIdx = (contentFocusIdx - 1 + items.length) % items.length;
-    } else {
+    } else if (direction === 'down' || direction === 'right') {
+        if (direction === 'down' && contentFocusIdx === items.length - 1) {
+            triggerTabSwitch('next'); // Reached absolute bottom
+            return;
+        }
         contentFocusIdx = (contentFocusIdx + 1) % items.length;
     }
 

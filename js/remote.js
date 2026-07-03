@@ -74,6 +74,10 @@ function getOverlayItems() {
     if (wifi?.classList.contains('active'))
         return [...wifi.querySelectorAll('button:not([disabled])')].filter(isVisible);
 
+    const deleteModal = document.getElementById('delete-confirm-modal');
+    if (deleteModal?.classList.contains('active'))
+        return [...deleteModal.querySelectorAll('.modal-btn')].filter(isVisible);
+
     return null; // null = no overlay open
 }
 

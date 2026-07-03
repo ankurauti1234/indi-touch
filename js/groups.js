@@ -332,27 +332,47 @@ export async function submitGroup() {
     }
 }
 
-export async function deleteGroup() {
+// 1. This now just OPENS your custom popup instead of the browser confirm()
+export function deleteGroup() {
     if (!editingGroupId) return;
 
-    if (!confirm("Are you sure you want to delete this group?")) {
-        return;
+    // Show the custom modal
+    const modal = document.getElementById('delete-confirm-modal');
+    if (modal) {
+        modal.classList.add('active');
     }
+}
+
+// 2. This hides the custom popup if they click Cancel
+export function closeDeleteModal() {
+    const modal = document.getElementById('delete-confirm-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// 3. This runs the actual API call if they click Delete in the custom popup
+export async function executeDelete() {
+    if (!editingGroupId) return;
 
     try {
         const r = await fetch(`/api/groups/${editingGroupId}`, {
             method: 'DELETE'
         });
         const res = await r.json();
+
         if (res.success) {
-            closeGroupModal();
-            // Reload and render groups grid
-            await loadGroups();
+            closeDeleteModal(); // Close the confirm popup
+            closeGroupModal();  // Close the edit modal
+            await loadGroups(); // Reload the grid
         } else {
-            alert("Failed to delete group: " + res.error);
+            console.error("Failed to delete group: " + res.error);
+            // Optional: you can show a custom error message here later
+            closeDeleteModal();
         }
     } catch (e) {
         console.error("Delete group failed:", e);
+        closeDeleteModal();
     }
 }
 
@@ -361,6 +381,9 @@ window.renderGroupsGrid = renderGroupsGrid;
 window.closeGroupModal = closeGroupModal;
 window.submitGroup = submitGroup;
 window.deleteGroup = deleteGroup;
+
+window.closeDeleteModal = closeDeleteModal;
+window.executeDelete = executeDelete;
 
 window.updateTvUI_groups = function (tvOn) {
     const overlay = document.getElementById('tv-off-overlay-groups');

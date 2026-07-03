@@ -123,9 +123,9 @@ export function renderGroupsGrid() {
 
         return `
         <div class="group-card ${activeClass} ${avatarStyleClass} ${bentoClass}" data-group-id="${g.id}" tabindex="0">
-            <button class="group-edit-btn" title="Edit Group" tabindex="-1">
+            <div class="group-edit-btn" title="Edit Group" tabindex="-1">
                 <span class="material-symbols-rounded">edit</span>
-            </button>
+            </div>
             <div class="group-avatars-container">
                 ${avatarsHtml}
                 ${excessHtml}

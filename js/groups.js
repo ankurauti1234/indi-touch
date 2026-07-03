@@ -342,7 +342,7 @@ export function deleteGroup() {
 
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
         display: flex; align-items: center; justify-content: center;
         z-index: 10000; font-family: 'Roboto', sans-serif;
     `;
@@ -354,24 +354,32 @@ export function deleteGroup() {
             padding: 32px;
             width: 360px;
             text-align: center;
-            border: 1px solid var(--outline-variant);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+            border: 2px solid rgba(179, 38, 30, 0.4);
+            box-shadow: 0 8px 24px rgba(179, 38, 30, 0.15);
             display: flex; flex-direction: column; gap: 16px;
         ">
-            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--error);">delete</span>
-            <h2 style="color: var(--text-main); font-size: 1.5rem; font-weight: 500; margin: 0;">Delete Group?</h2>
-            <p id="delete-confirm-text" style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">This action cannot be undone.</p>
+            <div style="
+                background: rgba(179, 38, 30, 0.1);
+                width: 64px; height: 64px; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                margin: 0 auto;
+            ">
+                <span class="material-symbols-rounded" style="font-size: 32px; color: #ff5252; font-weight: bold;">delete</span>
+            </div>
+            
+            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 0;">Delete Group</h2>
+            <p style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">Are you sure? This action cannot be undone.</p>
             
             <div style="display: flex; gap: var(--gap); margin-top: 16px;">
                 <button class="modal-btn" onclick="closeDeleteModal()" style="
                     flex: 1; padding: 14px; border-radius: var(--radius-pill);
-                    background: var(--surface-variant); color: var(--on-surface-variant);
+                    background: var(--surface-variant); color: var(--text-main);
                     border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
                 ">Cancel</button>
                 
                 <button class="modal-btn" onclick="executeDelete()" style="
                     flex: 1; padding: 14px; border-radius: var(--radius-pill);
-                    background: var(--error); color: var(--on-error);
+                    background: rgba(179, 38, 30, 0.8); color: #fff;
                     border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
                 ">Delete</button>
             </div>

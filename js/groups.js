@@ -368,3 +368,62 @@ window.updateTvUI_groups = function (tvOn) {
         overlay.style.display = tvOn ? 'none' : 'flex';
     }
 }
+
+// Add this at the root level of groups.js
+document.addEventListener('keydown', function (e) {
+    const container = document.getElementById('groups-grid-container');
+
+    // If we aren't currently focused inside the groups grid, let the browser behave normally
+    if (!container || !container.contains(document.activeElement)) return;
+
+    // Support both standard keyboards and weird Bluetooth remotes
+    const key = e.key || '';
+    const keyCode = e.keyCode;
+
+    const isLeft = key === 'ArrowLeft' || key === 'Left' || keyCode === 37;
+    const isRight = key === 'ArrowRight' || key === 'Right' || keyCode === 39;
+    const isUp = key === 'ArrowUp' || key === 'Up' || keyCode === 38;
+    const isDown = key === 'ArrowDown' || key === 'Down' || keyCode === 40;
+
+    // If it's an arrow key, WE take over.
+    if (isLeft || isRight || isUp || isDown) {
+        e.preventDefault();   // Kill Chromium's native spatial engine immediately
+        e.stopPropagation();  // Stop the event from reaching other listeners
+
+        const cards = Array.from(container.querySelectorAll('.group-card:not(.create-card)'));
+        if (!cards.length) return;
+
+        const activeIdx = cards.indexOf(document.activeElement);
+        if (activeIdx === -1) {
+            cards[0].focus();
+            return;
+        }
+
+        let nextIdx = activeIdx;
+
+        // Manual Grid Navigation Logic
+        if (isLeft) {
+            nextIdx = Math.max(0, activeIdx - 1); // Lock to 0, prevents sidebar jump
+        }
+        else if (isRight) {
+            nextIdx = Math.min(cards.length - 1, activeIdx + 1); // Lock to end
+        }
+        else if (isUp) {
+            // Jump back roughly one row (3 columns)
+            nextIdx = Math.max(0, activeIdx - 3);
+        }
+        else if (isDown) {
+            // Jump forward roughly one row (3 columns)
+            nextIdx = Math.min(cards.length - 1, activeIdx + 3);
+        }
+
+        cards[nextIdx].focus();
+    }
+
+    // Handle Enter/OK button from remote natively to trigger clicks
+    const isEnter = key === 'Enter' || keyCode === 13;
+    if (isEnter && document.activeElement.classList.contains('group-card')) {
+        e.preventDefault();
+        document.activeElement.click();
+    }
+}, true); // <-- The 'true' guarantees this runs before anything else in the app

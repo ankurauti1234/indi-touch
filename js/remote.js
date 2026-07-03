@@ -120,6 +120,12 @@ function getContentItems() {
         return [...activeView.querySelectorAll('.member-card')].filter(isVisible);
     }
 
+    // Replace 'view-groups' with the actual ID of your groups tab container
+    if (activeView.id === 'view-groups') {
+        // This explicitly ignores the create-card AND completely ignores the edit button!
+        return [...activeView.querySelectorAll('.group-card:not(.create-card)')].filter(isVisible);
+    }
+
     if (activeView.id === 'view-settings') {
         const panel = activeView.querySelector('.settings-panel.active') || activeView;
         const sel = '.back-btn, .list-item:not(.no-click), .avatar-option, .wifi-item, .chip, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], textarea';
@@ -225,9 +231,13 @@ function navigate(direction) {
         return;
     }
 
-    // ── CONTENT ZONE – LINEAR LIST ────────────────────────────────────────────
-    // Left always escapes to nav zone, UNLESS OSK is open
-    if (direction === 'left' && !document.getElementById('osk-container')?.classList.contains('visible')) {
+    // ── CONTENT ZONE – LINEAR LIST & 2D GRIDS ────────────────────────────────
+    const activeView = document.querySelector('#app-frame .view.active');
+    const isGroupsView = activeView && activeView.id === 'view-groups'; // <-- Use your actual view ID
+    const isOskVisible = document.getElementById('osk-container')?.classList.contains('visible');
+
+    // Left escapes to nav zone, UNLESS OSK is open OR we are in the Groups grid
+    if (direction === 'left' && !isOskVisible && !isGroupsView) {
         enterNavZone();
         return;
     }
@@ -235,8 +245,8 @@ function navigate(direction) {
     const items = getContentItems();
     if (!items.length) return;
 
-    // -- 2D OSK Navigation --
-    if (document.getElementById('osk-container')?.classList.contains('visible')) {
+    // -- 2D Spatial Navigation (OSK & Groups Grid) --
+    if (isOskVisible || isGroupsView) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
 
@@ -248,7 +258,6 @@ function navigate(direction) {
             if (i === contentFocusIdx) return;
             const box = item.getBoundingClientRect();
 
-            // Filter by direction
             let isCorrectDir = false;
             let dist = 0;
 
@@ -280,6 +289,9 @@ function navigate(direction) {
         if (bestIdx !== -1) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
+        } else if (direction === 'left' && isGroupsView) {
+            // If we pressed left and there's no card to the left, we are at the edge! Jump to Nav.
+            enterNavZone();
         }
         return;
     }

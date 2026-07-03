@@ -122,7 +122,7 @@ export function renderGroupsGrid() {
         const excessHtml = excessCount > 0 ? `<div class="group-avatar-more">+${excessCount}</div>` : '';
 
         return `
-        <div class="group-card ${activeClass} ${avatarStyleClass} ${bentoClass}" data-group-id="${g.id}" tabindex="0">
+        <button class="group-card ${activeClass} ${avatarStyleClass} ${bentoClass}" data-group-id="${g.id}" tabindex="0">
             <div class="group-edit-btn" title="Edit Group" tabindex="-1">
                 <span class="material-symbols-rounded">edit</span>
             </div>
@@ -134,7 +134,7 @@ export function renderGroupsGrid() {
                 <span class="m-name g-name" style="font-size:1.2rem; font-weight:500;">${g.name}</span>
                 <span class="m-info g-info" style="font-size:0.9rem; opacity:0.8;">${g.members.length} ${g.members.length === 1 ? 'Member' : 'Members'}</span>
             </div>
-        </div>`;
+        </button>`;
     }).join('');
 
     // --- APPEND CREATE CARD ---

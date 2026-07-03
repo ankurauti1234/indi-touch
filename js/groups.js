@@ -332,42 +332,45 @@ export async function submitGroup() {
     }
 }
 
-// 1. This now just OPENS your custom popup instead of the browser confirm()
+// Delete group logic
 export function deleteGroup() {
     if (!editingGroupId) return;
+    if (document.getElementById('delete-confirm-modal')) return;
 
-    // Show the custom modal
-    const modal = document.getElementById('delete-confirm-modal');
-    if (modal) {
-        modal.classList.add('active');
-    }
+    const modal = document.createElement('div');
+    modal.id = 'delete-confirm-modal';
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2 style="color: #ff5252;">Delete Group</h2>
+            <p id="delete-confirm-text">Are you sure?</p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="modal-btn" onclick="closeDeleteModal()">Cancel</button>
+                <button class="modal-btn" style="background: #ff5252; color: white;" onclick="executeDelete()">Delete</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
-// 2. This hides the custom popup if they click Cancel
 export function closeDeleteModal() {
     const modal = document.getElementById('delete-confirm-modal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    if (modal) modal.remove();
 }
 
-// 3. This runs the actual API call if they click Delete in the custom popup
 export async function executeDelete() {
     if (!editingGroupId) return;
 
     try {
-        const r = await fetch(`/api/groups/${editingGroupId}`, {
-            method: 'DELETE'
-        });
+        const r = await fetch(`/api/groups/${editingGroupId}`, { method: 'DELETE' });
         const res = await r.json();
 
         if (res.success) {
-            closeDeleteModal(); // Close the confirm popup
-            closeGroupModal();  // Close the edit modal
-            await loadGroups(); // Reload the grid
+            closeDeleteModal();
+            closeGroupModal();
+            await loadGroups();
         } else {
             console.error("Failed to delete group: " + res.error);
-            // Optional: you can show a custom error message here later
             closeDeleteModal();
         }
     } catch (e) {
@@ -381,7 +384,6 @@ window.renderGroupsGrid = renderGroupsGrid;
 window.closeGroupModal = closeGroupModal;
 window.submitGroup = submitGroup;
 window.deleteGroup = deleteGroup;
-
 window.closeDeleteModal = closeDeleteModal;
 window.executeDelete = executeDelete;
 

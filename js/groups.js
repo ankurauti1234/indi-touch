@@ -27,15 +27,13 @@ export function renderGroupsGrid() {
     if (!container) return;
 
     if (!container._delegated) {
+        // --- 1. Click Handling ---
         container.addEventListener('click', (e) => {
             const editBtn = e.target.closest('.group-edit-btn');
             if (editBtn) {
                 e.stopPropagation();
                 const card = editBtn.closest('.group-card');
-                if (card) {
-                    const id = parseInt(card.dataset.groupId);
-                    openEditGroupModal(id);
-                }
+                if (card) openEditGroupModal(parseInt(card.dataset.groupId));
                 return;
             }
 
@@ -53,49 +51,30 @@ export function renderGroupsGrid() {
             }
         });
 
-        // ONE unified keydown listener to rule the remote
+        // --- 2. The Focus Trap (Capture Phase) ---
         container.addEventListener('keydown', (e) => {
-            // 1. Handle selection
-            if (e.key === 'Enter') {
-                e.preventDefault(); // Stop native double-firing
-                e.target.click();
-                return;
-            }
+            const cards = Array.from(container.querySelectorAll('button.group-card'));
+            const activeIdx = cards.indexOf(document.activeElement);
 
-            // 2. Trap ALL arrow keys to prevent escaping to the sidebar
-            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-                e.preventDefault(); // Block the browser's native jump instantly
-
-                const cards = Array.from(container.querySelectorAll('.group-card:not(.create-card)'));
-                if (cards.length === 0) return;
-
-                const activeIdx = cards.indexOf(document.activeElement);
-
-                // If focus is lost, snap to the first card
-                if (activeIdx === -1) {
-                    cards[0].focus();
-                    return;
-                }
-
-                // Calculate the next card based on Left/Right
-                let nextIdx = activeIdx;
+            if (activeIdx !== -1) {
+                // Intercept Left and Right to stop sidebar leakage
                 if (e.key === 'ArrowLeft') {
-                    nextIdx = activeIdx - 1;
-                } else if (e.key === 'ArrowRight') {
-                    nextIdx = activeIdx + 1;
+                    e.preventDefault();   // Stop native browser jumping
+                    e.stopPropagation();  // Stop event bubbling
+                    if (activeIdx > 0) {
+                        cards[activeIdx - 1].focus(); // Move left safely
+                    }
+                    // If activeIdx is 0, it does nothing -> successfully trapped!
                 }
-                // (Up and Down will currently just hold focus in place to prevent leaks)
-
-                // 3. Boundary Lock: Keep focus locked to the grid
-                if (nextIdx < 0) {
-                    nextIdx = 0; // Hard lock to the first card, stopping the left jump to Home
-                } else if (nextIdx >= cards.length) {
-                    nextIdx = cards.length - 1; // Hard lock to the last card
+                else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (activeIdx < cards.length - 1) {
+                        cards[activeIdx + 1].focus(); // Move right safely
+                    }
                 }
-
-                cards[nextIdx].focus();
             }
-        });
+        }, true); // <--- THIS 'true' IS WHAT FIXES THE PROBLEM
 
         container._delegated = true;
     }

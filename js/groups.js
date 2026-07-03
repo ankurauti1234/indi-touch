@@ -47,48 +47,57 @@ export function renderGroupsGrid() {
 
             const card = e.target.closest('.group-card');
             if (card) {
-                // Check if it's the "all" string, otherwise parse it as an ID
                 let id = card.dataset.groupId;
                 if (id !== 'all') id = parseInt(id);
                 toggleGroup(id);
             }
         });
 
-        // Add this for the remote's "OK/Enter" button
-        container.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') e.target.click();
-        });
-
-        container._delegated = true;
-
+        // ONE unified keydown listener to rule the remote
         container.addEventListener('keydown', (e) => {
             // 1. Handle selection
             if (e.key === 'Enter') {
+                e.preventDefault(); // Stop native double-firing
                 e.target.click();
-                e.preventDefault();
                 return;
             }
 
-            // 2. Only intercept Left/Right keys
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                e.preventDefault(); // Stop the remote from moving focus to sidebar
+            // 2. Trap ALL arrow keys to prevent escaping to the sidebar
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                e.preventDefault(); // Block the browser's native jump instantly
 
-                // Find all focusable group cards
                 const cards = Array.from(container.querySelectorAll('.group-card:not(.create-card)'));
+                if (cards.length === 0) return;
+
                 const activeIdx = cards.indexOf(document.activeElement);
 
+                // If focus is lost, snap to the first card
                 if (activeIdx === -1) {
-                    // If focus is somehow lost, jump to the first card
-                    cards[0]?.focus();
-                } else {
-                    // Move based on direction
-                    const nextIdx = e.key === 'ArrowLeft' ? activeIdx - 1 : activeIdx + 1;
-                    if (nextIdx >= 0 && nextIdx < cards.length) {
-                        cards[nextIdx].focus();
-                    }
+                    cards[0].focus();
+                    return;
                 }
+
+                // Calculate the next card based on Left/Right
+                let nextIdx = activeIdx;
+                if (e.key === 'ArrowLeft') {
+                    nextIdx = activeIdx - 1;
+                } else if (e.key === 'ArrowRight') {
+                    nextIdx = activeIdx + 1;
+                }
+                // (Up and Down will currently just hold focus in place to prevent leaks)
+
+                // 3. Boundary Lock: Keep focus locked to the grid
+                if (nextIdx < 0) {
+                    nextIdx = 0; // Hard lock to the first card, stopping the left jump to Home
+                } else if (nextIdx >= cards.length) {
+                    nextIdx = cards.length - 1; // Hard lock to the last card
+                }
+
+                cards[nextIdx].focus();
             }
         });
+
+        container._delegated = true;
     }
 
     const style = config.avatarStyle || 'local';

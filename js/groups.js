@@ -53,6 +53,12 @@ export function renderGroupsGrid() {
                 toggleGroup(id);
             }
         });
+
+        // Add this for the remote's "OK/Enter" button
+        container.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') e.target.click();
+        });
+
         container._delegated = true;
     }
 
@@ -76,7 +82,7 @@ export function renderGroupsGrid() {
     const allExcessHtml = excessAllCount > 0 ? `<div class="group-avatar-more">+${excessAllCount}</div>` : '';
 
     let html = `
-    <div class="group-card all-members-card ${allActiveClass} ${avatarStyleClass}" data-group-id="all">
+    <div class="group-card all-members-card ${allActiveClass} ${avatarStyleClass}" data-group-id="all" tabindex="0">
         <div class="group-avatars-container">
             ${allAvatarsHtml}
             ${allExcessHtml}
@@ -116,8 +122,8 @@ export function renderGroupsGrid() {
         const excessHtml = excessCount > 0 ? `<div class="group-avatar-more">+${excessCount}</div>` : '';
 
         return `
-        <div class="group-card ${activeClass} ${avatarStyleClass} ${bentoClass}" data-group-id="${g.id}">
-            <button class="group-edit-btn" title="Edit Group">
+        <div class="group-card ${activeClass} ${avatarStyleClass} ${bentoClass}" data-group-id="${g.id}" tabindex="0">
+            <button class="group-edit-btn" title="Edit Group" tabindex="-1">
                 <span class="material-symbols-rounded">edit</span>
             </button>
             <div class="group-avatars-container">

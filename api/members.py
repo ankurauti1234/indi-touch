@@ -33,6 +33,31 @@ def toggle_member():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@members_bp.route("/toggle_bulk", methods=["POST"])
+def toggle_members_bulk():
+    indexes = request.get_json(force=True).get("indexes")
+    if not isinstance(indexes, list):
+        return jsonify({"success": False, "error": "indexes (list) required"}), 400
+    
+    try:
+        updated_members = []
+        # Update the database for all provided indexes silently
+        for index in indexes:
+            member, new_state = toggle_member_in_db(index)
+            updated_members.append({"member": member, "active": new_state})
+        
+        # Fire the device event EXACTLY ONCE after all DB updates are complete
+        if indexes:
+            publish_member_event()
+        
+        return jsonify({"success": True, "updated": updated_members})
+    
+    except IndexError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+
 @members_bp.route("/rename", methods=["POST"])
 def rename_member():
     data  = request.get_json(force=True)

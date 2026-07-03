@@ -200,12 +200,12 @@ export async function toggleGroup(groupId) {
         if (window.renderGrid) window.renderGrid();
         renderGroupsGrid();
 
-        // --- 3. SAFE BACKGROUND SYNC ---
-        for (const index of pendingApiIndexes) {
-            await fetch('/api/members/toggle', {
+        // --- 3. SAFE BACKGROUND SYNC (BULK) ---
+        if (pendingApiIndexes.length > 0) {
+            await fetch('/api/members/toggle_bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ index: index })
+                body: JSON.stringify({ indexes: pendingApiIndexes })
             });
         }
 

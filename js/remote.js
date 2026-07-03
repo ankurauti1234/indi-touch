@@ -94,21 +94,24 @@ function getNavItems() {
     return [...document.querySelectorAll('#app-frame .nav-btn')].filter(isVisible);
 }
 
+// ─── HELPER: Tab Switcher ─────────────────────────────────────────────────────
 function triggerTabSwitch(dir) {
     const navs = getNavItems();
     if (!navs.length) return;
 
-    // Find currently active tab, fallback to last known focus
     let currentIdx = navs.findIndex(n => n.classList.contains('active'));
     if (currentIdx === -1) currentIdx = navFocusIdx;
 
-    // Calculate previous/next index (wraps around)
-    const nextIdx = dir === 'prev'
-        ? (currentIdx - 1 + navs.length) % navs.length
-        : (currentIdx + 1) % navs.length;
+    const nextIdx = dir === 'prev' ? currentIdx - 1 : currentIdx + 1;
+
+    // FIX 1: CLAMPING (Stop scrolling/wrapping)
+    // If we try to go above the first tab (0) or below the last tab, do nothing!
+    if (nextIdx < 0 || nextIdx >= navs.length) {
+        return;
+    }
 
     navFocusIdx = nextIdx;
-    navs[nextIdx].click(); // This safely triggers your existing tab-switch animation and focus reset!
+    navs[nextIdx].click();
 }
 
 
@@ -202,10 +205,8 @@ function enterContentZone() {
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 function navigate(direction) {
-    // Wake screensaver on any navigation key
     if (isScreensaverActive()) {
         resetIdle();
-        // Restore previous focus context
         setTimeout(() => enterContentZone(), 100);
         return;
     }
@@ -215,40 +216,44 @@ function navigate(direction) {
         const navItems = getNavItems();
         if (!navItems.length) { enterContentZone(); return; }
 
+        // FIX 1 (Part B): Clamp the side rail too so the icon selection doesn't loop
         if (direction === 'up') {
-            navFocusIdx = (navFocusIdx - 1 + navItems.length) % navItems.length;
+            navFocusIdx = Math.max(0, navFocusIdx - 1);
             setFocusEl(navItems[navFocusIdx]);
         } else if (direction === 'down') {
-            navFocusIdx = (navFocusIdx + 1) % navItems.length;
+            navFocusIdx = Math.min(navItems.length - 1, navFocusIdx + 1);
             setFocusEl(navItems[navFocusIdx]);
         } else if (direction === 'right') {
             enterContentZone();
         }
-        // Left from nav = edge, do nothing
         return;
     }
 
     // ── CONTENT ZONE – HOME GRID (2D) ─────────────────────────────────────────
     if (isHomeGrid()) {
-        if (direction === 'left') {
-            // At leftmost column → jump to nav zone
-            const cols = getGridCols();
-            const idx = getFocusedGridIndex();
-            if (idx % cols === 0) {
-                enterNavZone();
-                return;
-            }
+        const cols = getGridCols();
+        const idx = getFocusedGridIndex();
+        const homeItems = getContentItems();
+
+        if (direction === 'left' && idx % cols === 0) {
+            enterNavZone();
+            return;
         }
         if (direction === 'up') {
-            // At top row → jump to PREVIOUS TAB instead of side nav
-            const cols = getGridCols();
-            const idx = getFocusedGridIndex();
-            if (idx < cols) {
+            if (homeItems.length === 0 || idx < cols) {
                 triggerTabSwitch('prev');
                 return;
             }
         }
-        // Delegate 2D movement to grid.js
+        // FIX 3: Home Grid Down Navigation
+        if (direction === 'down') {
+            // If the grid is empty OR if the current index is on the bottom row
+            if (homeItems.length === 0 || idx + cols >= homeItems.length) {
+                triggerTabSwitch('next');
+                return;
+            }
+        }
+
         gridMoveFocus(direction);
         return;
     }
@@ -258,14 +263,21 @@ function navigate(direction) {
     const isGroupsView = activeView && activeView.id === 'view-groups';
     const isOskVisible = document.getElementById('osk-container')?.classList.contains('visible');
 
-    // Left escapes to nav zone, UNLESS OSK is open OR we are in the Groups grid
     if (direction === 'left' && !isOskVisible && !isGroupsView) {
         enterNavZone();
         return;
     }
 
     const items = getContentItems();
-    if (!items.length) return;
+
+    // FIX 2: HANDLE EMPTY TABS
+    // If a tab is completely empty, don't get stuck! Allow them to swipe away.
+    if (!items.length) {
+        if (direction === 'up') triggerTabSwitch('prev');
+        else if (direction === 'down') triggerTabSwitch('next');
+        else if (direction === 'left') enterNavZone();
+        return;
+    }
 
     // -- 2D Spatial Navigation (OSK & Groups Grid) --
     if (isOskVisible || isGroupsView) {
@@ -312,7 +324,6 @@ function navigate(direction) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
         } else {
-            // EDGE HIT! We reached the boundary of the grid.
             if (direction === 'left' && isGroupsView) {
                 enterNavZone();
             } else if (direction === 'up' && !isOskVisible) {
@@ -327,16 +338,18 @@ function navigate(direction) {
     // -- Default Linear List Navigation --
     if (direction === 'up') {
         if (contentFocusIdx === 0) {
-            triggerTabSwitch('prev'); // Reached absolute top
+            triggerTabSwitch('prev');
             return;
         }
-        contentFocusIdx = (contentFocusIdx - 1 + items.length) % items.length;
+        contentFocusIdx = contentFocusIdx - 1; // Removed wrap loop
     } else if (direction === 'down' || direction === 'right') {
         if (direction === 'down' && contentFocusIdx === items.length - 1) {
-            triggerTabSwitch('next'); // Reached absolute bottom
+            triggerTabSwitch('next');
             return;
         }
-        contentFocusIdx = (contentFocusIdx + 1) % items.length;
+        if (contentFocusIdx < items.length - 1) {
+            contentFocusIdx = contentFocusIdx + 1; // Removed wrap loop
+        }
     }
 
     setFocusEl(items[contentFocusIdx]);

@@ -62,23 +62,31 @@ export function renderGroupsGrid() {
         container._delegated = true;
 
         container.addEventListener('keydown', (e) => {
+            // 1. Handle selection
             if (e.key === 'Enter') {
                 e.target.click();
                 e.preventDefault();
                 return;
             }
 
-            const cards = Array.from(container.querySelectorAll('.group-card:not(.create-card)'));
-            const idx = cards.indexOf(document.activeElement);
+            // 2. Only intercept Left/Right keys
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault(); // Stop the remote from moving focus to sidebar
 
-            if (idx === -1) return;
+                // Find all focusable group cards
+                const cards = Array.from(container.querySelectorAll('.group-card:not(.create-card)'));
+                const activeIdx = cards.indexOf(document.activeElement);
 
-            if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                if (idx > 0) cards[idx - 1].focus();
-            } else if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                if (idx < cards.length - 1) cards[idx + 1].focus();
+                if (activeIdx === -1) {
+                    // If focus is somehow lost, jump to the first card
+                    cards[0]?.focus();
+                } else {
+                    // Move based on direction
+                    const nextIdx = e.key === 'ArrowLeft' ? activeIdx - 1 : activeIdx + 1;
+                    if (nextIdx >= 0 && nextIdx < cards.length) {
+                        cards[nextIdx].focus();
+                    }
+                }
             }
         });
     }

@@ -339,18 +339,41 @@ export function deleteGroup() {
 
     const modal = document.createElement('div');
     modal.id = 'delete-confirm-modal';
-    modal.className = 'modal-overlay active';
 
-    // Forces popup to float over everything and center content
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 10000; font-family: 'Roboto', sans-serif;
+    `;
 
     modal.innerHTML = `
-        <div class="modal-content">
-            <h2 style="color: #ff5252;">Delete Group</h2>
-            <p id="delete-confirm-text">Are you sure?</p>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button class="modal-btn" onclick="closeDeleteModal()">Cancel</button>
-                <button class="modal-btn" style="background: #ff5252; color: white; border: none;" onclick="executeDelete()">Delete</button>
+        <div style="
+            background: var(--bg-surface-container-high);
+            border-radius: var(--radius-card);
+            padding: 32px;
+            width: 360px;
+            text-align: center;
+            border: 1px solid var(--outline-variant);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; gap: 16px;
+        ">
+            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--error);">delete</span>
+            <h2 style="color: var(--text-main); font-size: 1.5rem; font-weight: 500; margin: 0;">Delete Group?</h2>
+            <p id="delete-confirm-text" style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">This action cannot be undone.</p>
+            
+            <div style="display: flex; gap: var(--gap); margin-top: 16px;">
+                <button class="modal-btn" onclick="closeDeleteModal()" style="
+                    flex: 1; padding: 14px; border-radius: var(--radius-pill);
+                    background: var(--surface-variant); color: var(--on-surface-variant);
+                    border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
+                ">Cancel</button>
+                
+                <button class="modal-btn" onclick="executeDelete()" style="
+                    flex: 1; padding: 14px; border-radius: var(--radius-pill);
+                    background: var(--error); color: var(--on-error);
+                    border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
+                ">Delete</button>
             </div>
         </div>
     `;

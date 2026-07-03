@@ -27,7 +27,6 @@ export function renderGroupsGrid() {
     if (!container) return;
 
     if (!container._delegated) {
-        // --- 1. Click Handling ---
         container.addEventListener('click', (e) => {
             const editBtn = e.target.closest('.group-edit-btn');
             if (editBtn) {
@@ -50,31 +49,6 @@ export function renderGroupsGrid() {
                 toggleGroup(id);
             }
         });
-
-        // --- 2. The Focus Trap (Capture Phase) ---
-        container.addEventListener('keydown', (e) => {
-            const cards = Array.from(container.querySelectorAll('button.group-card'));
-            const activeIdx = cards.indexOf(document.activeElement);
-
-            if (activeIdx !== -1) {
-                // Intercept Left and Right to stop sidebar leakage
-                if (e.key === 'ArrowLeft') {
-                    e.preventDefault();   // Stop native browser jumping
-                    e.stopPropagation();  // Stop event bubbling
-                    if (activeIdx > 0) {
-                        cards[activeIdx - 1].focus(); // Move left safely
-                    }
-                    // If activeIdx is 0, it does nothing -> successfully trapped!
-                }
-                else if (e.key === 'ArrowRight') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (activeIdx < cards.length - 1) {
-                        cards[activeIdx + 1].focus(); // Move right safely
-                    }
-                }
-            }
-        }, true); // <--- THIS 'true' IS WHAT FIXES THE PROBLEM
 
         container._delegated = true;
     }

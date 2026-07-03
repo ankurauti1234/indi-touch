@@ -2672,27 +2672,38 @@ body.osk-open .main-stage {
 /* some extra stuff */
 
 #groups-grid-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    /* Strictly 3 equal columns */
-    grid-auto-rows: 160px;
-    /* Locks the height of all cards */
+    display: flex;
+    flex-wrap: wrap;
+    /* Allows cards to drop to the next line */
     gap: var(--gap, 16px);
-
     max-height: 100%;
     overflow-y: auto;
     padding-bottom: 20px;
-
-    /* Auto-dense packing makes sure smaller cards fill in any empty gaps left by bigger cards! */
-    grid-auto-flow: dense;
 }
 
-.group-card.wide-card {
-    grid-column: span 2;
-}
+/* 1 Column (Default) */
+.group-card {
+    /* ... (keep all your existing .group-card styling at the top) ... */
 
-.group-card.all-members-card {
-    grid-column: span 3;
+    /* Replaces grid-column: span 1 */
+    width: calc((100% - (2 * var(--gap, 16px))) / 3);
+
+    /* Replaces grid-auto-rows: 160px */
     height: 160px;
-    /* Overrides the standard height */
+
+    /* Prevents flexbox from randomly squishing the cards */
+    flex-shrink: 0;
+}
+
+/* 2 Columns */
+.group-card.wide-card {
+    /* Replaces grid-column: span 2 */
+    width: calc(((100% - (2 * var(--gap, 16px))) / 3) * 2 + var(--gap, 16px));
+}
+
+/* 3 Columns (Full Width) */
+.group-card.all-members-card {
+    /* Replaces grid-column: span 3 */
+    width: 100%;
+    height: 160px;
 }

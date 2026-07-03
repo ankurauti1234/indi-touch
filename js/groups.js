@@ -304,10 +304,29 @@ export async function submitGroup() {
         return;
     }
 
+    // 1. Get the member codes FIRST
     const listContainer = document.getElementById('group-members-list');
     const selectedItems = listContainer ? listContainer.querySelectorAll('.group-member-item.selected') : [];
     const member_codes = Array.from(selectedItems).map(item => item.dataset.code);
 
+    if (member_codes.length === 0) {
+        alert("Please select at least one member");
+        return;
+    }
+
+    // 2. THEN check for duplicates using member_codes
+    const duplicate = groupsData.find(g =>
+        g.id !== editingGroupId &&
+        g.members.length === member_codes.length &&
+        g.members.every(m => member_codes.includes(m.member_code))
+    );
+
+    if (duplicate) {
+        showDuplicateModal(duplicate.name);
+        return; // Stops the save process
+    }
+
+    // 3. Finally, save the group
     const url = editingGroupId ? `/api/groups/${editingGroupId}` : '/api/groups';
     const method = editingGroupId ? 'PUT' : 'POST';
 
@@ -320,9 +339,7 @@ export async function submitGroup() {
         const res = await r.json();
         if (res.success) {
             closeGroupModal();
-            // Reload all members just in case (updates dynamic state)
             await loadMembers();
-            // Reload and render groups grid
             await loadGroups();
         } else {
             alert("Failed to save group: " + res.error);
@@ -330,6 +347,43 @@ export async function submitGroup() {
     } catch (e) {
         console.error("Save group failed:", e);
     }
+}
+
+// Find Duplicate Group 
+export function showDuplicateModal(groupName) {
+    if (document.getElementById('duplicate-modal')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'duplicate-modal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 10000; font-family: 'Roboto', sans-serif;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: var(--bg-surface-container-high);
+            border-radius: var(--radius-card);
+            padding: 32px;
+            width: 360px;
+            text-align: center;
+            border: 1px solid var(--outline-variant);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        ">
+            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--primary);">info</span>
+            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">Duplicate Group</h2>
+            <p style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">This exact combination already exists as:<br><b style="color: var(--text-main);">${groupName}</b></p>
+            
+            <button class="modal-btn" onclick="this.closest('#duplicate-modal').remove()" style="
+                margin-top: 24px; width: 100%; padding: 14px; border-radius: var(--radius-pill);
+                background: var(--primary); color: var(--on-primary);
+                border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
+            ">OK</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 // Delete group logic

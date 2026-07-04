@@ -2673,57 +2673,50 @@ body.osk-open .main-stage {
 
 #groups-grid-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    /* Strictly 3 equal columns */
-    grid-auto-rows: 160px;
-    /* Locks the height of all cards */
-    gap: var(--gap, 16px);
-
+    grid-template-columns: repeat(2, 1fr) !important;
+    /* 2 columns */
+    grid-auto-rows: 180px;
+    gap: 32px !important;
+    /* Larger gap BETWEEN cards */
+    padding: 32px !important;
+    /* Margin AROUND the edges of the grid */
     max-height: 100%;
     overflow-y: auto;
-    padding-bottom: 20px;
-
-    /* Auto-dense packing makes sure smaller cards fill in any empty gaps left by bigger cards! */
+    box-sizing: border-box;
     grid-auto-flow: dense;
-}
-
-.group-card.wide-card {
-    grid-column: span 2;
-}
-
-.group-card.all-members-card {
-    grid-column: span 3;
-    height: 160px;
-    /* Overrides the standard height */
-}
-
-/* 1. Grid: 2 Columns & Taller Cards */
-#groups-grid-container {
-    grid-template-columns: repeat(2, 1fr) !important;
 }
 
 .group-card {
     min-height: 180px !important;
 }
 
-.group-card.all-members-card,
-.group-card.wide-card {
+.group-card.wide-card,
+.group-card.all-members-card {
     grid-column: span 2 !important;
+    height: auto;
+    /* Lets the all-members card adapt to the new row height */
 }
 
-/* 2. Bigger Avatars (Groups Tab & Edit Popup) */
+/* 2. Bigger Avatars (Scaled from 64px to 80px) */
 .group-avatar-stacked,
 .group-avatar-more,
 .group-member-item img {
-    width: 64px !important;
-    height: 64px !important;
+    width: 80px !important;
+    height: 80px !important;
+}
+
+/* Keeps the avatars overlapping correctly at their new larger size */
+.group-avatar-stacked~.group-avatar-stacked,
+.group-avatar-stacked~.group-avatar-more {
+    margin-left: -24px !important;
 }
 
 .group-avatar-more {
-    font-size: 1.4rem !important;
+    font-size: 1.6rem !important;
+    /* Bumped slightly to fit the 80px circle */
 }
 
-/* 3. Bigger Text (Overrides JS inline styles) */
+/* 3. Text Sizes */
 .group-card .g-name {
     font-size: 1.8rem !important;
 }

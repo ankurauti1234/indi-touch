@@ -2697,11 +2697,17 @@ body.osk-open .main-stage {
     /* Overrides the standard height */
 }
 
-/* 1. Grid: 2 Columns & Taller Cards */
+/* 1. Grid: 2 Columns, Restored Gaps, and Safe Area Padding */
 #groups-grid-container {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 24px !important;
+    /* This restores the space between cards */
+    padding: 32px 48px !important;
+    /* 32px top/bottom, 48px left/right for TV safe zones */
+    box-sizing: border-box;
 }
 
+/* Keep the rest of the CSS from the previous step exactly the same: */
 .group-card {
     min-height: 180px !important;
 }
@@ -2711,7 +2717,6 @@ body.osk-open .main-stage {
     grid-column: span 2 !important;
 }
 
-/* 2. Bigger Avatars (Groups Tab & Edit Popup) */
 .group-avatar-stacked,
 .group-avatar-more,
 .group-member-item img {
@@ -2723,7 +2728,6 @@ body.osk-open .main-stage {
     font-size: 1.4rem !important;
 }
 
-/* 3. Bigger Text (Overrides JS inline styles) */
 .group-card .g-name {
     font-size: 1.8rem !important;
 }

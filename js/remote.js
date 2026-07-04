@@ -54,7 +54,7 @@ function isScreensaverActive() {
 }
 
 function getOverlayItems() {
-    // 1. Connection warning & Critical
+    // 1. Connection warning popups take highest priority
     const wifiWarn = document.getElementById('wifi-warning-overlay');
     if (wifiWarn?.classList.contains('visible'))
         return [...wifiWarn.querySelectorAll('button')].filter(isVisible);
@@ -63,31 +63,33 @@ function getOverlayItems() {
     if (critical?.classList.contains('active'))
         return [...critical.querySelectorAll('button')].filter(isVisible);
 
-    // 2. Dynamic Top-Level Modals
+    // 2. Dynamic Top-Level Modals (Alert, Duplicate & Delete)
     const alertModal = document.getElementById('alert-modal');
-    if (alertModal) return [...alertModal.querySelectorAll('button')].filter(isVisible);
+    if (alertModal)
+        return [...alertModal.querySelectorAll('button')].filter(isVisible);
 
     const dupModal = document.getElementById('duplicate-modal');
-    if (dupModal) return [...dupModal.querySelectorAll('button')].filter(isVisible);
+    if (dupModal)
+        return [...dupModal.querySelectorAll('button')].filter(isVisible);
 
     const deleteModal = document.getElementById('delete-confirm-modal');
-    if (deleteModal) return [...deleteModal.querySelectorAll('button')].filter(isVisible);
+    if (deleteModal)
+        return [...deleteModal.querySelectorAll('button')].filter(isVisible);
 
     // 3. Wi-Fi Password Modal
     const wifi = document.getElementById('wifi-password-overlay');
     if (wifi?.classList.contains('active'))
         return [...wifi.querySelectorAll('button:not([disabled])')].filter(isVisible);
 
-    // 4. Group Create/Edit Modal
+    // 4. Group Create/Edit Modal (group-modal-overlay)
     const modal = document.getElementById('group-modal-overlay');
     if (modal?.classList.contains('active')) {
         const sel = 'input, button:not([disabled]), .group-member-item, .modal-btn';
         return [...modal.querySelectorAll(sel)].filter(isVisible);
     }
 
-    return null;
+    return null; // null = no overlay open
 }
-
 window.resetRemoteFocus = function () {
     setTimeout(() => {
         const items = getContentItems();
@@ -95,7 +97,7 @@ window.resetRemoteFocus = function () {
             contentFocusIdx = 0;
             setFocusEl(items[0]);
         }
-    }, 50);
+    }, 50); // Slight delay for DOM rendering
 };
 
 function isHomeGrid() {
@@ -111,6 +113,7 @@ function getNavItems() {
     return [...document.querySelectorAll('#app-frame .nav-btn')].filter(isVisible);
 }
 
+// ─── HELPER: Tab Switcher ─────────────────────────────────────────────────────
 function triggerTabSwitch(dir) {
     const navs = getNavItems();
     if (!navs.length) return;
@@ -120,29 +123,37 @@ function triggerTabSwitch(dir) {
 
     const nextIdx = dir === 'prev' ? currentIdx - 1 : currentIdx + 1;
 
-    // Clamp so we don't scroll off the ends
-    if (nextIdx < 0 || nextIdx >= navs.length) return;
+    if (nextIdx < 0 || nextIdx >= navs.length) {
+        return;
+    }
 
     navFocusIdx = nextIdx;
     navs[nextIdx].click();
 }
 
-// ─── Content items for current view ───────────────────────────────────────────
+// ─── Content items for current view (never includes nav rail) ─────────────────
 function getContentItems() {
+    // 1. Overlays take priority
     const overlay = getOverlayItems();
     if (overlay !== null) return overlay;
 
+    // 2. OSK open anywhere (wifi password, onboarding, etc.)
     const osk = document.getElementById('osk-container');
     if (osk?.classList.contains('visible'))
         return [...osk.querySelectorAll('.osk-key')].filter(isVisible);
 
+    // 3. Onboarding
     if (isOnboarding()) {
         const step = document.querySelector('#onboarding-layer .step.active');
-        return step ? [...step.querySelectorAll('button:not([disabled]), .net-item')].filter(isVisible) : [];
+        return step
+            ? [...step.querySelectorAll('button:not([disabled]), .net-item')].filter(isVisible)
+            : [];
     }
 
+    // 4. Screensaver — nothing focusable
     if (isScreensaverActive()) return [];
 
+    // 5. Main app
     const activeView = document.querySelector('#app-frame .view.active');
     if (!activeView) return [];
 
@@ -164,13 +175,15 @@ function getContentItems() {
     return [...activeView.querySelectorAll(sel)].filter(isVisible);
 }
 
-// ─── Zone Switching ───────────────────────────────────────────────────────────
+// ─── Zone: NAV ───────────────────────────────────────────────────────────────
 function enterNavZone() {
     const navItems = getNavItems();
     if (!navItems.length) return;
 
+    // Clear grid focus if leaving home grid
     clearGridFocus();
 
+    // Pick nav item closest vertically to current position
     if (remoteFocusEl) {
         const curY = remoteFocusEl.getBoundingClientRect().top;
         let bestIdx = 0, bestDist = Infinity;
@@ -185,9 +198,10 @@ function enterNavZone() {
     setFocusEl(navItems[navFocusIdx]);
 }
 
+// ─── Zone: CONTENT ────────────────────────────────────────────────────────────
 function enterContentZone() {
     zone = 'content';
-    clearFocusEl();
+    clearFocusEl(); // grid.js manages its own .focused class
 
     if (isHomeGrid()) {
         const cards = getContentItems();
@@ -208,6 +222,7 @@ function navigate(direction) {
         return;
     }
 
+    // ── NAV ZONE ──────────────────────────────────────────────────────────────
     if (zone === 'nav') {
         const navItems = getNavItems();
         if (!navItems.length) { enterContentZone(); return; }
@@ -224,6 +239,7 @@ function navigate(direction) {
         return;
     }
 
+    // ── CONTENT ZONE – HOME GRID (2D) ─────────────────────────────────────────
     if (isHomeGrid()) {
         const cols = getGridCols();
         const idx = getFocusedGridIndex();
@@ -250,12 +266,12 @@ function navigate(direction) {
         return;
     }
 
+    // ── CONTENT ZONE – LINEAR LIST & 2D GRIDS & OVERLAYS ──────────────────────
     const activeView = document.querySelector('#app-frame .view.active');
     const isGroupsView = activeView && activeView.id === 'view-groups';
     const isOskVisible = document.getElementById('osk-container')?.classList.contains('visible');
-    const isOverlayActive = getOverlayItems() !== null;
 
-    if (direction === 'left' && !isOskVisible && !isGroupsView && !isOverlayActive) {
+    if (direction === 'left' && !isOskVisible && !isGroupsView) {
         enterNavZone();
         return;
     }
@@ -269,7 +285,8 @@ function navigate(direction) {
         return;
     }
 
-    if (isOskVisible || isGroupsView || isOverlayActive) {
+    // -- 2D Spatial Navigation (OSK, Groups Grid, AND OVERLAYS) --
+    if (isOskVisible || isGroupsView || getOverlayItems() !== null) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
 
@@ -280,6 +297,7 @@ function navigate(direction) {
         items.forEach((item, i) => {
             if (i === contentFocusIdx) return;
             const box = item.getBoundingClientRect();
+
             let isCorrectDir = false;
             let dist = 0;
 
@@ -312,17 +330,19 @@ function navigate(direction) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
         } else {
-            if (direction === 'left' && isGroupsView && !isOverlayActive) {
+            // Re-enabled natural boundary escaping
+            if (direction === 'left' && isGroupsView) {
                 enterNavZone();
-            } else if (direction === 'up' && !isOskVisible && !isOverlayActive) {
+            } else if (direction === 'up' && !isOskVisible) {
                 triggerTabSwitch('prev');
-            } else if (direction === 'down' && !isOskVisible && !isOverlayActive) {
+            } else if (direction === 'down' && !isOskVisible) {
                 triggerTabSwitch('next');
             }
         }
         return;
     }
 
+    // -- Default Linear List Navigation --
     if (direction === 'up') {
         if (contentFocusIdx === 0) {
             triggerTabSwitch('prev');
@@ -342,7 +362,7 @@ function navigate(direction) {
     setFocusEl(items[contentFocusIdx]);
 }
 
-// ─── Activation & Init ────────────────────────────────────────────────────────
+// ─── Activation ───────────────────────────────────────────────────────────────
 function activate() {
     if (isScreensaverActive()) return;
 
@@ -370,6 +390,7 @@ function activate() {
     }
 }
 
+// ─── Public: reset focus when view changes ────────────────────────────────────
 export function resetFocusToFirst() {
     zone = 'content';
     contentFocusIdx = 0;
@@ -385,6 +406,7 @@ export function resetFocusToFirst() {
     if (items.length) setFocusEl(items[0]);
 }
 
+// ─── Public: apply/remove remote mode ────────────────────────────────────────
 export function applyRemoteMode(on) {
     if (on) {
         document.body.classList.add('remote-mode');
@@ -401,6 +423,7 @@ export function applyRemoteMode(on) {
     }
 }
 
+// ─── Init ─────────────────────────────────────────────────────────────────────
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 

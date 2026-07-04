@@ -118,6 +118,22 @@ document.addEventListener('touchend', e => {
         return;
     }
 
+    // --- NEW: MODAL LOCK FOR TOUCH SWIPES ---
+    const isModalActive = !!document.querySelector(
+        '#group-modal-overlay.active, ' +
+        '#wifi-password-overlay.active, ' +
+        '#alert-modal, ' +
+        '#duplicate-modal, ' +
+        '#delete-confirm-modal, ' +
+        '#wifi-warning-overlay.visible'
+    );
+
+    // If a modal is open, completely ignore the swipe
+    if (isModalActive) {
+        return;
+    }
+    // -----------------------------------------
+
     const endY = e.changedTouches[0].clientY;
     const deltaY = startY - endY;
 

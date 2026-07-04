@@ -2697,41 +2697,47 @@ body.osk-open .main-stage {
     /* Overrides the standard height */
 }
 
-/* 1. Grid: 2 Columns, Restored Gaps, and Safe Area Padding */
+/* 1. Grid: Generous Spacing for Pi Display */
 #groups-grid-container {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 24px !important;
-    /* This restores the space between cards */
-    padding: 32px 48px !important;
-    /* 32px top/bottom, 48px left/right for TV safe zones */
+    gap: 40px !important;
+    /* Much wider gaps between cards */
+    padding: 48px !important;
+    /* Thick safe margin on all four sides */
     box-sizing: border-box;
 }
 
-/* Keep the rest of the CSS from the previous step exactly the same: */
+/* 2. Taller Cards to Fit Bigger Content */
 .group-card {
-    min-height: 180px !important;
+    min-height: 220px !important;
 }
 
 .group-card.all-members-card,
-.group-card.wide-card {
+.group-card.wide-card,
+.group-card.create-card {
+    /* Ensuring create card spans if needed */
     grid-column: span 2 !important;
 }
 
+/* 3. Massive Avatars (Scaled from 64px -> 96px) */
 .group-avatar-stacked,
 .group-avatar-more,
 .group-member-item img {
-    width: 64px !important;
-    height: 64px !important;
+    width: 96px !important;
+    height: 96px !important;
 }
 
 .group-avatar-more {
-    font-size: 1.4rem !important;
+    font-size: 2rem !important;
+    /* Scaled the "+X" text to fit the larger circle */
 }
 
+/* 4. Highly Legible Text */
 .group-card .g-name {
-    font-size: 1.8rem !important;
+    font-size: 2.2rem !important;
+    margin-bottom: 4px !important;
 }
 
 .group-card .g-info {
-    font-size: 1.2rem !important;
+    font-size: 1.4rem !important;
 }

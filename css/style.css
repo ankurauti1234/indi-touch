@@ -2675,15 +2675,15 @@ body.osk-open .main-stage {
     display: grid;
     grid-template-columns: repeat(2, 1fr) !important;
 
-    /* Restored your exact original height */
     grid-auto-rows: 180px !important;
     gap: 12px !important;
 
-    padding: 32px !important;
+    /* Top 32px, Right 32px, Bottom 96px, Left 32px */
+    padding: 32px 32px 96px 32px !important;
 
-    /* CRITICAL: Stops the remote scroll from "eating" the top of the cards */
     scroll-padding-top: 32px !important;
-    scroll-padding-bottom: 32px !important;
+    /* Matches the bottom padding so the remote keeps it hovering above the edge */
+    scroll-padding-bottom: 96px !important;
 
     height: 100%;
     overflow-y: auto;

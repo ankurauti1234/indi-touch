@@ -244,35 +244,56 @@ export function showOSK() {
 }
 
 export function hideOSK() {
-    // 1. Remove the classes first (This triggers your CSS to remove the extra 300px)
-    document.getElementById('osk-container').classList.remove('visible');
-    document.body.classList.remove('osk-open');
-
-    // 2. Unfocus the input so the native TV browser stops forcing focus
-    if (activeInput) {
-        activeInput.blur();
-    }
+    // 1. Unfocus the input immediately
+    if (activeInput) activeInput.blur();
     if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
         document.activeElement.blur();
     }
 
-    // 3. Wait exactly 50ms for the CSS height change to render, THEN force the scroll down
-    setTimeout(() => {
-        if (activeInput) {
-            let parent = activeInput.parentElement;
-            while (parent && parent !== document.documentElement) {
-                if (parent.scrollTop > 0) parent.scrollTop = 0;
-                parent = parent.parentElement;
+    // Helper function to aggressively reset all scrolls
+    const forceScrollDown = () => {
+        // Walk up from the input and force scroll to 0
+        let el = activeInput;
+        while (el && el !== document) {
+            if (el.scrollTop > 0) {
+                el.style.scrollBehavior = 'auto'; // Kill any smooth scroll animation instantly
+                el.scrollTop = 0;
+                if (el.scrollTo) el.scrollTo({ top: 0, behavior: 'instant' });
+                el.style.scrollBehavior = ''; // Restore
             }
+            el = el.parentNode;
         }
 
-        // Force reset all standard containers
-        document.querySelectorAll('.view, .settings-panel, .popover-card, #group-modal-overlay, #app-frame, .main-stage').forEach(el => {
-            if (el.scrollTop > 0) el.scrollTop = 0;
+        // Hard-target all known scrollable containers
+        const containers = document.querySelectorAll(
+            '.view, .settings-panel, .popover-card, #group-modal-overlay, #app-frame, .main-stage, #member-settings-list'
+        );
+
+        containers.forEach(container => {
+            container.style.scrollBehavior = 'auto'; // Kill smooth scroll
+            container.scrollTop = 0;
+            if (container.scrollTo) container.scrollTo({ top: 0, behavior: 'instant' });
+            container.style.scrollBehavior = ''; // Restore
         });
 
-        window.scrollTo(0, 0);
+        // Hard-target the window
+        document.documentElement.style.scrollBehavior = 'auto';
+        document.body.style.scrollBehavior = 'auto';
+        window.scrollTo({ top: 0, behavior: 'instant' });
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
-    }, 50); // 50ms delay is the magic number here
+        document.documentElement.style.scrollBehavior = '';
+        document.body.style.scrollBehavior = '';
+    };
+
+    // 2. Force scroll down BEFORE the CSS height shrinks
+    forceScrollDown();
+
+    // 3. Remove the classes (this shrinks the #app-frame and .main-stage)
+    document.getElementById('osk-container').classList.remove('visible');
+    document.body.classList.remove('osk-open');
+
+    // 4. Force scroll down AFTER the CSS updates (double-tap to guarantee it snaps)
+    setTimeout(forceScrollDown, 10);
+    setTimeout(forceScrollDown, 50);
 }

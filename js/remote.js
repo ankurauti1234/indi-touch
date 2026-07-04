@@ -334,16 +334,40 @@ function navigate(direction) {
         } else {
             // EDGE HIT - Escaping the grid / keyboard
 
-            // --- FIXED: Down-to-Exit OSK ---
+            // --- FIXED: Down-to-Exit OSK with Smart Focus Return ---
             if (isOskVisible && direction === 'down') {
-                osk.classList.remove('visible');
-                document.body.classList.remove('osk-open'); // This removes the extra CSS height!
+                // 1. Capture the exact input field before we close anything
+                const currentInput = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')
+                    ? document.activeElement
+                    : null;
 
-                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-                    document.activeElement.blur(); // Remove text cursor
+                // 2. Hide the keyboard and shrink the CSS
+                osk.classList.remove('visible');
+                document.body.classList.remove('osk-open');
+
+                // 3. Blur the input to drop the native TV UI
+                if (currentInput) {
+                    currentInput.blur();
                 }
 
-                window.resetRemoteFocus(); // Snap remote back to the modal underneath
+                // 4. Wait for the DOM to settle, then find that specific input and focus it!
+                setTimeout(() => {
+                    const newItems = getContentItems();
+                    let targetIdx = 0; // Default fallback to 0
+
+                    if (currentInput) {
+                        const foundIdx = newItems.indexOf(currentInput);
+                        if (foundIdx !== -1) {
+                            targetIdx = foundIdx;
+                        }
+                    }
+
+                    if (newItems.length > 0) {
+                        contentFocusIdx = targetIdx;
+                        setFocusEl(newItems[contentFocusIdx]);
+                    }
+                }, 100); // 100ms gives the UI time to drop down properly
+
                 return;
             }
             // -----------------------------------------------------------------

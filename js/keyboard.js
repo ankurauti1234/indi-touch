@@ -244,56 +244,15 @@ export function showOSK() {
 }
 
 export function hideOSK() {
-    // 1. Unfocus the input immediately
-    if (activeInput) activeInput.blur();
-    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-        document.activeElement.blur();
-    }
-
-    // Helper function to aggressively reset all scrolls
-    const forceScrollDown = () => {
-        // Walk up from the input and force scroll to 0
-        let el = activeInput;
-        while (el && el !== document) {
-            if (el.scrollTop > 0) {
-                el.style.scrollBehavior = 'auto'; // Kill any smooth scroll animation instantly
-                el.scrollTop = 0;
-                if (el.scrollTo) el.scrollTo({ top: 0, behavior: 'instant' });
-                el.style.scrollBehavior = ''; // Restore
-            }
-            el = el.parentNode;
-        }
-
-        // Hard-target all known scrollable containers
-        const containers = document.querySelectorAll(
-            '.view, .settings-panel, .popover-card, #group-modal-overlay, #app-frame, .main-stage, #member-settings-list'
-        );
-
-        containers.forEach(container => {
-            container.style.scrollBehavior = 'auto'; // Kill smooth scroll
-            container.scrollTop = 0;
-            if (container.scrollTo) container.scrollTo({ top: 0, behavior: 'instant' });
-            container.style.scrollBehavior = ''; // Restore
-        });
-
-        // Hard-target the window
-        document.documentElement.style.scrollBehavior = 'auto';
-        document.body.style.scrollBehavior = 'auto';
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-        document.documentElement.style.scrollBehavior = '';
-        document.body.style.scrollBehavior = '';
-    };
-
-    // 2. Force scroll down BEFORE the CSS height shrinks
-    forceScrollDown();
-
-    // 3. Remove the classes (this shrinks the #app-frame and .main-stage)
     document.getElementById('osk-container').classList.remove('visible');
     document.body.classList.remove('osk-open');
 
-    // 4. Force scroll down AFTER the CSS updates (double-tap to guarantee it snaps)
-    setTimeout(forceScrollDown, 10);
-    setTimeout(forceScrollDown, 50);
+    if (activeInput) {
+        activeInput.blur();
+    }
+
+    // Reset Viewport: Ensure UI returns to center after keyboard push
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
 }

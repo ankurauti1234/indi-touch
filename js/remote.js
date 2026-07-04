@@ -334,11 +334,12 @@ function navigate(direction) {
         } else {
             // EDGE HIT - Escaping the grid / keyboard
 
-            // --- NEW: Pressing DOWN at the bottom of the keyboard exits it ---
+            // --- FIXED: Down-to-Exit OSK ---
             if (isOskVisible && direction === 'down') {
-                osk.classList.remove('visible'); // Hide Keyboard visually
+                osk.classList.remove('visible');
+                document.body.classList.remove('osk-open'); // This removes the extra CSS height!
 
-                if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
                     document.activeElement.blur(); // Remove text cursor
                 }
 

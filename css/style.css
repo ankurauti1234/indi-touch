@@ -2697,96 +2697,37 @@ body.osk-open .main-stage {
     /* Overrides the standard height */
 }
 
-/* --- FRESH START: GROUP CARDS --- */
-
-/* 1. Grid Container */
+/* 1. Grid: 2 Columns & Taller Cards */
 #groups-grid-container {
-    display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 40px !important;
-    padding: 40px !important;
-    align-content: start !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
 }
 
-/* 2. The Cards */
 .group-card {
-    background: var(--bg-surface-container) !important;
-    border-radius: var(--radius-card) !important;
-    padding: 32px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    align-items: center !important;
-    min-height: 240px !important;
-    border: 3px solid transparent !important;
-    box-sizing: border-box !important;
+    min-height: 180px !important;
 }
 
-/* Full width for all-members / create cards */
 .group-card.all-members-card,
-.group-card.create-card {
+.group-card.wide-card {
     grid-column: span 2 !important;
 }
 
-/* 3. Avatars Layout */
-.group-avatars-container {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin-bottom: 24px !important;
-}
-
-/* 4. Massive 96px Avatars */
+/* 2. Bigger Avatars (Groups Tab & Edit Popup) */
 .group-avatar-stacked,
 .group-avatar-more,
 .group-member-item img {
-    width: 96px !important;
-    height: 96px !important;
-    border-radius: 50% !important;
-    object-fit: cover !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border: 4px solid var(--bg-surface-container) !important;
-    /* Clean overlap cut */
-}
-
-/* Overlap effect */
-.group-avatar-stacked~.group-avatar-stacked,
-.group-avatar-stacked~.group-avatar-more {
-    margin-left: -32px !important;
+    width: 64px !important;
+    height: 64px !important;
 }
 
 .group-avatar-more {
-    font-size: 2rem !important;
-    font-weight: 500 !important;
-    background: var(--surface-variant) !important;
-    color: var(--on-surface-variant) !important;
+    font-size: 1.4rem !important;
 }
 
-/* 5. Typography */
+/* 3. Bigger Text (Overrides JS inline styles) */
 .group-card .g-name {
-    color: var(--text-main) !important;
-    font-size: 2.2rem !important;
-    font-weight: 500 !important;
-    margin: 0 0 8px 0 !important;
-    text-align: center !important;
+    font-size: 1.8rem !important;
 }
 
 .group-card .g-info {
-    color: var(--text-sub) !important;
-    font-size: 1.4rem !important;
-    margin: 0 !important;
-    text-align: center !important;
-}
-
-/* 6. Remote Focus State */
-.group-card:focus,
-.group-card.focused {
-    border-color: var(--primary) !important;
-    background: var(--bg-card-hover) !important;
-    outline: none !important;
+    font-size: 1.2rem !important;
 }

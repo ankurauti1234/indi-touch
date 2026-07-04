@@ -9,6 +9,7 @@ import {
     getGridCols
 } from './grid.js';
 import { resetIdle } from './screensaver.js';
+import { getActiveInput } from './keyboard.js';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 export function isRemoteMode() {
@@ -336,10 +337,8 @@ function navigate(direction) {
 
             // --- FIXED: Down-to-Exit OSK with Smart Focus Return ---
             if (isOskVisible && direction === 'down') {
-                // 1. Capture the exact input field before we close anything
-                const currentInput = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')
-                    ? document.activeElement
-                    : null;
+                // 1. Get the exact input directly from keyboard.js
+                const currentInput = getActiveInput();
 
                 // 2. Hide the keyboard and shrink the CSS
                 osk.classList.remove('visible');
@@ -366,7 +365,7 @@ function navigate(direction) {
                         contentFocusIdx = targetIdx;
                         setFocusEl(newItems[contentFocusIdx]);
                     }
-                }, 100); // 100ms gives the UI time to drop down properly
+                }, 100);
 
                 return;
             }

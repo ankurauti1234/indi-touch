@@ -256,3 +256,7 @@ export function hideOSK() {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
 }
+
+export function getActiveInput() {
+    return activeInput;
+}

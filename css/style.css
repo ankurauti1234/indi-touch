@@ -2674,12 +2674,15 @@ body.osk-open .main-stage {
 #groups-grid-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr) !important;
-    /* 2 columns */
-    grid-auto-rows: 180px;
+
+    /* FIX 2: Dynamic calc fits exactly 3 rows per screen size (accounting for padding & gaps) */
+    grid-auto-rows: calc((100% - 88px) / 3) !important;
     gap: 12px !important;
-    /* Larger gap BETWEEN cards */
-    padding: 32px !important;
-    /* Margin AROUND the edges of the grid */
+
+    /* FIX 1 & 3: scroll-padding fixes the top card cutoff bug; extra bottom padding stops screen touching */
+    padding: 32px 32px 64px 32px !important;
+    scroll-padding: 32px !important;
+
     max-height: 100%;
     overflow-y: auto;
     box-sizing: border-box;
@@ -2687,7 +2690,9 @@ body.osk-open .main-stage {
 }
 
 .group-card {
-    min-height: 180px !important;
+    /* Remove hardcoded min-height so it relies perfectly on the 3-row grid-auto-rows calculation */
+    min-height: 0 !important;
+    scroll-margin: 12px !important;
 }
 
 .group-card.wide-card,

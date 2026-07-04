@@ -2669,68 +2669,82 @@ body.osk-open .main-stage {
 }
 
 
-/* some extra stuff */
-
+/* 1. Grid Container */
 #groups-grid-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr) !important;
-
     grid-auto-rows: 180px !important;
     gap: 12px !important;
-
-    /* Top 32px, Right 32px, Bottom 96px, Left 32px */
-    padding: 32px 32px 96px 32px !important;
-
+    padding: 32px 32px 0 32px !important;
     scroll-padding-top: 32px !important;
-    /* Matches the bottom padding so the remote keeps it hovering above the edge */
     scroll-padding-bottom: 96px !important;
-
     height: 100%;
     overflow-y: auto;
     box-sizing: border-box;
     grid-auto-flow: dense;
 }
 
-.group-card {
-    /* Restored your original size */
-    min-height: 180px !important;
+/* Forces true empty space at the end of the scroll */
+#groups-grid-container::after {
+    content: "";
+    grid-column: span 2;
+    height: 64px;
+}
 
-    /* Tells the remote to keep a safe distance when snapping to this card */
+/* 2. Group Cards (Height unchanged) */
+.group-card {
+    min-height: 180px !important;
+    max-height: 180px !important;
     scroll-margin-top: 32px !important;
     scroll-margin-bottom: 32px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
 }
 
 .group-card.wide-card,
 .group-card.all-members-card {
     grid-column: span 2 !important;
-    height: auto;
-    /* Lets the all-members card adapt to the new row height */
 }
 
-/* 2. Bigger Avatars (Scaled from 64px to 80px) */
+/* 3. Bigger Avatars */
+.group-avatars-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
 .group-avatar-stacked,
 .group-avatar-more,
 .group-member-item img {
-    width: 80px !important;
-    height: 80px !important;
+    width: 100px !important;
+    height: 100px !important;
 }
 
-/* Keeps the avatars overlapping correctly at their new larger size */
 .group-avatar-stacked~.group-avatar-stacked,
 .group-avatar-stacked~.group-avatar-more {
-    margin-left: -24px !important;
+    margin-left: -32px !important;
 }
 
 .group-avatar-more {
-    font-size: 1.6rem !important;
-    /* Bumped slightly to fit the 80px circle */
+    font-size: 1.8rem !important;
 }
 
-/* 3. Text Sizes */
+/* 4. Text OVER Avatars */
 .group-card .g-name {
-    font-size: 1.8rem !important;
+    font-size: 2rem !important;
+    font-weight: bold !important;
+    margin-top: -24px !important;
+    /* Pulls the text up over the image */
+    position: relative !important;
+    z-index: 10 !important;
+    text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.9), 0px 1px 3px rgba(0, 0, 0, 0.9) !important;
 }
 
 .group-card .g-info {
     font-size: 1.2rem !important;
+    position: relative !important;
+    z-index: 10 !important;
+    text-shadow: 0px 2px 6px rgba(0, 0, 0, 0.9) !important;
 }

@@ -145,10 +145,8 @@ function getContentItems() {
         return [...activeView.querySelectorAll('.member-card')].filter(isVisible);
     }
 
-    // Replace 'view-groups' with the actual ID of your groups tab container
     if (activeView.id === 'view-groups') {
-        // This explicitly ignores the create-card AND completely ignores the edit button!
-        return [...activeView.querySelectorAll('.group-card:not(.create-card)')].filter(isVisible);
+        return [...activeView.querySelectorAll('.group-card')].filter(isVisible);
     }
 
     if (activeView.id === 'view-settings') {

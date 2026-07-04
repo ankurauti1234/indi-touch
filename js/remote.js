@@ -131,29 +131,25 @@ function triggerTabSwitch(dir) {
     navs[nextIdx].click();
 }
 
-// ─── Content items for current view (never includes nav rail) ─────────────────
+// ─── Content items for current view ───────────────────────────────────────────
 function getContentItems() {
-    // 1. Overlays take priority
+    // 1. OSK takes absolute highest priority so you can type inside popups!
+    const osk = document.getElementById('osk-container');
+    if (osk?.classList.contains('visible')) {
+        return [...osk.querySelectorAll('.osk-key')].filter(isVisible);
+    }
+
+    // 2. Overlays take next priority
     const overlay = getOverlayItems();
     if (overlay !== null) return overlay;
 
-    // 2. OSK open anywhere (wifi password, onboarding, etc.)
-    const osk = document.getElementById('osk-container');
-    if (osk?.classList.contains('visible'))
-        return [...osk.querySelectorAll('.osk-key')].filter(isVisible);
-
-    // 3. Onboarding
     if (isOnboarding()) {
         const step = document.querySelector('#onboarding-layer .step.active');
-        return step
-            ? [...step.querySelectorAll('button:not([disabled]), .net-item')].filter(isVisible)
-            : [];
+        return step ? [...step.querySelectorAll('button:not([disabled]), .net-item')].filter(isVisible) : [];
     }
 
-    // 4. Screensaver — nothing focusable
     if (isScreensaverActive()) return [];
 
-    // 5. Main app
     const activeView = document.querySelector('#app-frame .view.active');
     if (!activeView) return [];
 
@@ -222,8 +218,14 @@ function navigate(direction) {
         return;
     }
 
-    // ── NAV ZONE ──────────────────────────────────────────────────────────────
+    const modalActive = isModalOpen();
+
     if (zone === 'nav') {
+        if (modalActive) {
+            enterContentZone();
+            return;
+        }
+
         const navItems = getNavItems();
         if (!navItems.length) { enterContentZone(); return; }
 
@@ -239,8 +241,7 @@ function navigate(direction) {
         return;
     }
 
-    // ── CONTENT ZONE – HOME GRID (2D) ─────────────────────────────────────────
-    if (isHomeGrid()) {
+    if (isHomeGrid() && !modalActive) {
         const cols = getGridCols();
         const idx = getFocusedGridIndex();
         const homeItems = getContentItems();
@@ -266,12 +267,12 @@ function navigate(direction) {
         return;
     }
 
-    // ── CONTENT ZONE – LINEAR LIST & 2D GRIDS & OVERLAYS ──────────────────────
     const activeView = document.querySelector('#app-frame .view.active');
     const isGroupsView = activeView && activeView.id === 'view-groups';
-    const isOskVisible = document.getElementById('osk-container')?.classList.contains('visible');
+    const osk = document.getElementById('osk-container');
+    const isOskVisible = osk?.classList.contains('visible');
 
-    if (direction === 'left' && !isOskVisible && !isGroupsView) {
+    if (direction === 'left' && !isOskVisible && !isGroupsView && !modalActive) {
         enterNavZone();
         return;
     }
@@ -279,14 +280,15 @@ function navigate(direction) {
     const items = getContentItems();
 
     if (!items.length) {
-        if (direction === 'up') triggerTabSwitch('prev');
-        else if (direction === 'down') triggerTabSwitch('next');
-        else if (direction === 'left') enterNavZone();
+        if (!modalActive) {
+            if (direction === 'up') triggerTabSwitch('prev');
+            else if (direction === 'down') triggerTabSwitch('next');
+            else if (direction === 'left') enterNavZone();
+        }
         return;
     }
 
-    // -- 2D Spatial Navigation (OSK, Groups Grid, AND OVERLAYS) --
-    if (isOskVisible || isGroupsView || getOverlayItems() !== null) {
+    if (isOskVisible || isGroupsView || modalActive) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
 
@@ -297,7 +299,6 @@ function navigate(direction) {
         items.forEach((item, i) => {
             if (i === contentFocusIdx) return;
             const box = item.getBoundingClientRect();
-
             let isCorrectDir = false;
             let dist = 0;
 
@@ -330,28 +331,45 @@ function navigate(direction) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
         } else {
-            // Re-enabled natural boundary escaping
-            if (direction === 'left' && isGroupsView) {
-                enterNavZone();
-            } else if (direction === 'up' && !isOskVisible) {
-                triggerTabSwitch('prev');
-            } else if (direction === 'down' && !isOskVisible) {
-                triggerTabSwitch('next');
+            // EDGE HIT LOGIC
+
+            // --- NEW: Down-to-Exit OSK ---
+            if (isOskVisible && direction === 'down') {
+                osk.classList.remove('visible'); // Hide Keyboard
+
+                // Defocus input so the keyboard doesn't instantly pop back up
+                if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                    document.activeElement.blur();
+                }
+
+                // Snap focus back to the content/modal underneath
+                window.resetRemoteFocus();
+                return;
+            }
+            // -----------------------------
+
+            if (!modalActive) {
+                if (direction === 'left' && isGroupsView) {
+                    enterNavZone();
+                } else if (direction === 'up' && !isOskVisible) {
+                    triggerTabSwitch('prev');
+                } else if (direction === 'down' && !isOskVisible) {
+                    triggerTabSwitch('next');
+                }
             }
         }
         return;
     }
 
-    // -- Default Linear List Navigation --
     if (direction === 'up') {
         if (contentFocusIdx === 0) {
-            triggerTabSwitch('prev');
+            if (!modalActive) triggerTabSwitch('prev');
             return;
         }
         contentFocusIdx = contentFocusIdx - 1;
     } else if (direction === 'down' || direction === 'right') {
         if (direction === 'down' && contentFocusIdx === items.length - 1) {
-            triggerTabSwitch('next');
+            if (!modalActive) triggerTabSwitch('next');
             return;
         }
         if (contentFocusIdx < items.length - 1) {

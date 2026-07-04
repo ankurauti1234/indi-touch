@@ -21,24 +21,6 @@ function isVisible(el) {
     return r.width > 0 && r.height > 0;
 }
 
-// ULTIMATE MODAL CHECK: Ignores CSS classes. Checks if browser is actually rendering it.
-function isOverlayVisible(id) {
-    const el = document.getElementById(id);
-    return el && el.offsetWidth > 0 && el.offsetHeight > 0 && getComputedStyle(el).display !== 'none';
-}
-
-function isModalOpen() {
-    return !!(
-        document.getElementById('alert-modal') ||
-        document.getElementById('duplicate-modal') ||
-        document.getElementById('delete-confirm-modal') ||
-        isOverlayVisible('group-modal-overlay') ||
-        isOverlayVisible('wifi-password-overlay') ||
-        isOverlayVisible('wifi-warning-overlay') ||
-        isOverlayVisible('critical-popover')
-    );
-}
-
 // ─── State ────────────────────────────────────────────────────────────────────
 let zone = 'content';
 let navFocusIdx = 0;
@@ -73,11 +55,13 @@ function isScreensaverActive() {
 
 function getOverlayItems() {
     // 1. Connection warning & Critical
-    if (isOverlayVisible('wifi-warning-overlay'))
-        return [...document.getElementById('wifi-warning-overlay').querySelectorAll('button')].filter(isVisible);
+    const wifiWarn = document.getElementById('wifi-warning-overlay');
+    if (wifiWarn?.classList.contains('visible'))
+        return [...wifiWarn.querySelectorAll('button')].filter(isVisible);
 
-    if (isOverlayVisible('critical-popover'))
-        return [...document.getElementById('critical-popover').querySelectorAll('button')].filter(isVisible);
+    const critical = document.getElementById('critical-popover');
+    if (critical?.classList.contains('active'))
+        return [...critical.querySelectorAll('button')].filter(isVisible);
 
     // 2. Dynamic Top-Level Modals
     const alertModal = document.getElementById('alert-modal');
@@ -90,13 +74,15 @@ function getOverlayItems() {
     if (deleteModal) return [...deleteModal.querySelectorAll('button')].filter(isVisible);
 
     // 3. Wi-Fi Password Modal
-    if (isOverlayVisible('wifi-password-overlay'))
-        return [...document.getElementById('wifi-password-overlay').querySelectorAll('button:not([disabled])')].filter(isVisible);
+    const wifi = document.getElementById('wifi-password-overlay');
+    if (wifi?.classList.contains('active'))
+        return [...wifi.querySelectorAll('button:not([disabled])')].filter(isVisible);
 
     // 4. Group Create/Edit Modal
-    if (isOverlayVisible('group-modal-overlay')) {
+    const modal = document.getElementById('group-modal-overlay');
+    if (modal?.classList.contains('active')) {
         const sel = 'input, button:not([disabled]), .group-member-item, .modal-btn';
-        return [...document.getElementById('group-modal-overlay').querySelectorAll(sel)].filter(isVisible);
+        return [...modal.querySelectorAll(sel)].filter(isVisible);
     }
 
     return null;
@@ -104,7 +90,6 @@ function getOverlayItems() {
 
 window.resetRemoteFocus = function () {
     setTimeout(() => {
-        zone = 'content'; // Force lock into content zone
         const items = getContentItems();
         if (items.length) {
             contentFocusIdx = 0;
@@ -127,8 +112,6 @@ function getNavItems() {
 }
 
 function triggerTabSwitch(dir) {
-    if (isModalOpen()) return;
-
     const navs = getNavItems();
     if (!navs.length) return;
 
@@ -137,6 +120,7 @@ function triggerTabSwitch(dir) {
 
     const nextIdx = dir === 'prev' ? currentIdx - 1 : currentIdx + 1;
 
+    // Clamp so we don't scroll off the ends
     if (nextIdx < 0 || nextIdx >= navs.length) return;
 
     navFocusIdx = nextIdx;
@@ -224,14 +208,7 @@ function navigate(direction) {
         return;
     }
 
-    const modalActive = isModalOpen();
-
     if (zone === 'nav') {
-        if (modalActive) {
-            enterContentZone();
-            return;
-        }
-
         const navItems = getNavItems();
         if (!navItems.length) { enterContentZone(); return; }
 
@@ -247,7 +224,7 @@ function navigate(direction) {
         return;
     }
 
-    if (isHomeGrid() && !modalActive) {
+    if (isHomeGrid()) {
         const cols = getGridCols();
         const idx = getFocusedGridIndex();
         const homeItems = getContentItems();
@@ -276,8 +253,9 @@ function navigate(direction) {
     const activeView = document.querySelector('#app-frame .view.active');
     const isGroupsView = activeView && activeView.id === 'view-groups';
     const isOskVisible = document.getElementById('osk-container')?.classList.contains('visible');
+    const isOverlayActive = getOverlayItems() !== null;
 
-    if (direction === 'left' && !isOskVisible && !isGroupsView && !modalActive) {
+    if (direction === 'left' && !isOskVisible && !isGroupsView && !isOverlayActive) {
         enterNavZone();
         return;
     }
@@ -285,15 +263,13 @@ function navigate(direction) {
     const items = getContentItems();
 
     if (!items.length) {
-        if (!modalActive) {
-            if (direction === 'up') triggerTabSwitch('prev');
-            else if (direction === 'down') triggerTabSwitch('next');
-            else if (direction === 'left') enterNavZone();
-        }
+        if (direction === 'up') triggerTabSwitch('prev');
+        else if (direction === 'down') triggerTabSwitch('next');
+        else if (direction === 'left') enterNavZone();
         return;
     }
 
-    if (isOskVisible || isGroupsView || modalActive) {
+    if (isOskVisible || isGroupsView || isOverlayActive) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
 
@@ -336,14 +312,12 @@ function navigate(direction) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
         } else {
-            if (!modalActive) {
-                if (direction === 'left' && isGroupsView) {
-                    enterNavZone();
-                } else if (direction === 'up' && !isOskVisible) {
-                    triggerTabSwitch('prev');
-                } else if (direction === 'down' && !isOskVisible) {
-                    triggerTabSwitch('next');
-                }
+            if (direction === 'left' && isGroupsView && !isOverlayActive) {
+                enterNavZone();
+            } else if (direction === 'up' && !isOskVisible && !isOverlayActive) {
+                triggerTabSwitch('prev');
+            } else if (direction === 'down' && !isOskVisible && !isOverlayActive) {
+                triggerTabSwitch('next');
             }
         }
         return;
@@ -351,13 +325,13 @@ function navigate(direction) {
 
     if (direction === 'up') {
         if (contentFocusIdx === 0) {
-            if (!modalActive) triggerTabSwitch('prev');
+            triggerTabSwitch('prev');
             return;
         }
         contentFocusIdx = contentFocusIdx - 1;
     } else if (direction === 'down' || direction === 'right') {
         if (direction === 'down' && contentFocusIdx === items.length - 1) {
-            if (!modalActive) triggerTabSwitch('next');
+            triggerTabSwitch('next');
             return;
         }
         if (contentFocusIdx < items.length - 1) {

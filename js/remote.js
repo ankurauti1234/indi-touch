@@ -133,14 +133,14 @@ function triggerTabSwitch(dir) {
 
 // ─── Content items for current view (never includes nav rail) ─────────────────
 function getContentItems() {
-    // 1. Overlays take priority
-    const overlay = getOverlayItems();
-    if (overlay !== null) return overlay;
-
-    // 2. OSK open anywhere (wifi password, onboarding, etc.)
+    // 1. OSK open anywhere takes absolute priority (so remote focuses on keyboard)
     const osk = document.getElementById('osk-container');
     if (osk?.classList.contains('visible'))
         return [...osk.querySelectorAll('.osk-key')].filter(isVisible);
+
+    // 2. Overlays take next priority
+    const overlay = getOverlayItems();
+    if (overlay !== null) return overlay;
 
     // 3. Onboarding
     if (isOnboarding()) {
@@ -174,7 +174,6 @@ function getContentItems() {
     const sel = '.back-btn, .list-item:not(.no-click), .chip, .action-btn, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], textarea';
     return [...activeView.querySelectorAll(sel)].filter(isVisible);
 }
-
 // ─── Zone: NAV ───────────────────────────────────────────────────────────────
 function enterNavZone() {
     const navItems = getNavItems();
@@ -213,7 +212,6 @@ function enterContentZone() {
     if (contentFocusIdx >= items.length) contentFocusIdx = 0;
     if (items[contentFocusIdx]) setFocusEl(items[contentFocusIdx]);
 }
-
 // ─── Navigation ───────────────────────────────────────────────────────────────
 function navigate(direction) {
     if (isScreensaverActive()) {
@@ -269,9 +267,13 @@ function navigate(direction) {
     // ── CONTENT ZONE – LINEAR LIST & 2D GRIDS & OVERLAYS ──────────────────────
     const activeView = document.querySelector('#app-frame .view.active');
     const isGroupsView = activeView && activeView.id === 'view-groups';
-    const isOskVisible = document.getElementById('osk-container')?.classList.contains('visible');
 
-    if (direction === 'left' && !isOskVisible && !isGroupsView) {
+    // Correctly check visibility states without crashing
+    const osk = document.getElementById('osk-container');
+    const isOskVisible = osk?.classList.contains('visible');
+    const isOverlayActive = getOverlayItems() !== null;
+
+    if (direction === 'left' && !isOskVisible && !isGroupsView && !isOverlayActive) {
         enterNavZone();
         return;
     }
@@ -286,7 +288,7 @@ function navigate(direction) {
     }
 
     // -- 2D Spatial Navigation (OSK, Groups Grid, AND OVERLAYS) --
-    if (isOskVisible || isGroupsView || getOverlayItems() !== null) {
+    if (isOskVisible || isGroupsView || isOverlayActive) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
 
@@ -330,12 +332,26 @@ function navigate(direction) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
         } else {
-            // Re-enabled natural boundary escaping
-            if (direction === 'left' && isGroupsView) {
+            // EDGE HIT - Escaping the grid / keyboard
+
+            // --- NEW: Pressing DOWN at the bottom of the keyboard exits it ---
+            if (isOskVisible && direction === 'down') {
+                osk.classList.remove('visible'); // Hide Keyboard visually
+
+                if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                    document.activeElement.blur(); // Remove text cursor
+                }
+
+                window.resetRemoteFocus(); // Snap remote back to the modal underneath
+                return;
+            }
+            // -----------------------------------------------------------------
+
+            if (direction === 'left' && isGroupsView && !isOverlayActive) {
                 enterNavZone();
-            } else if (direction === 'up' && !isOskVisible) {
+            } else if (direction === 'up' && !isOskVisible && !isOverlayActive) {
                 triggerTabSwitch('prev');
-            } else if (direction === 'down' && !isOskVisible) {
+            } else if (direction === 'down' && !isOskVisible && !isOverlayActive) {
                 triggerTabSwitch('next');
             }
         }

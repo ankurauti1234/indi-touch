@@ -231,12 +231,20 @@ function navigate(direction) {
         return;
     }
 
+    // 1. Check if ANY popup/modal is currently active
+    const isOverlayActive = getOverlayItems() !== null;
+
     // ── NAV ZONE ──────────────────────────────────────────────────────────────
     if (zone === 'nav') {
+        // If a modal popped up while we were in the nav zone, force us into the modal
+        if (isOverlayActive) {
+            enterContentZone();
+            return;
+        }
+
         const navItems = getNavItems();
         if (!navItems.length) { enterContentZone(); return; }
 
-        // FIX 1 (Part B): Clamp the side rail too so the icon selection doesn't loop
         if (direction === 'up') {
             navFocusIdx = Math.max(0, navFocusIdx - 1);
             setFocusEl(navItems[navFocusIdx]);
@@ -250,7 +258,8 @@ function navigate(direction) {
     }
 
     // ── CONTENT ZONE – HOME GRID (2D) ─────────────────────────────────────────
-    if (isHomeGrid()) {
+    // Only run background grid logic if NO overlay is active
+    if (isHomeGrid() && !isOverlayActive) {
         const cols = getGridCols();
         const idx = getFocusedGridIndex();
         const homeItems = getContentItems();
@@ -265,9 +274,7 @@ function navigate(direction) {
                 return;
             }
         }
-        // FIX 3: Home Grid Down Navigation
         if (direction === 'down') {
-            // If the grid is empty OR if the current index is on the bottom row
             if (homeItems.length === 0 || idx + cols >= homeItems.length) {
                 triggerTabSwitch('next');
                 return;
@@ -278,29 +285,32 @@ function navigate(direction) {
         return;
     }
 
-    // ── CONTENT ZONE – LINEAR LIST & 2D GRIDS ────────────────────────────────
+    // ── CONTENT ZONE – LINEAR LIST & 2D GRIDS & OVERLAYS ──────────────────────
     const activeView = document.querySelector('#app-frame .view.active');
     const isGroupsView = activeView && activeView.id === 'view-groups';
     const isOskVisible = document.getElementById('osk-container')?.classList.contains('visible');
 
-    if (direction === 'left' && !isOskVisible && !isGroupsView) {
+    // Prevent escaping to nav when a modal is open
+    if (direction === 'left' && !isOskVisible && !isGroupsView && !isOverlayActive) {
         enterNavZone();
         return;
     }
 
     const items = getContentItems();
 
-    // FIX 2: HANDLE EMPTY TABS
-    // If a tab is completely empty, don't get stuck! Allow them to swipe away.
+    // Empty tab fallback (locked if in overlay)
     if (!items.length) {
-        if (direction === 'up') triggerTabSwitch('prev');
-        else if (direction === 'down') triggerTabSwitch('next');
-        else if (direction === 'left') enterNavZone();
+        if (!isOverlayActive) {
+            if (direction === 'up') triggerTabSwitch('prev');
+            else if (direction === 'down') triggerTabSwitch('next');
+            else if (direction === 'left') enterNavZone();
+        }
         return;
     }
 
-    // -- 2D Spatial Navigation (OSK & Groups Grid) --
-    if (isOskVisible || isGroupsView) {
+    // -- 2D Spatial Navigation (OSK, Groups Grid, AND OVERLAYS) --
+    // We now force 2D navigation for overlays so you can navigate complex popups perfectly!
+    if (isOskVisible || isGroupsView || isOverlayActive) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
 
@@ -344,31 +354,36 @@ function navigate(direction) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
         } else {
-            if (direction === 'left' && isGroupsView) {
-                enterNavZone();
-            } else if (direction === 'up' && !isOskVisible) {
-                triggerTabSwitch('prev');
-            } else if (direction === 'down' && !isOskVisible) {
-                triggerTabSwitch('next');
+            // EDGE HIT - FOCUS TRAPPING
+            // If we are in a popup (isOverlayActive is true), we do absolutely NOTHING here.
+            // This prevents the user from accidentally swiping away.
+            if (!isOverlayActive) {
+                if (direction === 'left' && isGroupsView) {
+                    enterNavZone();
+                } else if (direction === 'up' && !isOskVisible) {
+                    triggerTabSwitch('prev');
+                } else if (direction === 'down' && !isOskVisible) {
+                    triggerTabSwitch('next');
+                }
             }
         }
         return;
     }
 
-    // -- Default Linear List Navigation --
+    // -- Default Linear List Navigation (Only used for simple settings lists now) --
     if (direction === 'up') {
         if (contentFocusIdx === 0) {
-            triggerTabSwitch('prev');
+            if (!isOverlayActive) triggerTabSwitch('prev'); // Trap focus
             return;
         }
-        contentFocusIdx = contentFocusIdx - 1; // Removed wrap loop
+        contentFocusIdx = contentFocusIdx - 1;
     } else if (direction === 'down' || direction === 'right') {
         if (direction === 'down' && contentFocusIdx === items.length - 1) {
-            triggerTabSwitch('next');
+            if (!isOverlayActive) triggerTabSwitch('next'); // Trap focus
             return;
         }
         if (contentFocusIdx < items.length - 1) {
-            contentFocusIdx = contentFocusIdx + 1; // Removed wrap loop
+            contentFocusIdx = contentFocusIdx + 1;
         }
     }
 

@@ -48,7 +48,7 @@ export function initOSK() {
     const container = document.createElement('div');
     container.id = 'osk-container';
     document.body.appendChild(container);
-    
+
     // 2. Render Initial Layout
     renderKeys();
 
@@ -57,10 +57,10 @@ export function initOSK() {
     document.addEventListener('focusin', (e) => {
         if ((e.target.tagName === 'INPUT' && e.target.type !== 'range') || e.target.tagName === 'TEXTAREA') {
             activeInput = e.target;
-            
+
             // Unified Keyboard: We no longer use a separate large numeric mode
-            isNumberMode = false; 
-            
+            isNumberMode = false;
+
             showOSK();
         }
     });
@@ -154,7 +154,7 @@ function renderKeys() {
         width: 100%; text-align: center; color: var(--text-sub); 
         font-size: 14px; font-weight: 500; margin-top: 12px;
         display: flex; align-items: center; justify-content: center; 
-        gap: 6px; opacity: 0.6; user-select: none;
+        gap: 3px; opacity: 0.6; user-select: none;
     `;
     container.appendChild(hintDiv);
     // ---------------------------------------------
@@ -164,7 +164,7 @@ function handleKey(key) {
     if (!activeInput) return;
 
     if (key === 'shift') {
-        if (isSymbol) return; 
+        if (isSymbol) return;
         isShift = !isShift;
         renderKeys();
         return;
@@ -207,7 +207,7 @@ function handleKey(key) {
         }
     } else if (key === 'enter') {
         hideOSK();
-        activeInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+        activeInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
         activeInput.blur();
     } else if (key === 'space') {
         const start = activeInput.selectionStart;
@@ -221,16 +221,16 @@ function handleKey(key) {
         const start = activeInput.selectionStart;
         const end = activeInput.selectionEnd;
         const val = activeInput.value;
-        
+
         activeInput.value = val.slice(0, start) + char + val.slice(end);
         activeInput.selectionStart = activeInput.selectionEnd = start + 1;
-        
+
         if (isShift) {
             isShift = false;
             renderKeys();
         }
     }
-    
+
     // Trigger input event so frameworks/listeners know value changed
     activeInput.dispatchEvent(new Event('input', { bubbles: true }));
 }

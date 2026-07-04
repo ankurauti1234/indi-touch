@@ -2696,3 +2696,38 @@ body.osk-open .main-stage {
     height: 160px;
     /* Overrides the standard height */
 }
+
+/* 1. Grid: 2 Columns & Taller Cards */
+#groups-grid-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.group-card {
+    min-height: 180px !important;
+}
+
+.group-card.all-members-card,
+.group-card.wide-card {
+    grid-column: span 2 !important;
+}
+
+/* 2. Bigger Avatars (Groups Tab & Edit Popup) */
+.group-avatar-stacked,
+.group-avatar-more,
+.group-member-item img {
+    width: 64px !important;
+    height: 64px !important;
+}
+
+.group-avatar-more {
+    font-size: 1.4rem !important;
+}
+
+/* 3. Bigger Text (Overrides JS inline styles) */
+.group-card .g-name {
+    font-size: 1.8rem !important;
+}
+
+.group-card .g-info {
+    font-size: 1.2rem !important;
+}

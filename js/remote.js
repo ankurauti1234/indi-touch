@@ -10,25 +10,6 @@ import {
 } from './grid.js';
 import { resetIdle } from './screensaver.js';
 
-// Strict check: Is ANY popup or modal currently open?
-function isModalOpen() {
-    return !!(
-        document.getElementById('alert-modal') ||
-        document.getElementById('duplicate-modal') ||
-        document.getElementById('delete-confirm-modal') ||
-        document.getElementById('group-modal-overlay')?.classList.contains('active') ||
-        document.getElementById('wifi-password-overlay')?.classList.contains('active') ||
-        document.getElementById('wifi-warning-overlay')?.classList.contains('visible')
-    );
-}
-
-// ─── State ────────────────────────────────────────────────────────────────────
-// Two zones: 'nav' (left rail) and 'content' (active view)
-let zone = 'content';
-let navFocusIdx = 0;
-let contentFocusIdx = 0;
-let remoteFocusEl = null; // element holding .remoteFocused (null when home grid is content zone)
-
 // ─── Utilities ────────────────────────────────────────────────────────────────
 export function isRemoteMode() {
     return document.body.classList.contains('remote-mode');
@@ -39,6 +20,30 @@ function isVisible(el) {
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0;
 }
+
+// ULTIMATE MODAL CHECK: Ignores CSS classes. Checks if browser is actually rendering it.
+function isOverlayVisible(id) {
+    const el = document.getElementById(id);
+    return el && el.offsetWidth > 0 && el.offsetHeight > 0 && getComputedStyle(el).display !== 'none';
+}
+
+function isModalOpen() {
+    return !!(
+        document.getElementById('alert-modal') ||
+        document.getElementById('duplicate-modal') ||
+        document.getElementById('delete-confirm-modal') ||
+        isOverlayVisible('group-modal-overlay') ||
+        isOverlayVisible('wifi-password-overlay') ||
+        isOverlayVisible('wifi-warning-overlay') ||
+        isOverlayVisible('critical-popover')
+    );
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let zone = 'content';
+let navFocusIdx = 0;
+let contentFocusIdx = 0;
+let remoteFocusEl = null;
 
 function clearFocusEl() {
     if (remoteFocusEl) {
@@ -67,52 +72,45 @@ function isScreensaverActive() {
 }
 
 function getOverlayItems() {
-    // 1. Connection warning popups take highest priority
-    const wifiWarn = document.getElementById('wifi-warning-overlay');
-    if (wifiWarn?.classList.contains('visible'))
-        return [...wifiWarn.querySelectorAll('button')].filter(isVisible);
+    // 1. Connection warning & Critical
+    if (isOverlayVisible('wifi-warning-overlay'))
+        return [...document.getElementById('wifi-warning-overlay').querySelectorAll('button')].filter(isVisible);
 
-    // USB popup has no buttons — skip (user can't dismiss it by remote)
+    if (isOverlayVisible('critical-popover'))
+        return [...document.getElementById('critical-popover').querySelectorAll('button')].filter(isVisible);
 
-    const critical = document.getElementById('critical-popover');
-    if (critical?.classList.contains('active'))
-        return [...critical.querySelectorAll('button')].filter(isVisible);
-
-    // 2. Dynamic Top-Level Modals (Alert, Duplicate & Delete)
+    // 2. Dynamic Top-Level Modals
     const alertModal = document.getElementById('alert-modal');
-    if (alertModal)
-        return [...alertModal.querySelectorAll('button')].filter(isVisible);
+    if (alertModal) return [...alertModal.querySelectorAll('button')].filter(isVisible);
 
     const dupModal = document.getElementById('duplicate-modal');
-    if (dupModal)
-        return [...dupModal.querySelectorAll('button')].filter(isVisible);
+    if (dupModal) return [...dupModal.querySelectorAll('button')].filter(isVisible);
 
     const deleteModal = document.getElementById('delete-confirm-modal');
-    if (deleteModal)
-        return [...deleteModal.querySelectorAll('button')].filter(isVisible);
+    if (deleteModal) return [...deleteModal.querySelectorAll('button')].filter(isVisible);
 
     // 3. Wi-Fi Password Modal
-    const wifi = document.getElementById('wifi-password-overlay');
-    if (wifi?.classList.contains('active'))
-        return [...wifi.querySelectorAll('button:not([disabled])')].filter(isVisible);
+    if (isOverlayVisible('wifi-password-overlay'))
+        return [...document.getElementById('wifi-password-overlay').querySelectorAll('button:not([disabled])')].filter(isVisible);
 
-    // 4. Group Create/Edit Modal (group-modal-overlay)
-    const modal = document.getElementById('group-modal-overlay');
-    if (modal?.classList.contains('active')) {
+    // 4. Group Create/Edit Modal
+    if (isOverlayVisible('group-modal-overlay')) {
         const sel = 'input, button:not([disabled]), .group-member-item, .modal-btn';
-        return [...modal.querySelectorAll(sel)].filter(isVisible);
+        return [...document.getElementById('group-modal-overlay').querySelectorAll(sel)].filter(isVisible);
     }
 
-    return null; // null = no overlay open
+    return null;
 }
+
 window.resetRemoteFocus = function () {
     setTimeout(() => {
+        zone = 'content'; // Force lock into content zone
         const items = getContentItems();
         if (items.length) {
             contentFocusIdx = 0;
             setFocusEl(items[0]);
         }
-    }, 50); // Slight delay for DOM rendering
+    }, 50);
 };
 
 function isHomeGrid() {
@@ -128,50 +126,39 @@ function getNavItems() {
     return [...document.querySelectorAll('#app-frame .nav-btn')].filter(isVisible);
 }
 
-// ─── HELPER: Tab Switcher ─────────────────────────────────────────────────────
 function triggerTabSwitch(dir) {
-    // ULTIMATE LOCK: Prevent tab switching if ANY popup is open
-    if (isModalOpen()) return; 
+    if (isModalOpen()) return;
 
     const navs = getNavItems();
     if (!navs.length) return;
-    
+
     let currentIdx = navs.findIndex(n => n.classList.contains('active'));
-    if (currentIdx === -1) currentIdx = navFocusIdx; 
-    
+    if (currentIdx === -1) currentIdx = navFocusIdx;
+
     const nextIdx = dir === 'prev' ? currentIdx - 1 : currentIdx + 1;
-        
-    if (nextIdx < 0 || nextIdx >= navs.length) {
-        return; 
-    }
-    
+
+    if (nextIdx < 0 || nextIdx >= navs.length) return;
+
     navFocusIdx = nextIdx;
     navs[nextIdx].click();
 }
 
-// ─── Content items for current view (never includes nav rail) ─────────────────
+// ─── Content items for current view ───────────────────────────────────────────
 function getContentItems() {
-    // 1. Overlays take priority
     const overlay = getOverlayItems();
     if (overlay !== null) return overlay;
 
-    // 2. OSK open anywhere (wifi password, onboarding, etc.)
     const osk = document.getElementById('osk-container');
     if (osk?.classList.contains('visible'))
         return [...osk.querySelectorAll('.osk-key')].filter(isVisible);
 
-    // 3. Onboarding
     if (isOnboarding()) {
         const step = document.querySelector('#onboarding-layer .step.active');
-        return step
-            ? [...step.querySelectorAll('button:not([disabled]), .net-item')].filter(isVisible)
-            : [];
+        return step ? [...step.querySelectorAll('button:not([disabled]), .net-item')].filter(isVisible) : [];
     }
 
-    // 4. Screensaver — nothing focusable
     if (isScreensaverActive()) return [];
 
-    // 5. Main app
     const activeView = document.querySelector('#app-frame .view.active');
     if (!activeView) return [];
 
@@ -193,15 +180,13 @@ function getContentItems() {
     return [...activeView.querySelectorAll(sel)].filter(isVisible);
 }
 
-// ─── Zone: NAV ───────────────────────────────────────────────────────────────
+// ─── Zone Switching ───────────────────────────────────────────────────────────
 function enterNavZone() {
     const navItems = getNavItems();
     if (!navItems.length) return;
 
-    // Clear grid focus if leaving home grid
     clearGridFocus();
 
-    // Pick nav item closest vertically to current position
     if (remoteFocusEl) {
         const curY = remoteFocusEl.getBoundingClientRect().top;
         let bestIdx = 0, bestDist = Infinity;
@@ -216,17 +201,13 @@ function enterNavZone() {
     setFocusEl(navItems[navFocusIdx]);
 }
 
-// ─── Zone: CONTENT ────────────────────────────────────────────────────────────
 function enterContentZone() {
     zone = 'content';
-    clearFocusEl(); // grid.js manages its own .focused class
+    clearFocusEl();
 
     if (isHomeGrid()) {
-        // Grid.js already shows the focused card with .focused class
-        // Just make sure contentFocusIdx is within bounds
         const cards = getContentItems();
         if (contentFocusIdx >= cards.length) contentFocusIdx = 0;
-        // No remoteFocusEl needed — grid.js handles visuals
         return;
     }
 
@@ -245,7 +226,6 @@ function navigate(direction) {
 
     const modalActive = isModalOpen();
 
-    // ── NAV ZONE ──────────────────────────────────────────────────────────────
     if (zone === 'nav') {
         if (modalActive) {
             enterContentZone();
@@ -267,7 +247,6 @@ function navigate(direction) {
         return;
     }
 
-    // ── CONTENT ZONE – HOME GRID (2D) ─────────────────────────────────────────
     if (isHomeGrid() && !modalActive) {
         const cols = getGridCols();
         const idx = getFocusedGridIndex();
@@ -294,12 +273,10 @@ function navigate(direction) {
         return;
     }
 
-    // ── CONTENT ZONE – LINEAR LIST & 2D GRIDS & OVERLAYS ──────────────────────
     const activeView = document.querySelector('#app-frame .view.active');
     const isGroupsView = activeView && activeView.id === 'view-groups';
     const isOskVisible = document.getElementById('osk-container')?.classList.contains('visible');
 
-    // Prevent escaping to nav when a modal is open
     if (direction === 'left' && !isOskVisible && !isGroupsView && !modalActive) {
         enterNavZone();
         return;
@@ -316,7 +293,6 @@ function navigate(direction) {
         return;
     }
 
-    // -- 2D Spatial Navigation (OSK, Groups Grid, AND OVERLAYS) --
     if (isOskVisible || isGroupsView || modalActive) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
@@ -328,7 +304,6 @@ function navigate(direction) {
         items.forEach((item, i) => {
             if (i === contentFocusIdx) return;
             const box = item.getBoundingClientRect();
-
             let isCorrectDir = false;
             let dist = 0;
 
@@ -361,7 +336,6 @@ function navigate(direction) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
         } else {
-            // EDGE HIT - FOCUS TRAPPING
             if (!modalActive) {
                 if (direction === 'left' && isGroupsView) {
                     enterNavZone();
@@ -375,7 +349,6 @@ function navigate(direction) {
         return;
     }
 
-    // -- Default Linear List Navigation --
     if (direction === 'up') {
         if (contentFocusIdx === 0) {
             if (!modalActive) triggerTabSwitch('prev');
@@ -395,21 +368,18 @@ function navigate(direction) {
     setFocusEl(items[contentFocusIdx]);
 }
 
-// ─── Activation ───────────────────────────────────────────────────────────────
+// ─── Activation & Init ────────────────────────────────────────────────────────
 function activate() {
-    if (isScreensaverActive()) return; // click event already calls resetIdle
+    if (isScreensaverActive()) return;
 
-    // Home grid content zone → toggle focused member
     if (isHomeGrid() && zone === 'content') {
         gridToggleFocused();
         return;
     }
 
-    // Everything else → click the focused element
     if (remoteFocusEl) {
         const el = remoteFocusEl;
         el.click();
-        // After click, context may have changed (new panel, modal, etc.) — refresh
         setTimeout(() => {
             if (zone === 'content') {
                 const items = getContentItems();
@@ -426,7 +396,6 @@ function activate() {
     }
 }
 
-// ─── Public: reset focus when view changes ────────────────────────────────────
 export function resetFocusToFirst() {
     zone = 'content';
     contentFocusIdx = 0;
@@ -434,9 +403,7 @@ export function resetFocusToFirst() {
     clearGridFocus();
 
     if (isHomeGrid()) {
-        // Grid.js will show .focused on first card after next renderGrid
-        // Force it now:
-        gridMoveFocus('up'); // will clamp to valid index if already at 0
+        gridMoveFocus('up');
         return;
     }
 
@@ -444,7 +411,6 @@ export function resetFocusToFirst() {
     if (items.length) setFocusEl(items[0]);
 }
 
-// ─── Public: apply/remove remote mode ────────────────────────────────────────
 export function applyRemoteMode(on) {
     if (on) {
         document.body.classList.add('remote-mode');
@@ -461,16 +427,12 @@ export function applyRemoteMode(on) {
     }
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
 export function initRemote() {
-    // Restore saved state
     if (config.remoteMode) applyRemoteMode(true);
 
-    // ── Arrow keys ──────────────────────────────────────────────────────────
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
 
-        // Restore highlights if they were hidden by mouse movement
         if (!remoteFocusEl && !isHomeGrid()) {
             enterContentZone();
         } else if (isHomeGrid() && !document.querySelector('#grid-container .member-card.focused')) {
@@ -486,11 +448,6 @@ export function initRemote() {
         }
     });
 
-    // Touch & click are NEVER intercepted — they always propagate naturally.
-    // Remote activation is keyboard-only (Enter key).
-    // This ensures touchscreen always works even in Remote Mode.
-
-    // ── Reset focus after view navigation ────────────────────────────────────
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             if (isRemoteMode()) setTimeout(() => {
@@ -501,14 +458,11 @@ export function initRemote() {
         });
     });
 
-    // ── Reset focus after settings panel open/close ─────────────────────────
     document.addEventListener('click', () => {
         if (!isRemoteMode()) return;
-        // Debounce: check if active panel changed
         setTimeout(() => {
             if (zone === 'content' && !isHomeGrid()) {
                 const items = getContentItems();
-                // If remoteFocusEl is no longer in DOM, reset
                 if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
                     contentFocusIdx = 0;
                     if (items.length) setFocusEl(items[0]);
@@ -517,11 +471,8 @@ export function initRemote() {
         }, 200);
     });
 
-    // ── Air Mouse / Mouse Movement ───────────────────────────────────────────
     document.addEventListener('mousemove', () => {
         if (!isRemoteMode()) return;
-        // Hide focus highlights when mouse is being used (Air Mouse mode)
-        // This avoids having both a mouse pointer AND a focus highlight visible
         clearFocusEl();
         clearGridFocus();
     });

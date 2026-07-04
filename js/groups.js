@@ -306,21 +306,21 @@ export async function submitGroup() {
     const nameInput = document.getElementById('group-name-input');
     const name = nameInput ? nameInput.value.trim() : '';
     if (!name) {
-        alert("Please enter a group name");
+        showAlertModal("Group Name Required", "Please enter a group name.");
         return;
     }
 
-    // 1. Get the member codes FIRST
+    // 1. Get the member codes
     const listContainer = document.getElementById('group-members-list');
     const selectedItems = listContainer ? listContainer.querySelectorAll('.group-member-item.selected') : [];
     const member_codes = Array.from(selectedItems).map(item => item.dataset.code);
 
     if (member_codes.length === 0) {
-        alert("Please select at least one member");
+        showAlertModal("Members Required", "Please select at least one member.");
         return;
     }
 
-    // 2. THEN check for duplicates using member_codes
+    // 2. Check for duplicates using member_codes
     const duplicate = groupsData.find(g =>
         g.id !== editingGroupId &&
         g.members.length === member_codes.length &&
@@ -329,10 +329,10 @@ export async function submitGroup() {
 
     if (duplicate) {
         showDuplicateModal(duplicate.name);
-        return; // Stops the save process
+        return;
     }
 
-    // 3. Finally, save the group
+    // 3. Save the group
     const url = editingGroupId ? `/api/groups/${editingGroupId}` : '/api/groups';
     const method = editingGroupId ? 'PUT' : 'POST';
 
@@ -348,11 +348,49 @@ export async function submitGroup() {
             await loadMembers();
             await loadGroups();
         } else {
-            alert("Failed to save group: " + res.error);
+            showAlertModal("Save Failed", res.error || "An unknown error occurred.");
         }
     } catch (e) {
         console.error("Save group failed:", e);
+        showAlertModal("Connection Error", "Failed to communicate with the server.");
     }
+}
+
+export function showAlertModal(title, message) {
+    if (document.getElementById('alert-modal')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'alert-modal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 10000; font-family: 'Roboto', sans-serif;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: var(--bg-surface-container-high);
+            border-radius: var(--radius-card);
+            padding: 32px;
+            width: 360px;
+            text-align: center;
+            border: 1px solid var(--outline-variant);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        ">
+            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--error);">error</span>
+            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">${title}</h2>
+            <p style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">${message}</p>
+            
+            <button class="modal-btn" onclick="this.closest('#alert-modal').remove(); window.resetRemoteFocus();" style="
+                margin-top: 24px; width: 100%; padding: 14px; border-radius: var(--radius-pill);
+                background: var(--surface-variant); color: var(--text-main);
+                border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
+            ">OK</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    window.resetRemoteFocus(); // Snap remote focus to this new modal
 }
 
 // Find Duplicate Group 

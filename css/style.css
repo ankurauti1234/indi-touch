@@ -2675,25 +2675,27 @@ body.osk-open .main-stage {
     display: grid;
     grid-template-columns: repeat(2, 1fr) !important;
 
-    /* Exactly 3 rows: 100% height - (32px top padding + 32px bottom padding + 24px for two 12px gaps) */
-    grid-auto-rows: calc((100% - 88px) / 3) !important;
+    /* Restored your exact original height */
+    grid-auto-rows: 180px !important;
     gap: 12px !important;
 
     padding: 32px !important;
 
-    /* Prevents the remote scroll from "eating" the top/bottom of the cards */
+    /* CRITICAL: Stops the remote scroll from "eating" the top of the cards */
     scroll-padding-top: 32px !important;
     scroll-padding-bottom: 32px !important;
 
     height: 100%;
-    /* CRITICAL: Forces grid to exact screen height so calc() works */
     overflow-y: auto;
     box-sizing: border-box;
     grid-auto-flow: dense;
 }
 
 .group-card {
-    /* Tells the remote's scrollIntoView to leave a safe margin when snapping to this card */
+    /* Restored your original size */
+    min-height: 180px !important;
+
+    /* Tells the remote to keep a safe distance when snapping to this card */
     scroll-margin-top: 32px !important;
     scroll-margin-bottom: 32px !important;
 }

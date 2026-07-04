@@ -66,7 +66,11 @@ function getOverlayItems() {
     if (critical?.classList.contains('active'))
         return [...critical.querySelectorAll('button')].filter(isVisible);
 
-    // 2. Dynamic Top-Level Modals (Duplicate & Delete)
+    // 2. Dynamic Top-Level Modals (Alert, Duplicate & Delete)
+    const alertModal = document.getElementById('alert-modal');
+    if (alertModal)
+        return [...alertModal.querySelectorAll('button')].filter(isVisible);
+
     const dupModal = document.getElementById('duplicate-modal');
     if (dupModal)
         return [...dupModal.querySelectorAll('button')].filter(isVisible);

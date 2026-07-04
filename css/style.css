@@ -2697,47 +2697,96 @@ body.osk-open .main-stage {
     /* Overrides the standard height */
 }
 
-/* 1. Grid: Generous Spacing for Pi Display */
+/* --- FRESH START: GROUP CARDS --- */
+
+/* 1. Grid Container */
 #groups-grid-container {
+    display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 40px !important;
-    /* Much wider gaps between cards */
-    padding: 48px !important;
-    /* Thick safe margin on all four sides */
-    box-sizing: border-box;
+    padding: 40px !important;
+    align-content: start !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-/* 2. Taller Cards to Fit Bigger Content */
+/* 2. The Cards */
 .group-card {
-    min-height: 220px !important;
+    background: var(--bg-surface-container) !important;
+    border-radius: var(--radius-card) !important;
+    padding: 32px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 240px !important;
+    border: 3px solid transparent !important;
+    box-sizing: border-box !important;
 }
 
+/* Full width for all-members / create cards */
 .group-card.all-members-card,
-.group-card.wide-card,
 .group-card.create-card {
-    /* Ensuring create card spans if needed */
     grid-column: span 2 !important;
 }
 
-/* 3. Massive Avatars (Scaled from 64px -> 96px) */
+/* 3. Avatars Layout */
+.group-avatars-container {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 24px !important;
+}
+
+/* 4. Massive 96px Avatars */
 .group-avatar-stacked,
 .group-avatar-more,
 .group-member-item img {
     width: 96px !important;
     height: 96px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 4px solid var(--bg-surface-container) !important;
+    /* Clean overlap cut */
+}
+
+/* Overlap effect */
+.group-avatar-stacked~.group-avatar-stacked,
+.group-avatar-stacked~.group-avatar-more {
+    margin-left: -32px !important;
 }
 
 .group-avatar-more {
     font-size: 2rem !important;
-    /* Scaled the "+X" text to fit the larger circle */
+    font-weight: 500 !important;
+    background: var(--surface-variant) !important;
+    color: var(--on-surface-variant) !important;
 }
 
-/* 4. Highly Legible Text */
+/* 5. Typography */
 .group-card .g-name {
+    color: var(--text-main) !important;
     font-size: 2.2rem !important;
-    margin-bottom: 4px !important;
+    font-weight: 500 !important;
+    margin: 0 0 8px 0 !important;
+    text-align: center !important;
 }
 
 .group-card .g-info {
+    color: var(--text-sub) !important;
     font-size: 1.4rem !important;
+    margin: 0 !important;
+    text-align: center !important;
+}
+
+/* 6. Remote Focus State */
+.group-card:focus,
+.group-card.focused {
+    border-color: var(--primary) !important;
+    background: var(--bg-card-hover) !important;
+    outline: none !important;
 }

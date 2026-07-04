@@ -2688,7 +2688,7 @@ body.osk-open .main-stage {
 #groups-grid-container::after {
     content: "";
     grid-column: span 2;
-    height: 64px;
+    height: 34px;
 }
 
 /* 2. Group Cards (Height unchanged) */

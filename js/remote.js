@@ -55,7 +55,7 @@ function isScreensaverActive() {
 }
 
 function getOverlayItems() {
-    // Connection warning popups take highest priority
+    // 1. Connection warning popups take highest priority
     const wifiWarn = document.getElementById('wifi-warning-overlay');
     if (wifiWarn?.classList.contains('visible'))
         return [...wifiWarn.querySelectorAll('button')].filter(isVisible);
@@ -66,20 +66,38 @@ function getOverlayItems() {
     if (critical?.classList.contains('active'))
         return [...critical.querySelectorAll('button')].filter(isVisible);
 
-    const modal = document.getElementById('modal-overlay');
-    if (modal?.classList.contains('active'))
-        return [...modal.querySelectorAll('.modal-btn')].filter(isVisible);
+    // 2. Dynamic Top-Level Modals (Duplicate & Delete)
+    const dupModal = document.getElementById('duplicate-modal');
+    if (dupModal)
+        return [...dupModal.querySelectorAll('button')].filter(isVisible);
 
+    const deleteModal = document.getElementById('delete-confirm-modal');
+    if (deleteModal)
+        return [...deleteModal.querySelectorAll('button')].filter(isVisible);
+
+    // 3. Wi-Fi Password Modal
     const wifi = document.getElementById('wifi-password-overlay');
     if (wifi?.classList.contains('active'))
         return [...wifi.querySelectorAll('button:not([disabled])')].filter(isVisible);
 
-    const deleteModal = document.getElementById('delete-confirm-modal');
-    if (deleteModal?.classList.contains('active'))
-        return [...deleteModal.querySelectorAll('.modal-btn')].filter(isVisible);
+    // 4. Group Create/Edit Modal (group-modal-overlay)
+    const modal = document.getElementById('group-modal-overlay');
+    if (modal?.classList.contains('active')) {
+        const sel = 'input, button:not([disabled]), .group-member-item, .modal-btn';
+        return [...modal.querySelectorAll(sel)].filter(isVisible);
+    }
 
     return null; // null = no overlay open
 }
+window.resetRemoteFocus = function () {
+    setTimeout(() => {
+        const items = getContentItems();
+        if (items.length) {
+            contentFocusIdx = 0;
+            setFocusEl(items[0]);
+        }
+    }, 50); // Slight delay for DOM rendering
+};
 
 function isHomeGrid() {
     return !isOnboarding() &&

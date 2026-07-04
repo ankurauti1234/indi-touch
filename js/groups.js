@@ -130,7 +130,7 @@ export function renderGroupsGrid() {
 
     // --- APPEND CREATE CARD ---
     html += `
-    <button class="group-card create-card" tabindex="0" onclick="openGroupModal()">
+    <button class="group-card create-card" tabindex="0">
         <span class="material-symbols-rounded">group_add</span>
         <div class="create-label" data-i18n="create_group">Create Group</div>
     </button>`;
@@ -255,6 +255,9 @@ export async function openEditGroupModal(groupId) {
         overlay.classList.add('active');
     }
     applyTranslations();
+
+    // Snap remote focus to modal
+    window.resetRemoteFocus();
 }
 
 export function closeGroupModal() {
@@ -262,6 +265,9 @@ export function closeGroupModal() {
     if (overlay) {
         overlay.classList.remove('active');
     }
+
+    // Snap remote focus back to grid
+    window.resetRemoteFocus();
 }
 
 async function renderMembersSelectionList(selectedCodes = []) {
@@ -376,7 +382,7 @@ export function showDuplicateModal(groupName) {
             <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">Duplicate Group</h2>
             <p style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">This exact combination already exists as:<br><b style="color: var(--text-main);">${groupName}</b></p>
             
-            <button class="modal-btn" onclick="this.closest('#duplicate-modal').remove()" style="
+            <button class="modal-btn" onclick="this.closest('#duplicate-modal').remove(); window.resetRemoteFocus();" style="
                 margin-top: 24px; width: 100%; padding: 14px; border-radius: var(--radius-pill);
                 background: var(--primary); color: var(--on-primary);
                 border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
@@ -384,6 +390,7 @@ export function showDuplicateModal(groupName) {
         </div>
     `;
     document.body.appendChild(modal);
+    window.resetRemoteFocus(); // Triggers when modal OPENS
 }
 
 // Delete group logic
@@ -444,7 +451,10 @@ export function deleteGroup() {
 
 export function closeDeleteModal() {
     const modal = document.getElementById('delete-confirm-modal');
-    if (modal) modal.remove();
+    if (modal) {
+        modal.remove();
+        window.resetRemoteFocus(); // Triggers when modal CLOSES (via cancel)
+    }
 }
 
 export async function executeDelete() {
@@ -458,6 +468,7 @@ export async function executeDelete() {
             closeDeleteModal();
             closeGroupModal();
             await loadGroups();
+            window.resetRemoteFocus(); // Triggers after successful deletion
         } else {
             console.error("Failed to delete group: " + res.error);
             closeDeleteModal();

@@ -130,7 +130,7 @@ export function renderGroupsGrid() {
 
     // --- APPEND CREATE CARD ---
     html += `
-    <button class="group-card create-card" tabindex="0">
+    <button class="group-card create-card" tabindex="0" onclick="openGroupModal()">
         <span class="material-symbols-rounded">group_add</span>
         <div class="create-label" data-i18n="create_group">Create Group</div>
     </button>`;

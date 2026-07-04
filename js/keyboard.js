@@ -244,39 +244,35 @@ export function showOSK() {
 }
 
 export function hideOSK() {
+    // 1. Remove the classes first (This triggers your CSS to remove the extra 300px)
     document.getElementById('osk-container').classList.remove('visible');
     document.body.classList.remove('osk-open');
 
-    // 1. Reset Viewport: Main document scroll
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    // 2. Reset specific containers that commonly get stuck shifted up
-    const containersToReset = [
-        '.view.active',
-        '.settings-panel.active',
-        '#group-modal-overlay',
-        '#member-settings-list', // Specifically added for the Member Settings panel
-        '#app-frame',
-        '.popover-card'
-    ];
-
-    containersToReset.forEach(selector => {
-        document.querySelectorAll(selector).forEach(el => {
-            el.scrollTop = 0;
-        });
-    });
-
-    // 3. Fallback: If the active input was inside a deeply nested div, walk up and reset
+    // 2. Unfocus the input so the native TV browser stops forcing focus
     if (activeInput) {
-        let parent = activeInput.parentElement;
-        while (parent && parent !== document.body) {
-            const overflowY = window.getComputedStyle(parent).overflowY;
-            if (overflowY === 'auto' || overflowY === 'scroll') {
-                parent.scrollTop = 0;
-            }
-            parent = parent.parentElement;
-        }
+        activeInput.blur();
     }
+    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+        document.activeElement.blur();
+    }
+
+    // 3. Wait exactly 50ms for the CSS height change to render, THEN force the scroll down
+    setTimeout(() => {
+        if (activeInput) {
+            let parent = activeInput.parentElement;
+            while (parent && parent !== document.documentElement) {
+                if (parent.scrollTop > 0) parent.scrollTop = 0;
+                parent = parent.parentElement;
+            }
+        }
+
+        // Force reset all standard containers
+        document.querySelectorAll('.view, .settings-panel, .popover-card, #group-modal-overlay, #app-frame, .main-stage').forEach(el => {
+            if (el.scrollTop > 0) el.scrollTop = 0;
+        });
+
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    }, 50); // 50ms delay is the magic number here
 }

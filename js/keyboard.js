@@ -84,7 +84,7 @@ export function initOSK() {
 function renderKeys() {
     const container = document.getElementById('osk-container');
     container.innerHTML = ''; // Clear
-    
+
     let layout;
     if (isSymbol) {
         layout = keysSymbol;
@@ -101,7 +101,7 @@ function renderKeys() {
         row.forEach(key => {
             const btn = document.createElement('button');
             btn.className = 'osk-key';
-            
+
             // Text / Label Logic
             let display = key;
             if (key === 'shift') {
@@ -128,13 +128,13 @@ function renderKeys() {
             }
 
             btn.innerText = display;
-            
+
             // Interaction
             btn.onclick = (e) => {
-                e.stopPropagation(); // Prevent "click outside" listener from firing
-                e.preventDefault(); 
+                e.stopPropagation();
+                e.preventDefault();
                 handleKey(key);
-                if (activeInput && key !== 'enter') activeInput.focus(); // Skip focus if closing
+                if (activeInput && key !== 'enter') activeInput.focus();
             };
 
             rowDiv.appendChild(btn);
@@ -142,6 +142,22 @@ function renderKeys() {
 
         container.appendChild(rowDiv);
     });
+
+    // --- NEW: Add the Remote Dismiss Indicator ---
+    const hintDiv = document.createElement('div');
+    hintDiv.className = 'osk-dismiss-hint';
+    hintDiv.innerHTML = `
+        <span class="material-symbols-rounded" style="font-size: 20px;">keyboard_arrow_down</span> 
+        <span>Press DOWN to hide</span>
+    `;
+    hintDiv.style.cssText = `
+        width: 100%; text-align: center; color: var(--text-sub); 
+        font-size: 14px; font-weight: 500; margin-top: 12px;
+        display: flex; align-items: center; justify-content: center; 
+        gap: 6px; opacity: 0.6; user-select: none;
+    `;
+    container.appendChild(hintDiv);
+    // ---------------------------------------------
 }
 
 function handleKey(key) {
@@ -230,8 +246,24 @@ export function showOSK() {
 export function hideOSK() {
     document.getElementById('osk-container').classList.remove('visible');
     document.body.classList.remove('osk-open');
-    
-    // Reset Viewport: Ensure UI returns to center after keyboard push
+
+    // Reset Viewport: Ensure internal UI containers return to their normal positions
+    if (activeInput) {
+        let parent = activeInput.parentElement;
+        while (parent && parent !== document.body) {
+            const overflowY = window.getComputedStyle(parent).overflowY;
+            if (overflowY === 'auto' || overflowY === 'scroll') {
+                parent.scrollTop = 0; // Snap the pushed container back down
+            }
+            parent = parent.parentElement;
+        }
+    }
+
+    // Catch-alls for standard app containers just to be safe
+    document.querySelectorAll('.view.active, .settings-panel.active, #group-modal-overlay').forEach(el => {
+        el.scrollTop = 0;
+    });
+
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;

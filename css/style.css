@@ -2696,7 +2696,6 @@ body.osk-open .main-stage {
     /* Tells the remote's scrollIntoView to leave a safe margin when snapping to this card */
     scroll-margin-top: 32px !important;
     scroll-margin-bottom: 32px !important;
-    min-height: 180px !important;
 }
 
 .group-card.wide-card,

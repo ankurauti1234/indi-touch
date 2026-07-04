@@ -2676,7 +2676,7 @@ body.osk-open .main-stage {
     grid-template-columns: repeat(2, 1fr) !important;
     /* 2 columns */
     grid-auto-rows: 180px;
-    gap: 32px !important;
+    gap: 12px !important;
     /* Larger gap BETWEEN cards */
     padding: 32px !important;
     /* Margin AROUND the edges of the grid */

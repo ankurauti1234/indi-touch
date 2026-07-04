@@ -152,9 +152,9 @@ function renderKeys() {
     `;
     hintDiv.style.cssText = `
         width: 100%; text-align: center; color: var(--text-sub); 
-        font-size: 14px; font-weight: 500; margin-top: 12px;
+        font-size: 14px; font-weight: 500; margin-top: 6px;
         display: flex; align-items: center; justify-content: center; 
-        gap: 3px; opacity: 0.6; user-select: none;
+        gap: 4px; opacity: 0.6; user-select: none;
     `;
     container.appendChild(hintDiv);
     // ---------------------------------------------

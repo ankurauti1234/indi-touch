@@ -247,24 +247,36 @@ export function hideOSK() {
     document.getElementById('osk-container').classList.remove('visible');
     document.body.classList.remove('osk-open');
 
-    // Reset Viewport: Ensure internal UI containers return to their normal positions
+    // 1. Reset Viewport: Main document scroll
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    // 2. Reset specific containers that commonly get stuck shifted up
+    const containersToReset = [
+        '.view.active',
+        '.settings-panel.active',
+        '#group-modal-overlay',
+        '#member-settings-list', // Specifically added for the Member Settings panel
+        '#app-frame',
+        '.popover-card'
+    ];
+
+    containersToReset.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+            el.scrollTop = 0;
+        });
+    });
+
+    // 3. Fallback: If the active input was inside a deeply nested div, walk up and reset
     if (activeInput) {
         let parent = activeInput.parentElement;
         while (parent && parent !== document.body) {
             const overflowY = window.getComputedStyle(parent).overflowY;
             if (overflowY === 'auto' || overflowY === 'scroll') {
-                parent.scrollTop = 0; // Snap the pushed container back down
+                parent.scrollTop = 0;
             }
             parent = parent.parentElement;
         }
     }
-
-    // Catch-alls for standard app containers just to be safe
-    document.querySelectorAll('.view.active, .settings-panel.active, #group-modal-overlay').forEach(el => {
-        el.scrollTop = 0;
-    });
-
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
 }

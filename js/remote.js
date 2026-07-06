@@ -398,7 +398,10 @@ function activate() {
             if (zone === 'content') {
                 const items = getContentItems();
                 if (items.length) {
-                    if (contentFocusIdx >= items.length) contentFocusIdx = 0;
+                    // FIX: Safe boundary check instead of resetting to 0
+                    if (contentFocusIdx >= items.length) {
+                        contentFocusIdx = Math.max(0, items.length - 1);
+                    }
                     setFocusEl(items[contentFocusIdx]);
                 }
             } else {
@@ -475,7 +478,6 @@ export function applyRemoteMode(on) {
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 
-    // KEY DOWN: Triggers navigation, and starts Long Press Timer for 'Enter'
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
 
@@ -492,9 +494,8 @@ export function initRemote() {
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
             case 'Enter':
                 e.preventDefault();
-                if (e.repeat) return; // Prevent repeating if held down
+                if (e.repeat) return;
 
-                // Visual feedback: Squeeze the card while holding
                 if (remoteFocusEl && remoteFocusEl.classList.contains('group-card')) {
                     remoteFocusEl.style.transition = 'transform 0.6s ease';
                     remoteFocusEl.style.transform = 'scale(0.95)';
@@ -503,15 +504,13 @@ export function initRemote() {
                 isLongPress = false;
                 enterPressTimer = setTimeout(() => {
                     isLongPress = true;
-                    // Pop it back visually right as the modal opens
                     if (remoteFocusEl) remoteFocusEl.style.transform = 'scale(1)';
                     handleLongPress();
-                }, 600); // 600ms hold triggers Edit
+                }, 600);
                 break;
         }
     });
 
-    // KEY UP: Cancels Long Press, triggers Short Press if threshold wasn't met
     document.addEventListener('keyup', (e) => {
         if (!isRemoteMode()) return;
 
@@ -519,11 +518,10 @@ export function initRemote() {
             e.preventDefault();
             clearTimeout(enterPressTimer);
 
-            // Revert visual squeeze if they let go early
             if (remoteFocusEl) remoteFocusEl.style.transform = '';
 
             if (!isLongPress) {
-                activate(); // Standard click behavior
+                activate();
             }
         }
     });
@@ -544,8 +542,11 @@ export function initRemote() {
             if (zone === 'content' && !isHomeGrid()) {
                 const items = getContentItems();
                 if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
-                    contentFocusIdx = 0;
-                    if (items.length) setFocusEl(items[0]);
+                    // FIX: Maintain index during DOM re-render instead of panicking to 0
+                    if (contentFocusIdx >= items.length) {
+                        contentFocusIdx = Math.max(0, items.length - 1);
+                    }
+                    if (items.length) setFocusEl(items[contentFocusIdx]);
                 }
             }
         }, 200);

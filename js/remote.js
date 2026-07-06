@@ -394,10 +394,11 @@ function navigate(direction) {
     }
 
     // ---- BOTTOM OF navigate() ----
-    const items = getContentItems();
+
+    // We REMOVED the duplicate "const items = getContentItems();" 
+    // and "const activeView = ..." because they were already declared higher up in the function!
 
     // Strict Lock: Only lock tabs if we are actually in the Settings view AND see a back button
-    const activeView = document.querySelector('#app-frame .view.active');
     const isSettings = activeView && activeView.id === 'view-settings';
     const isDeepMenu = isSettings && items.some(el => el.classList.contains('back-btn'));
 

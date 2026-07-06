@@ -609,25 +609,27 @@ export function initRemote() {
     });
 
     // --- FIXED: Phantom Mousemove Fix ---
+    // --- FIXED: Phantom Mousemove Fix ---
     let lastMouseX = -1;
     let lastMouseY = -1;
     let lastKeyTime = 0; // Track when the last remote button was pressed
 
-    // Update time whenever a remote button is pressed
-    document.addEventListener('keydown', () => {
-        lastKeyTime = Date.now();
-    });
+    // FIX: Update time on BOTH keydown and keyup! 
+    // This ensures that releasing the Select button doesn't trigger a fake mousemove that wipes focus.
+    document.addEventListener('keydown', () => { lastKeyTime = Date.now(); });
+    document.addEventListener('keyup', () => { lastKeyTime = Date.now(); });
 
     document.addEventListener('mousemove', (e) => {
         if (!isRemoteMode()) return;
 
-        // 1. Ignore if a remote button was pressed in the last 500ms (stops phantom Select clicks)
-        if (Date.now() - lastKeyTime < 500) return;
+        // 1. Ignore if a remote button was pressed or released in the last 800ms
+        if (Date.now() - lastKeyTime < 800) return;
 
         // 2. Ignore fake TV remote movements that have no actual physical movement delta
-        if (e.movementX === 0 && e.movementY === 0 && e.clientX === lastMouseX) return;
+        if (e.movementX === 0 && e.movementY === 0) return;
 
-        if (Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
+        // 3. Ignore tiny physical bumps (deadzone)
+        if (lastMouseX !== -1 && Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
             return;
         }
 

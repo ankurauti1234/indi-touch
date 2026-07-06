@@ -553,15 +553,18 @@ export function initRemote() {
                 e.preventDefault();
                 if (e.repeat) return;
 
-                if (remoteFocusEl && remoteFocusEl.classList.contains('group-card')) {
-                    remoteFocusEl.style.transition = 'transform 0.6s ease';
-                    remoteFocusEl.style.transform = 'scale(0.95)';
+                // Add the smooth squeeze class
+                if (remoteFocusEl) {
+                    remoteFocusEl.classList.add('remote-pressing');
                 }
 
                 isLongPress = false;
                 enterPressTimer = setTimeout(() => {
                     isLongPress = true;
-                    if (remoteFocusEl) remoteFocusEl.style.transform = 'scale(1)';
+                    // Release the squeeze when the long press triggers
+                    if (remoteFocusEl) {
+                        remoteFocusEl.classList.remove('remote-pressing');
+                    }
                     handleLongPress();
                 }, 600);
                 break;
@@ -575,7 +578,10 @@ export function initRemote() {
             e.preventDefault();
             clearTimeout(enterPressTimer);
 
-            if (remoteFocusEl) remoteFocusEl.style.transform = '';
+            // Release the squeeze when button is let go
+            if (remoteFocusEl) {
+                remoteFocusEl.classList.remove('remote-pressing');
+            }
 
             if (!isLongPress) {
                 activate();

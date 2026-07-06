@@ -97,20 +97,17 @@ function clearFocusEl() {
 }
 
 function setFocusEl(el) {
-    // 1. If null, clear and exit
     if (!el) {
         clearFocusEl();
         return;
     }
 
-    // 2. THE THROB KILLER:
-    // If the engine tries to focus the exact same card we are already on,
-    // ABORT IMMEDIATELY. This stops the layout from thrashing and looping.
-    if (remoteFocusEl === el) {
+    // THE GUARD: If we are already focused on this exact element, 
+    // abort immediately. Do not remove the class, do not re-add it.
+    if (remoteFocusEl === el && el.classList.contains('remoteFocused')) {
         return;
     }
 
-    // 3. Only apply focus if it's a genuinely new card
     clearFocusEl();
     el.classList.add('remoteFocused');
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -530,14 +527,17 @@ export function applyRemoteMode(on) {
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 
-    // --- NEW: Bulletproof DOM Re-render Observer ---
-    // If the focused card gets destroyed by an async API call, instantly grab the new one
+    // --- UPDATED: Surgical DOM Observer ---
     const domObserver = new MutationObserver(() => {
-        if (!isRemoteMode() || zone !== 'content') return;
+        if (!isRemoteMode() || zone !== 'content' || !remoteFocusEl) return;
 
-        if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
+        // Only trigger if the element is gone, OR if the element was replaced by a clone 
+        // (i.e., !document.body.contains(remoteFocusEl))
+        if (!document.body.contains(remoteFocusEl)) {
             const items = getContentItems();
             if (items.length > 0) {
+                // Do NOT call setFocusEl directly here if unnecessary
+                // This prevents the re-focus loop
                 contentFocusIdx = Math.max(0, Math.min(contentFocusIdx, items.length - 1));
                 setFocusEl(items[contentFocusIdx]);
             }
@@ -615,20 +615,20 @@ export function initRemote() {
         });
     });
 
-    document.addEventListener('click', () => {
-        if (!isRemoteMode()) return;
-        setTimeout(() => {
-            if (zone === 'content' && !isHomeGrid()) {
-                const items = getContentItems();
-                if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
-                    if (contentFocusIdx >= items.length) {
-                        contentFocusIdx = Math.max(0, items.length - 1);
-                    }
-                    if (items.length) setFocusEl(items[contentFocusIdx]);
-                }
-            }
-        }, 200);
-    });
+    // document.addEventListener('click', () => {
+    //     if (!isRemoteMode()) return;
+    //     setTimeout(() => {
+    //         if (zone === 'content' && !isHomeGrid()) {
+    //             const items = getContentItems();
+    //             if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
+    //                 if (contentFocusIdx >= items.length) {
+    //                     contentFocusIdx = Math.max(0, items.length - 1);
+    //                 }
+    //                 if (items.length) setFocusEl(items[contentFocusIdx]);
+    //             }
+    //         }
+    //     }, 200);
+    // });
 
     // --- FIXED: Phantom Mousemove Fix ---
     //     let lastMouseX = -1;

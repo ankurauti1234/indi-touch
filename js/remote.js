@@ -99,11 +99,14 @@ function setFocusEl(el) {
     clearFocusEl();
     if (!el) return;
     el.classList.add('remoteFocused');
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // CHANGED: 'center' ensures the hovered item is always perfectly in the middle of the screen, never chopped at the edges!
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
     remoteFocusEl = el;
 
     // Constantly update memory when navigating safely in the background
-    if (zone === 'content' && isBackgroundContext()) {
+    if (zone === 'content' && typeof isBackgroundContext === 'function' && isBackgroundContext()) {
         lastBackgroundIdx = contentFocusIdx;
     }
 }

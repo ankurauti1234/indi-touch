@@ -736,6 +736,8 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
+    /* FIX: Added left padding so the header aligns perfectly with the inset lists below */
+    padding-left: 12px;
     margin-bottom: 24px;
     flex-shrink: 0;
 }
@@ -762,10 +764,13 @@ body {
 .list-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    /* FIX: Increased gap from 8px to 14px so scaled items don't overlap vertically */
+    gap: 14px;
     overflow-y: auto;
     height: 100%;
-    padding-bottom: 20px;
+    /* FIX: Built-in safe padding for all sides */
+    padding: 16px 24px 64px 24px;
+    box-sizing: border-box;
 }
 
 .list-item {
@@ -778,6 +783,10 @@ body {
     cursor: pointer;
     transition: 0.2s cubic-bezier(0.2, 0, 0, 1);
     border: 1px solid rgba(255, 255, 255, 0.05);
+
+    /* FIX: Built-in lateral margin */
+    margin: 0 12px;
+    box-sizing: border-box;
 }
 
 .list-item:hover {
@@ -1042,8 +1051,10 @@ body {
 .settings-scroll-area {
     flex: 1;
     overflow-y: auto;
-    padding-bottom: 24px;
+    /* FIX: Added symmetric padding to create a built-in safe zone for scaling */
+    padding: 16px 24px 64px 24px;
     min-height: 0;
+    box-sizing: border-box;
 }
 
 .settings-panel.active {
@@ -2206,7 +2217,12 @@ body.osk-open .main-stage {
     padding: 14px 20px;
     border-radius: 12px;
     cursor: pointer;
-    transition: background 0.15s;
+    /* FIX: Added transform to the transition so scaling feels smooth */
+    transition: background 0.15s, transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+
+    /* FIX: Built-in lateral margin ensures it never scrapes the scroll container edges */
+    margin: 0 12px;
+    box-sizing: border-box;
 }
 
 .wifi-item:hover,
@@ -2245,7 +2261,6 @@ body.osk-open .main-stage {
     background: rgba(208, 188, 255, 0.2);
     color: #d0bcff;
 }
-
 
 
 /* ── System Info Redesign ──────────────────────────────────────────────────── */

@@ -133,6 +133,15 @@ function isHomeGrid() {
         !!document.getElementById('view-home')?.classList.contains('active');
 }
 
+function isSelectKey(e) {
+    return e.key === 'Enter' ||
+        e.key === 'OK' ||
+        e.key === 'Select' ||
+        e.key === ' ' ||
+        e.key === 'Spacebar' ||
+        e.code === 'NumpadEnter';
+}
+
 // ─── Nav rail ─────────────────────────────────────────────────────────────────
 function getNavItems() {
     if (isOnboarding() || getOverlayItems() !== null) return [];
@@ -544,34 +553,37 @@ export function initRemote() {
             import('./grid.js').then(m => m.applyFocus());
         }
 
+        const isSelect = isSelectKey(e);
+
         switch (e.key) {
             case 'ArrowDown': e.preventDefault(); navigate('down'); break;
             case 'ArrowUp': e.preventDefault(); navigate('up'); break;
             case 'ArrowRight': e.preventDefault(); navigate('right'); break;
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
-            case 'Enter':
-                e.preventDefault();
-                if (e.repeat) return;
+            default:
+                if (isSelect) {
+                    e.preventDefault();
+                    if (e.repeat) return;
 
-                if (remoteFocusEl && remoteFocusEl.classList.contains('group-card')) {
-                    remoteFocusEl.style.transition = 'transform 0.6s ease';
-                    remoteFocusEl.style.transform = 'scale(0.95)';
+                    if (remoteFocusEl && remoteFocusEl.classList.contains('group-card')) {
+                        remoteFocusEl.style.transition = 'transform 0.6s ease';
+                        remoteFocusEl.style.transform = 'scale(0.95)';
+                    }
+
+                    isLongPress = false;
+                    enterPressTimer = setTimeout(() => {
+                        isLongPress = true;
+                        if (remoteFocusEl) remoteFocusEl.style.transform = 'scale(1)';
+                        handleLongPress();
+                    }, 600);
                 }
-
-                isLongPress = false;
-                enterPressTimer = setTimeout(() => {
-                    isLongPress = true;
-                    if (remoteFocusEl) remoteFocusEl.style.transform = 'scale(1)';
-                    handleLongPress();
-                }, 600);
-                break;
         }
     });
 
     document.addEventListener('keyup', (e) => {
         if (!isRemoteMode()) return;
 
-        if (e.key === 'Enter') {
+        if (isSelectKey(e)) {
             e.preventDefault();
             clearTimeout(enterPressTimer);
 
@@ -608,7 +620,6 @@ export function initRemote() {
         }, 200);
     });
 
-    // --- FIXED: Phantom Mousemove Fix ---
     // --- FIXED: Phantom Mousemove Fix ---
     let lastMouseX = -1;
     let lastMouseY = -1;

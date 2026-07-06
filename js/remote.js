@@ -102,17 +102,22 @@ function setFocusEl(el) {
         return;
     }
 
-    // THE THROB KILLER:
-    // If the engine tries to focus the exact same card we are already hovering on,
-    // do absolutely nothing! This stops the class from ripping off and restarting the animation.
+    // Stop rapid-fire duplicate focus loops
     if (remoteFocusEl === el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         return;
     }
 
     clearFocusEl();
-    el.classList.add('remoteFocused');
+
+    // 1. Scroll first while the element is at its base size
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // 2. Apply the focus scale via requestAnimationFrame 
+    // This perfectly syncs the scale animation with the monitor's refresh rate, stopping the hover throb.
+    requestAnimationFrame(() => {
+        el.classList.add('remoteFocused');
+    });
+
     remoteFocusEl = el;
 
     if (zone === 'content' && typeof isBackgroundContext === 'function' && isBackgroundContext()) {

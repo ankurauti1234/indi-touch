@@ -2905,28 +2905,63 @@ body.light-mode .group-card.focused.remote-pressing {
 }
 
 /* =========================================================
-   THE FINAL DOUBLE-BOUNCE KILLER (Override Everything)
+   THE FINAL THROB & BOUNCE KILLER (Absolute Override)
    ========================================================= */
 
-/* 1. Strip rogue transitions from all base cards */
+/* 1. LOCK THE BASE GEOMETRY & TRANSITION */
+/* We force a permanent 4px border so the physical size NEVER changes when focused */
 .group-card,
 .member-card,
 .list-item,
 .wifi-item {
+    border: 4px solid transparent !important;
+    box-sizing: border-box !important;
     transform: scale(1) !important;
-    /* Explicit transition mapping — NO "all" allowed */
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, border-color 0.2s !important;
+
+    /* Hardware acceleration to stop UI tearing */
+    transform-style: preserve-3d !important;
+    backface-visibility: hidden !important;
+    will-change: transform, box-shadow, border-color !important;
+
+    /* The ONLY place transition should be defined! */
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+        box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1),
+        background-color 0.2s ease,
+        border-color 0.2s ease !important;
 }
 
-/* 2. Unify the focus scale and match the exact transition timing */
+/* 2. APPLY COLORS WITHOUT CHANGING SIZE */
+.group-card:not(.inactive),
+.member-card:not(.inactive) {
+    border-color: #64d29a !important;
+}
+
+/* 3. THE FOCUS STATE (NO TRANSITIONS ALLOWED HERE) */
+/* We REMOVED the transition property from here so the base class handles it perfectly in BOTH directions */
 .remoteFocused,
 .focused,
 .member-card.focused,
 .group-card.focused {
-    transform: scale(1.05) !important;
     outline: none !important;
-    /* This MUST perfectly match the base block to prevent bouncing */
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, border-color 0.2s !important;
-    will-change: transform, box-shadow;
-    backface-visibility: hidden;
+    transform: scale(1.05) !important;
+    z-index: 10 !important;
+
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow:
+        0 0 0 3px var(--bg-app),
+        0 0 0 6px var(--text-main),
+        0 12px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Light mode focus colors */
+body.light-mode .remoteFocused,
+body.light-mode .focused,
+body.light-mode .member-card.focused,
+body.light-mode .group-card.focused {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    box-shadow:
+        0 0 0 3px var(--bg-app),
+        0 0 0 6px var(--primary),
+        0 12px 32px rgba(0, 0, 0, 0.15) !important;
+}
 }

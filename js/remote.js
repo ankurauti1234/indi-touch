@@ -102,8 +102,9 @@ function setFocusEl(el) {
         return;
     }
 
-    // PREVENT DOUBLE BOUNCING! 
-    // If the element is already focused, do not remove and re-add the class.
+    // THE THROB KILLER:
+    // If the engine tries to focus the exact same card we are already hovering on,
+    // do absolutely nothing! This stops the class from ripping off and restarting the animation.
     if (remoteFocusEl === el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         return;

@@ -96,6 +96,45 @@ function clearFocusEl() {
     }
 }
 
+function getInteractiveRemoteTarget(target) {
+    if (!target || target.nodeType !== 1) return null;
+
+    const selector = [
+        'button',
+        'input',
+        'textarea',
+        'select',
+        'a',
+        '.nav-btn',
+        '.list-item',
+        '.chip',
+        '.group-card',
+        '.member-card',
+        '.wifi-item',
+        '.avatar-option',
+        '.modal-btn',
+        '.action-btn',
+        '.osk-key',
+        '.group-member-item',
+        '.guest-avatar-circle'
+    ].join(', ');
+
+    const el = target.closest?.(selector);
+    if (!el || el.disabled || !isVisible(el)) return null;
+    return el;
+}
+
+function syncRemoteFocusFromPointer(target, options = {}) {
+    if (!isRemoteMode()) return;
+
+    const focusTarget = getInteractiveRemoteTarget(target);
+    if (!focusTarget) return;
+
+    if (remoteFocusEl !== focusTarget) {
+        setFocusEl(focusTarget, options);
+    }
+}
+
 function setFocusEl(el, options = {}) {
     if (!el) return;
 
@@ -560,6 +599,11 @@ export function initRemote() {
         domObserver.observe(container, { childList: true, subtree: true });
     }
     // -----------------------------------------------
+
+    document.addEventListener('pointerdown', (e) => {
+        if (!isRemoteMode()) return;
+        syncRemoteFocusFromPointer(e.target, { scroll: false });
+    }, true);
 
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;

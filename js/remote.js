@@ -64,7 +64,7 @@ function getOverlayItems() {
     if (critical?.classList.contains('active'))
         return [...critical.querySelectorAll('button')].filter(isVisible);
 
-    // 2. Dynamic Top-Level Modals (Alert, Duplicate & Delete)
+    // 2. Dynamic Top-Level Modals
     const alertModal = document.getElementById('alert-modal');
     if (alertModal)
         return [...alertModal.querySelectorAll('button')].filter(isVisible);
@@ -82,14 +82,15 @@ function getOverlayItems() {
     if (wifi?.classList.contains('active'))
         return [...wifi.querySelectorAll('button:not([disabled])')].filter(isVisible);
 
-    // 4. Group Create/Edit Modal (group-modal-overlay)
+    // 4. Group Create/Edit Modal
     const modal = document.getElementById('group-modal-overlay');
     if (modal?.classList.contains('active')) {
-        const sel = 'input, button:not([disabled]), .group-member-item, .modal-btn';
+        // Added #btn-group-delete
+        const sel = 'input, button:not([disabled]), .group-member-item, .modal-btn, #btn-group-delete';
         return [...modal.querySelectorAll(sel)].filter(isVisible);
     }
 
-    return null; // null = no overlay open
+    return null;
 }
 window.resetRemoteFocus = function () {
     setTimeout(() => {

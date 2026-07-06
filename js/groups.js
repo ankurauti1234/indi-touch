@@ -310,17 +310,25 @@ export async function submitGroup() {
         return;
     }
 
-    // 1. Get the member codes
+    // 1. Get selected and total items
     const listContainer = document.getElementById('group-members-list');
     const selectedItems = listContainer ? listContainer.querySelectorAll('.group-member-item.selected') : [];
+    const allItems = listContainer ? listContainer.querySelectorAll('.group-member-item') : [];
     const member_codes = Array.from(selectedItems).map(item => item.dataset.code);
 
-    if (member_codes.length === 0) {
-        showAlertModal("Members Required", "Please select at least one member.");
+    // --- NEW VALIDATIONS ---
+    if (member_codes.length < 2) {
+        showAlertModal("Invalid Group", "A group must have at least 2 members.");
         return;
     }
 
-    // 2. Check for duplicates using member_codes
+    if (member_codes.length === allItems.length) {
+        showAlertModal("Invalid Group", "An 'All Members' group already exists. Please select fewer members.");
+        return;
+    }
+    // -----------------------
+
+    // 2. Check for duplicates
     const duplicate = groupsData.find(g =>
         g.id !== editingGroupId &&
         g.members.length === member_codes.length &&

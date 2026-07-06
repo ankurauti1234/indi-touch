@@ -631,21 +631,21 @@ export function initRemote() {
     });
 
     // --- FIXED: Phantom Mousemove Fix ---
-//     let lastMouseX = -1;
-//     let lastMouseY = -1;
+    //     let lastMouseX = -1;
+    //     let lastMouseY = -1;
 
-//     document.addEventListener('mousemove', (e) => {
-//         if (!isRemoteMode()) return;
+    //     document.addEventListener('mousemove', (e) => {
+    //         if (!isRemoteMode()) return;
 
-//         if (Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
-//             return;
-//         }
+    //         if (Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
+    //             return;
+    //         }
 
-//         lastMouseX = e.clientX;
-//         lastMouseY = e.clientY;
+    //         lastMouseX = e.clientX;
+    //         lastMouseY = e.clientY;
 
-//         // Comment these out temporarily!
-//         // clearFocusEl();
-//         // clearGridFocus();
-//     });
-// }
+    //         // Comment these out temporarily!
+    //         // clearFocusEl();
+    //         // clearGridFocus();
+    //     });
+}

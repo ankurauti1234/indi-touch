@@ -601,10 +601,6 @@ export function initRemote() {
 
             clearTimeout(enterHoldTimer);
 
-            if (remoteFocusEl) {
-                remoteFocusEl.classList.remove('remote-pressing');
-            }
-
             if (!wasLongPress) {
                 activate();
             }

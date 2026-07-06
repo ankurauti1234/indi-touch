@@ -118,7 +118,7 @@ document.addEventListener('touchend', e => {
         return;
     }
 
-    // --- NEW: MODAL LOCK FOR TOUCH SWIPES ---
+    // --- MODAL LOCK FOR TOUCH SWIPES ---
     const isModalActive = !!document.querySelector(
         '#group-modal-overlay.active, ' +
         '#wifi-password-overlay.active, ' +
@@ -142,6 +142,16 @@ document.addEventListener('touchend', e => {
 
     const activeView = document.querySelector('.view.active');
     if (!activeView) return;
+
+    // --- NEW: DEEP SETTINGS LOCK ---
+    // If we are in the settings view, and a panel other than 'set-main' is active, block swipe
+    if (activeView.id === 'view-settings') {
+        const isDeepSetting = !!activeView.querySelector('.settings-panel.active:not(#set-main)');
+        if (isDeepSetting) {
+            return;
+        }
+    }
+    // -------------------------------
 
     const currentId = activeView.id.replace('view-', '');
     const currentIndex = tabOrder.indexOf(currentId);

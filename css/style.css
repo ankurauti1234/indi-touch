@@ -561,12 +561,15 @@ body {
     overflow: hidden;
     position: relative;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
     cursor: pointer;
     border: 2px solid transparent;
     height: calc((100% - (var(--gap) * (var(--rows) - 1))) / var(--rows));
     flex-basis: calc((100% - (var(--gap) * (var(--cols) - 1))) / var(--cols));
     flex-grow: 1;
+
+    /* Anchor the base size and STRICTLY define transitions to prevent double-bouncing */
+    transform: scale(1);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, box-shadow 0.2s, border-color 0.2s, filter 0.2s !important;
 }
 
 /* Remove mouse-based active scale */
@@ -2544,9 +2547,11 @@ body.osk-open .main-stage {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-
-    /* Takes up 1 column by default */
     grid-column: span 1;
+
+    /* Anchor the base size and STRICTLY define transitions to prevent double-bouncing */
+    transform: scale(1);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, box-shadow 0.2s, border-color 0.2s, filter 0.2s !important;
 }
 
 .group-card:not(.inactive) {

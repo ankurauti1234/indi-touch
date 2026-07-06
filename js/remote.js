@@ -30,9 +30,8 @@ let lastBackgroundIdx = 0; // NEW: Memory for when modals close
 let remoteFocusEl = null;
 
 // Long-press state variables
-let enterPressTimer = null;
-let pressingVisualTimer = null; // NEW: Controls the visual squeeze delay
-let isLongPress = false;
+let enterHoldTimer = null;
+let wasLongPress = false;
 
 // ─── Context detectors ────────────────────────────────────────────────────────
 function isOnboarding() {
@@ -560,15 +559,17 @@ export function initRemote() {
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
             case 'Enter':
                 e.preventDefault();
+                // 1. Ignore TV remote auto-repeat if the button is held
                 if (e.repeat) return;
 
-                isLongPress = false;
+                wasLongPress = false;
 
-                // NO visual changes on keydown. This guarantees single taps stay rock solid!
-                enterPressTimer = setTimeout(() => {
-                    isLongPress = true;
+                // 2. Start the 600ms stopwatch. 
+                // NO visual changes happen here. Single taps stay rock solid!
+                enterHoldTimer = setTimeout(() => {
+                    wasLongPress = true;
 
-                    // Trigger the visual squeeze pulse ONLY when the long press is confirmed
+                    // 3. Fire the visual squeeze pulse to confirm the long press
                     if (remoteFocusEl) {
                         remoteFocusEl.classList.add('remote-pressing');
                         setTimeout(() => remoteFocusEl.classList.remove('remote-pressing'), 250);
@@ -585,14 +586,17 @@ export function initRemote() {
 
         if (e.key === 'Enter') {
             e.preventDefault();
-            clearTimeout(enterPressTimer);
 
-            // Clean up class just in case they release exactly during the pulse
+            // 1. Instantly stop the stopwatch
+            clearTimeout(enterHoldTimer);
+
+            // 2. Cleanup the animation class just in case
             if (remoteFocusEl) {
                 remoteFocusEl.classList.remove('remote-pressing');
             }
 
-            if (!isLongPress) {
+            // 3. If the stopwatch never hit 600ms, it is a guaranteed short tap!
+            if (!wasLongPress) {
                 activate();
             }
         }

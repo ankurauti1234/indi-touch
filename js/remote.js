@@ -32,6 +32,7 @@ let remoteFocusEl = null;
 // Long-press state variables
 let enterHoldTimer = null;
 let wasLongPress = false;
+let isKeyLocked = false; // NEW: The hardware ghost-input padlock
 
 // ─── Context detectors ────────────────────────────────────────────────────────
 function isOnboarding() {
@@ -559,17 +560,17 @@ export function initRemote() {
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
             case 'Enter':
                 e.preventDefault();
-                // 1. Ignore TV remote auto-repeat if the button is held
-                if (e.repeat) return;
+
+                // Hardware Lock: If a signal is already processing, ignore all ghost inputs!
+                if (e.repeat || isKeyLocked) return;
+                isKeyLocked = true;
 
                 wasLongPress = false;
 
-                // 2. Start the 600ms stopwatch. 
-                // NO visual changes happen here. Single taps stay rock solid!
                 enterHoldTimer = setTimeout(() => {
                     wasLongPress = true;
 
-                    // 3. Fire the visual squeeze pulse to confirm the long press
+                    // Trigger the visual squeeze pulse to confirm the long press
                     if (remoteFocusEl) {
                         remoteFocusEl.classList.add('remote-pressing');
                         setTimeout(() => remoteFocusEl.classList.remove('remote-pressing'), 250);
@@ -587,15 +588,15 @@ export function initRemote() {
         if (e.key === 'Enter') {
             e.preventDefault();
 
-            // 1. Instantly stop the stopwatch
+            // Instantly unlock the hardware padlock for the next physical press
+            isKeyLocked = false;
+
             clearTimeout(enterHoldTimer);
 
-            // 2. Cleanup the animation class just in case
             if (remoteFocusEl) {
                 remoteFocusEl.classList.remove('remote-pressing');
             }
 
-            // 3. If the stopwatch never hit 600ms, it is a guaranteed short tap!
             if (!wasLongPress) {
                 activate();
             }

@@ -386,15 +386,17 @@ function navigate(direction) {
         return;
     }
 
+    const isDeepMenu = items.some(el => el.classList.contains('back-btn'));
+
     if (direction === 'up') {
         if (contentFocusIdx === 0) {
-            triggerTabSwitch('prev');
+            if (!isDeepMenu) triggerTabSwitch('prev');
             return;
         }
         contentFocusIdx = contentFocusIdx - 1;
     } else if (direction === 'down' || direction === 'right') {
         if (direction === 'down' && contentFocusIdx === items.length - 1) {
-            triggerTabSwitch('next');
+            if (!isDeepMenu) triggerTabSwitch('next');
             return;
         }
         if (contentFocusIdx < items.length - 1) {
@@ -599,9 +601,9 @@ export function initRemote() {
     document.addEventListener('mousemove', (e) => {
         if (!isRemoteMode()) return;
 
-        // Browsers fire 'mousemove' when DOM updates under the stationary cursor.
-        // We only clear focus if the mouse physically moved more than 5 pixels.
-        if (Math.abs(e.clientX - lastMouseX) < 5 && Math.abs(e.clientY - lastMouseY) < 5) {
+        // Increased deadzone from 5px to 20px. 
+        // This stops scaled elements touching the cursor from triggering a focus wipe!
+        if (Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
             return;
         }
 

@@ -416,10 +416,22 @@ function handleLongPress() {
 
     // Check if we are long-pressing a Group Card
     if (remoteFocusEl.classList.contains('group-card')) {
-        // Find the hidden/visible edit button inside the card and click it
-        const editBtn = remoteFocusEl.querySelector('[onclick*="openEditGroupModal"]');
+
+        // Try to find the edit button using several common selectors
+        const editBtn = remoteFocusEl.querySelector(
+            '[onclick*="openEditGroupModal"], [onclick*="Edit"], .edit-btn, button'
+        );
+
         if (editBtn) {
             editBtn.click();
+        } else {
+            // Fallback: If we can't find the button, try to call the function directly if the card has a data-id
+            const groupId = remoteFocusEl.dataset.id || remoteFocusEl.getAttribute('data-id');
+            if (groupId && typeof window.openEditGroupModal === 'function') {
+                window.openEditGroupModal(groupId);
+            } else {
+                console.warn("Long press detected, but couldn't find the Edit button inside the card!");
+            }
         }
     }
 }
@@ -480,9 +492,17 @@ export function initRemote() {
                 e.preventDefault();
                 if (e.repeat) return; // Prevent repeating if held down
 
+                // Visual feedback: Squeeze the card while holding
+                if (remoteFocusEl && remoteFocusEl.classList.contains('group-card')) {
+                    remoteFocusEl.style.transition = 'transform 0.6s ease';
+                    remoteFocusEl.style.transform = 'scale(0.95)';
+                }
+
                 isLongPress = false;
                 enterPressTimer = setTimeout(() => {
                     isLongPress = true;
+                    // Pop it back visually right as the modal opens
+                    if (remoteFocusEl) remoteFocusEl.style.transform = 'scale(1)';
                     handleLongPress();
                 }, 600); // 600ms hold triggers Edit
                 break;
@@ -496,6 +516,10 @@ export function initRemote() {
         if (e.key === 'Enter') {
             e.preventDefault();
             clearTimeout(enterPressTimer);
+
+            // Revert visual squeeze if they let go early
+            if (remoteFocusEl) remoteFocusEl.style.transform = '';
+
             if (!isLongPress) {
                 activate(); // Standard click behavior
             }

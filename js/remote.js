@@ -414,24 +414,26 @@ function activate() {
 function handleLongPress() {
     if (!remoteFocusEl) return;
 
-    // Check if we are long-pressing a Group Card
     if (remoteFocusEl.classList.contains('group-card')) {
+        let editBtn = null;
 
-        // Try to find the edit button using several common selectors
-        const editBtn = remoteFocusEl.querySelector(
-            '[onclick*="openEditGroupModal"], [onclick*="Edit"], .edit-btn, button'
-        );
+        // Aggressively search every element inside the card for the edit function
+        const elements = remoteFocusEl.querySelectorAll('*');
+        for (let el of elements) {
+            const onClick = el.getAttribute('onclick') || '';
+            if (onClick.includes('openEditGroupModal') || onClick.includes('Edit')) {
+                editBtn = el;
+                break;
+            }
+        }
+
+        // Fallbacks for common classes if onclick isn't directly inline
+        if (!editBtn) {
+            editBtn = remoteFocusEl.querySelector('.edit-btn, .group-edit, [class*="edit"], [id*="edit"]');
+        }
 
         if (editBtn) {
             editBtn.click();
-        } else {
-            // Fallback: If we can't find the button, try to call the function directly if the card has a data-id
-            const groupId = remoteFocusEl.dataset.id || remoteFocusEl.getAttribute('data-id');
-            if (groupId && typeof window.openEditGroupModal === 'function') {
-                window.openEditGroupModal(groupId);
-            } else {
-                console.warn("Long press detected, but couldn't find the Edit button inside the card!");
-            }
         }
     }
 }

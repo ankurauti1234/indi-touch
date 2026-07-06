@@ -787,14 +787,15 @@
     <!-- Group Create/Edit Overlay (Large Two-Column Card) -->
     <div id="group-modal-overlay" class="popover-overlay">
       <div class="popover-card" style="
-          width: 90vw; 
-          max-width: 1000px; 
-          height: 85vh; 
-          max-height: 700px; 
+          width: 85vw; 
+          max-width: 900px; 
+          height: 75vh; 
+          max-height: 600px; 
           display: flex; 
           flex-direction: row; 
           gap: 32px; 
-          padding: 32px;
+          background: var(--bg-card); 
+          color: var(--text-main);
       ">
     
         <!-- LEFT SIDE: Form & Actions -->
@@ -803,28 +804,30 @@
     
           <!-- Header Area -->
           <div>
-            <h3 id="group-modal-title" data-i18n="create_group"
-              style="margin-top: 0; margin-bottom: 8px; font-size: 2rem; font-weight: 500;">Create Group</h3>
+            <h3 id="group-modal-title" data-i18n="create_group" style="margin-top: 0; margin-bottom: 8px; font-size: 2rem;">
+              Create Group</h3>
             <p id="group-modal-desc" style="color: var(--text-sub); margin-top: 0; margin-bottom: 32px; font-size: 1.1rem;">
               Configure your group members.</p>
     
-            <!-- Restored standard input-field-v2 class so it matches Light/Dark theme naturally -->
             <div class="input-field-v2">
+              <!-- Overrode hardcoded #fff with var(--text-main) for Light Mode visibility -->
               <input type="text" id="group-name-input" placeholder="Group Name" data-i18n="group_name"
-                style="background: transparent; border: none; font-size: 1.2rem; width: 100%; height: 56px; outline: none;" />
+                style="color: var(--text-main); width: 100%;" />
             </div>
           </div>
     
           <!-- Spacer pushes actions to the bottom -->
           <div style="flex-grow: 1;"></div>
     
-          <!-- Action Buttons (Restored original modal-btn classes to fix flat look) -->
+          <!-- Action Buttons -->
           <div class="popover-actions" style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 24px;">
             <button class="modal-btn" id="btn-group-delete"
-              style="display: none; background: rgba(220, 53, 69, 0.15); color: #dc3545; margin-right: auto;"
+              style="display: none; background: rgba(179, 38, 30, 0.15); color: var(--error); margin-right: auto; padding: 12px 24px; border: none; font-weight: 500; cursor: pointer; border-radius: var(--radius-pill);"
               onclick="deleteGroup()" data-i18n="delete_group">Delete</button>
-            <button class="modal-btn" onclick="closeGroupModal()" data-i18n="cancel">Cancel</button>
-            <button class="modal-btn primary" onclick="submitGroup()" data-i18n="done">Save</button>
+            <button class="modal-btn" onclick="closeGroupModal()" data-i18n="cancel"
+              style="padding: 12px 24px; background: transparent; border: 1px solid var(--outline-variant); color: var(--text-main); font-weight: 500; cursor: pointer; border-radius: var(--radius-pill);">Cancel</button>
+            <button class="modal-btn primary" onclick="submitGroup()" data-i18n="done"
+              style="padding: 12px 32px; background: var(--primary); color: var(--on-primary); border: none; font-weight: 500; cursor: pointer; border-radius: var(--radius-pill);">Save</button>
           </div>
     
         </div>
@@ -832,9 +835,10 @@
         <!-- RIGHT SIDE: Members List -->
         <div style="flex: 1; display: flex; flex-direction: column; padding-left: 8px; height: 100%;">
           <div class="section-title" data-i18n="select_members"
-            style="margin-top: 0; margin-bottom: 16px; font-size: 1.2rem; font-weight: 500;">Select Members</div>
+            style="margin-top: 0; margin-bottom: 16px; font-size: 1.2rem; font-weight: 500; color: var(--text-main);">Select
+            Members</div>
     
-          <!-- Flex: 1 ensures it stretches to the bottom, displaying many members! -->
+          <!-- Flex: 1 ensures it stretches to the bottom -->
           <div id="group-members-list"
             style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 12px;">
             <!-- Javascript will inject list of members with checkboxes here -->

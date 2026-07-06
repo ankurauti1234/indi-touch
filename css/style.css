@@ -73,23 +73,32 @@ body.remote-mode * {
     scroll-behavior: auto !important;
 }
 
-/* Remote Focus ring — used for full-UI navigation in remote mode */
+/* Remote Focus ring — Premium TV-style Glow */
 .remoteFocused {
-    outline: 3px solid #fff !important;
-    outline-offset: 3px !important;
-    box-shadow: 0 0 0 6px rgba(208, 188, 255, 0.35) !important;
-    /* transform: scale(1.03); */
+    outline: none !important;
+    transform: scale(1.04) !important;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    /* Soft dim white glow */
+    box-shadow: 0 8px 32px rgba(255, 255, 255, 0.08) !important;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, box-shadow 0.2s !important;
     z-index: 100;
     position: relative;
+    border-radius: inherit;
+    /* Respects whatever border-radius the card/button already has */
 }
 
-/* Slightly lighter effect on smaller elements like chips/buttons */
+/* In Light Mode, the white glow becomes a soft dark shadow so you can actually see it */
+body.light-mode .remoteFocused {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Slightly larger pop for smaller elements so they feel responsive */
 .remoteFocused.chip,
 .remoteFocused.nav-btn,
 .remoteFocused.modal-btn,
 .remoteFocused.osk-key {
-    outline-offset: 2px !important;
-    /* transform: scale(1.06); */
+    transform: scale(1.08) !important;
 }
 
 body {

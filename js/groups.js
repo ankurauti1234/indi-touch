@@ -369,19 +369,20 @@ export function showAlertModal(title, message) {
 
     const modal = document.createElement('div');
     modal.id = 'alert-modal';
-    modal.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 10000; font-family: 'Roboto', sans-serif;
-    `;
+    // Use your native overlay class to handle the backdrop natively
+    modal.className = 'popover-overlay active';
 
     modal.innerHTML = `
-        <div class="popover-card" style="width: 360px; text-align: center; padding: 32px; display: flex; flex-direction: column; align-items: center;">
-            <span class="material-symbols-rounded" style="font-size: 48px; color: #dc3545;">error</span>
-            <h2 style="font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">${title}</h2>
+        <div class="popover-card" style="background: var(--bg-card); width: 360px; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 32px;">
+            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--error);">error</span>
+            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">${title}</h2>
             <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">${message}</p>
-            <button class="modal-btn primary" onclick="this.closest('#alert-modal').remove(); window.resetRemoteFocus();" style="width: 100%;">OK</button>
+            
+            <button class="modal-btn" onclick="this.closest('#alert-modal').remove(); window.resetRemoteFocus();" style="
+                width: 100%; padding: 14px; border-radius: var(--radius-pill);
+                background: var(--surface-variant); color: var(--text-main);
+                border: 1px solid var(--outline-variant); font-size: 1rem; font-weight: 500; cursor: pointer;
+            ">OK</button>
         </div>
     `;
     document.body.appendChild(modal);
@@ -394,19 +395,19 @@ export function showDuplicateModal(groupName) {
 
     const modal = document.createElement('div');
     modal.id = 'duplicate-modal';
-    modal.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 10000; font-family: 'Roboto', sans-serif;
-    `;
+    modal.className = 'popover-overlay active';
 
     modal.innerHTML = `
-        <div class="popover-card" style="width: 360px; text-align: center; padding: 32px; display: flex; flex-direction: column; align-items: center;">
+        <div class="popover-card" style="background: var(--bg-card); width: 360px; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 32px;">
             <span class="material-symbols-rounded" style="font-size: 48px; color: var(--primary);">info</span>
-            <h2 style="font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">Duplicate Group</h2>
-            <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">This exact combination already exists as:<br><b>${groupName}</b></p>
-            <button class="modal-btn primary" onclick="this.closest('#duplicate-modal').remove(); window.resetRemoteFocus();" style="width: 100%;">OK</button>
+            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">Duplicate Group</h2>
+            <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">This exact combination already exists as:<br><b style="color: var(--text-main);">${groupName}</b></p>
+            
+            <button class="modal-btn" onclick="this.closest('#duplicate-modal').remove(); window.resetRemoteFocus();" style="
+                width: 100%; padding: 14px; border-radius: var(--radius-pill);
+                background: var(--primary); color: var(--on-primary);
+                border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
+            ">OK</button>
         </div>
     `;
     document.body.appendChild(modal);
@@ -420,26 +421,29 @@ export function deleteGroup() {
 
     const modal = document.createElement('div');
     modal.id = 'delete-confirm-modal';
-
-    modal.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 10000; font-family: 'Roboto', sans-serif;
-    `;
+    modal.className = 'popover-overlay active';
 
     modal.innerHTML = `
-        <div class="popover-card" style="width: 360px; text-align: center; padding: 32px; display: flex; flex-direction: column; align-items: center;">
-            <div style="background: rgba(220, 53, 69, 0.15); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-                <span class="material-symbols-rounded" style="font-size: 32px; color: #dc3545; font-weight: bold;">delete</span>
+        <div class="popover-card" style="background: var(--bg-card); width: 360px; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 32px;">
+            <div style="background: rgba(179, 38, 30, 0.15); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                <span class="material-symbols-rounded" style="font-size: 32px; color: var(--error); font-weight: bold;">delete</span>
             </div>
             
-            <h2 style="font-size: 1.4rem; font-weight: 500; margin: 0 0 8px 0;">Delete Group</h2>
+            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 0 0 8px 0;">Delete Group</h2>
             <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">Are you sure? This action cannot be undone.</p>
             
             <div style="display: flex; gap: 12px; width: 100%;">
-                <button class="modal-btn" onclick="closeDeleteModal()" style="flex: 1;">Cancel</button>
-                <button class="modal-btn" onclick="executeDelete()" style="flex: 1; background: #dc3545; color: white; border: none;">Delete</button>
+                <button class="modal-btn" onclick="closeDeleteModal()" style="
+                    flex: 1; padding: 14px; border-radius: var(--radius-pill);
+                    background: transparent; color: var(--text-main);
+                    border: 1px solid var(--outline-variant); font-size: 1rem; font-weight: 500; cursor: pointer;
+                ">Cancel</button>
+                
+                <button class="modal-btn" onclick="executeDelete()" style="
+                    flex: 1; padding: 14px; border-radius: var(--radius-pill);
+                    background: var(--error); color: var(--on-error);
+                    border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
+                ">Delete</button>
             </div>
         </div>
     `;

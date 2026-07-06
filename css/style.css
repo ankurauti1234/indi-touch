@@ -108,6 +108,23 @@ body.remote-mode * {
         0 8px 24px rgba(0, 0, 0, 0.4) !important;
 }
 
+/* In remote mode, avoid hover/active states from fighting the focus highlight */
+body.remote-mode .group-card:hover,
+body.remote-mode .group-card:active,
+body.remote-mode .group-card.create-card:hover,
+body.remote-mode .nav-btn:hover,
+body.remote-mode .nav-btn:active,
+body.remote-mode .list-item:hover,
+body.remote-mode .list-item:active,
+body.remote-mode .wifi-item:hover,
+body.remote-mode .wifi-item:active,
+body.remote-mode .modal-btn:hover,
+body.remote-mode .modal-btn:active,
+body.remote-mode .action-btn:hover,
+body.remote-mode .action-btn:active {
+    transform: none !important;
+    transition: none !important;
+}
 
 /* --- 2. LIGHT THEME --- */
 body.light-mode .remoteFocused,

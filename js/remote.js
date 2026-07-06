@@ -100,13 +100,11 @@ function setFocusEl(el, options = {}) {
     if (!el) return;
 
     const { scroll = true } = options;
+    const isSameElement = remoteFocusEl === el;
 
-    if (remoteFocusEl === el) {
+    if (isSameElement) {
         if (!el.classList.contains('remoteFocused')) {
             el.classList.add('remoteFocused');
-        }
-        if (scroll) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         return;
     }
@@ -120,7 +118,11 @@ function setFocusEl(el, options = {}) {
     }
 
     if (scroll) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const rect = el.getBoundingClientRect();
+        const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
+        if (!isInView) {
+            el.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+        }
     }
 
     remoteFocusEl = el;

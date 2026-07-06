@@ -414,6 +414,7 @@ function activate() {
     if (remoteFocusEl) {
         const el = remoteFocusEl;
         el.click();
+
         setTimeout(() => {
             if (zone === 'content') {
                 const items = getContentItems();
@@ -421,7 +422,10 @@ function activate() {
                     if (contentFocusIdx >= items.length) {
                         contentFocusIdx = Math.max(0, items.length - 1);
                     }
-                    setFocusEl(items[contentFocusIdx]);
+                    // Re-apply focus safely if it got lost in the click event
+                    if (!remoteFocusEl || !document.body.contains(remoteFocusEl)) {
+                        setFocusEl(items[contentFocusIdx]);
+                    }
                 }
             } else {
                 const navItems = getNavItems();
@@ -496,6 +500,22 @@ export function applyRemoteMode(on) {
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 
+    // --- NEW: Bulletproof DOM Re-render Observer ---
+    // If the focused card gets destroyed by an async API call, instantly grab the new one
+    const domObserver = new MutationObserver(() => {
+        if (!isRemoteMode() || zone !== 'content') return;
+
+        if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
+            const items = getContentItems();
+            if (items.length > 0) {
+                contentFocusIdx = Math.max(0, Math.min(contentFocusIdx, items.length - 1));
+                setFocusEl(items[contentFocusIdx]);
+            }
+        }
+    });
+    domObserver.observe(document.body, { childList: true, subtree: true });
+    // -----------------------------------------------
+
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
 
@@ -569,8 +589,22 @@ export function initRemote() {
         }, 200);
     });
 
-    document.addEventListener('mousemove', () => {
+    // --- FIXED: Phantom Mousemove Fix ---
+    let lastMouseX = -1;
+    let lastMouseY = -1;
+
+    document.addEventListener('mousemove', (e) => {
         if (!isRemoteMode()) return;
+
+        // Browsers fire 'mousemove' when DOM updates under the stationary cursor.
+        // We only clear focus if the mouse physically moved more than 5 pixels.
+        if (Math.abs(e.clientX - lastMouseX) < 5 && Math.abs(e.clientY - lastMouseY) < 5) {
+            return;
+        }
+
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+
         clearFocusEl();
         clearGridFocus();
     });

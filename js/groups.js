@@ -377,24 +377,11 @@ export function showAlertModal(title, message) {
     `;
 
     modal.innerHTML = `
-        <div style="
-            background: var(--bg-surface-container-high);
-            border-radius: var(--radius-card);
-            padding: 32px;
-            width: 360px;
-            text-align: center;
-            border: 1px solid var(--outline-variant);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-        ">
-            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--error, #dc3545);">error</span>
-            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">${title}</h2>
-            <p style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">${message}</p>
-            
-            <button class="modal-btn" onclick="this.closest('#alert-modal').remove(); window.resetRemoteFocus();" style="
-                margin-top: 24px; width: 100%; padding: 14px; border-radius: var(--radius-pill);
-                background: var(--surface-variant); color: var(--text-main);
-                border: 1px solid var(--outline-variant); font-size: 1rem; font-weight: 500; cursor: pointer;
-            ">OK</button>
+        <div class="popover-card" style="width: 360px; text-align: center; padding: 32px; display: flex; flex-direction: column; align-items: center;">
+            <span class="material-symbols-rounded" style="font-size: 48px; color: #dc3545;">error</span>
+            <h2 style="font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">${title}</h2>
+            <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">${message}</p>
+            <button class="modal-btn primary" onclick="this.closest('#alert-modal').remove(); window.resetRemoteFocus();" style="width: 100%;">OK</button>
         </div>
     `;
     document.body.appendChild(modal);
@@ -415,24 +402,11 @@ export function showDuplicateModal(groupName) {
     `;
 
     modal.innerHTML = `
-        <div style="
-            background: var(--bg-surface-container-high);
-            border-radius: var(--radius-card);
-            padding: 32px;
-            width: 360px;
-            text-align: center;
-            border: 1px solid var(--outline-variant);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-        ">
+        <div class="popover-card" style="width: 360px; text-align: center; padding: 32px; display: flex; flex-direction: column; align-items: center;">
             <span class="material-symbols-rounded" style="font-size: 48px; color: var(--primary);">info</span>
-            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">Duplicate Group</h2>
-            <p style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">This exact combination already exists as:<br><b style="color: var(--text-main);">${groupName}</b></p>
-            
-            <button class="modal-btn" onclick="this.closest('#duplicate-modal').remove(); window.resetRemoteFocus();" style="
-                margin-top: 24px; width: 100%; padding: 14px; border-radius: var(--radius-pill);
-                background: var(--primary); color: var(--on-primary);
-                border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
-            ">OK</button>
+            <h2 style="font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">Duplicate Group</h2>
+            <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">This exact combination already exists as:<br><b>${groupName}</b></p>
+            <button class="modal-btn primary" onclick="this.closest('#duplicate-modal').remove(); window.resetRemoteFocus();" style="width: 100%;">OK</button>
         </div>
     `;
     document.body.appendChild(modal);
@@ -455,40 +429,17 @@ export function deleteGroup() {
     `;
 
     modal.innerHTML = `
-        <div style="
-            background: var(--bg-surface-container-high);
-            border-radius: var(--radius-card);
-            padding: 32px;
-            width: 360px;
-            text-align: center;
-            border: 1px solid var(--outline-variant);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-            display: flex; flex-direction: column; gap: 16px;
-        ">
-            <div style="
-                background: rgba(220, 53, 69, 0.15);
-                width: 64px; height: 64px; border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                margin: 0 auto;
-            ">
+        <div class="popover-card" style="width: 360px; text-align: center; padding: 32px; display: flex; flex-direction: column; align-items: center;">
+            <div style="background: rgba(220, 53, 69, 0.15); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
                 <span class="material-symbols-rounded" style="font-size: 32px; color: #dc3545; font-weight: bold;">delete</span>
             </div>
             
-            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 0;">Delete Group</h2>
-            <p style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">Are you sure? This action cannot be undone.</p>
+            <h2 style="font-size: 1.4rem; font-weight: 500; margin: 0 0 8px 0;">Delete Group</h2>
+            <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">Are you sure? This action cannot be undone.</p>
             
-            <div style="display: flex; gap: var(--gap, 12px); margin-top: 16px;">
-                <button class="modal-btn" onclick="closeDeleteModal()" style="
-                    flex: 1; padding: 14px; border-radius: var(--radius-pill);
-                    background: transparent; color: var(--text-main);
-                    border: 1px solid var(--outline-variant); font-size: 1rem; font-weight: 500; cursor: pointer;
-                ">Cancel</button>
-                
-                <button class="modal-btn" onclick="executeDelete()" style="
-                    flex: 1; padding: 14px; border-radius: var(--radius-pill);
-                    background: #dc3545; color: white;
-                    border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
-                ">Delete</button>
+            <div style="display: flex; gap: 12px; width: 100%;">
+                <button class="modal-btn" onclick="closeDeleteModal()" style="flex: 1;">Cancel</button>
+                <button class="modal-btn" onclick="executeDelete()" style="flex: 1; background: #dc3545; color: white; border: none;">Delete</button>
             </div>
         </div>
     `;

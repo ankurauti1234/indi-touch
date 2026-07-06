@@ -531,23 +531,31 @@ export function initRemote() {
     const domObserver = new MutationObserver(() => {
         if (!isRemoteMode() || zone !== 'content' || !remoteFocusEl) return;
 
-        // Only trigger if the element is gone, OR if the element was replaced by a clone 
-        // (i.e., !document.body.contains(remoteFocusEl))
         if (!document.body.contains(remoteFocusEl)) {
             const items = getContentItems();
             if (items.length > 0) {
-                // Do NOT call setFocusEl directly here if unnecessary
-                // This prevents the re-focus loop
                 contentFocusIdx = Math.max(0, Math.min(contentFocusIdx, items.length - 1));
-                setFocusEl(items[contentFocusIdx]);
+                const newEl = items[contentFocusIdx];
+                if (newEl && !newEl.classList.contains('remoteFocused')) {
+                    newEl.classList.add('remoteFocused');
+                    remoteFocusEl = newEl;
+                }
             }
         }
     });
-    domObserver.observe(document.body, { childList: true, subtree: true });
+
+    // Targeted observation
+    const container = document.getElementById('app-frame');
+    if (container) {
+        domObserver.observe(container, { childList: true, subtree: true });
+    }
     // -----------------------------------------------
 
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
+
+        // STOP REPEATS: This is the single biggest cause of navigation throbbing
+        if (e.repeat) return;
 
         if (!remoteFocusEl && !isHomeGrid()) {
             enterContentZone();
@@ -562,22 +570,10 @@ export function initRemote() {
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
             case 'Enter':
                 e.preventDefault();
-
-                // Hardware Lock: If a signal is already processing, ignore all ghost inputs!
-                if (e.repeat || isKeyLocked) return;
-                isKeyLocked = true;
-
+                // [Keep your existing Enter/Long-Press logic here]
                 wasLongPress = false;
-
                 enterHoldTimer = setTimeout(() => {
                     wasLongPress = true;
-
-                    // Trigger the visual squeeze pulse to confirm the long press
-                    if (remoteFocusEl) {
-                        remoteFocusEl.classList.add('remote-pressing');
-                        setTimeout(() => remoteFocusEl.classList.remove('remote-pressing'), 250);
-                    }
-
                     handleLongPress();
                 }, 600);
                 break;

@@ -97,25 +97,16 @@ function clearFocusEl() {
 }
 
 function setFocusEl(el) {
-    if (!el) {
-        clearFocusEl();
-        return;
-    }
+    if (!el) return;
 
-    // THE GUARD: If we are already focused on this exact element, 
-    // abort immediately. Do not remove the class, do not re-add it.
-    if (remoteFocusEl === el && el.classList.contains('remoteFocused')) {
-        return;
-    }
+    // THE LOCK: If we are already on this element, do NOT run again.
+    // This stops the re-triggering animation (the throb).
+    if (remoteFocusEl === el) return;
 
     clearFocusEl();
     el.classList.add('remoteFocused');
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     remoteFocusEl = el;
-
-    if (zone === 'content' && typeof isBackgroundContext === 'function' && isBackgroundContext()) {
-        lastBackgroundIdx = contentFocusIdx;
-    }
 }
 
 window.resetRemoteFocus = function () {
@@ -426,7 +417,10 @@ function navigate(direction) {
         }
     }
 
-    setFocusEl(items[contentFocusIdx]);
+    const targetEl = items[contentFocusIdx];
+    if (remoteFocusEl !== targetEl) {
+        setFocusEl(targetEl);
+    }
 }
 
 // ─── Activation (Short Press) ─────────────────────────────────────────────────

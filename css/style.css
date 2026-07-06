@@ -74,7 +74,7 @@ body.remote-mode * {
 }
 
 /* =========================================================
-   PREMIUM TV REMOTE FOCUS (Adapts to Light & Dark Theme)
+   PREMIUM TV REMOTE FOCUS (Perfectly Rounded Corners)
    ========================================================= */
 
 /* --- 1. DARK THEME (Default) --- */
@@ -82,41 +82,82 @@ body.remote-mode * {
 .focused,
 .member-card.focused,
 .group-card.focused {
-    outline: 3px solid var(--text-main) !important;
-    /* Crisp white border */
-    outline-offset: 3px !important;
+    outline: none !important;
     background-color: rgba(255, 255, 255, 0.1) !important;
-    /* Dim white transparent overlay */
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
-    /* Deep drop shadow */
+    /* Dim white overlay */
+
+    /* 
+       Shadow 1: Creates a 3px gap matching the app background (simulates outline-offset)
+       Shadow 2: Creates the 3px solid white ring
+       Shadow 3: Adds the deep drop shadow
+    */
+    box-shadow:
+        0 0 0 3px var(--bg-app),
+        0 0 0 6px var(--text-main),
+        0 12px 32px rgba(0, 0, 0, 0.5) !important;
+
     transform: scale(1.05) !important;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, outline 0.2s !important;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, box-shadow 0.2s !important;
     z-index: 100 !important;
     border-radius: inherit;
-    /* Keeps the natural curves of cards/buttons */
+    /* Inherits exact curve of the element */
 }
 
-/* Smaller elements need slightly more scale and a tighter outline */
+/* Smaller elements get a tighter ring and slightly more pop */
 .remoteFocused.chip,
 .remoteFocused.nav-btn,
 .remoteFocused.modal-btn,
 .remoteFocused.osk-key {
     transform: scale(1.08) !important;
-    outline-width: 2px !important;
-    outline-offset: 2px !important;
+    box-shadow:
+        0 0 0 2px var(--bg-app),
+        0 0 0 4px var(--text-main),
+        0 8px 24px rgba(0, 0, 0, 0.4) !important;
 }
+
 
 /* --- 2. LIGHT THEME --- */
 body.light-mode .remoteFocused,
 body.light-mode .focused,
 body.light-mode .member-card.focused,
 body.light-mode .group-card.focused {
-    outline: 3px solid var(--primary) !important;
-    /* Beautiful Purple border in light mode */
     background-color: rgba(0, 0, 0, 0.05) !important;
-    /* Dim dark transparent overlay */
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15) !important;
-    /* Softer shadow for light backgrounds */
+    /* Dim dark overlay */
+
+    /* Light theme gap + Primary Purple Ring + Softer shadow */
+    box-shadow:
+        0 0 0 3px var(--bg-app),
+        0 0 0 6px var(--primary),
+        0 12px 32px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.light-mode .remoteFocused.chip,
+body.light-mode .remoteFocused.nav-btn,
+body.light-mode .remoteFocused.modal-btn,
+body.light-mode .remoteFocused.osk-key {
+    box-shadow:
+        0 0 0 2px var(--bg-app),
+        0 0 0 4px var(--primary),
+        0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+
+/* --- 3. LIGHT THEME FIX: "Create Group/Member" Cards --- */
+/* Target any card that looks like a create button and forcefully apply colors */
+body.light-mode .group-card.create,
+body.light-mode .member-card.create,
+body.light-mode [onclick*="openCreate"],
+body.light-mode .add-card {
+    background: var(--bg-surface-container) !important;
+    border: 2px dashed var(--outline-variant) !important;
+}
+
+/* Force all text and icons inside the create card to be dark */
+body.light-mode .group-card.create *,
+body.light-mode .member-card.create *,
+body.light-mode [onclick*="openCreate"] *,
+body.light-mode .add-card * {
+    color: var(--text-main) !important;
 }
 
 body {

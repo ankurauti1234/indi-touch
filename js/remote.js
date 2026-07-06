@@ -611,12 +611,22 @@ export function initRemote() {
     // --- FIXED: Phantom Mousemove Fix ---
     let lastMouseX = -1;
     let lastMouseY = -1;
+    let lastKeyTime = 0; // Track when the last remote button was pressed
+
+    // Update time whenever a remote button is pressed
+    document.addEventListener('keydown', () => {
+        lastKeyTime = Date.now();
+    });
 
     document.addEventListener('mousemove', (e) => {
         if (!isRemoteMode()) return;
 
-        // Increased deadzone from 5px to 20px. 
-        // This stops scaled elements touching the cursor from triggering a focus wipe!
+        // 1. Ignore if a remote button was pressed in the last 500ms (stops phantom Select clicks)
+        if (Date.now() - lastKeyTime < 500) return;
+
+        // 2. Ignore fake TV remote movements that have no actual physical movement delta
+        if (e.movementX === 0 && e.movementY === 0 && e.clientX === lastMouseX) return;
+
         if (Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
             return;
         }

@@ -133,15 +133,6 @@ function isHomeGrid() {
         !!document.getElementById('view-home')?.classList.contains('active');
 }
 
-function isSelectKey(e) {
-    return e.key === 'Enter' ||
-        e.key === 'OK' ||
-        e.key === 'Select' ||
-        e.key === ' ' ||
-        e.key === 'Spacebar' ||
-        e.code === 'NumpadEnter';
-}
-
 // ─── Nav rail ─────────────────────────────────────────────────────────────────
 function getNavItems() {
     if (isOnboarding() || getOverlayItems() !== null) return [];
@@ -553,37 +544,34 @@ export function initRemote() {
             import('./grid.js').then(m => m.applyFocus());
         }
 
-        const isSelect = isSelectKey(e);
-
         switch (e.key) {
             case 'ArrowDown': e.preventDefault(); navigate('down'); break;
             case 'ArrowUp': e.preventDefault(); navigate('up'); break;
             case 'ArrowRight': e.preventDefault(); navigate('right'); break;
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
-            default:
-                if (isSelect) {
-                    e.preventDefault();
-                    if (e.repeat) return;
+            case 'Enter':
+                e.preventDefault();
+                if (e.repeat) return;
 
-                    if (remoteFocusEl && remoteFocusEl.classList.contains('group-card')) {
-                        remoteFocusEl.style.transition = 'transform 0.6s ease';
-                        remoteFocusEl.style.transform = 'scale(0.95)';
-                    }
-
-                    isLongPress = false;
-                    enterPressTimer = setTimeout(() => {
-                        isLongPress = true;
-                        if (remoteFocusEl) remoteFocusEl.style.transform = 'scale(1)';
-                        handleLongPress();
-                    }, 600);
+                if (remoteFocusEl && remoteFocusEl.classList.contains('group-card')) {
+                    remoteFocusEl.style.transition = 'transform 0.6s ease';
+                    remoteFocusEl.style.transform = 'scale(0.95)';
                 }
+
+                isLongPress = false;
+                enterPressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    if (remoteFocusEl) remoteFocusEl.style.transform = 'scale(1)';
+                    handleLongPress();
+                }, 600);
+                break;
         }
     });
 
     document.addEventListener('keyup', (e) => {
         if (!isRemoteMode()) return;
 
-        if (isSelectKey(e)) {
+        if (e.key === 'Enter') {
             e.preventDefault();
             clearTimeout(enterPressTimer);
 
@@ -623,31 +611,19 @@ export function initRemote() {
     // --- FIXED: Phantom Mousemove Fix ---
     let lastMouseX = -1;
     let lastMouseY = -1;
-    let lastKeyTime = 0; // Track when the last remote button was pressed
-
-    // FIX: Update time on BOTH keydown and keyup! 
-    // This ensures that releasing the Select button doesn't trigger a fake mousemove that wipes focus.
-    document.addEventListener('keydown', () => { lastKeyTime = Date.now(); });
-    document.addEventListener('keyup', () => { lastKeyTime = Date.now(); });
 
     document.addEventListener('mousemove', (e) => {
         if (!isRemoteMode()) return;
 
-        // 1. Ignore if a remote button was pressed or released in the last 800ms
-        if (Date.now() - lastKeyTime < 800) return;
-
-        // 2. Ignore fake TV remote movements that have no actual physical movement delta
-        if (e.movementX === 0 && e.movementY === 0) return;
-
-        // 3. Ignore tiny physical bumps (deadzone)
-        if (lastMouseX !== -1 && Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
+        if (Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
             return;
         }
 
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
 
-        clearFocusEl();
-        clearGridFocus();
+        // Comment these out temporarily!
+        // clearFocusEl();
+        // clearGridFocus();
     });
 }

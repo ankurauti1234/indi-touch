@@ -561,7 +561,7 @@ export function initRemote() {
             case 'Enter':
                 e.preventDefault();
 
-                // Hardware Lock: If a signal is already processing, ignore all ghost inputs!
+                // Hardware Lock prevents ghost inputs
                 if (e.repeat || isKeyLocked) return;
                 isKeyLocked = true;
 
@@ -569,13 +569,7 @@ export function initRemote() {
 
                 enterHoldTimer = setTimeout(() => {
                     wasLongPress = true;
-
-                    // Trigger the visual squeeze pulse to confirm the long press
-                    if (remoteFocusEl) {
-                        remoteFocusEl.classList.add('remote-pressing');
-                        setTimeout(() => remoteFocusEl.classList.remove('remote-pressing'), 250);
-                    }
-
+                    // Just execute the functionality, no animation!
                     handleLongPress();
                 }, 600);
                 break;
@@ -588,14 +582,10 @@ export function initRemote() {
         if (e.key === 'Enter') {
             e.preventDefault();
 
-            // Instantly unlock the hardware padlock for the next physical press
+            // Unlock for the next physical press
             isKeyLocked = false;
 
             clearTimeout(enterHoldTimer);
-
-            if (remoteFocusEl) {
-                remoteFocusEl.classList.remove('remote-pressing');
-            }
 
             if (!wasLongPress) {
                 activate();

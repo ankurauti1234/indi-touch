@@ -26,26 +26,12 @@ function isVisible(el) {
 let zone = 'content';
 let navFocusIdx = 0;
 let contentFocusIdx = 0;
+let lastBackgroundIdx = 0; // NEW: Memory for when modals close
 let remoteFocusEl = null;
 
 // Long-press state variables
 let enterPressTimer = null;
 let isLongPress = false;
-
-function clearFocusEl() {
-    if (remoteFocusEl) {
-        remoteFocusEl.classList.remove('remoteFocused');
-        remoteFocusEl = null;
-    }
-}
-
-function setFocusEl(el) {
-    clearFocusEl();
-    if (!el) return;
-    el.classList.add('remoteFocused');
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    remoteFocusEl = el;
-}
 
 // ─── Context detectors ────────────────────────────────────────────────────────
 function isOnboarding() {
@@ -91,12 +77,49 @@ function getOverlayItems() {
 
     return null;
 }
+
+// Helper to know if we are in the main UI vs stuck in a popup
+function isBackgroundContext() {
+    const osk = document.getElementById('osk-container');
+    if (osk?.classList.contains('visible')) return false;
+    if (getOverlayItems() !== null) return false;
+    if (isOnboarding()) return false;
+    if (isScreensaverActive()) return false;
+    return true;
+}
+
+function clearFocusEl() {
+    if (remoteFocusEl) {
+        remoteFocusEl.classList.remove('remoteFocused');
+        remoteFocusEl = null;
+    }
+}
+
+function setFocusEl(el) {
+    clearFocusEl();
+    if (!el) return;
+    el.classList.add('remoteFocused');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    remoteFocusEl = el;
+
+    // Constantly update memory when navigating safely in the background
+    if (zone === 'content' && isBackgroundContext()) {
+        lastBackgroundIdx = contentFocusIdx;
+    }
+}
+
 window.resetRemoteFocus = function () {
     setTimeout(() => {
         const items = getContentItems();
         if (items.length) {
-            contentFocusIdx = 0;
-            setFocusEl(items[0]);
+            if (!isBackgroundContext()) {
+                // Modal opened -> Focus first item in modal
+                contentFocusIdx = 0;
+            } else {
+                // Modal closed -> Restore memory so hover stays where it was!
+                contentFocusIdx = Math.max(0, Math.min(lastBackgroundIdx, items.length - 1));
+            }
+            setFocusEl(items[contentFocusIdx]);
         }
     }, 50);
 };
@@ -299,9 +322,6 @@ function navigate(direction) {
             const targetCX = box.left + box.width / 2;
             const targetCY = box.top + box.height / 2;
 
-            // --- FIXED SPATIAL MATH ---
-            // Y-axis multipliers adjusted heavily on Left/Right to lock into horizontal rows.
-            // This guarantees Cancel snaps to Delete instead of jumping up to a checkbox.
             if (direction === 'up' && targetCY < curCY - curBox.height / 2) {
                 isCorrectDir = true;
                 dist = Math.pow(targetCY - curCY, 2) * 2 + Math.pow(targetCX - curCX, 2);
@@ -398,7 +418,6 @@ function activate() {
             if (zone === 'content') {
                 const items = getContentItems();
                 if (items.length) {
-                    // FIX: Safe boundary check instead of resetting to 0
                     if (contentFocusIdx >= items.length) {
                         contentFocusIdx = Math.max(0, items.length - 1);
                     }
@@ -420,7 +439,6 @@ function handleLongPress() {
     if (remoteFocusEl.classList.contains('group-card')) {
         let editBtn = null;
 
-        // Aggressively search every element inside the card for the edit function
         const elements = remoteFocusEl.querySelectorAll('*');
         for (let el of elements) {
             const onClick = el.getAttribute('onclick') || '';
@@ -430,7 +448,6 @@ function handleLongPress() {
             }
         }
 
-        // Fallbacks for common classes if onclick isn't directly inline
         if (!editBtn) {
             editBtn = remoteFocusEl.querySelector('.edit-btn, .group-edit, [class*="edit"], [id*="edit"]');
         }
@@ -445,6 +462,7 @@ function handleLongPress() {
 export function resetFocusToFirst() {
     zone = 'content';
     contentFocusIdx = 0;
+    lastBackgroundIdx = 0; // Wipe memory when completely changing tabs
     clearFocusEl();
     clearGridFocus();
 
@@ -542,7 +560,6 @@ export function initRemote() {
             if (zone === 'content' && !isHomeGrid()) {
                 const items = getContentItems();
                 if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
-                    // FIX: Maintain index during DOM re-render instead of panicking to 0
                     if (contentFocusIdx >= items.length) {
                         contentFocusIdx = Math.max(0, items.length - 1);
                     }

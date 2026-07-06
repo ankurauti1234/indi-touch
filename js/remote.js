@@ -28,6 +28,10 @@ let navFocusIdx = 0;
 let contentFocusIdx = 0;
 let remoteFocusEl = null;
 
+// Long-press state variables
+let enterPressTimer = null;
+let isLongPress = false;
+
 function clearFocusEl() {
     if (remoteFocusEl) {
         remoteFocusEl.classList.remove('remoteFocused');
@@ -55,7 +59,6 @@ function isScreensaverActive() {
 }
 
 function getOverlayItems() {
-    // 1. Connection warning popups take highest priority
     const wifiWarn = document.getElementById('wifi-warning-overlay');
     if (wifiWarn?.classList.contains('visible'))
         return [...wifiWarn.querySelectorAll('button')].filter(isVisible);
@@ -64,7 +67,6 @@ function getOverlayItems() {
     if (critical?.classList.contains('active'))
         return [...critical.querySelectorAll('button')].filter(isVisible);
 
-    // 2. Dynamic Top-Level Modals
     const alertModal = document.getElementById('alert-modal');
     if (alertModal)
         return [...alertModal.querySelectorAll('button')].filter(isVisible);
@@ -77,15 +79,12 @@ function getOverlayItems() {
     if (deleteModal)
         return [...deleteModal.querySelectorAll('button')].filter(isVisible);
 
-    // 3. Wi-Fi Password Modal
     const wifi = document.getElementById('wifi-password-overlay');
     if (wifi?.classList.contains('active'))
         return [...wifi.querySelectorAll('button:not([disabled])')].filter(isVisible);
 
-    // 4. Group Create/Edit Modal
     const modal = document.getElementById('group-modal-overlay');
     if (modal?.classList.contains('active')) {
-        // Added #btn-group-delete
         const sel = 'input, button:not([disabled]), .group-member-item, .modal-btn, #btn-group-delete';
         return [...modal.querySelectorAll(sel)].filter(isVisible);
     }
@@ -99,7 +98,7 @@ window.resetRemoteFocus = function () {
             contentFocusIdx = 0;
             setFocusEl(items[0]);
         }
-    }, 50); // Slight delay for DOM rendering
+    }, 50);
 };
 
 function isHomeGrid() {
@@ -133,18 +132,15 @@ function triggerTabSwitch(dir) {
     navs[nextIdx].click();
 }
 
-// ─── Content items for current view (never includes nav rail) ─────────────────
+// ─── Content items for current view ───────────────────────────────────────────
 function getContentItems() {
-    // 1. OSK open anywhere takes absolute priority (so remote focuses on keyboard)
     const osk = document.getElementById('osk-container');
     if (osk?.classList.contains('visible'))
         return [...osk.querySelectorAll('.osk-key')].filter(isVisible);
 
-    // 2. Overlays take next priority
     const overlay = getOverlayItems();
     if (overlay !== null) return overlay;
 
-    // 3. Onboarding
     if (isOnboarding()) {
         const step = document.querySelector('#onboarding-layer .step.active');
         return step
@@ -152,10 +148,8 @@ function getContentItems() {
             : [];
     }
 
-    // 4. Screensaver — nothing focusable
     if (isScreensaverActive()) return [];
 
-    // 5. Main app
     const activeView = document.querySelector('#app-frame .view.active');
     if (!activeView) return [];
 
@@ -176,15 +170,14 @@ function getContentItems() {
     const sel = '.back-btn, .list-item:not(.no-click), .chip, .action-btn, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], textarea';
     return [...activeView.querySelectorAll(sel)].filter(isVisible);
 }
+
 // ─── Zone: NAV ───────────────────────────────────────────────────────────────
 function enterNavZone() {
     const navItems = getNavItems();
     if (!navItems.length) return;
 
-    // Clear grid focus if leaving home grid
     clearGridFocus();
 
-    // Pick nav item closest vertically to current position
     if (remoteFocusEl) {
         const curY = remoteFocusEl.getBoundingClientRect().top;
         let bestIdx = 0, bestDist = Infinity;
@@ -202,7 +195,7 @@ function enterNavZone() {
 // ─── Zone: CONTENT ────────────────────────────────────────────────────────────
 function enterContentZone() {
     zone = 'content';
-    clearFocusEl(); // grid.js manages its own .focused class
+    clearFocusEl();
 
     if (isHomeGrid()) {
         const cards = getContentItems();
@@ -214,6 +207,7 @@ function enterContentZone() {
     if (contentFocusIdx >= items.length) contentFocusIdx = 0;
     if (items[contentFocusIdx]) setFocusEl(items[contentFocusIdx]);
 }
+
 // ─── Navigation ───────────────────────────────────────────────────────────────
 function navigate(direction) {
     if (isScreensaverActive()) {
@@ -222,7 +216,6 @@ function navigate(direction) {
         return;
     }
 
-    // ── NAV ZONE ──────────────────────────────────────────────────────────────
     if (zone === 'nav') {
         const navItems = getNavItems();
         if (!navItems.length) { enterContentZone(); return; }
@@ -239,7 +232,6 @@ function navigate(direction) {
         return;
     }
 
-    // ── CONTENT ZONE – HOME GRID (2D) ─────────────────────────────────────────
     if (isHomeGrid()) {
         const cols = getGridCols();
         const idx = getFocusedGridIndex();
@@ -266,11 +258,9 @@ function navigate(direction) {
         return;
     }
 
-    // ── CONTENT ZONE – LINEAR LIST & 2D GRIDS & OVERLAYS ──────────────────────
     const activeView = document.querySelector('#app-frame .view.active');
     const isGroupsView = activeView && activeView.id === 'view-groups';
 
-    // Correctly check visibility states without crashing
     const osk = document.getElementById('osk-container');
     const isOskVisible = osk?.classList.contains('visible');
     const isOverlayActive = getOverlayItems() !== null;
@@ -289,7 +279,6 @@ function navigate(direction) {
         return;
     }
 
-    // -- 2D Spatial Navigation (OSK, Groups Grid, AND OVERLAYS) --
     if (isOskVisible || isGroupsView || isOverlayActive) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
@@ -310,6 +299,9 @@ function navigate(direction) {
             const targetCX = box.left + box.width / 2;
             const targetCY = box.top + box.height / 2;
 
+            // --- FIXED SPATIAL MATH ---
+            // Y-axis multipliers adjusted heavily on Left/Right to lock into horizontal rows.
+            // This guarantees Cancel snaps to Delete instead of jumping up to a checkbox.
             if (direction === 'up' && targetCY < curCY - curBox.height / 2) {
                 isCorrectDir = true;
                 dist = Math.pow(targetCY - curCY, 2) * 2 + Math.pow(targetCX - curCX, 2);
@@ -318,10 +310,10 @@ function navigate(direction) {
                 dist = Math.pow(targetCY - curCY, 2) * 2 + Math.pow(targetCX - curCX, 2);
             } else if (direction === 'left' && targetCX < curBox.left) {
                 isCorrectDir = true;
-                dist = Math.pow(targetCX - curCX, 2) + Math.pow(targetCY - curCY, 2) * 4;
+                dist = Math.pow(targetCX - curCX, 2) + Math.pow(targetCY - curCY, 2) * 50;
             } else if (direction === 'right' && targetCX > curBox.right) {
                 isCorrectDir = true;
-                dist = Math.pow(targetCX - curCX, 2) + Math.pow(targetCY - curCY, 2) * 4;
+                dist = Math.pow(targetCX - curCX, 2) + Math.pow(targetCY - curCY, 2) * 50;
             }
 
             if (isCorrectDir && dist < bestDist) {
@@ -334,34 +326,23 @@ function navigate(direction) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
         } else {
-            // EDGE HIT - Escaping the grid / keyboard
-
-            // --- FIXED: Down-to-Exit OSK with Smart Focus Return ---
             if (isOskVisible && direction === 'down') {
-                // 1. Get the exact input directly from keyboard.js
                 const currentInput = getActiveInput();
 
-                // 2. Hide the keyboard and shrink the CSS
                 osk.classList.remove('visible');
                 document.body.classList.remove('osk-open');
 
-                // 3. Blur the input to drop the native TV UI
                 if (currentInput) {
                     currentInput.blur();
                 }
 
-                // 4. Wait for the DOM to settle, then find that specific input and focus it!
                 setTimeout(() => {
                     const newItems = getContentItems();
-                    let targetIdx = 0; // Default fallback to 0
-
+                    let targetIdx = 0;
                     if (currentInput) {
                         const foundIdx = newItems.indexOf(currentInput);
-                        if (foundIdx !== -1) {
-                            targetIdx = foundIdx;
-                        }
+                        if (foundIdx !== -1) targetIdx = foundIdx;
                     }
-
                     if (newItems.length > 0) {
                         contentFocusIdx = targetIdx;
                         setFocusEl(newItems[contentFocusIdx]);
@@ -370,7 +351,6 @@ function navigate(direction) {
 
                 return;
             }
-            // -----------------------------------------------------------------
 
             if (direction === 'left' && isGroupsView && !isOverlayActive) {
                 enterNavZone();
@@ -383,7 +363,6 @@ function navigate(direction) {
         return;
     }
 
-    // -- Default Linear List Navigation --
     if (direction === 'up') {
         if (contentFocusIdx === 0) {
             triggerTabSwitch('prev');
@@ -403,7 +382,7 @@ function navigate(direction) {
     setFocusEl(items[contentFocusIdx]);
 }
 
-// ─── Activation ───────────────────────────────────────────────────────────────
+// ─── Activation (Short Press) ─────────────────────────────────────────────────
 function activate() {
     if (isScreensaverActive()) return;
 
@@ -428,6 +407,20 @@ function activate() {
                 if (navItems[navFocusIdx]) setFocusEl(navItems[navFocusIdx]);
             }
         }, 150);
+    }
+}
+
+// ─── NEW: Long Press Engine ───────────────────────────────────────────────────
+function handleLongPress() {
+    if (!remoteFocusEl) return;
+
+    // Check if we are long-pressing a Group Card
+    if (remoteFocusEl.classList.contains('group-card')) {
+        // Find the hidden/visible edit button inside the card and click it
+        const editBtn = remoteFocusEl.querySelector('[onclick*="openEditGroupModal"]');
+        if (editBtn) {
+            editBtn.click();
+        }
     }
 }
 
@@ -468,6 +461,7 @@ export function applyRemoteMode(on) {
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 
+    // KEY DOWN: Triggers navigation, and starts Long Press Timer for 'Enter'
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
 
@@ -482,7 +476,29 @@ export function initRemote() {
             case 'ArrowUp': e.preventDefault(); navigate('up'); break;
             case 'ArrowRight': e.preventDefault(); navigate('right'); break;
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
-            case 'Enter': e.preventDefault(); activate(); break;
+            case 'Enter':
+                e.preventDefault();
+                if (e.repeat) return; // Prevent repeating if held down
+
+                isLongPress = false;
+                enterPressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    handleLongPress();
+                }, 600); // 600ms hold triggers Edit
+                break;
+        }
+    });
+
+    // KEY UP: Cancels Long Press, triggers Short Press if threshold wasn't met
+    document.addEventListener('keyup', (e) => {
+        if (!isRemoteMode()) return;
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(enterPressTimer);
+            if (!isLongPress) {
+                activate(); // Standard click behavior
+            }
         }
     });
 

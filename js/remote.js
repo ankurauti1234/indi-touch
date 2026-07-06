@@ -96,16 +96,33 @@ function clearFocusEl() {
     }
 }
 
-function setFocusEl(el) {
+function setFocusEl(el, options = {}) {
     if (!el) return;
 
-    // THE LOCK: If we are already on this element, do NOT run again.
-    // This stops the re-triggering animation (the throb).
-    if (remoteFocusEl === el) return;
+    const { scroll = true } = options;
 
-    clearFocusEl();
-    el.classList.add('remoteFocused');
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (remoteFocusEl === el) {
+        if (!el.classList.contains('remoteFocused')) {
+            el.classList.add('remoteFocused');
+        }
+        if (scroll) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        return;
+    }
+
+    if (remoteFocusEl && remoteFocusEl !== el) {
+        remoteFocusEl.classList.remove('remoteFocused');
+    }
+
+    if (!el.classList.contains('remoteFocused')) {
+        el.classList.add('remoteFocused');
+    }
+
+    if (scroll) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
     remoteFocusEl = el;
 }
 
@@ -530,9 +547,8 @@ export function initRemote() {
             if (items.length > 0) {
                 contentFocusIdx = Math.max(0, Math.min(contentFocusIdx, items.length - 1));
                 const newEl = items[contentFocusIdx];
-                if (newEl && !newEl.classList.contains('remoteFocused')) {
-                    newEl.classList.add('remoteFocused');
-                    remoteFocusEl = newEl;
+                if (newEl) {
+                    setFocusEl(newEl, { scroll: false });
                 }
             }
         }

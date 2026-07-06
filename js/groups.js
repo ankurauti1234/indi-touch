@@ -371,7 +371,7 @@ export function showAlertModal(title, message) {
     modal.id = 'alert-modal';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
         display: flex; align-items: center; justify-content: center;
         z-index: 10000; font-family: 'Roboto', sans-serif;
     `;
@@ -384,21 +384,21 @@ export function showAlertModal(title, message) {
             width: 360px;
             text-align: center;
             border: 1px solid var(--outline-variant);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         ">
-            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--error);">error</span>
+            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--error, #dc3545);">error</span>
             <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">${title}</h2>
             <p style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">${message}</p>
             
             <button class="modal-btn" onclick="this.closest('#alert-modal').remove(); window.resetRemoteFocus();" style="
                 margin-top: 24px; width: 100%; padding: 14px; border-radius: var(--radius-pill);
                 background: var(--surface-variant); color: var(--text-main);
-                border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
+                border: 1px solid var(--outline-variant); font-size: 1rem; font-weight: 500; cursor: pointer;
             ">OK</button>
         </div>
     `;
     document.body.appendChild(modal);
-    window.resetRemoteFocus(); // Snap remote focus to this new modal
+    window.resetRemoteFocus();
 }
 
 // Find Duplicate Group 
@@ -409,7 +409,7 @@ export function showDuplicateModal(groupName) {
     modal.id = 'duplicate-modal';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
         display: flex; align-items: center; justify-content: center;
         z-index: 10000; font-family: 'Roboto', sans-serif;
     `;
@@ -422,7 +422,7 @@ export function showDuplicateModal(groupName) {
             width: 360px;
             text-align: center;
             border: 1px solid var(--outline-variant);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         ">
             <span class="material-symbols-rounded" style="font-size: 48px; color: var(--primary);">info</span>
             <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">Duplicate Group</h2>
@@ -436,7 +436,7 @@ export function showDuplicateModal(groupName) {
         </div>
     `;
     document.body.appendChild(modal);
-    window.resetRemoteFocus(); // Triggers when modal OPENS
+    window.resetRemoteFocus();
 }
 
 // Delete group logic
@@ -449,7 +449,7 @@ export function deleteGroup() {
 
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
         display: flex; align-items: center; justify-content: center;
         z-index: 10000; font-family: 'Roboto', sans-serif;
     `;
@@ -461,38 +461,39 @@ export function deleteGroup() {
             padding: 32px;
             width: 360px;
             text-align: center;
-            border: 2px solid rgba(179, 38, 30, 0.4);
-            box-shadow: 0 8px 24px rgba(179, 38, 30, 0.15);
+            border: 1px solid var(--outline-variant);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
             display: flex; flex-direction: column; gap: 16px;
         ">
             <div style="
-                background: rgba(179, 38, 30, 0.1);
+                background: rgba(220, 53, 69, 0.15);
                 width: 64px; height: 64px; border-radius: 50%;
                 display: flex; align-items: center; justify-content: center;
                 margin: 0 auto;
             ">
-                <span class="material-symbols-rounded" style="font-size: 32px; color: #ff5252; font-weight: bold;">delete</span>
+                <span class="material-symbols-rounded" style="font-size: 32px; color: #dc3545; font-weight: bold;">delete</span>
             </div>
             
             <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 0;">Delete Group</h2>
             <p style="color: var(--text-sub); font-size: 1rem; margin: 0; line-height: 1.5;">Are you sure? This action cannot be undone.</p>
             
-            <div style="display: flex; gap: var(--gap); margin-top: 16px;">
+            <div style="display: flex; gap: var(--gap, 12px); margin-top: 16px;">
                 <button class="modal-btn" onclick="closeDeleteModal()" style="
                     flex: 1; padding: 14px; border-radius: var(--radius-pill);
-                    background: var(--surface-variant); color: var(--text-main);
-                    border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
+                    background: transparent; color: var(--text-main);
+                    border: 1px solid var(--outline-variant); font-size: 1rem; font-weight: 500; cursor: pointer;
                 ">Cancel</button>
                 
                 <button class="modal-btn" onclick="executeDelete()" style="
                     flex: 1; padding: 14px; border-radius: var(--radius-pill);
-                    background: rgba(179, 38, 30, 0.8); color: #fff;
+                    background: #dc3545; color: white;
                     border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
                 ">Delete</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
+    window.resetRemoteFocus();
 }
 
 export function closeDeleteModal() {

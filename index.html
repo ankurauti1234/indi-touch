@@ -784,26 +784,70 @@
       </div>
     </div>
 
-    <!-- Group Create/Edit Overlay (Material 3 style) -->
-    <div id="group-modal-overlay" class="popover-overlay">
-      <div class="popover-card" style="width: 520px; max-width: 90%;">
-        <h3 id="group-modal-title" data-i18n="create_group">Create Group</h3>
-        <p id="group-modal-desc">Configure your group members.</p>
-        
-        <div class="input-field-v2">
-          <input type="text" id="group-name-input" placeholder="Group Name" data-i18n="group_name" style="background: transparent; border: none; color: var(--text-main); font-size: 16px; width: 100%; height: 48px; outline: none;" />
+    <!-- Group Create/Edit Overlay (Large Two-Column Card) -->
+    <div id="group-modal-overlay" class="popover-overlay"
+      style="display: flex; justify-content: center; align-items: center;">
+      <div class="popover-card" style="
+          width: 85vw; 
+          max-width: 900px; 
+          height: 75vh; 
+          max-height: 600px; 
+          display: flex; 
+          flex-direction: row; 
+          gap: 32px; 
+          padding: 32px;
+          background: var(--bg-surface-container-high);
+          border: 1px solid var(--outline-variant);
+      ">
+    
+        <!-- LEFT SIDE: Form & Actions -->
+        <div
+          style="flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--outline-variant); padding-right: 32px;">
+    
+          <!-- Header Area -->
+          <div>
+            <h3 id="group-modal-title" data-i18n="create_group"
+              style="margin-top: 0; margin-bottom: 8px; font-size: 2rem; font-weight: 500; color: var(--text-main);">Create
+              Group</h3>
+            <p id="group-modal-desc" style="color: var(--text-sub); margin-top: 0; margin-bottom: 32px; font-size: 1.1rem;">
+              Configure your group members.</p>
+    
+            <div class="input-field-v2"
+              style="background: var(--surface-variant); border-radius: 12px; padding: 4px 16px; border: 1px solid var(--outline-variant);">
+              <input type="text" id="group-name-input" placeholder="Group Name" data-i18n="group_name"
+                style="background: transparent; border: none; color: var(--text-main); font-size: 1.2rem; width: 100%; height: 56px; outline: none;" />
+            </div>
+          </div>
+    
+          <!-- Spacer pushes actions to the bottom -->
+          <div style="flex-grow: 1;"></div>
+    
+          <!-- Action Buttons -->
+          <div class="popover-actions" style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 24px;">
+            <button class="modal-btn" id="btn-group-delete"
+              style="display: none; background: rgba(220, 53, 69, 0.15); color: #dc3545; margin-right: auto; padding: 0 24px; border-radius: 24px; border: none; font-size: 1rem; font-weight: 500; cursor: pointer;"
+              onclick="deleteGroup()" data-i18n="delete_group">Delete</button>
+            <button class="modal-btn" onclick="closeGroupModal()" data-i18n="cancel"
+              style="padding: 0 24px; border-radius: 24px; background: transparent; border: 1px solid var(--outline-variant); color: var(--text-main); font-size: 1rem; font-weight: 500; cursor: pointer;">Cancel</button>
+            <button class="modal-btn primary" onclick="submitGroup()" data-i18n="done"
+              style="padding: 0 32px; border-radius: 24px; background: var(--primary); color: var(--on-primary); border: none; font-size: 1rem; font-weight: 500; cursor: pointer;">Save</button>
+          </div>
+    
         </div>
-        
-        <div class="section-title" data-i18n="select_members" style="margin-bottom: 12px;">Select Members</div>
-        <div id="group-members-list" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 32px; padding-right: 8px;">
-          <!-- Javascript will inject list of members with checkboxes here -->
+    
+        <!-- RIGHT SIDE: Members List -->
+        <div style="flex: 1; display: flex; flex-direction: column; padding-left: 8px;">
+          <div class="section-title" data-i18n="select_members"
+            style="margin-top: 0; margin-bottom: 16px; font-size: 1.2rem; font-weight: 500; color: var(--text-main);">Select
+            Members</div>
+    
+          <!-- List expands to fill the exact height of the card -->
+          <div id="group-members-list"
+            style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 12px;">
+            <!-- Javascript will inject list of members with checkboxes here -->
+          </div>
         </div>
-        
-        <div class="popover-actions" style="display: flex; gap: 12px; justify-content: flex-end;">
-          <button class="modal-btn" id="btn-group-delete" style="display: none; background: rgba(235, 87, 87, 0.15); color: #eb5757; margin-right: auto;" onclick="deleteGroup()" data-i18n="delete_group">Delete</button>
-          <button class="modal-btn" onclick="closeGroupModal()" data-i18n="cancel">Cancel</button>
-          <button class="modal-btn primary" onclick="submitGroup()" data-i18n="done">Save</button>
-        </div>
+    
       </div>
     </div>
   </div>

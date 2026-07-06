@@ -31,6 +31,7 @@ let remoteFocusEl = null;
 
 // Long-press state variables
 let enterPressTimer = null;
+let pressingVisualTimer = null; // NEW: Controls the visual squeeze delay
 let isLongPress = false;
 
 // ─── Context detectors ────────────────────────────────────────────────────────
@@ -553,18 +554,18 @@ export function initRemote() {
                 e.preventDefault();
                 if (e.repeat) return;
 
-                // Add the smooth squeeze class
-                if (remoteFocusEl) {
-                    remoteFocusEl.classList.add('remote-pressing');
-                }
-
                 isLongPress = false;
+
+                // DELAY the squeeze by 150ms. 
+                // Quick taps will never see the animation, resulting in a clean click!
+                pressingVisualTimer = setTimeout(() => {
+                    if (remoteFocusEl) remoteFocusEl.classList.add('remote-pressing');
+                }, 150);
+
                 enterPressTimer = setTimeout(() => {
                     isLongPress = true;
-                    // Release the squeeze when the long press triggers
-                    if (remoteFocusEl) {
-                        remoteFocusEl.classList.remove('remote-pressing');
-                    }
+                    // Pop back up to normal size when the long-press triggers
+                    if (remoteFocusEl) remoteFocusEl.classList.remove('remote-pressing');
                     handleLongPress();
                 }, 600);
                 break;
@@ -576,9 +577,12 @@ export function initRemote() {
 
         if (e.key === 'Enter') {
             e.preventDefault();
-            clearTimeout(enterPressTimer);
 
-            // Release the squeeze when button is let go
+            // Clear BOTH timers
+            clearTimeout(enterPressTimer);
+            clearTimeout(pressingVisualTimer);
+
+            // Clean up the animation class
             if (remoteFocusEl) {
                 remoteFocusEl.classList.remove('remote-pressing');
             }

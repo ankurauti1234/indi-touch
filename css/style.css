@@ -84,17 +84,19 @@ body.remote-mode * {
 .group-card.focused {
     outline: none !important;
     background-color: rgba(255, 255, 255, 0.1) !important;
+
+    transform: scale(1.05) !important;
+    /* Changed to linear to stop GPU rendering throbs on weak TVs */
+    transition: transform 0.15s linear, box-shadow 0.15s linear !important;
+
     box-shadow:
         0 0 0 3px var(--bg-app),
         0 0 0 6px var(--text-main),
         0 12px 32px rgba(0, 0, 0, 0.5) !important;
 
-    transform: scale(1.05) !important;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, box-shadow 0.2s !important;
     z-index: 100 !important;
     border-radius: inherit;
-    /* Stops the heavy blinking/glitching */
-    will-change: transform, box-shadow;
+    transform-style: preserve-3d;
     backface-visibility: hidden;
 }
 

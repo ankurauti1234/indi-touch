@@ -97,27 +97,23 @@ function clearFocusEl() {
 }
 
 function setFocusEl(el) {
+    // 1. If null, clear and exit
     if (!el) {
         clearFocusEl();
         return;
     }
 
-    // Stop rapid-fire duplicate focus loops
+    // 2. THE THROB KILLER:
+    // If the engine tries to focus the exact same card we are already on,
+    // ABORT IMMEDIATELY. This stops the layout from thrashing and looping.
     if (remoteFocusEl === el) {
         return;
     }
 
+    // 3. Only apply focus if it's a genuinely new card
     clearFocusEl();
-
-    // 1. Scroll first while the element is at its base size
+    el.classList.add('remoteFocused');
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-    // 2. Apply the focus scale via requestAnimationFrame 
-    // This perfectly syncs the scale animation with the monitor's refresh rate, stopping the hover throb.
-    requestAnimationFrame(() => {
-        el.classList.add('remoteFocused');
-    });
-
     remoteFocusEl = el;
 
     if (zone === 'content' && typeof isBackgroundContext === 'function' && isBackgroundContext()) {
@@ -635,21 +631,21 @@ export function initRemote() {
     });
 
     // --- FIXED: Phantom Mousemove Fix ---
-    let lastMouseX = -1;
-    let lastMouseY = -1;
+//     let lastMouseX = -1;
+//     let lastMouseY = -1;
 
-    document.addEventListener('mousemove', (e) => {
-        if (!isRemoteMode()) return;
+//     document.addEventListener('mousemove', (e) => {
+//         if (!isRemoteMode()) return;
 
-        if (Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
-            return;
-        }
+//         if (Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
+//             return;
+//         }
 
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
+//         lastMouseX = e.clientX;
+//         lastMouseY = e.clientY;
 
-        // Comment these out temporarily!
-        // clearFocusEl();
-        // clearGridFocus();
-    });
-}
+//         // Comment these out temporarily!
+//         // clearFocusEl();
+//         // clearGridFocus();
+//     });
+// }

@@ -2816,39 +2816,3 @@ body.osk-open .main-stage {
     z-index: 10 !important;
     text-shadow: 0px 2px 6px rgba(0, 0, 0, 0.9) !important;
 }
-
-/* =========================================================
-   ANTI-CLIPPING SAFE ZONES (Add to very bottom of CSS)
-   ========================================================= */
-
-/* 1. Groups Grid: Increase left/right padding from 12px to 24px to fit the 1.05 scale */
-#groups-grid-container {
-    padding-left: 24px !important;
-    padding-right: 24px !important;
-    overflow-x: hidden !important;
-}
-
-/* 2. Modal Member List: Add padding so scaled items don't hit the scrollbar */
-#group-members-list {
-    padding-left: 12px !important;
-    padding-right: 16px !important;
-    padding-bottom: 24px !important;
-    overflow-x: hidden !important;
-}
-
-/* 3. Settings & Member Lists: Shrink the items slightly and center them */
-.list-item,
-.wifi-item,
-.group-member-item {
-    width: calc(100% - 16px) !important;
-    margin-left: 8px !important;
-    margin-right: 8px !important;
-    box-sizing: border-box !important;
-}
-
-/* 4. General App Grid (if you have one for the home tab) */
-#grid-container {
-    padding-left: 24px !important;
-    padding-right: 24px !important;
-    overflow-x: hidden !important;
-}

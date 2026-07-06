@@ -73,32 +73,46 @@ body.remote-mode * {
     scroll-behavior: auto !important;
 }
 
-/* Remote Focus ring — Premium TV-style Glow */
-.remoteFocused {
+/* --- 1. Pure Scale Remote Focus (No borders, no glow) --- */
+.remoteFocused,
+.focused,
+.member-card.focused,
+.group-card.focused {
     outline: none !important;
-    transform: scale(1.04) !important;
-    background-color: rgba(255, 255, 255, 0.12) !important;
-    /* Soft dim white glow */
-    box-shadow: 0 8px 32px rgba(255, 255, 255, 0.08) !important;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, box-shadow 0.2s !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    transform: scale(1.05) !important;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
     z-index: 100;
-    position: relative;
-    border-radius: inherit;
-    /* Respects whatever border-radius the card/button already has */
 }
 
-/* In Light Mode, the white glow becomes a soft dark shadow so you can actually see it */
-body.light-mode .remoteFocused {
-    background-color: rgba(0, 0, 0, 0.06) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Slightly larger pop for smaller elements so they feel responsive */
+/* Slightly more pop for smaller elements */
 .remoteFocused.chip,
 .remoteFocused.nav-btn,
 .remoteFocused.modal-btn,
 .remoteFocused.osk-key {
     transform: scale(1.08) !important;
+}
+
+/* --- 2. Light Theme: Fix Group Cards & 'Create Group' Visibility --- */
+/* Replaces the dark bottom shadow with a light one */
+body.light-mode .group-card::after,
+body.light-mode .group-card .gradient-overlay {
+    background: linear-gradient(to top, var(--bg-surface), transparent) !important;
+}
+
+/* Forces the 'Create Group' button/card text and icon to be visible */
+body.light-mode .create-card,
+body.light-mode .add-group-btn,
+body.light-mode .group-card.create {
+    background: var(--bg-surface-container) !important;
+    border: 1px dashed var(--outline-variant) !important;
+}
+
+body.light-mode .create-card *,
+body.light-mode .add-group-btn *,
+body.light-mode .group-card.create * {
+    color: var(--text-main) !important;
 }
 
 body {

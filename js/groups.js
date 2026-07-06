@@ -280,14 +280,26 @@ async function renderMembersSelectionList(selectedCodes = []) {
     allMembers.forEach(member => {
         const isSelected = selectedCodes.includes(member.member_code);
         const item = document.createElement('div');
+
         item.className = `group-member-item ${isSelected ? 'selected' : ''}`;
         item.dataset.code = member.member_code;
 
+        // Inline styling ensures it looks large, clickable, and adapts to Light/Dark Mode
+        item.style.cssText = `
+            display: flex; align-items: center; padding: 12px 16px; 
+            background: var(--surface-variant); border-radius: 16px; 
+            border: 1px solid var(--outline-variant); cursor: pointer;
+            transition: transform 0.1s, border-color 0.2s;
+        `;
+
         const avatarUrl = getAvatarUrl(member);
+
         item.innerHTML = `
-            <img src="${avatarUrl}" class="group-member-avatar" onerror="this.src='/img/avatars/default.png'" />
-            <span class="group-member-name">${member.name}</span>
-            <span class="material-symbols-rounded check-icon">${isSelected ? 'check_box' : 'check_box_outline_blank'}</span>
+            <img src="${avatarUrl}" class="group-member-avatar" onerror="this.src='/img/avatars/default.png'" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; margin-right: 16px;" />
+            <span class="group-member-name" style="flex: 1; font-size: 1.2rem; font-weight: 500; color: var(--text-main);">${member.name}</span>
+            <span class="material-symbols-rounded check-icon" style="color: ${isSelected ? 'var(--primary)' : 'var(--text-sub)'}; font-size: 32px; transition: color 0.2s;">
+                ${isSelected ? 'check_box' : 'check_box_outline_blank'}
+            </span>
         `;
 
         item.onclick = () => {
@@ -295,6 +307,7 @@ async function renderMembersSelectionList(selectedCodes = []) {
             const icon = item.querySelector('.check-icon');
             if (icon) {
                 icon.textContent = nowSelected ? 'check_box' : 'check_box_outline_blank';
+                icon.style.color = nowSelected ? 'var(--primary)' : 'var(--text-sub)';
             }
         };
 

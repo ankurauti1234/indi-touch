@@ -2863,3 +2863,13 @@ body.osk-open .main-stage {
 #group-members-list {
     overflow-x: hidden !important;
 }
+
+/* Creates an invisible forcefield at the top and bottom of scrollable areas 
+   so the nearest scroll never pushes items against the absolute edge */
+.settings-scroll-area,
+.list-group,
+#group-members-list,
+#groups-grid-container {
+    scroll-padding-top: 100px !important;
+    scroll-padding-bottom: 100px !important;
+}

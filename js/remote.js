@@ -98,14 +98,10 @@ function clearFocusEl() {
 function setFocusEl(el) {
     clearFocusEl();
     if (!el) return;
-
-    // Add focus class (triggers the CSS scale)
     el.classList.add('remoteFocused');
 
-    // FIX: Changed 'smooth' to 'instant'. 
-    // This perfectly centers the item immediately, stopping the browser's 
-    // layout engine from fighting the CSS scale animation (no more bouncing/jittering).
-    el.scrollIntoView({ behavior: 'instant', block: 'center' });
+    // Smooth glide, no more dizzy center-jumping
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     remoteFocusEl = el;
 
@@ -153,17 +149,20 @@ function triggerTabSwitch(dir) {
 
     let nextIdx = dir === 'prev' ? currentIdx - 1 : currentIdx + 1;
 
-    // FIX: Loop around instead of getting stuck!
-    // If you are on the Guest Tab (last) and press down, it loops to Home (0).
-    // If you are on Home (0) and press up, it loops to Guest (last).
+    // Loop from top to bottom and bottom to top
     if (nextIdx < 0) {
-        nextIdx = navs.length - 1;
+        nextIdx = navs.length - 1; // Wrap to bottom (Guest)
     } else if (nextIdx >= navs.length) {
-        nextIdx = 0;
+        nextIdx = 0; // Wrap to top (Home)
     }
 
     navFocusIdx = nextIdx;
     navs[nextIdx].click();
+
+    // Keep focus synced on the nav rail visually if we are in the nav zone
+    if (zone === 'nav') {
+        setFocusEl(navs[nextIdx]);
+    }
 }
 
 // ─── Content items for current view ───────────────────────────────────────────
@@ -394,7 +393,13 @@ function navigate(direction) {
         return;
     }
 
-    const isDeepMenu = items.some(el => el.classList.contains('back-btn'));
+    // ---- BOTTOM OF navigate() ----
+    const items = getContentItems();
+
+    // Strict Lock: Only lock tabs if we are actually in the Settings view AND see a back button
+    const activeView = document.querySelector('#app-frame .view.active');
+    const isSettings = activeView && activeView.id === 'view-settings';
+    const isDeepMenu = isSettings && items.some(el => el.classList.contains('back-btn'));
 
     if (direction === 'up') {
         if (contentFocusIdx === 0) {

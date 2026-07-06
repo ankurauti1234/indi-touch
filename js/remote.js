@@ -97,13 +97,21 @@ function clearFocusEl() {
 }
 
 function setFocusEl(el) {
+    if (!el) {
+        clearFocusEl();
+        return;
+    }
+
+    // PREVENT DOUBLE BOUNCING! 
+    // If the element is already focused, do not remove and re-add the class.
+    if (remoteFocusEl === el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return;
+    }
+
     clearFocusEl();
-    if (!el) return;
     el.classList.add('remoteFocused');
-
-    // Smooth glide, no more dizzy center-jumping
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
     remoteFocusEl = el;
 
     if (zone === 'content' && typeof isBackgroundContext === 'function' && isBackgroundContext()) {
@@ -556,16 +564,16 @@ export function initRemote() {
 
                 isLongPress = false;
 
-                // DELAY the squeeze by 150ms. 
-                // Quick taps will never see the animation, resulting in a clean click!
-                pressingVisualTimer = setTimeout(() => {
-                    if (remoteFocusEl) remoteFocusEl.classList.add('remote-pressing');
-                }, 150);
-
+                // NO visual changes on keydown. This guarantees single taps stay rock solid!
                 enterPressTimer = setTimeout(() => {
                     isLongPress = true;
-                    // Pop back up to normal size when the long-press triggers
-                    if (remoteFocusEl) remoteFocusEl.classList.remove('remote-pressing');
+
+                    // Trigger the visual squeeze pulse ONLY when the long press is confirmed
+                    if (remoteFocusEl) {
+                        remoteFocusEl.classList.add('remote-pressing');
+                        setTimeout(() => remoteFocusEl.classList.remove('remote-pressing'), 250);
+                    }
+
                     handleLongPress();
                 }, 600);
                 break;
@@ -577,12 +585,9 @@ export function initRemote() {
 
         if (e.key === 'Enter') {
             e.preventDefault();
-
-            // Clear BOTH timers
             clearTimeout(enterPressTimer);
-            clearTimeout(pressingVisualTimer);
 
-            // Clean up the animation class
+            // Clean up class just in case they release exactly during the pulse
             if (remoteFocusEl) {
                 remoteFocusEl.classList.remove('remote-pressing');
             }

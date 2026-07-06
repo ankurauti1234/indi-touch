@@ -73,46 +73,50 @@ body.remote-mode * {
     scroll-behavior: auto !important;
 }
 
-/* --- 1. Pure Scale Remote Focus (No borders, no glow) --- */
+/* =========================================================
+   PREMIUM TV REMOTE FOCUS (Adapts to Light & Dark Theme)
+   ========================================================= */
+
+/* --- 1. DARK THEME (Default) --- */
 .remoteFocused,
 .focused,
 .member-card.focused,
 .group-card.focused {
-    outline: none !important;
-    box-shadow: none !important;
-    background-color: transparent !important;
+    outline: 3px solid var(--text-main) !important;
+    /* Crisp white border */
+    outline-offset: 3px !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    /* Dim white transparent overlay */
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+    /* Deep drop shadow */
     transform: scale(1.05) !important;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
-    z-index: 100;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, outline 0.2s !important;
+    z-index: 100 !important;
+    border-radius: inherit;
+    /* Keeps the natural curves of cards/buttons */
 }
 
-/* Slightly more pop for smaller elements */
+/* Smaller elements need slightly more scale and a tighter outline */
 .remoteFocused.chip,
 .remoteFocused.nav-btn,
 .remoteFocused.modal-btn,
 .remoteFocused.osk-key {
     transform: scale(1.08) !important;
+    outline-width: 2px !important;
+    outline-offset: 2px !important;
 }
 
-/* --- 2. Light Theme: Fix Group Cards & 'Create Group' Visibility --- */
-/* Replaces the dark bottom shadow with a light one */
-body.light-mode .group-card::after,
-body.light-mode .group-card .gradient-overlay {
-    background: linear-gradient(to top, var(--bg-surface), transparent) !important;
-}
-
-/* Forces the 'Create Group' button/card text and icon to be visible */
-body.light-mode .create-card,
-body.light-mode .add-group-btn,
-body.light-mode .group-card.create {
-    background: var(--bg-surface-container) !important;
-    border: 1px dashed var(--outline-variant) !important;
-}
-
-body.light-mode .create-card *,
-body.light-mode .add-group-btn *,
-body.light-mode .group-card.create * {
-    color: var(--text-main) !important;
+/* --- 2. LIGHT THEME --- */
+body.light-mode .remoteFocused,
+body.light-mode .focused,
+body.light-mode .member-card.focused,
+body.light-mode .group-card.focused {
+    outline: 3px solid var(--primary) !important;
+    /* Beautiful Purple border in light mode */
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    /* Dim dark transparent overlay */
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15) !important;
+    /* Softer shadow for light backgrounds */
 }
 
 body {

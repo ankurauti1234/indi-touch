@@ -2880,12 +2880,21 @@ body.osk-open .main-stage {
 .remoteFocused.remote-pressing,
 .focused.remote-pressing,
 .group-card.focused.remote-pressing {
+    /* Updated transition to match the focus-state transition EXACTLY */
     transform: scale(0.95) !important;
     transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
-    box-shadow: 0 0 0 3px var(--bg-app), 0 0 0 6px var(--text-main), 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+
+    /* Squeezes the shadow closer to the element */
+    box-shadow:
+        0 0 0 3px var(--bg-app),
+        0 0 0 6px var(--text-main),
+        0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
 body.light-mode .remoteFocused.remote-pressing,
 body.light-mode .group-card.focused.remote-pressing {
-    box-shadow: 0 0 0 3px var(--bg-app), 0 0 0 6px var(--primary), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    box-shadow:
+        0 0 0 3px var(--bg-app),
+        0 0 0 6px var(--primary),
+        0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }

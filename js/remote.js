@@ -98,14 +98,17 @@ function clearFocusEl() {
 function setFocusEl(el) {
     clearFocusEl();
     if (!el) return;
+
+    // Add focus class (triggers the CSS scale)
     el.classList.add('remoteFocused');
 
-    // CHANGED: 'center' ensures the hovered item is always perfectly in the middle of the screen, never chopped at the edges!
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // FIX: Changed 'smooth' to 'instant'. 
+    // This perfectly centers the item immediately, stopping the browser's 
+    // layout engine from fighting the CSS scale animation (no more bouncing/jittering).
+    el.scrollIntoView({ behavior: 'instant', block: 'center' });
 
     remoteFocusEl = el;
 
-    // Constantly update memory when navigating safely in the background
     if (zone === 'content' && typeof isBackgroundContext === 'function' && isBackgroundContext()) {
         lastBackgroundIdx = contentFocusIdx;
     }
@@ -148,10 +151,15 @@ function triggerTabSwitch(dir) {
     let currentIdx = navs.findIndex(n => n.classList.contains('active'));
     if (currentIdx === -1) currentIdx = navFocusIdx;
 
-    const nextIdx = dir === 'prev' ? currentIdx - 1 : currentIdx + 1;
+    let nextIdx = dir === 'prev' ? currentIdx - 1 : currentIdx + 1;
 
-    if (nextIdx < 0 || nextIdx >= navs.length) {
-        return;
+    // FIX: Loop around instead of getting stuck!
+    // If you are on the Guest Tab (last) and press down, it loops to Home (0).
+    // If you are on Home (0) and press up, it loops to Guest (last).
+    if (nextIdx < 0) {
+        nextIdx = navs.length - 1;
+    } else if (nextIdx >= navs.length) {
+        nextIdx = 0;
     }
 
     navFocusIdx = nextIdx;

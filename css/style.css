@@ -2650,20 +2650,26 @@ body.osk-open .main-stage {
    INACTIVE GROUP CARDS (Split Theme Logic)
    ========================================================= */
 
-/* --- DARK MODE (Restored to Original Behavior) --- */
+/* --- DARK MODE (Locked background, disabled content) --- */
 .group-card.inactive {
-    filter: grayscale(80%) brightness(0.85) !important;
-    opacity: 0.7 !important;
+    opacity: 1 !important;
+    filter: none !important;
     border: 2px solid rgba(255, 255, 255, 0.1) !important;
     background: var(--bg-card) !important;
 }
 
-/* Dark Mode Hover (Restores color and brightness) */
+/* Gray out inner content in Dark Mode */
+.group-card.inactive .group-avatars-container,
+.group-card.inactive .member-overlay {
+    filter: grayscale(100%) !important;
+    opacity: 0.45 !important;
+}
+
+/* Dark Mode Hover (Locks background to solid dark, keeps content grey) */
 .group-card.inactive:hover,
 .group-card.inactive.focused,
 .group-card.inactive.remoteFocused {
-    filter: none !important;
-    opacity: 1 !important;
+    background: var(--bg-card) !important;
 }
 
 /* --- LIGHT MODE (Your #eeeeee tweak, strictly isolated) --- */
@@ -2674,7 +2680,7 @@ body.light-mode .group-card.inactive {
     border: 2px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Apply the gray/disabled effect ONLY to the inner content in Light Mode */
+/* Gray out inner content in Light Mode */
 body.light-mode .group-card.inactive .group-avatars-container,
 body.light-mode .group-card.inactive .member-overlay {
     filter: grayscale(100%) !important;
@@ -2695,29 +2701,34 @@ body.light-mode .group-card.inactive.remoteFocused {
     background: #64d29a !important;
 }
 
-/* --- DARK MODE LOCAL AVATAR (Restored to Original) --- */
+/* --- DARK MODE LOCAL AVATAR --- */
 .group-card.local-avatar.inactive {
     background: #4a4a4a !important;
-    filter: grayscale(80%) brightness(0.8) !important;
     opacity: 1 !important;
+    filter: none !important;
+}
+
+/* Grays out internal icon/text in Dark Mode */
+.group-card.local-avatar.inactive * {
+    filter: grayscale(100%) !important;
+    opacity: 0.45 !important;
 }
 
 /* Dark Mode Local Avatar Hover */
 .group-card.local-avatar.inactive:hover,
 .group-card.local-avatar.inactive.focused,
 .group-card.local-avatar.inactive.remoteFocused {
-    background: #64d29a !important;
-    filter: none !important;
+    background: #4a4a4a !important;
 }
 
-/* --- LIGHT MODE LOCAL AVATAR (Matches your #eeeeee tweak) --- */
+/* --- LIGHT MODE LOCAL AVATAR --- */
 body.light-mode .group-card.local-avatar.inactive {
     background: #eeeeee !important;
     opacity: 1 !important;
     filter: none !important;
 }
 
-/* Grays out only the internal icon/text in Light Mode */
+/* Grays out internal icon/text in Light Mode */
 body.light-mode .group-card.local-avatar.inactive * {
     filter: grayscale(100%) !important;
     opacity: 0.45 !important;

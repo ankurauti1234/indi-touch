@@ -582,7 +582,8 @@ export function initRemote() {
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
             case 'Enter':
                 e.preventDefault();
-                // [Keep your existing Enter/Long-Press logic here]
+                e.stopPropagation(); // Kills bubbling so it can't trigger background tabs
+
                 wasLongPress = false;
                 enterHoldTimer = setTimeout(() => {
                     wasLongPress = true;

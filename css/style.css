@@ -2665,20 +2665,12 @@ body.osk-open .main-stage {
     background: #64d29a !important;
 }
 
-/* Normal inactive local avatar card */
 .group-card.local-avatar.inactive {
     background: #4a4a4a !important;
     filter: grayscale(80%) brightness(0.8) !important;
 }
 
-/* Force full visibility when interactive */
-.group-card.local-avatar.inactive:hover,
-.group-card.local-avatar.inactive.focused,
-.group-card.local-avatar.inactive.remoteFocused {
-    filter: none !important;
-    background: #64d29a !important;
-    /* Restores the signature green instantly on focus */
-}
+
 
 .group-edit-btn {
     position: absolute;

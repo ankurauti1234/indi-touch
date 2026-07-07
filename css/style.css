@@ -84,6 +84,10 @@ body.remote-mode * {
 .group-card.focused {
     outline: none !important;
     background-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow:
+        0 0 0 3px var(--bg-app),
+        0 0 0 6px var(--text-main),
+        0 12px 32px rgba(0, 0, 0, 0.5) !important;
 
     transform: none !important;
     transition: none !important;
@@ -2621,7 +2625,7 @@ body.osk-open .main-stage {
     background-color: var(--bg-card);
     border-radius: var(--radius-card);
     position: relative;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); */
     cursor: pointer;
     border: 2px solid transparent;
     display: flex;

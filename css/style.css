@@ -2772,6 +2772,11 @@ body.osk-open .main-stage {
     font-weight: 500;
 }
 
+/* Remove the dark bottom gradient from group cards */
+.group-card .member-overlay {
+    background: transparent !important;
+}
+
 #group-members-list {
     max-height: 250px;
     overflow-y: auto;

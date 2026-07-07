@@ -689,7 +689,7 @@
         <div class="form-area" style="flex: 0">
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="g-age" class="input-box" placeholder="Guest Age"
             data-i18n="guest_age" maxlength="3" autocomplete="off" autocorrect="off" spellcheck="false"
-            style="direction:ltr; text-align:left;" oninput="
+            style="direction:ltr; text-align:left;" onclick="event.stopPropagation(); this.focus();" oninput="
               this.value = this.value.replace(/[^0-9]/g, '');
               if(this.value.length > 3) {
                 this.value = this.value.slice(0,3);

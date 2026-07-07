@@ -2914,3 +2914,84 @@ body.light-mode .group-card.focused.remote-pressing {
         0 0 0 6px var(--primary),
         0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
+
+/* =========================================================
+   MAXIMIZED CREATE/EDIT OVERLAY & MEMBER LIST EXPANSION
+   ========================================================= */
+
+/* 1. Expand the Overlay to 99% Screen Size */
+#edit-popup-container,
+.overlay-card,
+.modal-content {
+    width: 99vw !important;
+    height: 95vh !important;
+    max-width: 99vw !important;
+    max-height: 95vh !important;
+    margin: auto !important;
+
+    /* Keep it looking like a distinct floating card */
+    border-radius: var(--radius-card, 16px) !important;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6) !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. Flex Split Layout: Form on Left, Big List on Right */
+.overlay-body,
+.modal-body {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 24px !important;
+    height: calc(100% - 80px) !important;
+    /* Subtracting header space */
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+/* 3. Left Side Control Panel (Inputs/Buttons) */
+.overlay-left-panel,
+.group-form-left {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+}
+
+/* 4. Right Side Member List Container (Fills Remaining Space) */
+.overlay-right-panel,
+.group-form-right {
+    flex: 1.2 !important;
+    /* Slightly wider than the form panel */
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
+
+/* 5. The Member List: Expanded Height to Show Multiple Rows */
+#group-members-list {
+    /* Wipes out the tiny restrictive 250px cap */
+    max-height: 100% !important;
+    height: 100% !important;
+    flex-grow: 1 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    padding-bottom: 24px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* 6. List Element Sizing for Remote Tracking */
+.group-member-item {
+    min-height: 64px !important;
+    /* Uniform height per element */
+    height: 64px !important;
+    width: calc(100% - 8px) !important;
+    box-sizing: border-box !important;
+
+    /* Keeps rendering stable during remote tracking */
+    transform-style: preserve-3d !important;
+    backface-visibility: hidden !important;
+}

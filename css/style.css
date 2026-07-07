@@ -2969,30 +2969,23 @@ body.light-mode .group-card.focused.remote-pressing {
         0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* =========================================================
-   MAXIMIZED CREATE/EDIT OVERLAY & MEMBER LIST EXPANSION
-   ========================================================= */
 
-/* 1. Expand the Overlay to Full Screen with Tight 10px Margins */
+/* =========================================================
+   1. MAXIMIZED OVERLAY & SPLIT LAYOUT
+   ========================================================= */
 #edit-popup-container,
 .overlay-card,
 .modal-content {
-    /* Calculates 100% viewport space minus a crisp 10px margin on both sides */
     width: calc(100vw - 20px) !important;
     height: calc(100vh - 20px) !important;
     max-width: calc(100vw - 20px) !important;
     max-height: calc(100vh - 20px) !important;
-
-    /* Uniform 10px placement from the physical monitor edges */
     margin: 10px !important;
-
-    /* Keep it looking like a distinct floating card */
     border-radius: var(--radius-card, 16px) !important;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6) !important;
     box-sizing: border-box !important;
 }
 
-/* 2. Flex Split Layout: Form on Left, Big List on Right */
 .overlay-body,
 .modal-body {
     display: flex !important;
@@ -3003,10 +2996,9 @@ body.light-mode .group-card.focused.remote-pressing {
     box-sizing: border-box !important;
     overflow: hidden !important;
     min-height: 0 !important;
-    /* CRITICAL FIX: Stops infinite stretching */
+    /* Stops infinite stretching */
 }
 
-/* 3. Left Side Control Panel (Inputs/Buttons) */
 .overlay-left-panel,
 .group-form-left {
     flex: 1 !important;
@@ -3015,7 +3007,6 @@ body.light-mode .group-card.focused.remote-pressing {
     gap: 16px !important;
 }
 
-/* 4. Right Side Member List Container (Fills Remaining Space) */
 .overlay-right-panel,
 .group-form-right {
     flex: 1.2 !important;
@@ -3023,40 +3014,47 @@ body.light-mode .group-card.focused.remote-pressing {
     flex-direction: column !important;
     height: 100% !important;
     min-height: 0 !important;
-    /* CRITICAL FIX: Forces inner list to scroll */
     overflow: hidden !important;
+    /* Forces inner list to scroll */
 }
 
-/* 5. The Member List: Expanded Height to Show Multiple Rows */
+/* =========================================================
+   2. MEMBER LIST CONTAINER & ITEM SIZING
+   ========================================================= */
 #group-members-list {
-    /* Wipes out the tiny restrictive 250px cap */
     max-height: 100% !important;
+    /* Overrides the old tiny 250px limit */
     height: 100% !important;
     flex-grow: 1 !important;
-
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-    padding-bottom: 24px !important;
-    overflow-y: auto !important;
+    overflow-y: auto;
     overflow-x: hidden !important;
-    box-sizing: border-box !important;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 12px 24px 12px !important;
+    /* Added safe padding zone */
+    box-sizing: border-box;
 }
 
-/* 6. List Element Sizing for Remote Tracking */
 .group-member-item {
     min-height: 64px !important;
-    /* Uniform height per element */
-    /* height: 64px !important; */
-    width: calc(100% - 8px) !important;
+    /* Sizing for remote tracking */
+    width: 100% !important;
+    /* Perfectly fits the new padded container */
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-bottom: 4px !important;
+    /* Stops focus rings from chopping each other */
     box-sizing: border-box !important;
-
-    /* Keeps rendering stable during remote tracking */
     transform-style: preserve-3d !important;
     backface-visibility: hidden !important;
 }
 
-/* --- FIXED: OVERLAY MEMBER LIST THEME RESOLUTION --- */
+/* =========================================================
+   3. MEMBER ITEM THEME & STATES
+   ========================================================= */
+/* Unselected State */
 #edit-popup-container .group-member-item,
 .popover-card .group-member-item,
 .modal-content .group-member-item {
@@ -3071,39 +3069,29 @@ body.light-mode .modal-content .group-member-item {
     border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-#edit-popup-container .group-member-name,
-.popover-card .group-member-name,
-.modal-content .group-member-name {
-    color: var(--text-main) !important;
-}
-
-/* Selected state overrides */
+/* Selected State Borders */
 #edit-popup-container .group-member-item.selected,
 .popover-card .group-member-item.selected,
-.modal-content .group-member-item.selected {
-    /* Changes border thickness to 3px solid purple/accent */
-    border: 2px solid var(--primary) !important;
-}
-
-/* Explicit Light Mode Override to ensure visibility */
+.modal-content .group-member-item.selected,
 body.light-mode #edit-popup-container .group-member-item.selected,
 body.light-mode .popover-card .group-member-item.selected,
 body.light-mode .modal-content .group-member-item.selected {
     border: 2px solid var(--primary) !important;
 }
 
+/* Base Text Color & Selected Text Color Protection */
+#edit-popup-container .group-member-name,
+.popover-card .group-member-name,
+.modal-content .group-member-name,
 #edit-popup-container .group-member-item.selected .group-member-name,
-.popover-card .group-member-item.selected .group-member-name {
-    color: var(--on-primary-container, var(--text-main)) !important;
+.popover-card .group-member-item.selected .group-member-name,
+.modal-content .group-member-item.selected .group-member-name {
+    color: var(--text-main) !important;
 }
 
-
-
 /* =========================================================
-   TOUCH INTERACTIVITY RESTORATION OVERRIDE
+   4. TOUCH INTERACTIVITY RESTORATION
    ========================================================= */
-
-/* Forces all input fields to immediately accept single touches */
 input,
 input.input-box,
 #g-age,
@@ -3114,21 +3102,13 @@ input.input-box,
     -webkit-user-select: text !important;
     position: relative !important;
     z-index: 999991 !important;
-    /* Forces inputs above any invisible background wrappers */
 }
 
-/* Ensures the parent form containers don't block the inputs inside them */
 .form-area,
 .list-item .item-content {
     pointer-events: auto !important;
 }
 
-/* Lock selected text color */
-#edit-popup-container .group-member-item.selected .group-member-name,
-.popover-card .group-member-item.selected .group-member-name,
-.modal-content .group-member-item.selected .group-member-name {
-    color: var(--text-main) !important;
-}
 
 /* =========================================================
    UNIVERSAL PRIMARY BUTTON SYSTEM (Dark & Light Theme Safe)

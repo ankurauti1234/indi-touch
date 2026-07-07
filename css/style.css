@@ -3101,3 +3101,20 @@ input.input-box,
     filter: brightness(0.88) contrast(1.1) !important;
     /* Elegant modern shift instead of vanishing */
 }
+
+/* Lock selected text color */
+#edit-popup-container .group-member-item.selected .group-member-name,
+.popover-card .group-member-item.selected .group-member-name,
+.modal-content .group-member-item.selected .group-member-name {
+    color: var(--text-main) !important;
+}
+
+/* Lock primary button hover states */
+body.light-mode .modal-btn.primary:hover,
+body.light-mode .action-btn:hover,
+body.light-mode [class*="btn"].primary:hover {
+    background-color: var(--primary) !important;
+    color: #ffffff !important;
+    border: none !important;
+    filter: brightness(0.9) !important;
+}

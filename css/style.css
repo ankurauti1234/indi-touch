@@ -2648,25 +2648,45 @@ body.osk-open .main-stage {
 
 /* 3. Inactive State (Dark Mode Default) */
 .group-card.inactive {
-    filter: grayscale(80%) brightness(0.85);
-    opacity: 0.7;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    opacity: 1 !important;
+    /* Keeps background solid */
+    filter: none !important;
+    /* Removes global gray filter */
+    background: var(--bg-card) !important;
+    border: 2px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 4. Inactive State (Light Mode) */
+/* 4. Inactive State (Light Mode - Forced Pure White) */
 body.light-mode .group-card.inactive {
-    filter: grayscale(100%);
-    opacity: 0.55;
-    background: var(--bg-surface-container) !important;
+    opacity: 1 !important;
+    filter: none !important;
+    background: #FFFFFF !important;
+    /* Pure white background */
     border: 2px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-/* 5. Hover/Focus overrides */
+/* Apply the gray/disabled effect ONLY to the inner content (Avatars + Text) */
+.group-card.inactive .group-avatars-container,
+.group-card.inactive .member-overlay {
+    filter: grayscale(100%) !important;
+    opacity: 0.45 !important;
+    /* Makes text and images look disabled */
+}
+
+/* 5. Hover/Focus (Locks background color, keeps content grey) */
 .group-card.inactive:hover,
 .group-card.inactive.focused,
 .group-card.inactive.remoteFocused {
-    filter: none !important;
     opacity: 1 !important;
+    filter: none !important;
+    background: var(--bg-card) !important;
+}
+
+body.light-mode .group-card.inactive:hover,
+body.light-mode .group-card.inactive.focused,
+body.light-mode .group-card.inactive.remoteFocused {
+    background: #FFFFFF !important;
+    /* Stays pure white on hover */
 }
 
 /* =========================================================
@@ -2676,15 +2696,24 @@ body.light-mode .group-card.inactive {
     background: #64d29a !important;
 }
 
+/* Dark Mode Local Inactive */
 .group-card.local-avatar.inactive {
-    background: #4a4a4a !important;
-    filter: grayscale(80%) brightness(0.8) !important;
+    background: var(--bg-card) !important;
+    opacity: 1 !important;
+    filter: none !important;
 }
 
+/* Light Mode Local Inactive */
 body.light-mode .group-card.local-avatar.inactive {
-    background: var(--surface-variant) !important;
+    background: #FFFFFF !important;
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+/* Grays out only the internal icon/text of the local avatar */
+.group-card.local-avatar.inactive * {
     filter: grayscale(100%) !important;
-    opacity: 0.6 !important;
+    opacity: 0.45 !important;
 }
 
 

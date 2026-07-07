@@ -1366,7 +1366,7 @@ body {
 body.light-mode .modal-btn.primary.remoteFocused {
     background: var(--on-primary) !important;
     color: var(--primary) !important;
-    /* filter: brightness(0.85); */
+    filter: brightness(0.95);
 }
 
 #critical-popover {

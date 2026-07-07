@@ -2096,6 +2096,9 @@ body.osk-open .main-stage {
     margin-bottom: 24px;
 }
 
+/* =========================================================
+   INPUT FIELD V2 CONTAINER ADJUSTMENTS
+   ========================================================= */
 .input-field-v2 {
     background: var(--bg-card);
     border: 2px solid var(--surface-variant);
@@ -2104,21 +2107,36 @@ body.osk-open .main-stage {
     display: flex;
     align-items: center;
     margin-bottom: 32px;
-    transition: 0.2s;
+    transition: background 0.2s, border-color 0.2s;
 }
 
-.input-field-v2:focus-within {
-    border-color: var(--primary);
+/* 1. Shift the Focus / Hover effect to the entire wrapper box */
+.input-field-v2:hover,
+.input-field-v2:focus-within,
+.input-field-v2.focused,
+.input-field-v2.remoteFocused {
+    border-color: var(--primary) !important;
+    background: var(--bg-card-hover) !important;
+    /* Fully consumes the whole container */
 }
 
+/* 2. Strip any background/hover clips from the raw inner input */
 .input-field-v2 input {
     flex: 1;
-    background: transparent;
-    border: none;
+    background: transparent !important;
+    border: none !important;
     padding: 12px 0;
     color: var(--text-main);
     font-size: 18px;
-    outline: none;
+    outline: none !important;
+}
+
+/* Remove competing focus highlights from the internal element */
+.input-field-v2 input:hover,
+.input-field-v2 input.focused,
+.input-field-v2 input.remoteFocused {
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 .eye-toggle {

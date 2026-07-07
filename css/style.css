@@ -2847,10 +2847,9 @@ body.osk-open .main-stage {
    ANTI-CLIPPING: The "Cell Inset" Trick
    ========================================================= */
 
-/* 1. Grid Cards (Groups & Home) */
-/* Shrinks the card horizontally by 20px and centers it inside its grid cell */
-.group-card,
-.member-card {
+/* 1. Grid Cards (Groups ONLY) */
+/* We removed .member-card from here so the main tab stays perfect */
+.group-card {
     width: calc(100% - 20px) !important;
     margin-left: auto !important;
     margin-right: auto !important;
@@ -2863,14 +2862,13 @@ body.osk-open .main-stage {
 }
 
 /* 2. Linear Lists (Settings, WiFi, Member Selection Modal) */
-/* Shrinks list items slightly so they don't scrape the left/right edges */
+/* This keeps your settings and wifi lists looking perfect */
 .list-item,
 .wifi-item,
 .group-member-item {
     width: calc(100% - 16px) !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    /* Stops UI tearing when scaling */
     transform-style: preserve-3d !important;
     backface-visibility: hidden !important;
 }
@@ -2880,8 +2878,8 @@ body.osk-open .main-stage {
     overflow-x: hidden !important;
 }
 
-/* Creates an invisible forcefield at the top and bottom of scrollable areas 
-   so the nearest scroll never pushes items against the absolute edge */
+/* KEEPS YOUR SCROLLING SAFE */
+/* Creates an invisible forcefield at the top and bottom of scrollable areas */
 .settings-scroll-area,
 .list-group,
 #group-members-list,
@@ -2891,19 +2889,16 @@ body.osk-open .main-stage {
 }
 
 /* =========================================================
-   SAFE LONG-PRESS ANIMATION & GRID GAP
+   SAFE LONG-PRESS ANIMATION & GRID GAP (GROUP CARDS ONLY)
    ========================================================= */
 
-/* 1. Prevent overlapping on hover scale (1.05) */
-#grid-container,
+/* 1. Prevent overlapping on hover scale (1.05) - ONLY for groups */
 #groups-grid-container {
-    /* Increase this value slightly if they still look too close */
     gap: 20px !important;
 }
 
-/* 2. The Long-Press Squeeze */
-.remoteFocused.remote-pressing,
-.focused.remote-pressing,
+/* 2. The Long-Press Squeeze - STRICTLY restricted to group-cards */
+.group-card.remote-pressing,
 .group-card.focused.remote-pressing {
     transform: scale(0.95) !important;
 
@@ -2914,9 +2909,8 @@ body.osk-open .main-stage {
         0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
-/* Light mode specific squeeze shadow */
-body.light-mode .remoteFocused.remote-pressing,
-body.light-mode .focused.remote-pressing,
+/* Light mode specific squeeze shadow - STRICTLY restricted to group-cards */
+body.light-mode .group-card.remote-pressing,
 body.light-mode .group-card.focused.remote-pressing {
     box-shadow:
         0 0 0 3px var(--bg-app),

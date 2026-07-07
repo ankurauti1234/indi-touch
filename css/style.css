@@ -2620,51 +2620,40 @@ body.osk-open .main-stage {
     padding-bottom: 40px;
 }
 
-/* --- Member Groups Styling --- */
+/* =========================================================
+   MEMBER GROUPS & CARDS (Unified)
+   ========================================================= */
+
+/* 1. Base Group Card */
 .group-card {
     background-color: var(--bg-card);
     border-radius: var(--radius-card);
     position: relative;
     box-shadow: none;
-    /* FIXED: Removed 0 2px 4px rgba(0, 0, 0, 0.2) */
     cursor: pointer;
     border: 2px solid transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-
-    /* Takes up 1 column by default */
     grid-column: span 1;
 }
 
-/* 2. Active Group Card (Removes the green glowing bottom shadow) */
+/* 2. Active State */
 .group-card:not(.inactive) {
     box-shadow: none;
-    /* FIXED: Removed 0 4px 12px rgba(100, 210, 154, 0.25) */
     border: 4px solid #64d29a;
     background: rgba(100, 210, 154, 0.05);
 }
 
-/* Normal inactive state */
+/* 3. Inactive State (Dark Mode Default) */
 .group-card.inactive {
     filter: grayscale(80%) brightness(0.85);
     opacity: 0.7;
     border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-/* =========================================================
-   INACTIVE GROUP CARDS (Dark & Light Theme Safe)
-   ========================================================= */
-
-/* 1. Dark Mode (Default) Inactive State */
-.group-card.inactive {
-    filter: grayscale(80%) brightness(0.85);
-    opacity: 0.7;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-/* 2. Light Mode Inactive State (Fixes the ugly dark grey) */
+/* 4. Inactive State (Light Mode) */
 body.light-mode .group-card.inactive {
     filter: grayscale(100%);
     opacity: 0.55;
@@ -2672,34 +2661,31 @@ body.light-mode .group-card.inactive {
     border: 2px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-/* 3. Force full visibility when hovered/focused (Applies to both modes) */
-/* .group-card.inactive:hover,
+/* 5. Hover/Focus overrides */
+.group-card.inactive:hover,
 .group-card.inactive.focused,
 .group-card.inactive.remoteFocused {
     filter: none !important;
     opacity: 1 !important;
-} */
+}
 
 /* =========================================================
-   LOCAL AVATAR SPECIFIC INACTIVE STATES
+   LOCAL AVATAR STATES
    ========================================================= */
 .group-card.local-avatar:not(.inactive) {
     background: #64d29a !important;
 }
 
-/* Dark Mode Local Inactive */
 .group-card.local-avatar.inactive {
     background: #4a4a4a !important;
     filter: grayscale(80%) brightness(0.8) !important;
 }
 
-/* Light Mode Local Inactive (Clean grey instead of muddy dark) */
 body.light-mode .group-card.local-avatar.inactive {
     background: var(--surface-variant) !important;
     filter: grayscale(100%) !important;
     opacity: 0.6 !important;
 }
-
 
 
 .group-edit-btn {

@@ -174,12 +174,27 @@ document.addEventListener('touchend', e => {
 });
 
 document.addEventListener('click', (e) => {
-
+    // Only swallow the very next click if it was set by the screensaver wake-lock
+    // and the click is not targeting a genuine interactive element (inputs/buttons/modals).
     if (!consumeNextClick) {
         return;
     }
 
     consumeNextClick = false;
+
+    // Only perform swallowing in the explicit screensaver wake scenario
+    const wakeLockActive = document.body.dataset.screensaverWakeLock === '1';
+    if (!wakeLockActive) {
+        return; // allow the click through for other consumeNextClick reasons
+    }
+
+    // If the user tapped an input, textarea, select, button, or inside a modal/list-item,
+    // do not swallow — allow native behavior to proceed.
+    const target = e.target;
+    const interactive = target.closest && target.closest('input, textarea, select, button, .modal-card, .popover-card, .group-card, .list-item, #group-modal-overlay, #wifi-password-overlay, #alert-modal');
+    if (interactive) {
+        return; // allow event to reach the interactive element
+    }
 
     e.preventDefault();
     e.stopPropagation();

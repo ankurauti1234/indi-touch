@@ -2660,7 +2660,7 @@ body.osk-open .main-stage {
 body.light-mode .group-card.inactive {
     opacity: 1 !important;
     filter: none !important;
-    background: #e25151 !important;
+    background: #dfdfdf !important;
     /* Pure white background */
     border: 2px solid rgba(0, 0, 0, 0.08) !important;
 }

@@ -1350,24 +1350,19 @@ body {
     transition: 0.2s;
 }
 
-.modal-btn.primary {
-    background: var(--primary);
-    color: var(--on-primary);
-}
-
 .modal-btn:active {
     opacity: 0.7;
 }
 
 /* Prevents light-mode hover and remote focus from wiping out the button color */
-.modal-btn.primary:hover,
+/* .modal-btn.primary:hover,
 .modal-btn.primary.focused,
 .modal-btn.primary.remoteFocused,
 body.light-mode .modal-btn.primary.remoteFocused {
     background: var(--on-primary) !important;
     color: var(--primary) !important;
-    filter: brightness(0.95);
-}
+    filter: brightness(0.97);
+} */
 
 #critical-popover {
     position: fixed;
@@ -3087,4 +3082,37 @@ input.input-box,
 .popover-card .group-member-item.selected .group-member-name,
 .modal-content .group-member-item.selected .group-member-name {
     color: var(--text-main) !important;
+}
+
+/* =========================================================
+   UNIVERSAL PRIMARY BUTTON SYSTEM
+   ========================================================= */
+
+/* 1. Master Base State (Forces purple background, light text) */
+.action-btn,
+.modal-btn.primary,
+.conn-btn-primary {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+/* 2. Master Hover/Focus State (Your inverted color tweak) */
+.action-btn:hover,
+.action-btn.focused,
+.action-btn.remoteFocused,
+.modal-btn.primary:hover,
+.modal-btn.primary.focused,
+.modal-btn.primary.remoteFocused,
+.conn-btn-primary:hover,
+.conn-btn-primary.focused,
+.conn-btn-primary.remoteFocused,
+body.light-mode .action-btn.remoteFocused,
+body.light-mode .modal-btn.primary.remoteFocused,
+body.light-mode .conn-btn-primary.remoteFocused {
+    background: var(--on-primary) !important;
+    color: var(--primary) !important;
+    filter: brightness(0.97) !important;
+    /* Keeps the remote focus ring clean */
+    outline: none !important;
 }

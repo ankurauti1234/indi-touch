@@ -577,28 +577,7 @@ export function initRemote() {
 
         switch (e.key) {
             case 'ArrowDown': e.preventDefault(); navigate('down'); break;
-            case 'ArrowUp':
-                e.preventDefault();
-
-                // OVERRIDE: If on the Done/Save button in the overlay, force focus to the input field
-                if (remoteFocusEl && remoteFocusEl.classList.contains('modal-btn') && remoteFocusEl.classList.contains('primary')) {
-                    const inputTarget = document.querySelector('.input-field-v2 input') || document.querySelector('.input-field-v2');
-                    if (inputTarget) {
-                        // Remove focus from the button
-                        remoteFocusEl.classList.remove('remoteFocused', 'focused');
-                        // Shift focus to the input
-                        remoteFocusEl = inputTarget;
-                        remoteFocusEl.classList.add('remoteFocused', 'focused');
-                        // Ensure the new element is fully visible
-                        remoteFocusEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        break; // Stop here so standard navigate('up') does not run
-                    }
-                }
-
-                // Normal navigation for everything else
-                navigate('up');
-                break;
-
+            case 'ArrowUp': e.preventDefault(); navigate('up'); break;
             case 'ArrowRight': e.preventDefault(); navigate('right'); break;
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
             case 'Enter':

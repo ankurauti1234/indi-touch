@@ -2772,9 +2772,26 @@ body.osk-open .main-stage {
     font-weight: 500;
 }
 
-/* Remove the dark bottom gradient from group cards */
+/* =========================================================
+   GROUP CARD GRADIENTS & TEXT CONTRAST
+   ========================================================= */
+
+/* 1. Dark Mode (Default): Restore the dark bottom shadow */
 .group-card .member-overlay {
-    background: transparent !important;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95), transparent) !important;
+}
+
+/* 2. Light Mode: Clean white gradient */
+body.light-mode .group-card .member-overlay {
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.95), transparent) !important;
+}
+
+/* 3. Light Mode Text Fix: Make text dark and remove the muddy black text-shadows */
+body.light-mode .group-card .member-overlay span,
+body.light-mode .group-card .g-name,
+body.light-mode .group-card .g-info {
+    color: var(--text-main) !important;
+    text-shadow: none !important;
 }
 
 #group-members-list {

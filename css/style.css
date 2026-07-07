@@ -2723,24 +2723,28 @@ body.osk-open .main-stage {
     border-radius: 3px;
 }
 
+/* --- THEME-SAFE MEMBER ITEMS --- */
 .group-member-item {
     display: flex;
     align-items: center;
     padding: 10px 16px;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
+    /* Removed hardcoded white */
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.2s, border-color 0.2s;
     border: 1px solid transparent;
 }
 
-.group-member-item:hover {
-    background: rgba(255, 255, 255, 0.1);
+/* Uses your variables.css hover colors */
+.group-member-item:hover,
+.group-member-item.focused {
+    background: var(--bg-card-hover);
 }
 
 .group-member-item.selected {
-    background: rgba(100, 210, 154, 0.1);
-    border-color: rgba(100, 210, 154, 0.3);
+    background: var(--secondary-container);
+    border-color: var(--primary);
 }
 
 .group-member-avatar {
@@ -2749,26 +2753,26 @@ body.osk-open .main-stage {
     border-radius: 50%;
     object-fit: cover;
     margin-right: 12px;
-    background: #333;
+    background: var(--surface-variant);
 }
 
 .group-member-name {
     flex-grow: 1;
     font-size: 1rem;
     font-weight: 500;
-    color: white;
+    color: var(--text-main);
+    /* Switches instantly with theme */
 }
 
 .group-member-item .check-icon {
     font-size: 24px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-sub);
     user-select: none;
 }
 
 .group-member-item.selected .check-icon {
-    color: #64d29a;
+    color: var(--primary);
 }
-
 
 /* 1. Grid Container */
 #groups-grid-container {

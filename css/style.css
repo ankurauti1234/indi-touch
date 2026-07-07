@@ -3001,3 +3001,10 @@ body.light-mode .group-card.focused.remote-pressing {
     transform-style: preserve-3d !important;
     backface-visibility: hidden !important;
 }
+
+input,
+.input-box {
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+    pointer-events: auto !important;
+}

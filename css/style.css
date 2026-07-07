@@ -3149,7 +3149,7 @@ input.input-box,
 body.light-mode .action-btn.remoteFocused,
 body.light-mode .modal-btn.primary.remoteFocused,
 body.light-mode .conn-btn-primary.remoteFocused {
-    background: var(--on-primary) !important;
+    /* background: var(--on-primary) !important; */
     color: var(--primary) !important;
     outline: none !important;
 }

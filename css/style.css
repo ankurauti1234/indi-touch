@@ -2646,7 +2646,10 @@ body.osk-open .main-stage {
     background: rgba(100, 210, 154, 0.05);
 }
 
-/* 3. Inactive State (Dark Mode Default) */
+/* =========================================================
+   INACTIVE GROUP CARDS (Split Theme Logic)
+   ========================================================= */
+
 /* --- DARK MODE (Restored to Original Behavior) --- */
 .group-card.inactive {
     filter: grayscale(80%) brightness(0.85) !important;
@@ -2663,7 +2666,6 @@ body.osk-open .main-stage {
     opacity: 1 !important;
 }
 
-/* 4. Inactive State (Light Mode - Forced Pure White) */
 /* --- LIGHT MODE (Your #eeeeee tweak, strictly isolated) --- */
 body.light-mode .group-card.inactive {
     opacity: 1 !important;
@@ -2671,15 +2673,6 @@ body.light-mode .group-card.inactive {
     background: #eeeeee !important;
     border: 2px solid rgba(0, 0, 0, 0.08) !important;
 }
-
-/* Apply the gray/disabled effect ONLY to the inner content (Avatars + Text) */
-.group-card.inactive .group-avatars-container,
-.group-card.inactive .member-overlay {
-    filter: grayscale(100%) !important;
-    opacity: 0.45 !important;
-    /* Makes text and images look disabled */
-}
-
 
 /* Apply the gray/disabled effect ONLY to the inner content in Light Mode */
 body.light-mode .group-card.inactive .group-avatars-container,
@@ -2724,6 +2717,11 @@ body.light-mode .group-card.local-avatar.inactive {
     filter: none !important;
 }
 
+/* Grays out only the internal icon/text in Light Mode */
+body.light-mode .group-card.local-avatar.inactive * {
+    filter: grayscale(100%) !important;
+    opacity: 0.45 !important;
+}
 
 .group-edit-btn {
     position: absolute;

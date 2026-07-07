@@ -167,11 +167,11 @@ function triggerTabSwitch(dir) {
 
     let nextIdx = dir === 'prev' ? currentIdx - 1 : currentIdx + 1;
 
-    // Loop from top to bottom and bottom to top
+    // SCROLL LOCK: Prevent wrapping from top to bottom or bottom to top
     if (nextIdx < 0) {
-        nextIdx = navs.length - 1; // Wrap to bottom (Guest)
+        return; // Reached the top (Home), STOP. Do not wrap.
     } else if (nextIdx >= navs.length) {
-        nextIdx = 0; // Wrap to top (Home)
+        return; // Reached the bottom (Settings), STOP. Do not wrap.
     }
 
     navFocusIdx = nextIdx;

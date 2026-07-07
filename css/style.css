@@ -1359,6 +1359,15 @@ body {
     opacity: 0.7;
 }
 
+/* Prevents light-mode hover from wiping out the button color */
+.modal-btn.primary:hover,
+.modal-btn.primary.focused {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    filter: brightness(0.85);
+    /* Slightly darkens the button on hover instead of erasing it */
+}
+
 #critical-popover {
     position: fixed;
     top: 0;

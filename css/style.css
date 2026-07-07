@@ -3002,9 +3002,26 @@ body.light-mode .group-card.focused.remote-pressing {
     backface-visibility: hidden !important;
 }
 
+/* =========================================================
+   TOUCH INTERACTIVITY RESTORATION OVERRIDE
+   ========================================================= */
+
+/* Forces all input fields to immediately accept single touches */
 input,
-.input-box {
-    user-select: auto !important;
-    -webkit-user-select: auto !important;
+input.input-box,
+#g-age,
+[type="text"] {
+    pointer-events: auto !important;
+    cursor: text !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    position: relative !important;
+    z-index: 999991 !important;
+    /* Forces inputs above any invisible background wrappers */
+}
+
+/* Ensures the parent form containers don't block the inputs inside them */
+.form-area,
+.list-item .item-content {
     pointer-events: auto !important;
 }

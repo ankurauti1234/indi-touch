@@ -3085,19 +3085,20 @@ input.input-box,
 }
 
 /* =========================================================
-   UNIVERSAL PRIMARY BUTTON SYSTEM
+   UNIVERSAL PRIMARY BUTTON SYSTEM (Dark & Light Theme Safe)
    ========================================================= */
 
-/* 1. Master Base State (Forces purple background, light text) */
+/* 1. Master Base State */
 .action-btn,
 .modal-btn.primary,
 .conn-btn-primary {
     background: var(--primary) !important;
     color: var(--on-primary) !important;
+    border: none !important;
     transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
-/* 2. Master Hover/Focus State (Your inverted color tweak) */
+/* 2. Master Hover/Focus State (Inverted Colors for both modes) */
 .action-btn:hover,
 .action-btn.focused,
 .action-btn.remoteFocused,
@@ -3112,7 +3113,5 @@ body.light-mode .modal-btn.primary.remoteFocused,
 body.light-mode .conn-btn-primary.remoteFocused {
     background: var(--on-primary) !important;
     color: var(--primary) !important;
-    filter: brightness(0.97) !important;
-    /* Keeps the remote focus ring clean */
     outline: none !important;
 }

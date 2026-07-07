@@ -137,8 +137,32 @@ document.addEventListener('touchend', e => {
     const endY = e.changedTouches[0].clientY;
     const deltaY = startY - endY;
 
-    // Ignore small touches
-    if (Math.abs(deltaY) < 50) return;
+    // If this was a small tap (not a swipe), try to focus inputs under the touch
+    if (Math.abs(deltaY) < 50) {
+        try {
+            const findInputFromTouch = (t) => {
+                if (!t) return null;
+                if (t.matches && t.matches('input,textarea')) return t;
+                const ancInput = t.closest && t.closest('input,textarea');
+                if (ancInput) return ancInput;
+                const container = t.closest && t.closest('.list-item, .group-member-item, .item-content, #view-guest, #view-settings, #group-members-list');
+                if (container) return container.querySelector('input,textarea');
+                return null;
+            };
+
+            const inputEl = findInputFromTouch(e.target);
+            if (inputEl) {
+                // Programmatically focus; keyboard.js listens for focusin to show OSK
+                inputEl.focus({ preventScroll: false });
+                setTimeout(() => { try { inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) {} }, 80);
+                return;
+            }
+        } catch (err) {
+            console.error('tap->focus helper failed', err);
+        }
+
+        return;
+    }
 
     const activeView = document.querySelector('.view.active');
     if (!activeView) return;

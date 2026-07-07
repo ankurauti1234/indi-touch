@@ -3082,14 +3082,14 @@ body.light-mode .modal-content .group-member-item {
 .popover-card .group-member-item.selected,
 .modal-content .group-member-item.selected {
     /* Changes border thickness to 3px solid purple/accent */
-    border: 3px solid var(--primary) !important;
+    border: 2px solid var(--primary) !important;
 }
 
 /* Explicit Light Mode Override to ensure visibility */
 body.light-mode #edit-popup-container .group-member-item.selected,
 body.light-mode .popover-card .group-member-item.selected,
 body.light-mode .modal-content .group-member-item.selected {
-    border: 3px solid var(--primary) !important;
+    border: 2px solid var(--primary) !important;
 }
 
 #edit-popup-container .group-member-item.selected .group-member-name,

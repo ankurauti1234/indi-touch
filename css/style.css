@@ -2650,26 +2650,20 @@ body.osk-open .main-stage {
    INACTIVE GROUP CARDS (Split Theme Logic)
    ========================================================= */
 
-/* --- DARK MODE (Locked background, disabled content) --- */
+/* --- DARK MODE (Restored fully to original faded look) --- */
 .group-card.inactive {
-    opacity: 1 !important;
-    filter: none !important;
+    filter: grayscale(80%) brightness(0.85) !important;
+    opacity: 0.7 !important;
     border: 2px solid rgba(255, 255, 255, 0.1) !important;
-    background: var(--bg-card) !important;
+    /* Removed the forced background override */
 }
 
-/* Gray out inner content in Dark Mode */
-.group-card.inactive .group-avatars-container,
-.group-card.inactive .member-overlay {
-    filter: grayscale(100%) !important;
-    opacity: 0.45 !important;
-}
-
-/* Dark Mode Hover (Locks background to solid dark, keeps content grey) */
+/* Dark Mode Hover (Locks the faded look, prevents it from lighting up) */
 .group-card.inactive:hover,
 .group-card.inactive.focused,
 .group-card.inactive.remoteFocused {
-    background: var(--bg-card) !important;
+    filter: grayscale(80%) brightness(0.85) !important;
+    opacity: 0.7 !important;
 }
 
 /* --- LIGHT MODE (Your #eeeeee tweak, strictly isolated) --- */
@@ -2701,24 +2695,19 @@ body.light-mode .group-card.inactive.remoteFocused {
     background: #64d29a !important;
 }
 
-/* --- DARK MODE LOCAL AVATAR --- */
+/* --- DARK MODE LOCAL AVATAR (Restored fully) --- */
 .group-card.local-avatar.inactive {
     background: #4a4a4a !important;
+    filter: grayscale(80%) brightness(0.8) !important;
     opacity: 1 !important;
-    filter: none !important;
 }
 
-/* Grays out internal icon/text in Dark Mode */
-.group-card.local-avatar.inactive * {
-    filter: grayscale(100%) !important;
-    opacity: 0.45 !important;
-}
-
-/* Dark Mode Local Avatar Hover */
+/* Dark Mode Local Avatar Hover (Locks the faded look) */
 .group-card.local-avatar.inactive:hover,
 .group-card.local-avatar.inactive.focused,
 .group-card.local-avatar.inactive.remoteFocused {
     background: #4a4a4a !important;
+    filter: grayscale(80%) brightness(0.8) !important;
 }
 
 /* --- LIGHT MODE LOCAL AVATAR --- */

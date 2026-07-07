@@ -154,6 +154,20 @@ document.addEventListener('touchend', e => {
             if (inputEl) {
                 // Programmatically focus; keyboard.js listens for focusin to show OSK
                 inputEl.focus({ preventScroll: false });
+                // Move caret to end of existing text so user can delete/append naturally
+                try {
+                    const len = inputEl.value ? inputEl.value.length : 0;
+                    // Delay slightly to ensure focus applied in all WebEngine contexts
+                    setTimeout(() => {
+                        try {
+                            if (typeof inputEl.setSelectionRange === 'function') {
+                                inputEl.setSelectionRange(len, len);
+                            } else if (typeof inputEl.selectionStart !== 'undefined') {
+                                inputEl.selectionStart = inputEl.selectionEnd = len;
+                            }
+                        } catch (err) {}
+                    }, 10);
+                } catch (err) {}
                 setTimeout(() => { try { inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) {} }, 80);
                 // Stop the following synthesized click from triggering buttons or submits
                 try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } catch (err) {}

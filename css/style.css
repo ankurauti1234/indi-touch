@@ -1168,19 +1168,57 @@ body {
     margin-top: 8px;
 }
 
+/* =========================================================
+   CHIP "BUTTON" SYSTEM
+   ========================================================= */
+
+/* Base Button Properties for the Div */
 .chip {
     padding: 8px 24px;
     border-radius: 100px;
     border: 1px solid var(--text-sub);
     cursor: pointer;
     font-weight: 500;
-    transition: 0.2s;
+    color: var(--text-main);
+    background: transparent;
+
+    /* Makes it behave like a real UI button */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
+/* 1. Unselected Hover / Focus State */
+.chip:hover,
+.chip.focused,
+.chip.remoteFocused {
+    background: var(--bg-card-hover) !important;
+    border-color: var(--text-main) !important;
+}
+
+/* 2. Selected Base State */
 .chip.selected {
-    background: var(--primary);
-    color: var(--on-primary);
-    border-color: transparent;
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    border-color: transparent !important;
+}
+
+/* 3. Selected Hover / Focus State (Matches your Universal Button System!) */
+.chip.selected:hover,
+.chip.selected.focused,
+.chip.selected.remoteFocused,
+body.light-mode .chip.selected.remoteFocused {
+    background: var(--on-primary) !important;
+    color: var(--primary) !important;
+    border: 1px solid var(--primary) !important;
+    outline: none !important;
+}
+
+/* 4. The Physical Click Effect */
+.chip:active {
+    transform: scale(0.95);
 }
 
 .action-btn {

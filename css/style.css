@@ -2768,7 +2768,10 @@ body.osk-open .main-stage {
     display: grid;
     grid-template-columns: repeat(2, 1fr) !important;
     grid-auto-rows: 180px !important;
-    gap: 12px !important;
+
+    /* FIX: Added the 20px gap directly here as requested */
+    gap: 20px !important;
+
     padding: 32px 12px 0 12px !important;
     scroll-padding-top: 32px !important;
     scroll-padding-bottom: 96px !important;
@@ -2785,7 +2788,7 @@ body.osk-open .main-stage {
     height: 34px;
 }
 
-/* 2. Group Cards (Height unchanged) */
+/* 2. Group Cards */
 .group-card {
     min-height: 180px !important;
     max-height: 180px !important;
@@ -2795,6 +2798,13 @@ body.osk-open .main-stage {
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
+
+    /* HARDWARE LOCK ANIMATION: 
+       We only animate 'transform' and 'box-shadow'. 
+       No 'all', no border animations. This prevents UI thrashing. */
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out !important;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
 }
 
 .group-card.wide-card,

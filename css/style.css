@@ -3080,7 +3080,7 @@ body.light-mode .modal-content .group-member-item {
 /* Selected state overrides */
 #edit-popup-container .group-member-item.selected,
 .popover-card .group-member-item.selected {
-    background: var(--surface-variant, rgba(100, 210, 154, 0.15)) !important;
+    /* background: var(--surface-variant, rgba(100, 210, 154, 0.15)) !important; */
     border-color: var(--primary) !important;
 }
 

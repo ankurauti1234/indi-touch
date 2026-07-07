@@ -582,24 +582,10 @@ export function initRemote() {
             case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
             case 'Enter':
                 e.preventDefault();
-
-                // Hardware lock prevents rapid-fire ghost inputs
-                if (e.repeat || isKeyLocked) return;
-                isKeyLocked = true;
-
+                // [Keep your existing Enter/Long-Press logic here]
                 wasLongPress = false;
-
                 enterHoldTimer = setTimeout(() => {
                     wasLongPress = true;
-
-                    // Surgical visual pulse - safely toggles the class
-                    if (remoteFocusEl) {
-                        remoteFocusEl.classList.add('remote-pressing');
-                        setTimeout(() => {
-                            if (remoteFocusEl) remoteFocusEl.classList.remove('remote-pressing');
-                        }, 200);
-                    }
-
                     handleLongPress();
                 }, 600);
                 break;

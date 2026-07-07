@@ -57,6 +57,8 @@ body.light-mode {
     --error: #B3261E;
     --on-error: #FFFFFF;
 
+    --surface-variant: #d0cdd4;
+
     --green-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
     --green-border: #2E7D32;
 

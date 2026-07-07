@@ -3078,16 +3078,16 @@ body.light-mode .modal-content .group-member-item {
 }
 
 /* Selected state overrides */
-/* #edit-popup-container .group-member-item.selected,
+#edit-popup-container .group-member-item.selected,
 .popover-card .group-member-item.selected {
-    background: var(--primary-container, rgba(100, 210, 154, 0.15)) !important;
+    background: var(--surface-variant, rgba(100, 210, 154, 0.15)) !important;
     border-color: var(--primary) !important;
 }
 
 #edit-popup-container .group-member-item.selected .group-member-name,
 .popover-card .group-member-item.selected .group-member-name {
     color: var(--on-primary-container, var(--text-main)) !important;
-} */
+}
 
 
 

@@ -3022,6 +3022,41 @@ body.light-mode .group-card.focused.remote-pressing {
     backface-visibility: hidden !important;
 }
 
+/* --- FIXED: OVERLAY MEMBER LIST THEME RESOLUTION --- */
+#edit-popup-container .group-member-item,
+.popover-card .group-member-item,
+.modal-content .group-member-item {
+    background: var(--bg-surface-container-high, rgba(255, 255, 255, 0.05)) !important;
+    border: 1px solid var(--outline-variant, transparent) !important;
+}
+
+body.light-mode #edit-popup-container .group-member-item,
+body.light-mode .popover-card .group-member-item,
+body.light-mode .modal-content .group-member-item {
+    background: var(--secondary-container) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+#edit-popup-container .group-member-name,
+.popover-card .group-member-name,
+.modal-content .group-member-name {
+    color: var(--text-main) !important;
+}
+
+/* Selected state overrides */
+#edit-popup-container .group-member-item.selected,
+.popover-card .group-member-item.selected {
+    background: var(--primary-container, rgba(100, 210, 154, 0.15)) !important;
+    border-color: var(--primary) !important;
+}
+
+#edit-popup-container .group-member-item.selected .group-member-name,
+.popover-card .group-member-item.selected .group-member-name {
+    color: var(--on-primary-container, var(--text-main)) !important;
+}
+
+
+
 /* =========================================================
    TOUCH INTERACTIVITY RESTORATION OVERRIDE
    ========================================================= */
@@ -3044,4 +3079,25 @@ input.input-box,
 .form-area,
 .list-item .item-content {
     pointer-events: auto !important;
+}
+
+/* --- UNIVERSAL HOVER COLOR LOCKS --- */
+.action-btn,
+.modal-btn.primary,
+.conn-btn-primary {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    transition: filter 0.2s, transform 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+/* Force buttons to remain perfectly readable across both light & dark engines */
+.action-btn:hover,
+.modal-btn.primary:hover,
+.conn-btn-primary:hover,
+.action-btn.focused,
+.modal-btn.primary.focused {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    filter: brightness(0.88) contrast(1.1) !important;
+    /* Elegant modern shift instead of vanishing */
 }

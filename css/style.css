@@ -2018,6 +2018,7 @@ body.osk-open .main-stage {
     justify-content: center;
     opacity: 0;
     transition: 0.3s;
+    background: var(--scrim-popover);
 }
 
 .popover-overlay.active {
@@ -2033,6 +2034,7 @@ body.osk-open .main-stage {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     transform: scale(0.9);
     transition: 0.3s cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: var(--shadow-popover);
 }
 
 .popover-overlay.active .popover-card {
@@ -2071,7 +2073,7 @@ body.osk-open .main-stage {
     background: transparent;
     border: none;
     padding: 12px 0;
-    color: #fff;
+    color: var(--text-main);
     font-size: 18px;
     outline: none;
 }
@@ -2668,19 +2670,24 @@ body.osk-open .main-stage {
 }
 
 .group-card.create-card {
-    border: 2px dashed rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.02);
+    /* Uses your custom outline variable instead of hardcoded white alpha */
+    border: 2px dashed var(--outline) !important;
+    background: transparent !important;
     flex-direction: column;
     gap: 8px;
     justify-content: center;
     align-items: center;
-    color: rgba(255, 255, 255, 0.7);
+    /* Uses your system sub-text color */
+    color: var(--text-sub) !important;
 }
 
-.group-card.create-card:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.5);
-    color: white;
+.group-card.create-card:hover,
+.group-card.create-card.focused,
+.group-card.create-card.remoteFocused {
+    /* Transitions seamlessly into your hover surface */
+    background: var(--bg-card-hover) !important;
+    border-color: var(--text-main) !important;
+    color: var(--text-main) !important;
 }
 
 .group-card.create-card span {

@@ -32,6 +32,11 @@
     --radius-app: 32px;
     --radius-card: 28px;
     --radius-pill: 100px;
+
+    --scrim-modal: rgba(0, 0, 0, 0.85);
+    --scrim-popover: rgba(0, 0, 0, 0.6);
+    --shadow-modal: 0 10px 40px rgba(0, 0, 0, 0.5);
+    --shadow-popover: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
 body.light-mode {
@@ -54,4 +59,11 @@ body.light-mode {
 
     --green-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
     --green-border: #2E7D32;
+
+    --scrim-modal: rgba(255, 255, 255, 0.85);
+    /* Frosted white for light mode */
+    --scrim-popover: rgba(255, 255, 255, 0.6);
+    --shadow-modal: 0 10px 40px rgba(0, 0, 0, 0.15);
+    /* Softer, lighter shadow */
+    --shadow-popover: 0 20px 60px rgba(0, 0, 0, 0.15);
 }

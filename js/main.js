@@ -155,6 +155,8 @@ document.addEventListener('touchend', e => {
                 // Programmatically focus; keyboard.js listens for focusin to show OSK
                 inputEl.focus({ preventScroll: false });
                 setTimeout(() => { try { inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) {} }, 80);
+                // Stop the following synthesized click from triggering buttons or submits
+                try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } catch (err) {}
                 return;
             }
         } catch (err) {

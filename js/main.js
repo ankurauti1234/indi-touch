@@ -142,6 +142,13 @@ document.addEventListener('touchend', e => {
         try {
             const findInputFromTouch = (t) => {
                 if (!t) return null;
+
+                // Never hijack explicit button/back interactions.
+                const buttonLike = t.closest && t.closest('button, .back-btn, .modal-btn, .action-btn, .chip');
+                if (buttonLike && !t.matches && !t.matches('input,textarea')) {
+                    return null;
+                }
+
                 if (t.matches && t.matches('input,textarea')) return t;
                 const ancInput = t.closest && t.closest('input,textarea');
                 if (ancInput) return ancInput;
@@ -165,12 +172,12 @@ document.addEventListener('touchend', e => {
                             } else if (typeof inputEl.selectionStart !== 'undefined') {
                                 inputEl.selectionStart = inputEl.selectionEnd = len;
                             }
-                        } catch (err) {}
+                        } catch (err) { }
                     }, 10);
-                } catch (err) {}
-                setTimeout(() => { try { inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) {} }, 80);
+                } catch (err) { }
+                setTimeout(() => { try { inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) { } }, 80);
                 // Stop the following synthesized click from triggering buttons or submits
-                try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } catch (err) {}
+                try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } catch (err) { }
                 return;
             }
         } catch (err) {

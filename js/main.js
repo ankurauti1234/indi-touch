@@ -137,55 +137,8 @@ document.addEventListener('touchend', e => {
     const endY = e.changedTouches[0].clientY;
     const deltaY = startY - endY;
 
-    // If this was a small tap (not a swipe), try to focus inputs under the touch
-    if (Math.abs(deltaY) < 50) {
-        try {
-            const findInputFromTouch = (t) => {
-                if (!t) return null;
-
-                // Never hijack explicit button/back interactions.
-                const buttonLike = t.closest && t.closest('button, .back-btn, .modal-btn, .action-btn, .chip');
-                if (buttonLike && !t.matches && !t.matches('input,textarea')) {
-                    return null;
-                }
-
-                if (t.matches && t.matches('input,textarea')) return t;
-                const ancInput = t.closest && t.closest('input,textarea');
-                if (ancInput) return ancInput;
-                const container = t.closest && t.closest('.list-item, .group-member-item, .item-content, #view-guest, #view-settings, #group-members-list');
-                if (container) return container.querySelector('input,textarea');
-                return null;
-            };
-
-            const inputEl = findInputFromTouch(e.target);
-            if (inputEl) {
-                // Programmatically focus; keyboard.js listens for focusin to show OSK
-                inputEl.focus({ preventScroll: false });
-                // Move caret to end of existing text so user can delete/append naturally
-                try {
-                    const len = inputEl.value ? inputEl.value.length : 0;
-                    // Delay slightly to ensure focus applied in all WebEngine contexts
-                    setTimeout(() => {
-                        try {
-                            if (typeof inputEl.setSelectionRange === 'function') {
-                                inputEl.setSelectionRange(len, len);
-                            } else if (typeof inputEl.selectionStart !== 'undefined') {
-                                inputEl.selectionStart = inputEl.selectionEnd = len;
-                            }
-                        } catch (err) { }
-                    }, 10);
-                } catch (err) { }
-                setTimeout(() => { try { inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) { } }, 80);
-                // Stop the following synthesized click from triggering buttons or submits
-                try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } catch (err) { }
-                return;
-            }
-        } catch (err) {
-            console.error('tap->focus helper failed', err);
-        }
-
-        return;
-    }
+    // Ignore small touches
+    if (Math.abs(deltaY) < 50) return;
 
     const activeView = document.querySelector('.view.active');
     if (!activeView) return;
@@ -221,27 +174,12 @@ document.addEventListener('touchend', e => {
 });
 
 document.addEventListener('click', (e) => {
-    // Only swallow the very next click if it was set by the screensaver wake-lock
-    // and the click is not targeting a genuine interactive element (inputs/buttons/modals).
+
     if (!consumeNextClick) {
         return;
     }
 
     consumeNextClick = false;
-
-    // Only perform swallowing in the explicit screensaver wake scenario
-    const wakeLockActive = document.body.dataset.screensaverWakeLock === '1';
-    if (!wakeLockActive) {
-        return; // allow the click through for other consumeNextClick reasons
-    }
-
-    // If the user tapped an input, textarea, select, button, or inside a modal/list-item,
-    // do not swallow — allow native behavior to proceed.
-    const target = e.target;
-    const interactive = target.closest && target.closest('input, textarea, select, button, .modal-card, .popover-card, .group-card, .list-item, #group-modal-overlay, #wifi-password-overlay, #alert-modal');
-    if (interactive) {
-        return; // allow event to reach the interactive element
-    }
 
     e.preventDefault();
     e.stopPropagation();

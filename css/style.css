@@ -1364,8 +1364,8 @@ body {
 .modal-btn.primary.focused,
 .modal-btn.primary.remoteFocused,
 body.light-mode .modal-btn.primary.remoteFocused {
-    background: var(--primary) !important;
-    color: var(--on-primary) !important;
+    background: var(--on-primary) !important;
+    color: var(--primary) !important;
     filter: brightness(0.85);
 }
 

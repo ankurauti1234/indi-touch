@@ -2940,7 +2940,7 @@ body.light-mode .group-card.focused.remote-pressing {
 .modal-body {
     display: flex !important;
     flex-direction: row !important;
-    gap: 24px !important;
+    gap: 4px !important;
     height: calc(100% - 20px) !important;
     /* Subtracting header space */
     width: 100% !important;

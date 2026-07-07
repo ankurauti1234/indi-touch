@@ -1210,7 +1210,7 @@ body {
 .chip.selected.focused,
 .chip.selected.remoteFocused,
 body.light-mode .chip.selected.remoteFocused {
-    background: var(--on-primary) !important;
+    background: var(--bg-card-hover) !important;
     color: var(--text-main) !important;
     border: 1px solid var(--primary) !important;
     outline: none !important;

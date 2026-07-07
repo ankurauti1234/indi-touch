@@ -2097,54 +2097,63 @@ body.osk-open .main-stage {
 }
 
 /* =========================================================
-   INPUT FIELD V2 CONTAINER ADJUSTMENTS
+   INPUT FIELD V2 (FIXED FOR REMOTE FOCUS)
    ========================================================= */
+
+/* 1. The Wrapper */
 .input-field-v2 {
     background: var(--bg-card);
     border: 2px solid var(--surface-variant);
     border-radius: 12px;
-    padding: 4px 16px;
+    padding: 0 !important;
+    /* CRITICAL: Removed padding so inner input can span edge-to-edge */
     display: flex;
     align-items: center;
     margin-bottom: 32px;
     transition: background 0.2s, border-color 0.2s;
 }
 
-/* 1. Shift the Focus / Hover effect to the entire wrapper box */
-.input-field-v2:hover,
-.input-field-v2:focus-within,
-.input-field-v2.focused,
-.input-field-v2.remoteFocused {
-    border-color: var(--primary) !important;
-    background: var(--bg-card-hover) !important;
-    /* Fully consumes the whole container */
+/* Native click border highlight */
+.input-field-v2:focus-within {
+    border-color: var(--primary);
 }
 
-/* 2. Strip any background/hover clips from the raw inner input */
+/* 2. The Input (Now fills the container completely) */
 .input-field-v2 input {
     flex: 1;
-    background: transparent !important;
+    background: transparent;
     border: none !important;
-    padding: 12px 0;
+    padding: 16px !important;
+    /* CRITICAL: Moved wrapper's padding into the input */
     color: var(--text-main);
     font-size: 18px;
     outline: none !important;
+    border-radius: 10px;
+    /* Matches the inner curve of the wrapper */
+    height: 100%;
+    box-sizing: border-box;
 }
 
-/* Remove competing focus highlights from the internal element */
+/* 3. The Hover & Remote Focus (Safely targets the input now) */
 .input-field-v2 input:hover,
 .input-field-v2 input.focused,
 .input-field-v2 input.remoteFocused {
-    background: transparent !important;
-    box-shadow: none !important;
+    background: var(--bg-card-hover) !important;
+    /* Optional: if you want the box shadow ring to appear perfectly around the input */
+    border-radius: 10px !important;
 }
 
+/* 4. Formatting for the Eye Toggle (If you have a password reveal button inside) */
 .eye-toggle {
-    background: none;
-    border: none;
-    color: var(--text-sub);
-    cursor: pointer;
-    padding: 8px;
+    padding: 16px !important;
+    border-radius: 0 10px 10px 0;
+    height: 100%;
+    margin: 0;
+}
+
+.eye-toggle:hover,
+.eye-toggle.remoteFocused {
+    background: var(--bg-card-hover) !important;
 }
 
 .popover-actions {

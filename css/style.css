@@ -3081,40 +3081,9 @@ input.input-box,
     pointer-events: auto !important;
 }
 
-/* --- UNIVERSAL HOVER COLOR LOCKS --- */
-.action-btn,
-.modal-btn.primary,
-.conn-btn-primary {
-    background: var(--primary) !important;
-    color: var(--on-primary) !important;
-    transition: filter 0.2s, transform 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
-}
-
-/* Force buttons to remain perfectly readable across both light & dark engines */
-.action-btn:hover,
-.modal-btn.primary:hover,
-.conn-btn-primary:hover,
-.action-btn.focused,
-.modal-btn.primary.focused {
-    background: var(--primary) !important;
-    color: var(--on-primary) !important;
-    filter: brightness(0.88) contrast(1.1) !important;
-    /* Elegant modern shift instead of vanishing */
-}
-
 /* Lock selected text color */
 #edit-popup-container .group-member-item.selected .group-member-name,
 .popover-card .group-member-item.selected .group-member-name,
 .modal-content .group-member-item.selected .group-member-name {
     color: var(--text-main) !important;
-}
-
-/* Lock primary button hover states */
-body.light-mode .modal-btn.primary:hover,
-body.light-mode .action-btn:hover,
-body.light-mode [class*="btn"].primary:hover {
-    background-color: var(--primary) !important;
-    color: #ffffff !important;
-    border: none !important;
-    filter: brightness(0.9) !important;
 }

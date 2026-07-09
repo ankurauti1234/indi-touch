@@ -94,9 +94,13 @@ function handleSwipe() {
 
     if (Math.abs(deltaY) > SWIPE_THRESHOLD && Math.abs(deltaY) > Math.abs(deltaX)) {
 
-        // STRICT LOCK: Never switch tabs if touching a scrollable list.
+        // SMART LOCK: Only block if actually scrolling.
         if (activeScrollableElement) {
-            return;
+            const scrollTop = activeScrollableElement.scrollTop;
+            const maxScroll = activeScrollableElement.scrollHeight - activeScrollableElement.clientHeight;
+
+            if (deltaY < 0 && scrollTop < maxScroll - 2) return;
+            if (deltaY > 0 && scrollTop > 2) return;
         }
 
         if (deltaY < 0) {

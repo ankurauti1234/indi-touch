@@ -9,7 +9,13 @@ import {
     getGridCols
 } from './grid.js';
 import { resetIdle } from './screensaver.js';
-import { getActiveInput } from './keyboard.js';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+// Two zones: 'nav' (left rail) and 'content' (active view)
+let zone = 'content';
+let navFocusIdx = 0;
+let contentFocusIdx = 0;
+let remoteFocusEl = null; // element holding .remoteFocused (null when home grid is content zone)
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 export function isRemoteMode() {
@@ -22,17 +28,20 @@ function isVisible(el) {
     return r.width > 0 && r.height > 0;
 }
 
-// ─── State ────────────────────────────────────────────────────────────────────
-let zone = 'content';
-let navFocusIdx = 0;
-let contentFocusIdx = 0;
-let lastBackgroundIdx = 0; // NEW: Memory for when modals close
-let remoteFocusEl = null;
+function clearFocusEl() {
+    if (remoteFocusEl) {
+        remoteFocusEl.classList.remove('remoteFocused');
+        remoteFocusEl = null;
+    }
+}
 
-// Long-press state variables
-let enterHoldTimer = null;
-let wasLongPress = false;
-let isKeyLocked = false; // NEW: The hardware ghost-input padlock
+function setFocusEl(el) {
+    clearFocusEl();
+    if (!el) return;
+    el.classList.add('remoteFocused');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    remoteFocusEl = el;
+}
 
 // ─── Context detectors ────────────────────────────────────────────────────────
 function isOnboarding() {
@@ -41,114 +50,37 @@ function isOnboarding() {
 }
 
 function isScreensaverActive() {
-    const s = document.getElementById('screensaver');
-    return Boolean(s?.classList.contains('active'));
+    return !!document.getElementById('screensaver')?.classList.contains('active');
 }
 
 function getOverlayItems() {
+    // Connection warning popups take highest priority
     const wifiWarn = document.getElementById('wifi-warning-overlay');
     if (wifiWarn?.classList.contains('visible'))
         return [...wifiWarn.querySelectorAll('button')].filter(isVisible);
+
+    // USB popup has no buttons — skip (user can't dismiss it by remote)
 
     const critical = document.getElementById('critical-popover');
     if (critical?.classList.contains('active'))
         return [...critical.querySelectorAll('button')].filter(isVisible);
 
-    const alertModal = document.getElementById('alert-modal');
-    if (alertModal)
-        return [...alertModal.querySelectorAll('button')].filter(isVisible);
-
-    const dupModal = document.getElementById('duplicate-modal');
-    if (dupModal)
-        return [...dupModal.querySelectorAll('button')].filter(isVisible);
-
-    const deleteModal = document.getElementById('delete-confirm-modal');
-    if (deleteModal)
-        return [...deleteModal.querySelectorAll('button')].filter(isVisible);
+    const modal = document.getElementById('modal-overlay');
+    if (modal?.classList.contains('active'))
+        return [...modal.querySelectorAll('.modal-btn')].filter(isVisible);
 
     const wifi = document.getElementById('wifi-password-overlay');
     if (wifi?.classList.contains('active'))
         return [...wifi.querySelectorAll('button:not([disabled])')].filter(isVisible);
 
-    const modal = document.getElementById('group-modal-overlay');
-    if (modal?.classList.contains('active')) {
-        const sel = 'input, button:not([disabled]), .group-member-item, .modal-btn, #btn-group-delete';
-        return [...modal.querySelectorAll(sel)].filter(isVisible);
-    }
-
-    return null;
+    return null; // null = no overlay open
 }
-
-// Helper to know if we are in the main UI vs stuck in a popup
-function isBackgroundContext() {
-    const osk = document.getElementById('osk-container');
-    if (osk?.classList.contains('visible')) return false;
-    if (getOverlayItems() !== null) return false;
-    if (isOnboarding()) return false;
-    if (isScreensaverActive()) return false;
-    return true;
-}
-
-function clearFocusEl() {
-    if (remoteFocusEl) {
-        remoteFocusEl.classList.remove('remoteFocused');
-        remoteFocusEl = null;
-    }
-}
-
-function setFocusEl(el, options = {}) {
-    if (!el) return;
-
-    const { scroll = true } = options;
-    const isSameElement = remoteFocusEl === el;
-
-    if (isSameElement) {
-        if (!el.classList.contains('remoteFocused')) {
-            el.classList.add('remoteFocused');
-        }
-        return;
-    }
-
-    if (remoteFocusEl && remoteFocusEl !== el) {
-        remoteFocusEl.classList.remove('remoteFocused');
-    }
-
-    if (!el.classList.contains('remoteFocused')) {
-        el.classList.add('remoteFocused');
-    }
-
-    if (scroll) {
-        const rect = el.getBoundingClientRect();
-        const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
-        if (!isInView) {
-            el.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-        }
-    }
-
-    remoteFocusEl = el;
-}
-
-window.resetRemoteFocus = function () {
-    setTimeout(() => {
-        const items = getContentItems();
-        if (items.length) {
-            if (!isBackgroundContext()) {
-                // Modal opened -> Focus first item in modal
-                contentFocusIdx = 0;
-            } else {
-                // Modal closed -> Restore memory so hover stays where it was!
-                contentFocusIdx = Math.max(0, Math.min(lastBackgroundIdx, items.length - 1));
-            }
-            setFocusEl(items[contentFocusIdx]);
-        }
-    }, 50);
-};
 
 function isHomeGrid() {
     return !isOnboarding() &&
-        !isScreensaverActive() &&
-        getOverlayItems() === null &&
-        !!document.getElementById('view-home')?.classList.contains('active');
+           !isScreensaverActive() &&
+           getOverlayItems() === null &&
+           !!document.getElementById('view-home')?.classList.contains('active');
 }
 
 // ─── Nav rail ─────────────────────────────────────────────────────────────────
@@ -157,41 +89,18 @@ function getNavItems() {
     return [...document.querySelectorAll('#app-frame .nav-btn')].filter(isVisible);
 }
 
-// ─── HELPER: Tab Switcher ─────────────────────────────────────────────────────
-function triggerTabSwitch(dir) {
-    const navs = getNavItems();
-    if (!navs.length) return;
-
-    let currentIdx = navs.findIndex(n => n.classList.contains('active'));
-    if (currentIdx === -1) currentIdx = navFocusIdx;
-
-    let nextIdx = dir === 'prev' ? currentIdx - 1 : currentIdx + 1;
-
-    // SCROLL LOCK: Prevent wrapping from top to bottom or bottom to top
-    if (nextIdx < 0) {
-        return; // Reached the top (Home), STOP. Do not wrap.
-    } else if (nextIdx >= navs.length) {
-        return; // Reached the bottom (Settings), STOP. Do not wrap.
-    }
-
-    navFocusIdx = nextIdx;
-    navs[nextIdx].click();
-
-    // Keep focus synced on the nav rail visually if we are in the nav zone
-    if (zone === 'nav') {
-        setFocusEl(navs[nextIdx]);
-    }
-}
-
-// ─── Content items for current view ───────────────────────────────────────────
+// ─── Content items for current view (never includes nav rail) ─────────────────
 function getContentItems() {
+    // 1. Overlays take priority
+    const overlay = getOverlayItems();
+    if (overlay !== null) return overlay;
+
+    // 2. OSK open anywhere (wifi password, onboarding, etc.)
     const osk = document.getElementById('osk-container');
     if (osk?.classList.contains('visible'))
         return [...osk.querySelectorAll('.osk-key')].filter(isVisible);
 
-    const overlay = getOverlayItems();
-    if (overlay !== null) return overlay;
-
+    // 3. Onboarding
     if (isOnboarding()) {
         const step = document.querySelector('#onboarding-layer .step.active');
         return step
@@ -199,17 +108,15 @@ function getContentItems() {
             : [];
     }
 
+    // 4. Screensaver — nothing focusable
     if (isScreensaverActive()) return [];
 
+    // 5. Main app
     const activeView = document.querySelector('#app-frame .view.active');
     if (!activeView) return [];
 
     if (activeView.id === 'view-home') {
         return [...activeView.querySelectorAll('.member-card')].filter(isVisible);
-    }
-
-    if (activeView.id === 'view-groups') {
-        return [...activeView.querySelectorAll('.group-card')].filter(isVisible);
     }
 
     if (activeView.id === 'view-settings') {
@@ -227,8 +134,10 @@ function enterNavZone() {
     const navItems = getNavItems();
     if (!navItems.length) return;
 
+    // Clear grid focus if leaving home grid
     clearGridFocus();
 
+    // Pick nav item closest vertically to current position
     if (remoteFocusEl) {
         const curY = remoteFocusEl.getBoundingClientRect().top;
         let bestIdx = 0, bestDist = Infinity;
@@ -246,11 +155,14 @@ function enterNavZone() {
 // ─── Zone: CONTENT ────────────────────────────────────────────────────────────
 function enterContentZone() {
     zone = 'content';
-    clearFocusEl();
+    clearFocusEl(); // grid.js manages its own .focused class
 
     if (isHomeGrid()) {
+        // Grid.js already shows the focused card with .focused class
+        // Just make sure contentFocusIdx is within bounds
         const cards = getContentItems();
         if (contentFocusIdx >= cards.length) contentFocusIdx = 0;
+        // No remoteFocusEl needed — grid.js handles visuals
         return;
     }
 
@@ -261,79 +173,72 @@ function enterContentZone() {
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 function navigate(direction) {
+    // Wake screensaver on any navigation key
     if (isScreensaverActive()) {
         resetIdle();
+        // Restore previous focus context
         setTimeout(() => enterContentZone(), 100);
         return;
     }
 
+    // ── NAV ZONE ──────────────────────────────────────────────────────────────
     if (zone === 'nav') {
         const navItems = getNavItems();
         if (!navItems.length) { enterContentZone(); return; }
 
         if (direction === 'up') {
-            navFocusIdx = Math.max(0, navFocusIdx - 1);
+            navFocusIdx = (navFocusIdx - 1 + navItems.length) % navItems.length;
             setFocusEl(navItems[navFocusIdx]);
         } else if (direction === 'down') {
-            navFocusIdx = Math.min(navItems.length - 1, navFocusIdx + 1);
+            navFocusIdx = (navFocusIdx + 1) % navItems.length;
             setFocusEl(navItems[navFocusIdx]);
         } else if (direction === 'right') {
             enterContentZone();
         }
+        // Left from nav = edge, do nothing
         return;
     }
 
+    // ── CONTENT ZONE – HOME GRID (2D) ─────────────────────────────────────────
     if (isHomeGrid()) {
-        const cols = getGridCols();
-        const idx = getFocusedGridIndex();
-        const homeItems = getContentItems();
-
-        if (direction === 'left' && idx % cols === 0) {
-            enterNavZone();
-            return;
+        if (direction === 'left') {
+            // At leftmost column → jump to nav zone
+            const cols = getGridCols();
+            const idx = getFocusedGridIndex();
+            if (idx % cols === 0) {
+                enterNavZone();
+                return;
+            }
         }
         if (direction === 'up') {
-            if (homeItems.length === 0 || idx < cols) {
-                triggerTabSwitch('prev');
+            // At top row → jump to nav zone
+            const cols = getGridCols();
+            const idx = getFocusedGridIndex();
+            if (idx < cols) {
+                enterNavZone();
                 return;
             }
         }
-        if (direction === 'down') {
-            if (homeItems.length === 0 || idx + cols >= homeItems.length) {
-                triggerTabSwitch('next');
-                return;
-            }
-        }
-
+        // Delegate 2D movement to grid.js
         gridMoveFocus(direction);
         return;
     }
 
-    const activeView = document.querySelector('#app-frame .view.active');
-    const isGroupsView = activeView && activeView.id === 'view-groups';
-
-    const osk = document.getElementById('osk-container');
-    const isOskVisible = osk?.classList.contains('visible');
-    const isOverlayActive = getOverlayItems() !== null;
-
-    if (direction === 'left' && !isOskVisible && !isGroupsView && !isOverlayActive) {
+    // ── CONTENT ZONE – LINEAR LIST ────────────────────────────────────────────
+    // Left always escapes to nav zone, UNLESS OSK is open
+    if (direction === 'left' && !document.getElementById('osk-container')?.classList.contains('visible')) {
         enterNavZone();
         return;
     }
 
     const items = getContentItems();
+    if (!items.length) return;
 
-    if (!items.length) {
-        if (direction === 'up') triggerTabSwitch('prev');
-        else if (direction === 'down') triggerTabSwitch('next');
-        else if (direction === 'left') enterNavZone();
-        return;
-    }
-
-    if (isOskVisible || isGroupsView || isOverlayActive) {
+    // -- 2D OSK Navigation --
+    if (document.getElementById('osk-container')?.classList.contains('visible')) {
         const curEl = items[contentFocusIdx];
         if (!curEl) { contentFocusIdx = 0; setFocusEl(items[0]); return; }
-
+        
         const curBox = curEl.getBoundingClientRect();
         let bestIdx = -1;
         let bestDist = Infinity;
@@ -341,7 +246,8 @@ function navigate(direction) {
         items.forEach((item, i) => {
             if (i === contentFocusIdx) return;
             const box = item.getBoundingClientRect();
-
+            
+            // Filter by direction
             let isCorrectDir = false;
             let dist = 0;
 
@@ -350,18 +256,18 @@ function navigate(direction) {
             const targetCX = box.left + box.width / 2;
             const targetCY = box.top + box.height / 2;
 
-            if (direction === 'up' && targetCY < curCY - curBox.height / 2) {
+            if (direction === 'up' && targetCY < curCY - curBox.height/2) {
                 isCorrectDir = true;
                 dist = Math.pow(targetCY - curCY, 2) * 2 + Math.pow(targetCX - curCX, 2);
-            } else if (direction === 'down' && targetCY > curCY + curBox.height / 2) {
+            } else if (direction === 'down' && targetCY > curCY + curBox.height/2) {
                 isCorrectDir = true;
                 dist = Math.pow(targetCY - curCY, 2) * 2 + Math.pow(targetCX - curCX, 2);
             } else if (direction === 'left' && targetCX < curBox.left) {
                 isCorrectDir = true;
-                dist = Math.pow(targetCX - curCX, 2) + Math.pow(targetCY - curCY, 2) * 50;
+                dist = Math.pow(targetCX - curCX, 2) + Math.pow(targetCY - curCY, 2) * 4;
             } else if (direction === 'right' && targetCX > curBox.right) {
                 isCorrectDir = true;
-                dist = Math.pow(targetCX - curCX, 2) + Math.pow(targetCY - curCY, 2) * 50;
+                dist = Math.pow(targetCX - curCX, 2) + Math.pow(targetCY - curCY, 2) * 4;
             }
 
             if (isCorrectDir && dist < bestDist) {
@@ -373,99 +279,42 @@ function navigate(direction) {
         if (bestIdx !== -1) {
             contentFocusIdx = bestIdx;
             setFocusEl(items[contentFocusIdx]);
-        } else {
-            if (isOskVisible && direction === 'down') {
-                const currentInput = getActiveInput();
-
-                osk.classList.remove('visible');
-                document.body.classList.remove('osk-open');
-
-                if (currentInput) {
-                    currentInput.blur();
-                }
-
-                setTimeout(() => {
-                    const newItems = getContentItems();
-                    let targetIdx = 0;
-                    if (currentInput) {
-                        const foundIdx = newItems.indexOf(currentInput);
-                        if (foundIdx !== -1) targetIdx = foundIdx;
-                    }
-                    if (newItems.length > 0) {
-                        contentFocusIdx = targetIdx;
-                        setFocusEl(newItems[contentFocusIdx]);
-                    }
-                }, 100);
-
-                return;
-            }
-
-            if (direction === 'left' && isGroupsView && !isOverlayActive) {
-                enterNavZone();
-            } else if (direction === 'up' && !isOskVisible && !isOverlayActive) {
-                triggerTabSwitch('prev');
-            } else if (direction === 'down' && !isOskVisible && !isOverlayActive) {
-                triggerTabSwitch('next');
-            }
         }
         return;
     }
 
-    // ---- BOTTOM OF navigate() ----
-
-    // We REMOVED the duplicate "const items = getContentItems();" 
-    // and "const activeView = ..." because they were already declared higher up in the function!
-
-    // Strict Lock: Only lock tabs if we are actually in the Settings view AND see a back button
-    const isSettings = activeView && activeView.id === 'view-settings';
-    const isDeepMenu = isSettings && items.some(el => el.classList.contains('back-btn'));
-
+    // -- Default Linear List Navigation --
+    // Up → previous; Down / Right → next
     if (direction === 'up') {
-        if (contentFocusIdx === 0) {
-            if (!isDeepMenu) triggerTabSwitch('prev');
-            return;
-        }
-        contentFocusIdx = contentFocusIdx - 1;
-    } else if (direction === 'down' || direction === 'right') {
-        if (direction === 'down' && contentFocusIdx === items.length - 1) {
-            if (!isDeepMenu) triggerTabSwitch('next');
-            return;
-        }
-        if (contentFocusIdx < items.length - 1) {
-            contentFocusIdx = contentFocusIdx + 1;
-        }
+        contentFocusIdx = (contentFocusIdx - 1 + items.length) % items.length;
+    } else {
+        contentFocusIdx = (contentFocusIdx + 1) % items.length;
     }
 
-    const targetEl = items[contentFocusIdx];
-    if (remoteFocusEl !== targetEl) {
-        setFocusEl(targetEl);
-    }
+    setFocusEl(items[contentFocusIdx]);
 }
 
-// ─── Activation (Short Press) ─────────────────────────────────────────────────
+// ─── Activation ───────────────────────────────────────────────────────────────
 function activate() {
-    if (isScreensaverActive()) return;
+    if (isScreensaverActive()) return; // click event already calls resetIdle
 
+    // Home grid content zone → toggle focused member
     if (isHomeGrid() && zone === 'content') {
         gridToggleFocused();
         return;
     }
 
+    // Everything else → click the focused element
     if (remoteFocusEl) {
         const el = remoteFocusEl;
         el.click();
-
+        // After click, context may have changed (new panel, modal, etc.) — refresh
         setTimeout(() => {
             if (zone === 'content') {
                 const items = getContentItems();
                 if (items.length) {
-                    if (contentFocusIdx >= items.length) {
-                        contentFocusIdx = Math.max(0, items.length - 1);
-                    }
-                    // Re-apply focus safely if it got lost in the click event
-                    if (!remoteFocusEl || !document.body.contains(remoteFocusEl)) {
-                        setFocusEl(items[contentFocusIdx]);
-                    }
+                    if (contentFocusIdx >= items.length) contentFocusIdx = 0;
+                    setFocusEl(items[contentFocusIdx]);
                 }
             } else {
                 const navItems = getNavItems();
@@ -476,42 +325,17 @@ function activate() {
     }
 }
 
-// ─── NEW: Long Press Engine ───────────────────────────────────────────────────
-function handleLongPress() {
-    if (!remoteFocusEl) return;
-
-    if (remoteFocusEl.classList.contains('group-card')) {
-        let editBtn = null;
-
-        const elements = remoteFocusEl.querySelectorAll('*');
-        for (let el of elements) {
-            const onClick = el.getAttribute('onclick') || '';
-            if (onClick.includes('openEditGroupModal') || onClick.includes('Edit')) {
-                editBtn = el;
-                break;
-            }
-        }
-
-        if (!editBtn) {
-            editBtn = remoteFocusEl.querySelector('.edit-btn, .group-edit, [class*="edit"], [id*="edit"]');
-        }
-
-        if (editBtn) {
-            editBtn.click();
-        }
-    }
-}
-
 // ─── Public: reset focus when view changes ────────────────────────────────────
 export function resetFocusToFirst() {
     zone = 'content';
     contentFocusIdx = 0;
-    lastBackgroundIdx = 0; // Wipe memory when completely changing tabs
     clearFocusEl();
     clearGridFocus();
 
     if (isHomeGrid()) {
-        gridMoveFocus('up');
+        // Grid.js will show .focused on first card after next renderGrid
+        // Force it now:
+        gridMoveFocus('up'); // will clamp to valid index if already at 0
         return;
     }
 
@@ -538,37 +362,14 @@ export function applyRemoteMode(on) {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 export function initRemote() {
+    // Restore saved state
     if (config.remoteMode) applyRemoteMode(true);
 
-    // --- UPDATED: Surgical DOM Observer ---
-    const domObserver = new MutationObserver(() => {
-        if (!isRemoteMode() || zone !== 'content' || !remoteFocusEl) return;
-
-        if (!document.body.contains(remoteFocusEl)) {
-            const items = getContentItems();
-            if (items.length > 0) {
-                contentFocusIdx = Math.max(0, Math.min(contentFocusIdx, items.length - 1));
-                const newEl = items[contentFocusIdx];
-                if (newEl) {
-                    setFocusEl(newEl, { scroll: false });
-                }
-            }
-        }
-    });
-
-    // Targeted observation
-    const container = document.getElementById('app-frame');
-    if (container) {
-        domObserver.observe(container, { childList: true, subtree: true });
-    }
-    // -----------------------------------------------
-
+    // ── Arrow keys ──────────────────────────────────────────────────────────
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
-
-        // STOP REPEATS: This is the single biggest cause of navigation throbbing
-        if (e.repeat) return;
-
+        
+        // Restore highlights if they were hidden by mouse movement
         if (!remoteFocusEl && !isHomeGrid()) {
             enterContentZone();
         } else if (isHomeGrid() && !document.querySelector('#grid-container .member-card.focused')) {
@@ -576,40 +377,19 @@ export function initRemote() {
         }
 
         switch (e.key) {
-            case 'ArrowDown': e.preventDefault(); navigate('down'); break;
-            case 'ArrowUp': e.preventDefault(); navigate('up'); break;
+            case 'ArrowDown':  e.preventDefault(); navigate('down');  break;
+            case 'ArrowUp':    e.preventDefault(); navigate('up');    break;
             case 'ArrowRight': e.preventDefault(); navigate('right'); break;
-            case 'ArrowLeft': e.preventDefault(); navigate('left'); break;
-            case 'Enter':
-                e.preventDefault();
-                e.stopPropagation(); // Kills bubbling so it can't trigger background tabs
-
-                wasLongPress = false;
-                enterHoldTimer = setTimeout(() => {
-                    wasLongPress = true;
-                    handleLongPress();
-                }, 600);
-                break;
+            case 'ArrowLeft':  e.preventDefault(); navigate('left');  break;
+            case 'Enter':      e.preventDefault(); activate();        break;
         }
     });
 
-    document.addEventListener('keyup', (e) => {
-        if (!isRemoteMode()) return;
+    // Touch & click are NEVER intercepted — they always propagate naturally.
+    // Remote activation is keyboard-only (Enter key).
+    // This ensures touchscreen always works even in Remote Mode.
 
-        if (e.key === 'Enter') {
-            e.preventDefault();
-
-            // Instantly unlock the hardware padlock for the next physical press
-            isKeyLocked = false;
-
-            clearTimeout(enterHoldTimer);
-
-            if (!wasLongPress) {
-                activate();
-            }
-        }
-    });
-
+    // ── Reset focus after view navigation ────────────────────────────────────
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             if (isRemoteMode()) setTimeout(() => {
@@ -620,37 +400,28 @@ export function initRemote() {
         });
     });
 
-    // document.addEventListener('click', () => {
-    //     if (!isRemoteMode()) return;
-    //     setTimeout(() => {
-    //         if (zone === 'content' && !isHomeGrid()) {
-    //             const items = getContentItems();
-    //             if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
-    //                 if (contentFocusIdx >= items.length) {
-    //                     contentFocusIdx = Math.max(0, items.length - 1);
-    //                 }
-    //                 if (items.length) setFocusEl(items[contentFocusIdx]);
-    //             }
-    //         }
-    //     }, 200);
-    // });
+    // ── Reset focus after settings panel open/close ─────────────────────────
+    document.addEventListener('click', () => {
+        if (!isRemoteMode()) return;
+        // Debounce: check if active panel changed
+        setTimeout(() => {
+            if (zone === 'content' && !isHomeGrid()) {
+                const items = getContentItems();
+                // If remoteFocusEl is no longer in DOM, reset
+                if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
+                    contentFocusIdx = 0;
+                    if (items.length) setFocusEl(items[0]);
+                }
+            }
+        }, 200);
+    });
 
-    // --- FIXED: Phantom Mousemove Fix ---
-    //     let lastMouseX = -1;
-    //     let lastMouseY = -1;
-
-    //     document.addEventListener('mousemove', (e) => {
-    //         if (!isRemoteMode()) return;
-
-    //         if (Math.abs(e.clientX - lastMouseX) < 20 && Math.abs(e.clientY - lastMouseY) < 20) {
-    //             return;
-    //         }
-
-    //         lastMouseX = e.clientX;
-    //         lastMouseY = e.clientY;
-
-    //         // Comment these out temporarily!
-    //         // clearFocusEl();
-    //         // clearGridFocus();
-    //     });
+    // ── Air Mouse / Mouse Movement ───────────────────────────────────────────
+    document.addEventListener('mousemove', () => {
+        if (!isRemoteMode()) return;
+        // Hide focus highlights when mouse is being used (Air Mouse mode)
+        // This avoids having both a mouse pointer AND a focus highlight visible
+        clearFocusEl();
+        clearGridFocus();
+    });
 }

@@ -2,54 +2,41 @@ import { config, memberData, tvState, getAvatarUrl } from './data.js';
 
 let idleTimer;
 
-window.isScreensaverShowing = false;
-
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
-
     s.classList.remove('active');
-    window.isScreensaverShowing = false;
-
-    // Clear wake-lock whenever screensaver is hidden
-    delete document.body.dataset.screensaverWakeLock;
-
     clearTimeout(idleTimer);
 
     // Disable screensaver only during ACTIVE onboarding
     if (!config.onboardingCompleted) {
         const onboardingLayer = document.getElementById('onboarding-layer');
-        const isVisible = onboardingLayer &&
-            !onboardingLayer.classList.contains('hidden') &&
-            onboardingLayer.style.display !== 'none' &&
-            onboardingLayer.style.opacity !== '0';
-
+        const isVisible = onboardingLayer && 
+                          !onboardingLayer.classList.contains('hidden') && 
+                          onboardingLayer.style.display !== 'none' &&
+                          onboardingLayer.style.opacity !== '0';
         if (isVisible) {
             console.log("Screensaver blocked by Onboarding Layer visibility");
             return;
         }
     }
 
+    // Use 5s if priority (e.g. TV Off), otherwise use config or 15s default
     const timeout = isPriority ? 5000 : (config.screenTimeout || 15000);
-
+    console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
+    
     idleTimer = setTimeout(() => {
         if (s) {
             console.log("Screensaver activating now...");
-
             s.classList.add('active');
-
-            // Wake-lock flag: first touch after screensaver is consumed
-            document.body.dataset.screensaverWakeLock = '1';
-
-            window.isScreensaverShowing = true;
-
-            applyWallpaper();
+            applyWallpaper(); // Fetch latest wallpaper state
             renderScreensaverMembers();
         }
     }, timeout);
 }
 
 window.setScreensaverTimeout = (ms) => {
+    // This allows immediate update from settings
     clearTimeout(idleTimer);
     resetIdle();
 };
@@ -58,12 +45,12 @@ export function updateClock() {
     const now = new Date();
     // 24-hour format with seconds for dynamic feel
     const hours = now.getHours().toString().padStart(2, '0');
-    const mins = now.getMinutes().toString().padStart(2, '0');
-    const secs = now.getSeconds().toString().padStart(2, '0');
-
+    const mins  = now.getMinutes().toString().padStart(2, '0');
+    const secs  = now.getSeconds().toString().padStart(2, '0');
+    
     const digits = document.getElementById('clock-time-digits');
     const secsEl = document.getElementById('clock-time-secs');
-
+    
     if (digits) digits.textContent = `${hours}:${mins}`;
     if (secsEl) secsEl.textContent = secs;
 
@@ -73,31 +60,9 @@ export function updateClock() {
         else clock.classList.remove('massive');
     }
 
-    const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const dateStr = now.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
     const dateEl = document.getElementById('clock-date');
     if (dateEl) dateEl.innerText = dateStr;
-}
-
-export function initScreensaverInteraction() {
-    const s = document.getElementById('screensaver');
-    if (!s) return;
-
-    const intercept = (e) => {
-        if (!s.classList.contains('active')) {
-            return;
-        }
-
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-
-        resetIdle();
-    };
-
-    s.addEventListener('touchstart', intercept, { capture: true });
-    s.addEventListener('touchmove', intercept, { capture: true });
-    s.addEventListener('touchend', intercept, { capture: true });
-    s.addEventListener('click', intercept, { capture: true });
 }
 
 // OpenWeatherMap Integration
@@ -112,7 +77,7 @@ async function fetchWeather(city) {
             signal: controller.signal
         });
         clearTimeout(timeoutId);
-
+        
         const data = await res.json();
         if (data && data.main) {
             return {
@@ -129,13 +94,13 @@ async function fetchWeather(city) {
 
 export async function initLocation() {
     const city = config.location || 'Yerevan';
-
+    
     const widget = document.getElementById('saver-weather');
     if (!widget) return;
 
     // Show loading state immediately to prevent "empty" UI
     if (!widget.innerHTML.trim() || widget.innerHTML.includes('material-symbols-rounded')) {
-        widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
+       widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
     }
 
     try {
@@ -144,7 +109,7 @@ export async function initLocation() {
             const iconUrl = `https://openweathermap.org/img/wn/${weather.icon}@2x.png`;
             // Capitalize each word of description for premium feel
             const desc = weather.desc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-
+            
             widget.innerHTML = `
                 <img src="${iconUrl}">
                 <span class="weather-temp">${weather.temp}°C</span>
@@ -192,7 +157,7 @@ export function renderScreensaverMembers() {
     }
 
     const activeMembers = tvState.on ? memberData.filter(m => m.active) : [];
-
+    
     // Dynamic scaling for many members
     const saver = document.getElementById('screensaver');
     if (saver) {

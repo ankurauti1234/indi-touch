@@ -1,33 +1,3 @@
-/* --- Fix 1: Scrollbar Nuke --- */
-::-webkit-scrollbar {
-    width: 0px !important;
-    height: 0px !important;
-    display: none !important;
-}
-
-/* --- Fix 2: Updated Body/HTML Locking --- */
-html,
-body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden !important;
-    overscroll-behavior: none;
-    background-color: #121212;
-}
-
-/* --- Fix 3: GPU Acceleration --- */
-/* Add this for the containers that hold your different page/section views */
-#view-home,
-#view-settings,
-#view-groups,
-.view {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    will-change: opacity, transform;
-}
-
 @font-face {
     font-family: 'Google Sans';
     src: url('../fonts/GoogleSans-Regular.ttf') format('truetype');
@@ -73,102 +43,23 @@ body.remote-mode * {
     scroll-behavior: auto !important;
 }
 
-/* =========================================================
-   PREMIUM TV REMOTE FOCUS (Perfectly Rounded Corners)
-   ========================================================= */
-
-/* --- 1. DARK THEME (Default) --- */
-.remoteFocused,
-.focused,
-.member-card.focused,
-.group-card.focused {
-    outline: none !important;
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    box-shadow:
-        0 0 0 3px var(--bg-app),
-        0 0 0 6px var(--text-main),
-        0 12px 32px rgba(0, 0, 0, 0.5) !important;
-
-    transform: none !important;
-    transition: none !important;
-    animation: none !important;
-    z-index: 100 !important;
-    border-radius: inherit;
-    will-change: auto;
-    backface-visibility: hidden;
+/* Remote Focus ring — used for full-UI navigation in remote mode */
+.remoteFocused {
+    outline: 3px solid #fff !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 0 6px rgba(208, 188, 255, 0.35) !important;
+    /* transform: scale(1.03); */
+    z-index: 100;
+    position: relative;
 }
 
-/* Smaller elements get a tighter ring without the zoom bounce */
+/* Slightly lighter effect on smaller elements like chips/buttons */
 .remoteFocused.chip,
 .remoteFocused.nav-btn,
 .remoteFocused.modal-btn,
 .remoteFocused.osk-key {
-    box-shadow:
-        0 0 0 2px var(--bg-app),
-        0 0 0 4px var(--text-main),
-        0 8px 24px rgba(0, 0, 0, 0.4) !important;
-}
-
-/* In remote mode, avoid hover/active states from fighting the focus highlight */
-body.remote-mode .group-card:hover,
-body.remote-mode .group-card:active,
-body.remote-mode .group-card.create-card:hover,
-body.remote-mode .nav-btn:hover,
-body.remote-mode .nav-btn:active,
-body.remote-mode .list-item:hover,
-body.remote-mode .list-item:active,
-body.remote-mode .wifi-item:hover,
-body.remote-mode .wifi-item:active,
-body.remote-mode .modal-btn:hover,
-body.remote-mode .modal-btn:active,
-body.remote-mode .action-btn:hover,
-body.remote-mode .action-btn:active {
-    transform: none !important;
-    transition: none !important;
-}
-
-/* --- 2. LIGHT THEME --- */
-body.light-mode .remoteFocused,
-body.light-mode .focused,
-body.light-mode .member-card.focused,
-body.light-mode .group-card.focused {
-    background-color: rgba(0, 0, 0, 0.05) !important;
-    /* Dim dark overlay */
-
-    /* Light theme gap + Primary Purple Ring + Softer shadow */
-    box-shadow:
-        0 0 0 3px var(--bg-app),
-        0 0 0 6px var(--primary),
-        0 12px 32px rgba(0, 0, 0, 0.15) !important;
-}
-
-body.light-mode .remoteFocused.chip,
-body.light-mode .remoteFocused.nav-btn,
-body.light-mode .remoteFocused.modal-btn,
-body.light-mode .remoteFocused.osk-key {
-    box-shadow:
-        0 0 0 2px var(--bg-app),
-        0 0 0 4px var(--primary),
-        0 8px 24px rgba(0, 0, 0, 0.1) !important;
-}
-
-
-/* --- 3. LIGHT THEME FIX: "Create Group/Member" Cards --- */
-/* Target any card that looks like a create button and forcefully apply colors */
-body.light-mode .group-card.create,
-body.light-mode .member-card.create,
-body.light-mode [onclick*="openCreate"],
-body.light-mode .add-card {
-    background: var(--bg-surface-container) !important;
-    border: 2px dashed var(--outline-variant) !important;
-}
-
-/* Force all text and icons inside the create card to be dark */
-body.light-mode .group-card.create *,
-body.light-mode .member-card.create *,
-body.light-mode [onclick*="openCreate"] *,
-body.light-mode .add-card * {
-    color: var(--text-main) !important;
+    outline-offset: 2px !important;
+    /* transform: scale(1.06); */
 }
 
 body {
@@ -514,49 +405,30 @@ body {
 .main-stage {
     flex: 1;
     position: relative;
-    /* This is crucial for absolute positioning to work inside */
     overflow: hidden;
     background: var(--bg-app);
-    width: 100%;
-    height: 100%;
 }
 
 .view {
     position: absolute;
     top: 0;
     left: 0;
-    /* CHANGE THIS: 100% respects the parent container's box model */
     width: 100%;
     height: 100%;
-
     display: flex;
     flex-direction: column;
     opacity: 0;
     pointer-events: none;
-
     transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0, 0, 1);
     transform: translateY(20px);
-
-    /* Keep your padding */
     padding: 24px 24px 0 24px;
-
-    /* These keep it contained */
-    box-sizing: border-box;
-    backface-visibility: hidden;
-    will-change: opacity, transform;
-    overflow: hidden;
 }
 
 .view.active {
     opacity: 1;
-    pointer-events: auto;
-    /* 'auto' is the standard; 'all' is okay but 'auto' is safer */
+    pointer-events: all;
     transform: translateY(0);
     z-index: 10;
-
-    /* Force GPU state */
-    backface-visibility: hidden;
-    will-change: opacity, transform;
 }
 
 /* GRID */
@@ -747,8 +619,6 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    /* FIX: Added left padding so the header aligns perfectly with the inset lists below */
-    padding-left: 12px;
     margin-bottom: 24px;
     flex-shrink: 0;
 }
@@ -775,13 +645,10 @@ body {
 .list-group {
     display: flex;
     flex-direction: column;
-    /* FIX: Increased gap from 8px to 14px so scaled items don't overlap vertically */
-    gap: 14px;
+    gap: 8px;
     overflow-y: auto;
     height: 100%;
-    /* FIX: Built-in safe padding for all sides */
-    padding: 16px 24px 64px 24px;
-    box-sizing: border-box;
+    padding-bottom: 20px;
 }
 
 .list-item {
@@ -794,10 +661,6 @@ body {
     cursor: pointer;
     transition: 0.2s cubic-bezier(0.2, 0, 0, 1);
     border: 1px solid rgba(255, 255, 255, 0.05);
-
-    /* FIX: Built-in lateral margin */
-    margin: 0 12px;
-    box-sizing: border-box;
 }
 
 .list-item:hover {
@@ -1062,10 +925,8 @@ body {
 .settings-scroll-area {
     flex: 1;
     overflow-y: auto;
-    /* FIX: Added symmetric padding to create a built-in safe zone for scaling */
-    padding: 16px 24px 64px 24px;
+    padding-bottom: 24px;
     min-height: 0;
-    box-sizing: border-box;
 }
 
 .settings-panel.active {
@@ -1168,57 +1029,19 @@ body {
     margin-top: 8px;
 }
 
-/* =========================================================
-   CHIP "BUTTON" SYSTEM
-   ========================================================= */
-
-/* Base Button Properties for the Div */
 .chip {
     padding: 8px 24px;
     border-radius: 100px;
     border: 1px solid var(--text-sub);
     cursor: pointer;
     font-weight: 500;
-    color: var(--text-main);
-    background: transparent;
-
-    /* Makes it behave like a real UI button */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+    transition: 0.2s;
 }
 
-/* 1. Unselected Hover / Focus State */
-.chip:hover,
-.chip.focused,
-.chip.remoteFocused {
-    background: var(--bg-card-hover) !important;
-    border-color: var(--text-main) !important;
-}
-
-/* 2. Selected Base State */
 .chip.selected {
-    background: var(--primary) !important;
-    color: var(--on-primary) !important;
-    border-color: transparent !important;
-}
-
-/* 3. Selected Hover / Focus State (Matches your Universal Button System!) */
-.chip.selected:hover,
-.chip.selected.focused,
-.chip.selected.remoteFocused,
-body.light-mode .chip.selected.remoteFocused {
-    background: var(--bg-card-hover) !important;
-    color: var(--text-main) !important;
-    border: 1px solid var(--primary) !important;
-    outline: none !important;
-}
-
-/* 4. The Physical Click Effect */
-.chip:active {
-    transform: scale(0.95);
+    background: var(--primary);
+    color: var(--on-primary);
+    border-color: transparent;
 }
 
 .action-btn {
@@ -1388,19 +1211,14 @@ body.light-mode .chip.selected.remoteFocused {
     transition: 0.2s;
 }
 
+.modal-btn.primary {
+    background: var(--primary);
+    color: var(--on-primary);
+}
+
 .modal-btn:active {
     opacity: 0.7;
 }
-
-/* Prevents light-mode hover and remote focus from wiping out the button color */
-/* .modal-btn.primary:hover,
-.modal-btn.primary.focused,
-.modal-btn.primary.remoteFocused,
-body.light-mode .modal-btn.primary.remoteFocused {
-    background: var(--on-primary) !important;
-    color: var(--primary) !important;
-    filter: brightness(0.97);
-} */
 
 #critical-popover {
     position: fixed;
@@ -1425,20 +1243,12 @@ body.light-mode .modal-btn.primary.remoteFocused {
     height: 100vh;
     background: #000;
     z-index: 9999;
-
+    display: none;
     opacity: 0;
-    pointer-events: none;
     transition: opacity 0.5s ease;
-
     will-change: opacity;
     padding: 0;
     overflow: hidden;
-}
-
-#screensaver.active {
-    opacity: 1;
-    pointer-events: auto;
-    /* Now it catches all clicks! */
 }
 
 @keyframes premiumFadeIn {
@@ -2061,7 +1871,6 @@ body.osk-open .main-stage {
     justify-content: center;
     opacity: 0;
     transition: 0.3s;
-    background: var(--scrim-popover);
 }
 
 .popover-overlay.active {
@@ -2077,7 +1886,6 @@ body.osk-open .main-stage {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     transform: scale(0.9);
     transition: 0.3s cubic-bezier(0.2, 0, 0, 1);
-    box-shadow: var(--shadow-popover);
 }
 
 .popover-overlay.active .popover-card {
@@ -2096,64 +1904,37 @@ body.osk-open .main-stage {
     margin-bottom: 24px;
 }
 
-/* =========================================================
-   INPUT FIELD V2 (FIXED FOR REMOTE FOCUS)
-   ========================================================= */
-
-/* 1. The Wrapper */
 .input-field-v2 {
     background: var(--bg-card);
     border: 2px solid var(--surface-variant);
     border-radius: 12px;
-    padding: 0 !important;
-    /* CRITICAL: Removed padding so inner input can span edge-to-edge */
+    padding: 4px 16px;
     display: flex;
     align-items: center;
     margin-bottom: 32px;
-    transition: background 0.2s, border-color 0.2s;
+    transition: 0.2s;
 }
 
-/* Native click border highlight */
 .input-field-v2:focus-within {
     border-color: var(--primary);
 }
 
-/* 2. The Input (Now fills the container completely) */
 .input-field-v2 input {
     flex: 1;
     background: transparent;
-    border: none !important;
-    padding: 16px !important;
-    /* CRITICAL: Moved wrapper's padding into the input */
-    color: var(--text-main);
+    border: none;
+    padding: 12px 0;
+    color: #fff;
     font-size: 18px;
-    outline: none !important;
-    border-radius: 10px;
-    /* Matches the inner curve of the wrapper */
-    height: 100%;
-    box-sizing: border-box;
+    outline: none;
 }
 
-/* 3. The Hover & Remote Focus (Safely targets the input now) */
-.input-field-v2 input:hover,
-.input-field-v2 input.focused,
-.input-field-v2 input.remoteFocused {
-    background: var(--bg-card-hover) !important;
-    /* Optional: if you want the box shadow ring to appear perfectly around the input */
-    border-radius: 10px !important;
-}
-
-/* 4. Formatting for the Eye Toggle (If you have a password reveal button inside) */
 .eye-toggle {
-    padding: 16px !important;
-    border-radius: 0 10px 10px 0;
-    height: 100%;
-    margin: 0;
-}
-
-.eye-toggle:hover,
-.eye-toggle.remoteFocused {
-    background: var(--bg-card-hover) !important;
+    background: none;
+    border: none;
+    color: var(--text-sub);
+    cursor: pointer;
+    padding: 8px;
 }
 
 .popover-actions {
@@ -2300,12 +2081,7 @@ body.osk-open .main-stage {
     padding: 14px 20px;
     border-radius: 12px;
     cursor: pointer;
-    /* FIX: Added transform to the transition so scaling feels smooth */
-    transition: background 0.15s, transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-
-    /* FIX: Built-in lateral margin ensures it never scrapes the scroll container edges */
-    margin: 0 12px;
-    box-sizing: border-box;
+    transition: background 0.15s;
 }
 
 .wifi-item:hover,
@@ -2344,6 +2120,7 @@ body.osk-open .main-stage {
     background: rgba(208, 188, 255, 0.2);
     color: #d0bcff;
 }
+
 
 
 /* ── System Info Redesign ──────────────────────────────────────────────────── */
@@ -2618,640 +2395,4 @@ body.osk-open .main-stage {
     flex: 1;
     overflow-y: auto;
     padding-bottom: 40px;
-}
-
-/* =========================================================
-   MEMBER GROUPS & CARDS (Unified)
-   ========================================================= */
-
-/* 1. Base Group Card */
-.group-card {
-    background-color: var(--bg-card);
-    border-radius: var(--radius-card);
-    position: relative;
-    box-shadow: none;
-    cursor: pointer;
-    border: 2px solid transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    grid-column: span 1;
-}
-
-/* 2. Active State */
-.group-card:not(.inactive) {
-    box-shadow: none;
-    border: 4px solid #64d29a;
-    background: rgba(100, 210, 154, 0.05);
-}
-
-/* =========================================================
-   INACTIVE GROUP CARDS (Split Theme Logic)
-   ========================================================= */
-
-/* --- DARK MODE (Restored fully to original faded look) --- */
-.group-card.inactive {
-    filter: grayscale(80%) brightness(0.85) !important;
-    opacity: 0.7 !important;
-    border: 2px solid rgba(255, 255, 255, 0.1) !important;
-    /* Removed the forced background override */
-}
-
-/* Dark Mode Hover (Locks the faded look, prevents it from lighting up) */
-.group-card.inactive:hover,
-.group-card.inactive.focused,
-.group-card.inactive.remoteFocused {
-    filter: grayscale(80%) brightness(0.85) !important;
-    opacity: 0.7 !important;
-}
-
-/* --- LIGHT MODE (Your #eeeeee tweak, strictly isolated) --- */
-body.light-mode .group-card.inactive {
-    opacity: 1 !important;
-    filter: none !important;
-    background: #eeeeee !important;
-    border: 2px solid rgba(0, 0, 0, 0.08) !important;
-}
-
-/* Gray out inner content in Light Mode */
-body.light-mode .group-card.inactive .group-avatars-container,
-body.light-mode .group-card.inactive .member-overlay {
-    filter: grayscale(100%) !important;
-    opacity: 0.45 !important;
-}
-
-/* Light Mode Hover (Locks background to #eeeeee, keeps content grey) */
-body.light-mode .group-card.inactive:hover,
-body.light-mode .group-card.inactive.focused,
-body.light-mode .group-card.inactive.remoteFocused {
-    background: #eeeeee !important;
-}
-
-/* =========================================================
-   LOCAL AVATAR STATES
-   ========================================================= */
-.group-card.local-avatar:not(.inactive) {
-    background: #64d29a !important;
-}
-
-/* --- DARK MODE LOCAL AVATAR (Restored fully) --- */
-.group-card.local-avatar.inactive {
-    background: #4a4a4a !important;
-    filter: grayscale(80%) brightness(0.8) !important;
-    opacity: 1 !important;
-}
-
-/* Dark Mode Local Avatar Hover (Locks the faded look) */
-.group-card.local-avatar.inactive:hover,
-.group-card.local-avatar.inactive.focused,
-.group-card.local-avatar.inactive.remoteFocused {
-    background: #4a4a4a !important;
-    filter: grayscale(80%) brightness(0.8) !important;
-}
-
-/* --- LIGHT MODE LOCAL AVATAR --- */
-body.light-mode .group-card.local-avatar.inactive {
-    background: #eeeeee !important;
-    opacity: 1 !important;
-    filter: none !important;
-}
-
-/* Grays out internal icon/text in Light Mode */
-body.light-mode .group-card.local-avatar.inactive * {
-    filter: grayscale(100%) !important;
-    opacity: 0.45 !important;
-}
-
-.group-edit-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 10;
-    transition: background 0.2s, transform 0.2s;
-}
-
-.group-edit-btn:hover {
-    background: rgba(0, 0, 0, 0.8);
-    transform: scale(1.05);
-}
-
-.group-edit-btn span {
-    font-size: 18px;
-}
-
-.group-avatars-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    padding-bottom: 40px;
-    box-sizing: border-box;
-}
-
-.group-avatar-stacked {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid var(--bg-card);
-    object-fit: cover;
-    margin-left: -15px;
-    transition: transform 0.2s, border-color 0.3s;
-    background: #333;
-}
-
-.group-avatar-stacked:first-child {
-    margin-left: 0;
-}
-
-.group-card:not(.inactive) .group-avatar-stacked {
-    border-color: rgba(100, 210, 154, 0.2);
-}
-
-.group-card.local-avatar:not(.inactive) .group-avatar-stacked {
-    border-color: #64d29a;
-}
-
-.group-avatar-more {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid var(--bg-card);
-    background: #444;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
-    margin-left: -15px;
-    z-index: 1;
-}
-
-.group-card:not(.inactive) .group-avatar-more {
-    border-color: rgba(100, 210, 154, 0.2);
-    background: #2e7d32;
-}
-
-.group-card.create-card {
-    /* Uses your custom outline variable instead of hardcoded white alpha */
-    border: 2px dashed var(--outline) !important;
-    background: transparent !important;
-    flex-direction: column;
-    gap: 8px;
-    justify-content: center;
-    align-items: center;
-    /* Uses your system sub-text color */
-    color: var(--text-sub) !important;
-}
-
-.group-card.create-card:hover,
-.group-card.create-card.focused,
-.group-card.create-card.remoteFocused {
-    /* Transitions seamlessly into your hover surface */
-    background: var(--bg-card-hover) !important;
-    border-color: var(--text-main) !important;
-    color: var(--text-main) !important;
-}
-
-.group-card.create-card span {
-    font-size: 40px;
-}
-
-.group-card.create-card .create-label {
-    font-size: 1.1rem;
-    font-weight: 500;
-}
-
-/* =========================================================
-   GROUP CARD GRADIENTS & TEXT CONTRAST
-   ========================================================= */
-
-/* 1. Dark Mode (Default): Restore the dark bottom shadow */
-.group-card .member-overlay {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.95), transparent) !important;
-}
-
-/* 2. Light Mode: Clean white gradient */
-body.light-mode .group-card .member-overlay {
-    background: linear-gradient(to top, rgba(255, 255, 255, 0.95), transparent) !important;
-}
-
-/* 3. Light Mode Text Fix: Make text dark and remove the muddy black text-shadows */
-body.light-mode .group-card .member-overlay span,
-body.light-mode .group-card .g-name,
-body.light-mode .group-card .g-info {
-    color: var(--text-main) !important;
-    text-shadow: none !important;
-}
-
-#group-members-list {
-    max-height: 250px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 12px;
-    padding-right: 4px;
-}
-
-#group-members-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-#group-members-list::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-}
-
-#group-members-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-}
-
-/* --- THEME-SAFE MEMBER ITEMS --- */
-.group-member-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    background: transparent;
-    /* Removed hardcoded white */
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
-    border: 1px solid transparent;
-}
-
-/* Uses your variables.css hover colors */
-.group-member-item:hover,
-.group-member-item.focused {
-    background: var(--bg-card-hover);
-}
-
-.group-member-item.selected {
-    background: var(--secondary-container);
-    border-color: var(--primary);
-}
-
-.group-member-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 12px;
-    background: var(--surface-variant);
-}
-
-.group-member-name {
-    flex-grow: 1;
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-main);
-    /* Switches instantly with theme */
-}
-
-.group-member-item .check-icon {
-    font-size: 24px;
-    color: var(--text-sub);
-    user-select: none;
-}
-
-.group-member-item.selected .check-icon {
-    color: var(--primary);
-}
-
-/* 1. Grid Container */
-#groups-grid-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr) !important;
-    grid-auto-rows: 180px !important;
-    gap: 12px !important;
-    padding: 32px 12px 0 12px !important;
-    scroll-padding-top: 32px !important;
-    scroll-padding-bottom: 96px !important;
-    height: 100%;
-    overflow-y: auto;
-    box-sizing: border-box;
-    grid-auto-flow: dense;
-}
-
-/* Forces true empty space at the end of the scroll */
-#groups-grid-container::after {
-    content: "";
-    grid-column: span 2;
-    height: 34px;
-}
-
-/* 2. Group Cards (Height unchanged) */
-.group-card {
-    min-height: 180px !important;
-    max-height: 180px !important;
-    scroll-margin-top: 32px !important;
-    scroll-margin-bottom: 32px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    align-items: center !important;
-}
-
-.group-card.wide-card,
-.group-card.all-members-card {
-    grid-column: span 2 !important;
-}
-
-/* 3. Bigger Avatars */
-.group-avatars-container {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-
-.group-avatar-stacked,
-.group-avatar-more,
-.group-member-item img {
-    width: 100px !important;
-    height: 100px !important;
-}
-
-.group-avatar-stacked~.group-avatar-stacked,
-.group-avatar-stacked~.group-avatar-more {
-    margin-left: -32px !important;
-}
-
-.group-avatar-more {
-    font-size: 1.8rem !important;
-}
-
-/* 4. Text OVER Avatars */
-.group-card .g-name {
-    font-size: 2rem !important;
-    font-weight: bold !important;
-    margin-top: -24px !important;
-    /* Pulls the text up over the image */
-    position: relative !important;
-    z-index: 10 !important;
-    text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.9), 0px 1px 3px rgba(0, 0, 0, 0.9) !important;
-}
-
-.group-card .g-info {
-    font-size: 1.2rem !important;
-    position: relative !important;
-    z-index: 10 !important;
-    text-shadow: 0px 2px 6px rgba(0, 0, 0, 0.9) !important;
-}
-
-/* =========================================================
-   ANTI-CLIPPING: The "Cell Inset" Trick
-   ========================================================= */
-
-/* 1. Grid Cards (Groups & Home) */
-/* Shrinks the card horizontally by 20px and centers it inside its grid cell */
-.group-card,
-.member-card {
-    width: calc(100% - 20px) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
-
-/* If the gap looks too wide now, we slightly tighten the grid's built-in gap to compensate */
-#groups-grid-container {
-    gap: 8px !important;
-    overflow-x: hidden !important;
-}
-
-/* 2. Linear Lists (Settings, WiFi, Member Selection Modal) */
-/* Shrinks list items slightly so they don't scrape the left/right edges */
-.list-item,
-.wifi-item,
-.group-member-item {
-    width: calc(100% - 16px) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    /* Stops UI tearing when scaling */
-    transform-style: preserve-3d !important;
-    backface-visibility: hidden !important;
-}
-
-/* Ensure the modal list doesn't spawn an accidental horizontal scrollbar */
-#group-members-list {
-    overflow-x: hidden !important;
-}
-
-/* Creates an invisible forcefield at the top and bottom of scrollable areas 
-   so the nearest scroll never pushes items against the absolute edge */
-.settings-scroll-area,
-.list-group,
-#group-members-list,
-#groups-grid-container {
-    scroll-padding-top: 100px !important;
-    scroll-padding-bottom: 100px !important;
-}
-
-/* =========================================================
-   LONG PRESS ANIMATION (Refined)
-   ========================================================= */
-.remoteFocused.remote-pressing,
-.focused.remote-pressing,
-.group-card.focused.remote-pressing {
-    /* Updated transition to match the focus-state transition EXACTLY */
-    transform: scale(0.95) !important;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
-
-    /* Squeezes the shadow closer to the element */
-    box-shadow:
-        0 0 0 3px var(--bg-app),
-        0 0 0 6px var(--text-main),
-        0 4px 12px rgba(0, 0, 0, 0.4) !important;
-}
-
-body.light-mode .remoteFocused.remote-pressing,
-body.light-mode .group-card.focused.remote-pressing {
-    box-shadow:
-        0 0 0 3px var(--bg-app),
-        0 0 0 6px var(--primary),
-        0 4px 12px rgba(0, 0, 0, 0.1) !important;
-}
-
-
-/* =========================================================
-   1. MAXIMIZED OVERLAY & SPLIT LAYOUT
-   ========================================================= */
-#edit-popup-container,
-.overlay-card,
-.modal-content {
-    width: calc(100vw - 20px) !important;
-    height: calc(100vh - 20px) !important;
-    max-width: calc(100vw - 20px) !important;
-    max-height: calc(100vh - 20px) !important;
-    margin: 10px !important;
-    border-radius: var(--radius-card, 16px) !important;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6) !important;
-    box-sizing: border-box !important;
-}
-
-.overlay-body,
-.modal-body {
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 24px !important;
-    height: calc(100% - 20px) !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-    min-height: 0 !important;
-    /* Stops infinite stretching */
-}
-
-.overlay-left-panel,
-.group-form-left {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-}
-
-.overlay-right-panel,
-.group-form-right {
-    flex: 1.2 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    /* Forces inner list to scroll */
-}
-
-/* =========================================================
-   2. MEMBER LIST CONTAINER & ITEM SIZING
-   ========================================================= */
-#group-members-list {
-    max-height: 100% !important;
-    /* Overrides the old tiny 250px limit */
-    height: 100% !important;
-    flex-grow: 1 !important;
-    overflow-y: auto;
-    overflow-x: hidden !important;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 12px;
-    padding: 8px 12px 24px 12px !important;
-    /* Added safe padding zone */
-    box-sizing: border-box;
-}
-
-.group-member-item {
-    min-height: 64px !important;
-    /* Sizing for remote tracking */
-    width: 100% !important;
-    /* Perfectly fits the new padded container */
-    margin-left: auto !important;
-    margin-right: auto !important;
-    margin-bottom: 4px !important;
-    /* Stops focus rings from chopping each other */
-    box-sizing: border-box !important;
-    transform-style: preserve-3d !important;
-    backface-visibility: hidden !important;
-}
-
-/* =========================================================
-   3. MEMBER ITEM THEME & STATES
-   ========================================================= */
-/* Unselected State */
-#edit-popup-container .group-member-item,
-.popover-card .group-member-item,
-.modal-content .group-member-item {
-    background: var(--bg-surface-container-high, rgba(255, 255, 255, 0.05)) !important;
-    border: 1px solid var(--outline-variant, transparent) !important;
-}
-
-body.light-mode #edit-popup-container .group-member-item,
-body.light-mode .popover-card .group-member-item,
-body.light-mode .modal-content .group-member-item {
-    background: var(--secondary-container) !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-/* Selected State Borders */
-#edit-popup-container .group-member-item.selected,
-.popover-card .group-member-item.selected,
-.modal-content .group-member-item.selected,
-body.light-mode #edit-popup-container .group-member-item.selected,
-body.light-mode .popover-card .group-member-item.selected,
-body.light-mode .modal-content .group-member-item.selected {
-    border: 2px solid var(--primary) !important;
-}
-
-/* Base Text Color & Selected Text Color Protection */
-#edit-popup-container .group-member-name,
-.popover-card .group-member-name,
-.modal-content .group-member-name,
-#edit-popup-container .group-member-item.selected .group-member-name,
-.popover-card .group-member-item.selected .group-member-name,
-.modal-content .group-member-item.selected .group-member-name {
-    color: var(--text-main) !important;
-}
-
-/* =========================================================
-   4. TOUCH INTERACTIVITY RESTORATION
-   ========================================================= */
-input,
-input.input-box,
-#g-age,
-[type="text"] {
-    pointer-events: auto !important;
-    cursor: text !important;
-    user-select: text !important;
-    -webkit-user-select: text !important;
-    position: relative !important;
-    z-index: 999991 !important;
-}
-
-.form-area,
-.list-item .item-content {
-    pointer-events: auto !important;
-}
-
-
-/* =========================================================
-   UNIVERSAL PRIMARY BUTTON SYSTEM (Dark & Light Theme Safe)
-   ========================================================= */
-
-/* 1. Master Base State */
-.action-btn,
-.modal-btn.primary,
-.conn-btn-primary {
-    background: var(--primary) !important;
-    color: var(--on-primary) !important;
-    border: none !important;
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
-}
-
-/* 2. Master Hover/Focus State (Inverted Colors for both modes) */
-.action-btn:hover,
-.action-btn.focused,
-.action-btn.remoteFocused,
-.modal-btn.primary:hover,
-.modal-btn.primary.focused,
-.modal-btn.primary.remoteFocused,
-.conn-btn-primary:hover,
-.conn-btn-primary.focused,
-.conn-btn-primary.remoteFocused,
-body.light-mode .action-btn.remoteFocused,
-body.light-mode .modal-btn.primary.remoteFocused,
-body.light-mode .conn-btn-primary.remoteFocused {
-    background: var(--bg-card-hover) !important;
-    color: var(--primary) !important;
-    outline: none !important;
 }

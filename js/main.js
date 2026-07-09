@@ -2,7 +2,7 @@ import { navTo } from './navigation.js';
 import { renderGrid, toggleMember } from './grid.js';
 import { openSetting, closeSetting, toggleTheme, selectAvatarStyle, toggleRemoteMode, toggleAnimations } from './settings.js';
 import { selectChip, addGuest, renderGuestList } from './guest.js';
-import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver, initScreensaverInteraction } from './screensaver.js';
+import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver } from './screensaver.js';
 import { initOSK } from './keyboard.js';
 import { checkOnboardingStatus } from './onboarding.js';
 import { showToast } from './ui.js';
@@ -11,7 +11,6 @@ import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
-import { loadGroups, renderGroupsGrid } from './groups.js';
 
 
 // Expose functions globally for HTML inline event handlers
@@ -37,162 +36,12 @@ window.renderScreensaverMembers = renderScreensaverMembers;
 window.refreshWallpaperOnScreensaver = refreshWallpaperOnScreensaver;
 window.renderGrid = renderGrid;
 
-// Define your vertical tab order
-const tabOrder = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
-
-let startY = 0;
-let startedAtTop = false;
-let startedAtBottom = false;
-let isScrollableContext = false;
-let consumeNextClick = false;
-
-document.addEventListener('touchstart', e => {
-
-    if (document.body.dataset.screensaverWakeLock === '1') {
-
-        delete document.body.dataset.screensaverWakeLock;
-
-        const screensaver = document.getElementById('screensaver');
-
-        if (screensaver?.classList.contains('active')) {
-            resetIdle(true);
-        }
-
-        startY = 0;
-        startedAtTop = false;
-        startedAtBottom = false;
-        isScrollableContext = false;
-        consumeNextClick = true;
-
-        return;
-    }
-
-    const screensaver = document.getElementById('screensaver');
-    if (screensaver?.classList.contains('active')) {
-        return;
-    }
-
-    startY = e.touches[0].clientY;
-
-    // Reset states for this new touch
-    startedAtTop = true;
-    startedAtBottom = true;
-    isScrollableContext = false;
-
-    let currentEl = e.target;
-
-    // Check where the scroll bar is AT THE EXACT MOMENT the finger touches the screen
-    while (currentEl && currentEl !== document.body && currentEl !== document.documentElement) {
-        const style = window.getComputedStyle(currentEl);
-        const overflowY = style.overflowY;
-
-        if ((overflowY === 'auto' || overflowY === 'scroll') && currentEl.scrollHeight > currentEl.clientHeight) {
-            isScrollableContext = true;
-
-            startedAtTop = currentEl.scrollTop <= 0;
-
-            startedAtBottom =
-                Math.abs(
-                    currentEl.scrollHeight -
-                    currentEl.clientHeight -
-                    currentEl.scrollTop
-                ) <= 5;
-
-            break;
-        }
-
-        currentEl = currentEl.parentElement;
-    }
-
-}, { passive: true });
-
-document.addEventListener('touchend', e => {
-
-    if (startY === 0) {
-        startY = -1;
-        return;
-    }
-
-    const screensaver = document.getElementById('screensaver');
-    if (screensaver?.classList.contains('active')) {
-        return;
-    }
-
-    // --- MODAL LOCK FOR TOUCH SWIPES ---
-    const isModalActive = !!document.querySelector(
-        '#group-modal-overlay.active, ' +
-        '#wifi-password-overlay.active, ' +
-        '#alert-modal, ' +
-        '#duplicate-modal, ' +
-        '#delete-confirm-modal, ' +
-        '#wifi-warning-overlay.visible'
-    );
-
-    // If a modal is open, completely ignore the swipe
-    if (isModalActive) {
-        return;
-    }
-    // -----------------------------------------
-
-    const endY = e.changedTouches[0].clientY;
-    const deltaY = startY - endY;
-
-    // Ignore small touches
-    if (Math.abs(deltaY) < 50) return;
-
-    const activeView = document.querySelector('.view.active');
-    if (!activeView) return;
-
-    // --- NEW: DEEP SETTINGS LOCK ---
-    // If we are in the settings view, and a panel other than 'set-main' is active, block swipe
-    if (activeView.id === 'view-settings') {
-        const isDeepSetting = !!activeView.querySelector('.settings-panel.active:not(#set-main)');
-        if (isDeepSetting) {
-            return;
-        }
-    }
-    // -------------------------------
-
-    const currentId = activeView.id.replace('view-', '');
-    const currentIndex = tabOrder.indexOf(currentId);
-    if (currentIndex === -1) return;
-
-    // Swipe UP -> NEXT tab
-    if (deltaY > 50 && currentIndex < tabOrder.length - 1) {
-        if (!isScrollableContext || startedAtBottom) {
-            navTo(tabOrder[currentIndex + 1]);
-        }
-    }
-
-    // Swipe DOWN -> PREVIOUS tab
-    else if (deltaY < -50 && currentIndex > 0) {
-        if (!isScrollableContext || startedAtTop) {
-            navTo(tabOrder[currentIndex - 1]);
-        }
-    }
-
-});
-
-document.addEventListener('click', (e) => {
-
-    if (!consumeNextClick) {
-        return;
-    }
-
-    consumeNextClick = false;
-
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-
-}, true);
-
 // ─── Phase 2 Refinements ──────────────────────────────────────────────────────
 export function resetHomeTimer() {
     if (typeof homeTimer !== 'undefined') clearTimeout(homeTimer);
     const onboardingLayer = document.getElementById('onboarding-layer');
     const isOnboarding = onboardingLayer && !onboardingLayer.classList.contains('hidden') && onboardingLayer.style.display !== 'none';
-
+    
     if (config.onboardingCompleted && !isOnboarding && !document.getElementById('view-home').classList.contains('active')) {
         timers.clearTimeout(window.homeTimerId); // Track specifically if needed
         window.homeTimerId = timers.setTimeout(() => {
@@ -219,7 +68,7 @@ let eggTimer;
 window.triggerEasterEgg = () => {
     eggClicks++;
     clearTimeout(eggTimer);
-
+    
     if (eggClicks === 7) {
         document.getElementById('author-overlay').classList.add('active');
         eggClicks = 0;
@@ -249,24 +98,25 @@ import { tvState, memberData, save as legacySave, initData, config } from './dat
 import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Initialize Localization & Data
+    // 1. Initialize Localization
     await initI18n();
+
+    // 2. Initialize Data Layer (from API)
     await initData();
 
-    // 2. Initialize Components (Call these ONCE)
+    // 3. Initialize Components
     await checkOnboardingStatus();
     initOSK();
     renderGrid();
-    await loadGroups();
     renderGuestList();
     initLocation();
     renderNotifications();
-    // initScreensaverInteraction(); // Added here
 
-    // 3. Finalize - Hide app loader
+    // 4. Finalize - Hide app loader
     hideAppLoader();
 
-    // 4. Background Services & Logic
+    
+    // 3. Start Background Services
     timers.setInterval(updateClock, 1000);
     updateClock();
 
@@ -277,7 +127,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyTranslations();
             updateLanguageUI(lang);
             renderGrid(); // Refresh grid for active status texts if any
-            renderGroupsGrid(); // Refresh groups grid
             renderNotifications(); // Refresh notifications
         }
     };
@@ -373,26 +222,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Disable right-click context menu
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // 5. Unified User Interaction Tracking
-    const activityEvents = ['touchstart', 'touchmove', 'click', 'scroll', 'keydown'];
+    // 3. User Interaction Tracking
+    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
+    document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
+    resetIdle();
+    resetHomeTimer();
 
-    function handleUserActivity(e) {
-        // If the screensaver is active, DON'T process navigation logic
-        const s = document.getElementById('screensaver');
-        if (s && s.classList.contains('active')) return;
-
-        resetIdle();
-        resetHomeTimer();
-    }
-    activityEvents.forEach(eventType => {
-        document.addEventListener(eventType, handleUserActivity, { passive: true });
-    });
-    handleUserActivity();
-
-    // 6. Systems
+    // 4. Remote Control System
     initRemote();
+
+    // 5. Connection state monitoring
     initConnectionMonitor();
-    document.addEventListener('contextmenu', e => e.preventDefault());
 
     console.log("System initialized.");
 });

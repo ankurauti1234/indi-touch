@@ -1,5 +1,4 @@
 import { config, memberData, tvState, save as legacySave, loadMembers, getAvatarUrl } from './data.js';
-import { renderGroupsGrid } from './groups.js';
 
 // --- Focus State ---
 let focusedIndex = 0;
@@ -40,7 +39,7 @@ export async function renderGrid() {
     container._gridRows = rows;
 
     const existingCards = container.querySelectorAll('.member-card');
-
+    
     // If count changed or no cards, do a full render
     if (existingCards.length !== count) {
         container.innerHTML = data.map((m, index) => {
@@ -66,7 +65,7 @@ export async function renderGrid() {
             // Update activity state
             card.classList.toggle('active', !!m.active);
             card.classList.toggle('inactive', !m.active);
-
+            
             // Update style class
             card.classList.toggle('local-avatar', style === 'local');
 
@@ -90,13 +89,10 @@ export async function renderGrid() {
     if (isRemoteMode()) applyFocus();
 }
 
-window.updateTvUI = function (tvOn) {
+window.updateTvUI = function(tvOn) {
     const overlay = document.getElementById('tv-off-overlay');
     if (overlay) {
         overlay.style.display = tvOn ? 'none' : 'flex';
-    }
-    if (window.updateTvUI_groups) {
-        window.updateTvUI_groups(tvOn);
     }
     // If TV is off, clear focus to prevent accidental toggles
     if (!tvOn) clearGridFocus();
@@ -136,8 +132,8 @@ export function moveFocus(direction) {
     let next = focusedIndex;
 
     switch (direction) {
-        case 'right': next = (focusedIndex + 1) % count; break;
-        case 'left': next = (focusedIndex - 1 + count) % count; break;
+        case 'right':  next = (focusedIndex + 1) % count; break;
+        case 'left':   next = (focusedIndex - 1 + count) % count; break;
         case 'down':
             next = focusedIndex + cols;
             if (next >= count) next = focusedIndex % cols;
@@ -183,9 +179,7 @@ export async function toggleMember(index) {
                 // Update local state and redraw
                 memberData[index].active = res.active;
                 renderGrid();
-
-                renderGroupsGrid();
-
+                
                 // Also update saver if active (using the shared global function if available)
                 if (window.renderScreensaverMembers) window.renderScreensaverMembers();
             }

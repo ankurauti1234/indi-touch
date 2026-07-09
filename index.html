@@ -223,9 +223,6 @@
         <button class="nav-btn active" id="btn-home" onclick="navTo('home')">
           <span class="material-symbols-rounded">grid_view</span>
         </button>
-        <button class="nav-btn" id="btn-groups" onclick="navTo('groups')">
-          <span class="material-symbols-rounded">groups</span>
-        </button>
         <button class="nav-btn guest-btn" id="btn-guest" onclick="navTo('guest-add')">
           <span class="material-symbols-rounded">group_add</span>
           <div class="badge" id="guest-badge">0</div>
@@ -243,17 +240,6 @@
       <section id="view-home" class="view active">
         <div id="grid-container"></div>
         <div id="tv-off-overlay" class="grid-lock-overlay tv-only" style="display: none;">
-          <div class="lock-content">
-            <span class="material-symbols-rounded lock-icon">tv_off</span>
-            <h3 class="lock-title" data-i18n="tv_is_off">TV is Off</h3>
-            <p class="lock-msg" data-i18n="member_decl_disabled">Member declaration is disabled while TV is off.</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-groups" class="view">
-        <div id="groups-grid-container"></div>
-        <div id="tv-off-overlay-groups" class="grid-lock-overlay tv-only" style="display: none;">
           <div class="lock-content">
             <span class="material-symbols-rounded lock-icon">tv_off</span>
             <h3 class="lock-title" data-i18n="tv_is_off">TV is Off</h3>
@@ -687,14 +673,26 @@
           <h2 class="page-title" data-i18n="add_guest">Add Guest</h2>
         </div>
         <div class="form-area" style="flex: 0">
-          <input type="text" inputmode="numeric" pattern="[0-9]*" id="g-age" class="input-box" placeholder="Guest Age"
-            data-i18n="guest_age" maxlength="3" autocomplete="off" autocorrect="off" spellcheck="false"
-            style="direction:ltr; text-align:left;" onclick="event.stopPropagation(); this.focus();" oninput="
+          <input
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            id="g-age"
+            class="input-box"
+            placeholder="Guest Age"
+            data-i18n="guest_age"
+            maxlength="3"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+            style="direction:ltr; text-align:left;"
+            oninput="
               this.value = this.value.replace(/[^0-9]/g, '');
               if(this.value.length > 3) {
                 this.value = this.value.slice(0,3);
               }
-            " />
+            "
+          />
           <div class="chip-group">
             <div class="chip selected" onclick="selectChip(this, 'gender')" data-i18n="male">
               Male
@@ -769,73 +767,6 @@
         <div class="modal-actions" id="modal-actions">
           <!-- Dynamic Actions -->
         </div>
-      </div>
-    </div>
-
-    <!-- Group Create/Edit Overlay (Large Two-Column Card) -->
-    <div id="group-modal-overlay" class="popover-overlay">
-      <div class="popover-card" style="
-          width: 85vw; 
-          max-width: 900px; 
-          height: 75vh; 
-          max-height: 600px; 
-          display: flex; 
-          flex-direction: row; 
-          gap: 32px; 
-          background: var(--bg-card); 
-          color: var(--text-main);
-      ">
-
-        <!-- LEFT SIDE: Form & Actions -->
-        <div
-          style="flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--outline-variant); padding-right: 32px;">
-
-          <!-- Header Area -->
-          <div>
-            <h3 id="group-modal-title" data-i18n="create_group"
-              style="margin-top: 0; margin-bottom: 8px; font-size: 2rem; color: var(--text-main);">
-              Create Group</h3>
-            <p id="group-modal-desc"
-              style="color: var(--text-sub); margin-top: 0; margin-bottom: 32px; font-size: 1.1rem;">
-              Configure your group members.</p>
-
-            <div class="input-field-v2">
-              <!-- Overrode hardcoded #fff with var(--text-main) for Light Mode visibility -->
-              <input type="text" id="group-name-input" placeholder="Group Name" data-i18n="group_name"
-                style="color: var(--text-main); width: 100%;" />
-            </div>
-          </div>
-
-          <!-- Spacer pushes actions to the bottom -->
-          <div style="flex-grow: 1;"></div>
-
-          <!-- Action Buttons -->
-          <div class="popover-actions" style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 24px;">
-            <button class="modal-btn" id="btn-group-delete"
-              style="display: none; background: rgba(179, 38, 30, 0.15); color: var(--error); margin-right: auto; padding: 12px 24px; border: none; font-weight: 500; cursor: pointer; border-radius: var(--radius-pill);"
-              onclick="deleteGroup()" data-i18n="delete_group">Delete</button>
-            <button class="modal-btn" onclick="closeGroupModal()" data-i18n="cancel"
-              style="padding: 12px 24px; background: transparent; border: 1px solid var(--outline-variant); color: var(--text-main); font-weight: 500; cursor: pointer; border-radius: var(--radius-pill);">Cancel</button>
-            <button class="modal-btn primary" onclick="submitGroup()" data-i18n="done"
-              style="padding: 12px 32px; background: var(--primary); color: var(--on-primary); border: none; font-weight: 500; cursor: pointer; border-radius: var(--radius-pill);">Save</button>
-          </div>
-
-        </div>
-
-        <!-- RIGHT SIDE: Members List -->
-        <div style="flex: 1; display: flex; flex-direction: column; padding-left: 8px; height: 100%;">
-          <div class="section-title" data-i18n="select_members"
-            style="margin-top: 0; margin-bottom: 16px; font-size: 1.2rem; font-weight: 500; color: var(--text-main);">
-            Select
-            Members</div>
-
-          <!-- Flex: 1 ensures it stretches to the bottom -->
-          <div id="group-members-list"
-            style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 12px;">
-            <!-- Javascript will inject list of members with checkboxes here -->
-          </div>
-        </div>
-
       </div>
     </div>
   </div>

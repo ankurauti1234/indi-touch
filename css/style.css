@@ -2427,7 +2427,7 @@ body.osk-open .main-stage {
     cursor: pointer;
     position: relative;
     transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-    min-height: 160px;
+    min-height: 180px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     overflow: hidden;
 }
@@ -2436,21 +2436,27 @@ body.osk-open .main-stage {
     transform: scale(0.97);
 }
 
+/* Bright green active state matching your toggle expectations */
 .group-card.active {
     border-color: var(--green-border, #B8F3BE) !important;
     box-shadow: var(--green-shadow) !important;
     background: rgba(100, 210, 154, 0.08) !important;
-    /* Adds a visible green tint */
+    opacity: 1 !important;
+    filter: none !important;
 }
 
+/* FIXED: Clear visual dimming for unselected groups */
 .group-card.inactive {
-    opacity: 0.65;
+    opacity: 0.4 !important;
+    filter: grayscale(100%) !important;
 }
 
 .group-card.create-card {
     border: 2px dashed var(--outline-variant, #49454F);
     background: transparent;
     color: var(--text-sub);
+    opacity: 1 !important;
+    filter: none !important;
 }
 
 .group-card.create-card .material-symbols-rounded {
@@ -2459,39 +2465,37 @@ body.osk-open .main-stage {
     margin-bottom: 8px;
 }
 
-/* --- STACKED AVATARS & OVERLAP FIX --- */
+/* --- STACKED AVATARS (FIXED FOR PERFECTLY ROUND & LARGE EVERYWHERE) --- */
 .group-avatars-container {
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 0px;
-    /* Crucial: Removed margin to allow overlap */
     z-index: 1;
 }
 
 .group-avatar-stacked {
-    width: 72px;
-    /* Bigger Avatar */
-    height: 72px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 4px solid var(--bg-card);
-    /* Thicker border */
-    margin-left: -24px;
-    /* Tighter stacking */
+    width: 72px !important;
+    height: 72px !important;
+    border-radius: 50% !important;
+    /* FORCES CIRCLE */
+    object-fit: cover !important;
+    border: 4px solid var(--bg-card) !important;
+    margin-left: -24px !important;
     position: relative;
     transition: border-color 0.2s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .group-avatar-stacked:first-child {
-    margin-left: 0;
+    margin-left: 0 !important;
 }
 
 .group-avatar-more {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
+    width: 72px !important;
+    height: 72px !important;
+    border-radius: 50% !important;
+    /* FORCES CIRCLE */
     background: var(--surface-variant);
     color: var(--text-main);
     display: flex;
@@ -2504,22 +2508,22 @@ body.osk-open .main-stage {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* FIX: This pulls the text UP over the avatars */
+/* --- TEXT LAYOUT (FIXED: NO BACKGROUND, STILL OVERLAPS CLEANLY) --- */
 .member-overlay {
     text-align: center;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    margin-top: -16px;
-    /* Pulls text UP over images */
+    margin-top: -12px;
+    /* Pulls text up overlaying the profiles */
     z-index: 2;
-    /* Keeps text above images */
-    background: var(--bg-card);
-    /* Solid background for readability */
-    padding: 6px 16px;
-    border-radius: 12px;
-    border: 1px solid var(--outline-variant);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: transparent !important;
+    /* FIXED: Removed background capsule completely */
+    border: none !important;
+    /* FIXED: Removed outline */
+    box-shadow: none !important;
+    /* FIXED: Removed shadow shadow */
+    padding: 0;
 }
 
 .member-overlay .g-name {
@@ -2527,6 +2531,8 @@ body.osk-open .main-stage {
     font-size: 1.2rem;
     font-weight: 500;
     color: var(--text-main);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    /* Subtle text shadow so it reads clean over profiles */
 }
 
 .member-overlay .g-info {
@@ -2536,7 +2542,7 @@ body.osk-open .main-stage {
     margin-top: 2px;
 }
 
-/* Touch-Visible Edit Button */
+/* Touch-Visible Permanent Edit Button */
 .group-edit-btn {
     position: absolute;
     top: 14px;
@@ -2549,11 +2555,10 @@ body.osk-open .main-stage {
     align-items: center;
     justify-content: center;
     color: var(--text-main);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     z-index: 5;
-    transition: transform 0.1s, background 0.2s;
+    transition: transform 0.1s;
     opacity: 0.95;
-    /* ALWAYS VISIBLE FOR TOUCH */
 }
 
 .group-edit-btn:active {
@@ -2580,7 +2585,6 @@ body.osk-open .main-stage {
     display: flex;
 }
 
-/* FIX: Uses --bg-card to natively adapt to Light/Dark Mode */
 .safe-modal-card {
     background: var(--bg-card);
     width: 460px;
@@ -2601,7 +2605,7 @@ body.osk-open .main-stage {
     color: var(--text-main);
 }
 
-/* Selection list for members configuration */
+/* Selection list inside creation menu */
 .g-member-select-list {
     display: flex;
     flex-direction: column;
@@ -2615,7 +2619,7 @@ body.osk-open .main-stage {
     display: flex;
     align-items: center;
     padding: 14px 16px;
-    background: var(--bg-card);
+    background: var(--bg-surface);
     border: 1px solid var(--outline-variant);
     border-radius: 16px;
     cursor: pointer;
@@ -2625,6 +2629,16 @@ body.osk-open .main-stage {
 .g-member-select-item.selected {
     background: var(--secondary-container);
     border-color: var(--primary);
+}
+
+/* FIXED: Force overlay list profiles to match large circle standards */
+.g-member-avatar {
+    width: 64px !important;
+    height: 64px !important;
+    border-radius: 50% !important;
+    /* FORCES CIRCLE INSIDE MODAL */
+    object-fit: cover !important;
+    margin-right: 16px;
 }
 
 .g-member-select-item .check-icon {
@@ -2643,7 +2657,6 @@ body.osk-open .main-stage {
     color: var(--text-main);
 }
 
-/* Controls / Buttons Alignment */
 .modal-btn {
     padding: 14px 24px;
     border-radius: var(--radius-pill, 100px);
@@ -2660,8 +2673,4 @@ body.osk-open .main-stage {
     background: var(--primary);
     color: var(--on-primary);
     border: none;
-}
-
-.modal-btn.primary:active {
-    background: var(--primary-container);
 }

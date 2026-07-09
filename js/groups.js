@@ -1,12 +1,12 @@
 import { config, memberData, tvState, loadMembers, getAvatarUrl } from './data.js';
 import { applyTranslations } from './i18n.js';
 import { timers } from './utils.js';
+import { renderGrid } from './grid.js';
 
 export let groupsData = [];
 let toggleDebounceTimer = null;
 let editingGroupId = null;
 
-// --- INITIALIZER ---
 export async function loadGroups() {
     try {
         const r = await fetch('/api/groups');
@@ -20,20 +20,19 @@ export async function loadGroups() {
     }
 }
 
-// --- CORE GRID BUILDER ---
 export function renderGroupsGrid() {
     const container = document.getElementById('groups-grid-container');
     if (!container) return;
-
     container.innerHTML = '';
+
     const maxAvatars = 4;
     const avatarStyleClass = (config.avatarStyle || 'local') === 'local' ? 'local-avatar' : '';
 
-    // Get currently active members for EXACT matching
-    const activeMembers = memberData.filter(m => m.active).map(m => m.member_code);
+    // STRICT MATCHING: Get an array of exactly who is currently active
+    const activeMemberCodes = memberData.filter(m => m.active).map(m => m.member_code);
 
-    // 1. "All Members" Card
-    const isAllActive = memberData.length > 0 && activeMembers.length === memberData.length;
+    // --- 1. "ALL MEMBERS" CARD ---
+    const isAllActive = memberData.length > 0 && activeMemberCodes.length === memberData.length;
     const displayAllMembers = memberData.slice(0, maxAvatars);
     const excessAllCount = memberData.length - maxAvatars;
 
@@ -54,13 +53,14 @@ export function renderGroupsGrid() {
     `;
     container.appendChild(allMembersCard);
 
-    // 2. Custom Rendered Groups
+    // --- 2. REGULAR GROUP CARDS ---
     groupsData.forEach((g) => {
-        const groupMemberCodes = g.members.map(m => m.member_code);
+        const groupCodes = g.members.map(m => m.member_code);
 
-        // STRICT MATCHING: Card is only active if the active members match the group members EXACTLY
-        const isGroupFullyActive = activeMembers.length === groupMemberCodes.length &&
-            groupMemberCodes.every(code => activeMembers.includes(code));
+        // STRICT MATCHING: Lengths must be identical, and every active code must be in the group
+        const isGroupFullyActive = activeMemberCodes.length > 0 &&
+            activeMemberCodes.length === groupCodes.length &&
+            groupCodes.every(code => activeMemberCodes.includes(code));
 
         const activeClass = isGroupFullyActive ? 'active' : 'inactive';
         const bentoClass = g.members.length > 4 ? 'wide-card' : '';
@@ -75,7 +75,6 @@ export function renderGroupsGrid() {
         const card = document.createElement('button');
         card.className = `group-card ${activeClass} ${avatarStyleClass} ${bentoClass}`;
 
-        // Event listener ensures clicking the edit button doesn't toggle the group
         card.onclick = (e) => {
             if (e.target.closest('.group-edit-btn')) {
                 openEditGroupModal(g.id);
@@ -97,13 +96,10 @@ export function renderGroupsGrid() {
         container.appendChild(card);
     });
 
-    // 3. "Create Group" Card
+    // --- 3. CREATE CARD ---
     const createCard = document.createElement('button');
     createCard.className = 'group-card create-card';
-    createCard.onclick = () => {
-        console.log("[Groups] Create Card Tapped");
-        openCreateGroupModal();
-    };
+    createCard.onclick = openCreateGroupModal;
     createCard.innerHTML = `
         <span class="material-symbols-rounded">group_add</span>
         <div class="create-label" data-i18n="create_group">Create Group</div>
@@ -113,70 +109,71 @@ export function renderGroupsGrid() {
     applyTranslations();
 }
 
-// --- MUTUALLY EXCLUSIVE TOGGLE LOGIC ---
 export async function toggleGroup(groupId) {
-    if (!tvState.on || toggleDebounceTimer) return;
-
-    // API safety lock (prevents double firing)
-    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 600);
+    if (!tvState.on) return;
+    if (toggleDebounceTimer) return;
+    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
 
     try {
         let targetGroupCodes = [];
-        const activeMembers = memberData.filter(m => m.active).map(m => m.member_code);
-        let isCurrentlyActive = false;
+        const activeMemberCodes = memberData.filter(m => m.active).map(m => m.member_code);
 
         if (groupId === 'all') {
-            isCurrentlyActive = activeMembers.length === memberData.length;
-            if (!isCurrentlyActive) {
-                targetGroupCodes = memberData.map(m => m.member_code); // Turn everyone ON
-            } // If it WAS active, targetGroupCodes remains empty (turns everyone OFF)
+            const isAllActive = activeMemberCodes.length === memberData.length;
+            // If turning ON, select everyone. If turning OFF, array remains empty.
+            if (!isAllActive) {
+                targetGroupCodes = memberData.map(m => m.member_code);
+            }
         } else {
             const group = groupsData.find(g => g.id == groupId);
             if (!group) return;
 
-            const groupMemberCodes = group.members.map(m => m.member_code);
-            isCurrentlyActive = activeMembers.length === groupMemberCodes.length &&
-                groupMemberCodes.every(code => activeMembers.includes(code));
+            const groupCodes = group.members.map(m => m.member_code);
+            const isCurrentlyActive = activeMemberCodes.length === groupCodes.length &&
+                groupCodes.every(code => activeMemberCodes.includes(code));
 
+            // If turning ON, select ONLY this group.
             if (!isCurrentlyActive) {
-                targetGroupCodes = groupMemberCodes; // Turn on ONLY this group
+                targetGroupCodes = groupCodes;
             }
         }
 
         const pendingApiIndexes = [];
-        memberData.forEach((member, index) => {
-            const shouldBeActive = targetGroupCodes.includes(member.member_code);
-            if (member.active !== shouldBeActive) {
-                member.active = shouldBeActive;
-                pendingApiIndexes.push(index);
+        for (let i = 0; i < memberData.length; i++) {
+            const shouldBeActive = targetGroupCodes.includes(memberData[i].member_code);
+            if (memberData[i].active !== shouldBeActive) {
+                memberData[i].active = shouldBeActive;
+                pendingApiIndexes.push(i);
             }
-        });
+        }
 
-        // 1. Optimistic UI update (Instant green border switch)
-        if (window.renderGrid) window.renderGrid();
+        // Optimistic update
+        renderGrid();
         renderGroupsGrid();
 
-        // 2. Background API Sync
         if (pendingApiIndexes.length > 0) {
             await fetch('/api/members/toggle_bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ indexes: pendingApiIndexes })
             });
-            await loadMembers(); // Validate state with server
-            renderGroupsGrid();  // Final pass
         }
+        await loadMembers();
     } catch (e) {
         console.error("Group toggle failed:", e);
     }
 }
 
-// --- MODAL MANAGEMENT ---
+// --- MODAL & UI LOGIC ---
 export async function openCreateGroupModal() {
     editingGroupId = null;
-    setupStaticModalState("create_group", "", false);
+    document.getElementById('group-modal-title').setAttribute('data-i18n', 'create_group');
+    document.getElementById('group-name-input').value = '';
+    document.getElementById('btn-group-delete').style.display = 'none';
+
     await renderMembersSelectionList([]);
     toggleOverlay('group-editor-overlay', true);
+    applyTranslations();
 }
 
 export async function openEditGroupModal(groupId) {
@@ -184,25 +181,17 @@ export async function openEditGroupModal(groupId) {
     const group = groupsData.find(g => g.id === groupId);
     if (!group) return;
 
-    setupStaticModalState("edit_group", group.name, true);
-    const checkedCodes = group.members ? group.members.map(m => m.member_code) : [];
-    await renderMembersSelectionList(checkedCodes);
+    document.getElementById('group-modal-title').setAttribute('data-i18n', 'edit_group');
+    document.getElementById('group-name-input').value = group.name;
+    document.getElementById('btn-group-delete').style.display = 'block';
+
+    await renderMembersSelectionList(group.members.map(m => m.member_code) || []);
     toggleOverlay('group-editor-overlay', true);
-}
-
-function setupStaticModalState(i18nKey, nameVal, showDelete) {
-    const titleEl = document.getElementById('g-modal-title');
-    const nameInput = document.getElementById('g-modal-input');
-    const deleteBtn = document.getElementById('g-modal-delete-btn');
-
-    if (titleEl) titleEl.setAttribute('data-i18n', i18nKey);
-    if (nameInput) nameInput.value = nameVal;
-    if (deleteBtn) deleteBtn.style.display = showDelete ? 'block' : 'none';
     applyTranslations();
 }
 
 async function renderMembersSelectionList(selectedCodes = []) {
-    const listContainer = document.getElementById('g-modal-member-list');
+    const listContainer = document.getElementById('group-members-list');
     if (!listContainer) return;
     listContainer.innerHTML = '';
 
@@ -214,10 +203,11 @@ async function renderMembersSelectionList(selectedCodes = []) {
         item.className = `g-member-select-item ${isSelected ? 'selected' : ''}`;
         item.dataset.code = member.member_code;
 
+        // Your preferred checkbox list UI
         item.innerHTML = `
             <img src="${getAvatarUrl(member)}" class="g-member-avatar" onerror="this.src='/img/avatars/default.png'" />
             <span class="g-member-name">${member.name}</span>
-            <span class="material-symbols-rounded check-icon" style="transition: color 0.2s;">
+            <span class="material-symbols-rounded check-icon" style="font-size: 32px;">
                 ${isSelected ? 'check_box' : 'check_box_outline_blank'}
             </span>
         `;
@@ -229,30 +219,31 @@ async function renderMembersSelectionList(selectedCodes = []) {
                 icon.textContent = nowSelected ? 'check_box' : 'check_box_outline_blank';
             }
         };
+
         listContainer.appendChild(item);
     });
 }
 
-// --- SUBMIT / VALIDATIONS ---
-export async function saveGroup() {
-    const nameInput = document.getElementById('g-modal-input');
+export async function submitGroup() {
+    const nameInput = document.getElementById('group-name-input');
     const name = nameInput ? nameInput.value.trim() : '';
     if (!name) {
-        showFeedbackAlert("Name Required", "Please enter a group name.");
+        showAlertModal("Group Name Required", "Please enter a group name.");
         return;
     }
 
-    const listContainer = document.getElementById('g-modal-member-list');
+    const listContainer = document.getElementById('group-members-list');
     const selectedItems = listContainer ? listContainer.querySelectorAll('.g-member-select-item.selected') : [];
     const allItems = listContainer ? listContainer.querySelectorAll('.g-member-select-item') : [];
     const member_codes = Array.from(selectedItems).map(item => item.dataset.code);
 
     if (member_codes.length < 2) {
-        showFeedbackAlert("Invalid Group", "A group must have at least 2 members.");
+        showAlertModal("Invalid Group", "A group must have at least 2 members.");
         return;
     }
+
     if (member_codes.length === allItems.length) {
-        showFeedbackAlert("Invalid Group", "An 'All Members' group already exists.");
+        showAlertModal("Invalid Group", "An 'All Members' group already exists. Please select fewer members.");
         return;
     }
 
@@ -261,8 +252,9 @@ export async function saveGroup() {
         g.members.length === member_codes.length &&
         g.members.every(m => member_codes.includes(m.member_code))
     );
+
     if (duplicate) {
-        showFeedbackAlert("Duplicate Group", `This exact combination already exists as: ${duplicate.name}`);
+        showAlertModal("Duplicate Group", `This exact combination already exists as: ${duplicate.name}`);
         return;
     }
 
@@ -281,19 +273,28 @@ export async function saveGroup() {
             await loadMembers();
             await loadGroups();
         } else {
-            showFeedbackAlert("Save Failed", res.error || "An unknown error occurred.");
+            showAlertModal("Save Failed", res.error || "An unknown error occurred.");
         }
     } catch (e) {
-        showFeedbackAlert("Connection Error", "Failed to communicate with the server.");
+        console.error("Save group failed:", e);
+        showAlertModal("Connection Error", "Failed to communicate with the server.");
     }
 }
 
-// --- DESTRUCTION TRIGGERS ---
+// --- OVERLAY UTILITIES (No Body Appending) ---
+export function showAlertModal(title, message) {
+    const titleEl = document.getElementById('g-alert-title');
+    const msgEl = document.getElementById('g-alert-msg');
+    if (titleEl) titleEl.innerText = title;
+    if (msgEl) msgEl.innerText = message;
+    toggleOverlay('group-alert-modal', true);
+}
+
 export function promptGroupDelete() {
     toggleOverlay('group-delete-confirm', true);
 }
 
-export async function deleteCurrentGroup() {
+export async function executeDelete() {
     if (!editingGroupId) return;
     try {
         const r = await fetch(`/api/groups/${editingGroupId}`, { method: 'DELETE' });
@@ -303,17 +304,8 @@ export async function deleteCurrentGroup() {
             await loadGroups();
         }
     } catch (e) {
-        console.error("Delete tracking failure", e);
+        console.error("Delete failed:", e);
     }
-}
-
-// --- FEEDBACK LAYER ---
-function showFeedbackAlert(title, message) {
-    const titleEl = document.getElementById('g-alert-title');
-    const msgEl = document.getElementById('g-alert-msg');
-    if (titleEl) titleEl.innerText = title;
-    if (msgEl) msgEl.innerText = message;
-    toggleOverlay('group-alert-modal', true);
 }
 
 function toggleOverlay(id, show) {
@@ -321,11 +313,10 @@ function toggleOverlay(id, show) {
     if (!el) return;
     if (show) {
         el.style.display = 'flex';
-        // Small delay to allow display: flex to apply before transitioning opacity
         timers.setTimeout(() => el.classList.add('active'), 10);
     } else {
         el.classList.remove('active');
-        timers.setTimeout(() => el.style.display = 'none', 200); // Wait for transition
+        timers.setTimeout(() => el.style.display = 'none', 200);
     }
 }
 
@@ -335,9 +326,9 @@ export function closeGroupModals() {
     toggleOverlay('group-alert-modal', false);
 }
 
-// Attach to window
-window.saveGroup = saveGroup;
+// Expose globals for static HTML event binding
+window.saveGroup = submitGroup;
 window.closeGroupModals = closeGroupModals;
 window.promptGroupDelete = promptGroupDelete;
-window.deleteCurrentGroup = deleteCurrentGroup;
+window.executeDelete = executeDelete;
 window.renderGroupsGrid = renderGroupsGrid;

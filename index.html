@@ -805,23 +805,23 @@
   <div id="group-editor-overlay" class="safe-overlay" style="display: none;">
     <div class="safe-modal-card">
       <div class="g-modal-header">
-        <h3 id="g-modal-title">Create Group</h3>
+        <h3 id="group-modal-title">Create Group</h3>
         <button class="icon-btn-ghost" onclick="closeGroupModals()"><span
             class="material-symbols-rounded">close</span></button>
       </div>
-      <div class="input-field-v2" style="margin-bottom: 16px;">
-        <input type="text" id="g-modal-input" placeholder="Group Name" autocomplete="off" />
+  
+      <input type="text" id="group-name-input" class="setup-input" placeholder="Group Name" autocomplete="off"
+        style="margin-bottom: 8px; padding: 16px; font-size: 1.1rem; width: 100%; box-sizing: border-box;" />
+  
+      <div class="g-member-select-list" id="group-members-list">
       </div>
-      <div class="g-member-select-list" id="g-modal-member-list">
-        <!-- Members generated dynamically by groups.js -->
-      </div>
-      <div class="popover-actions"
-        style="margin-top: 12px; display: flex; justify-content: space-between; width: 100%;">
-        <button class="modal-btn" id="g-modal-delete-btn" onclick="promptGroupDelete()"
+  
+      <div class="popover-actions" style="margin-top: 12px; display: flex; justify-content: space-between; width: 100%;">
+        <button class="modal-btn" id="btn-group-delete" onclick="promptGroupDelete()"
           style="background: var(--error); color: var(--on-error); display: none;">Delete</button>
         <div style="display: flex; gap: 12px; margin-left: auto;">
           <button class="modal-btn" onclick="closeGroupModals()">Cancel</button>
-          <button class="modal-btn primary" onclick="saveGroup()">Save</button>
+          <button class="modal-btn primary" onclick="submitGroup()">Save</button>
         </div>
       </div>
     </div>

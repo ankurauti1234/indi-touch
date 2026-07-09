@@ -1,306 +1,215 @@
-/* js/groups.js */
-
 import { config, memberData, tvState, loadMembers, getAvatarUrl } from './data.js';
-import { t, applyTranslations } from './i18n.js';
+import { applyTranslations } from './i18n.js';
 import { timers } from './utils.js';
-import { renderGrid } from './grid.js';
 
-export let groupsData = [];
-let toggleDebounceTimer = null;
-let editingGroupId = null;
+// --- STATE ---
+export let customGroups = [];
+let isToggling = false;
+let currentEditId = null;
 
+// --- INITIALIZATION ---
 export async function loadGroups() {
     try {
-        const r = await fetch('/api/groups');
-        const d = await r.json();
-        if (d.success) {
-            groupsData = d.groups || [];
-            renderGroupsGrid();
+        const response = await fetch('/api/groups');
+        const data = await response.json();
+        if (data.success) {
+            customGroups = data.groups || [];
+            renderGroupCards();
         }
-    } catch (e) {
-        console.error("Failed to load groups:", e);
+    } catch (err) {
+        console.error("[Groups] Failed to fetch groups:", err);
     }
 }
 
-export function renderGroupsGrid() {
+// --- RENDER UI ---
+export function renderGroupCards() {
     const container = document.getElementById('groups-grid-container');
     if (!container) return;
 
-    if (!container._delegated) {
-        container.addEventListener('click', (e) => {
-            const editBtn = e.target.closest('.group-edit-btn');
-            if (editBtn) {
-                e.stopPropagation();
-                const card = editBtn.closest('.group-card');
-                if (card) openEditGroupModal(parseInt(card.dataset.groupId));
-                return;
-            }
-
-            const createCard = e.target.closest('.group-card.create-card');
-            if (createCard) {
-                openCreateGroupModal();
-                return;
-            }
-
-            const card = e.target.closest('.group-card');
-            if (card) {
-                let id = card.dataset.groupId;
-                if (id !== 'all') id = parseInt(id);
-                toggleGroup(id);
-            }
-        });
-
-        container._delegated = true;
-    }
-
-    const style = config.avatarStyle || 'local';
-    const avatarStyleClass = style === 'local' ? 'local-avatar' : '';
-
-    // --- BUILD THE "ALL MEMBERS" CARD FIRST ---
-    // Check if every single member is active
-    const isAllActive = memberData.length > 0 && memberData.every(m => m.active);
-    const allActiveClass = isAllActive ? 'active' : 'inactive';
+    // Clear safely
+    container.innerHTML = '';
 
     const maxAvatars = 4;
-    const displayAllMembers = memberData.slice(0, maxAvatars);
-    const excessAllCount = memberData.length - maxAvatars;
+    const avatarStyleClass = (config.avatarStyle || 'local') === 'local' ? 'local-avatar' : '';
 
-    const allAvatarsHtml = displayAllMembers.map(m => {
-        const url = getAvatarUrl(m);
-        return `<img src="${url}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`;
-    }).join('');
+    // 1. "All Members" Card
+    const allMembersActive = memberData.length > 0 && memberData.every(m => m.active);
+    const allMembersCard = buildCardElement(
+        'all',
+        'All Members',
+        memberData,
+        allMembersActive,
+        avatarStyleClass,
+        maxAvatars,
+        false // cannot edit 'All Members'
+    );
+    container.appendChild(allMembersCard);
 
-    const allExcessHtml = excessAllCount > 0 ? `<div class="group-avatar-more">+${excessAllCount}</div>` : '';
+    // 2. Custom Group Cards
+    customGroups.forEach(group => {
+        // Map member codes to actual member objects to check status
+        const groupMembers = group.members.map(gMem =>
+            memberData.find(m => m.member_code === gMem.member_code)
+        ).filter(Boolean);
 
-    let html = `
-    <button class="group-card all-members-card ${allActiveClass} ${avatarStyleClass}" data-group-id="all" tabindex="0">
-        <div class="group-avatars-container">
-            ${allAvatarsHtml}
-            ${allExcessHtml}
-        </div>
-        <div class="member-overlay">
-            <span class="m-name g-name" style="font-size:1.2rem; font-weight:500;">All Members</span>
-            <span class="m-info g-info" style="font-size:0.9rem; opacity:0.8;">${memberData.length} ${memberData.length === 1 ? 'Member' : 'Members'}</span>
-        </div>
-    </button>`;
+        // Group is active ONLY if all its members are active AND 'All Members' is NOT active
+        const isGroupActive = groupMembers.length > 0 && groupMembers.every(m => m.active) && !allMembersActive;
+        const isWide = group.members.length > 4;
 
-    // --- APPEND REGULAR GROUPS ---
-    html += groupsData.map((g) => {
-        // 1. Get all member codes for this specific group
-        const groupMemberCodes = g.members.map(m => m.member_code);
+        const card = buildCardElement(
+            group.id,
+            group.name,
+            groupMembers,
+            isGroupActive,
+            avatarStyleClass,
+            maxAvatars,
+            true, // is editable
+            isWide
+        );
+        container.appendChild(card);
+    });
 
-        // 2. Check the real truth in memberData: are ALL of these specific members active right now?
-        const isGroupFullyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
-            const actualMember = memberData.find(m => m.member_code === code);
-            return actualMember && actualMember.active;
-        });
-
-        // 3. If the 'All Members' card is active, regular groups should visually dim out to avoid confusion.
-        // Otherwise, this group is active ONLY IF every single member inside it is currently active.
-        const activeClass = (isGroupFullyActive && !isAllActive) ? 'active' : 'inactive';
-
-        // BENTO LOGIC: If more than 4 members, make the card span 2 columns!
-        const bentoClass = g.members.length > 4 ? 'wide-card' : '';
-
-        const displayMembers = g.members.slice(0, maxAvatars);
-        const excessCount = g.members.length - maxAvatars;
-
-        const avatarsHtml = displayMembers.map(m => {
-            const url = getAvatarUrl(m);
-            return `<img src="${url}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`;
-        }).join('');
-
-        const excessHtml = excessCount > 0 ? `<div class="group-avatar-more">+${excessCount}</div>` : '';
-
-        return `
-        <button class="group-card ${activeClass} ${avatarStyleClass} ${bentoClass}" data-group-id="${g.id}" tabindex="0">
-            <div class="group-edit-btn" title="Edit Group" tabindex="-1">
-                <span class="material-symbols-rounded">edit</span>
-            </div>
-            <div class="group-avatars-container">
-                ${avatarsHtml}
-                ${excessHtml}
-            </div>
-            <div class="member-overlay">
-                <span class="m-name g-name" style="font-size:1.2rem; font-weight:500;">${g.name}</span>
-                <span class="m-info g-info" style="font-size:0.9rem; opacity:0.8;">${g.members.length} ${g.members.length === 1 ? 'Member' : 'Members'}</span>
-            </div>
-        </button>`;
-    }).join('');
-
-    // --- APPEND CREATE CARD ---
-    html += `
-    <button class="group-card create-card" tabindex="0">
+    // 3. "Create Group" Card
+    const createCard = document.createElement('button');
+    createCard.className = 'group-card create-card';
+    createCard.onclick = openCreateGroup;
+    createCard.innerHTML = `
         <span class="material-symbols-rounded">group_add</span>
         <div class="create-label" data-i18n="create_group">Create Group</div>
-    </button>`;
+    `;
+    container.appendChild(createCard);
 
-    container.innerHTML = html;
     applyTranslations();
 }
 
+// --- DOM BUILDER UTILITY ---
+function buildCardElement(id, name, members, isActive, styleClass, maxAvatars, isEditable, isWide = false) {
+    const card = document.createElement('button');
+    card.className = `group-card ${isActive ? 'active' : 'inactive'} ${styleClass} ${isWide ? 'wide-card' : ''}`;
 
-export async function toggleGroup(groupId) {
-    if (!tvState.on) return;
-    if (toggleDebounceTimer) return;
-    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
+    // Direct click handler prevents event bubbling bugs
+    card.onclick = (e) => {
+        // If clicking the edit button, open modal instead of toggling
+        if (e.target.closest('.group-edit-btn')) {
+            openEditGroup(id);
+            return;
+        }
+        executeGroupToggle(id, members);
+    };
+
+    const displayMembers = members.slice(0, maxAvatars);
+    const excess = members.length - maxAvatars;
+
+    let avatarsHtml = displayMembers.map(m =>
+        `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
+    ).join('');
+
+    if (excess > 0) {
+        avatarsHtml += `<div class="group-avatar-more">+${excess}</div>`;
+    }
+
+    const editBtnHtml = isEditable ? `
+        <div class="group-edit-btn" title="Edit Group">
+            <span class="material-symbols-rounded">edit</span>
+        </div>` : '';
+
+    card.innerHTML = `
+        ${editBtnHtml}
+        <div class="group-avatars-container">
+            ${avatarsHtml}
+        </div>
+        <div class="member-overlay">
+            <span class="m-name g-name" style="font-size:1.2rem; font-weight:500;">${name}</span>
+            <span class="m-info g-info" style="font-size:0.9rem; opacity:0.8;">${members.length} ${members.length === 1 ? 'Member' : 'Members'}</span>
+        </div>
+    `;
+
+    return card;
+}
+
+// --- CORE LOGIC ---
+async function executeGroupToggle(groupId, groupMembers) {
+    if (!tvState.on || isToggling) return;
+
+    isToggling = true;
+    timers.setTimeout(() => { isToggling = false; }, 500); // 500ms debounce
 
     try {
-        // --- 1. DETERMINE CURRENT STATE ---
-        let isCurrentlyActive = false;
-        let targetGroupCodes = [];
-
-        // Check if the entire board is currently active
-        const isAllActive = memberData.length > 0 && memberData.every(m => m.active);
+        const allMembersActive = memberData.length > 0 && memberData.every(m => m.active);
+        let targetCodes = [];
 
         if (groupId === 'all') {
-            isCurrentlyActive = isAllActive;
-            if (!isCurrentlyActive) {
-                // If it wasn't active, target is EVERYONE
-                targetGroupCodes = memberData.map(m => m.member_code);
-            }
+            if (!allMembersActive) targetCodes = memberData.map(m => m.member_code);
         } else {
-            const group = groupsData.find(g => g.id == groupId);
-            if (!group) return;
-
-            const groupMemberCodes = group.members.map(m => m.member_code);
-
-            // Are this specific group's members fully active right now?
-            const isGroupFullyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
-                const actualMember = memberData.find(m => m.member_code === code);
-                return actualMember && actualMember.active;
-            });
-
-            // THE FIX: A custom group is only "active" (ready to be toggled off) 
-            // if 'All Members' is NOT currently active.
-            isCurrentlyActive = isGroupFullyActive && !isAllActive;
-
-            if (!isCurrentlyActive) {
-                // If it wasn't active, target is ONLY THIS GROUP
-                targetGroupCodes = groupMemberCodes;
-            }
+            const isGroupActive = groupMembers.length > 0 && groupMembers.every(m => m.active) && !allMembersActive;
+            if (!isGroupActive) targetCodes = groupMembers.map(m => m.member_code);
         }
 
-        // --- 2. PREPARE CHANGES & OPTIMISTIC UI UPDATE ---
-        const pendingApiIndexes = [];
-
-        for (let i = 0; i < memberData.length; i++) {
-            const shouldBeActive = targetGroupCodes.includes(memberData[i].member_code);
-
-            if (memberData[i].active !== shouldBeActive) {
-                memberData[i].active = shouldBeActive;
-                pendingApiIndexes.push(i);
+        const pendingUpdates = [];
+        memberData.forEach((member, index) => {
+            const shouldBeActive = targetCodes.includes(member.member_code);
+            if (member.active !== shouldBeActive) {
+                member.active = shouldBeActive;
+                pendingUpdates.push(index);
             }
-        }
+        });
 
-        // Force the UI to instantly snap to the new state
+        // Optimistic UI update
         if (window.renderGrid) window.renderGrid();
-        renderGroupsGrid();
+        renderGroupCards();
 
-        // --- 3. SAFE BACKGROUND SYNC (BULK) ---
-        if (pendingApiIndexes.length > 0) {
+        if (pendingUpdates.length > 0) {
             await fetch('/api/members/toggle_bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ indexes: pendingApiIndexes })
+                body: JSON.stringify({ indexes: pendingUpdates })
             });
+            await loadMembers();
         }
-
-        // --- 4. FINAL VERIFICATION ---
-        await loadMembers();
-
-    } catch (e) {
-        console.error("Group toggle failed:", e);
+    } catch (err) {
+        console.error("[Groups] Toggle failed:", err);
     }
 }
 
-// Modal management
-export async function openCreateGroupModal() {
-    editingGroupId = null;
-
-    const titleEl = document.getElementById('group-modal-title');
-    const nameInput = document.getElementById('group-name-input');
-    const deleteBtn = document.getElementById('btn-group-delete');
-
-    if (titleEl) titleEl.setAttribute('data-i18n', 'create_group');
-    if (nameInput) nameInput.value = '';
-    if (deleteBtn) deleteBtn.style.display = 'none';
-
-    await renderMembersSelectionList([]);
-
-    const overlay = document.getElementById('group-modal-overlay');
-    if (overlay) {
-        overlay.classList.add('active');
-    }
-    applyTranslations();
+// --- MODAL TRIGGERS ---
+function openCreateGroup() {
+    currentEditId = null;
+    setupGroupModal('Create Group', '', false);
+    renderMemberSelectionList([]);
+    toggleOverlay('group-editor-overlay', true);
 }
 
-export async function openEditGroupModal(groupId) {
-    editingGroupId = groupId;
-    const group = groupsData.find(g => g.id === groupId);
+function openEditGroup(groupId) {
+    currentEditId = groupId;
+    const group = customGroups.find(g => g.id === groupId);
     if (!group) return;
 
-    const titleEl = document.getElementById('group-modal-title');
-    const nameInput = document.getElementById('group-name-input');
-    const deleteBtn = document.getElementById('btn-group-delete');
-
-    if (titleEl) titleEl.setAttribute('data-i18n', 'edit_group');
-    if (nameInput) nameInput.value = group.name;
-    if (deleteBtn) deleteBtn.style.display = 'block';
-
-    await renderMembersSelectionList(group.member_codes || []);
-
-    const overlay = document.getElementById('group-modal-overlay');
-    if (overlay) {
-        overlay.classList.add('active');
-    }
-    applyTranslations();
-
-    // Snap remote focus to modal
-    window.resetRemoteFocus();
+    setupGroupModal('Edit Group', group.name, true);
+    renderMemberSelectionList(group.members.map(m => m.member_code));
+    toggleOverlay('group-editor-overlay', true);
 }
 
-export function closeGroupModal() {
-    const overlay = document.getElementById('group-modal-overlay');
-    if (overlay) {
-        overlay.classList.remove('active');
-    }
+// --- SAFE MODAL RENDERING ---
+function setupGroupModal(title, inputValue, showDelete) {
+    const titleEl = document.getElementById('g-modal-title');
+    const inputEl = document.getElementById('g-modal-input');
+    const deleteBtn = document.getElementById('g-modal-delete-btn');
 
-    // Snap remote focus back to grid
-    window.resetRemoteFocus();
+    if (titleEl) titleEl.innerText = title;
+    if (inputEl) inputEl.value = inputValue;
+    if (deleteBtn) deleteBtn.style.display = showDelete ? 'block' : 'none';
 }
 
-async function renderMembersSelectionList(selectedCodes = []) {
-    const listContainer = document.getElementById('group-members-list');
-    if (!listContainer) return;
-    listContainer.innerHTML = '';
+function renderMemberSelectionList(selectedCodes) {
+    const list = document.getElementById('g-modal-member-list');
+    if (!list) return;
+    list.innerHTML = '';
 
-    const allMembers = memberData.length > 0 ? memberData : await loadMembers();
-
-    allMembers.forEach(member => {
+    memberData.forEach(member => {
         const isSelected = selectedCodes.includes(member.member_code);
         const item = document.createElement('div');
-
-        item.className = `group-member-item ${isSelected ? 'selected' : ''}`;
+        item.className = `g-member-select-item ${isSelected ? 'selected' : ''}`;
         item.dataset.code = member.member_code;
-
-        // Inline styling ensures it looks large, clickable, and adapts to Light/Dark Mode
-        item.style.cssText = `
-            display: flex; align-items: center; padding: 12px 16px; 
-            background: var(--surface-variant); border-radius: 16px; 
-            border: 1px solid var(--outline-variant); cursor: pointer;
-            transition: transform 0.1s, border-color 0.2s;
-        `;
-
-        const avatarUrl = getAvatarUrl(member);
-
-        item.innerHTML = `
-            <img src="${avatarUrl}" class="group-member-avatar" onerror="this.src='/img/avatars/default.png'" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; margin-right: 16px;" />
-            <span class="group-member-name" style="flex: 1; font-size: 1.2rem; font-weight: 500; color: var(--text-main);">${member.name}</span>
-            <span class="material-symbols-rounded check-icon" style="color: ${isSelected ? 'var(--primary)' : 'var(--text-sub)'}; font-size: 32px; transition: color 0.2s;">
-                ${isSelected ? 'check_box' : 'check_box_outline_blank'}
-            </span>
-        `;
 
         item.onclick = () => {
             const nowSelected = item.classList.toggle('selected');
@@ -311,200 +220,101 @@ async function renderMembersSelectionList(selectedCodes = []) {
             }
         };
 
-        listContainer.appendChild(item);
+        item.innerHTML = `
+            <img src="${getAvatarUrl(member)}" class="g-member-avatar" onerror="this.src='/img/avatars/default.png'" />
+            <span class="g-member-name">${member.name}</span>
+            <span class="material-symbols-rounded check-icon" style="color: ${isSelected ? 'var(--primary)' : 'var(--text-sub)'}">
+                ${isSelected ? 'check_box' : 'check_box_outline_blank'}
+            </span>
+        `;
+        list.appendChild(item);
     });
 }
 
-export async function submitGroup() {
-    const nameInput = document.getElementById('group-name-input');
-    const name = nameInput ? nameInput.value.trim() : '';
-    if (!name) {
-        showAlertModal("Group Name Required", "Please enter a group name.");
-        return;
-    }
+// --- API ACTIONS ---
+export async function saveGroup() {
+    const input = document.getElementById('g-modal-input');
+    const name = input ? input.value.trim() : '';
 
-    // 1. Get selected and total items
-    const listContainer = document.getElementById('group-members-list');
-    const selectedItems = listContainer ? listContainer.querySelectorAll('.group-member-item.selected') : [];
-    const allItems = listContainer ? listContainer.querySelectorAll('.group-member-item') : [];
-    const member_codes = Array.from(selectedItems).map(item => item.dataset.code);
+    if (!name) return triggerSafeAlert("Name Required", "Please enter a group name.");
 
-    // --- NEW VALIDATIONS ---
-    if (member_codes.length < 2) {
-        showAlertModal("Invalid Group", "A group must have at least 2 members.");
-        return;
-    }
+    const list = document.getElementById('g-modal-member-list');
+    const selectedNodes = list ? list.querySelectorAll('.g-member-select-item.selected') : [];
+    const member_codes = Array.from(selectedNodes).map(node => node.dataset.code);
 
-    if (member_codes.length === allItems.length) {
-        showAlertModal("Invalid Group", "An 'All Members' group already exists. Please select fewer members.");
-        return;
-    }
-    // -----------------------
+    if (member_codes.length < 2) return triggerSafeAlert("Invalid", "Select at least 2 members.");
+    if (member_codes.length === memberData.length) return triggerSafeAlert("Invalid", "'All Members' already exists.");
 
-    // 2. Check for duplicates
-    const duplicate = groupsData.find(g =>
-        g.id !== editingGroupId &&
+    const isDuplicate = customGroups.some(g =>
+        g.id !== currentEditId &&
         g.members.length === member_codes.length &&
         g.members.every(m => member_codes.includes(m.member_code))
     );
 
-    if (duplicate) {
-        showDuplicateModal(duplicate.name);
-        return;
-    }
+    if (isDuplicate) return triggerSafeAlert("Duplicate", "This exact group already exists.");
 
-    // 3. Save the group
-    const url = editingGroupId ? `/api/groups/${editingGroupId}` : '/api/groups';
-    const method = editingGroupId ? 'PUT' : 'POST';
+    const url = currentEditId ? `/api/groups/${currentEditId}` : '/api/groups';
+    const method = currentEditId ? 'PUT' : 'POST';
 
     try {
-        const r = await fetch(url, {
-            method: method,
+        const res = await fetch(url, {
+            method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, member_codes })
         });
-        const res = await r.json();
-        if (res.success) {
-            closeGroupModal();
-            await loadMembers();
+        const data = await res.json();
+
+        if (data.success) {
+            toggleOverlay('group-editor-overlay', false);
             await loadGroups();
         } else {
-            showAlertModal("Save Failed", res.error || "An unknown error occurred.");
+            triggerSafeAlert("Error", data.error);
         }
-    } catch (e) {
-        console.error("Save group failed:", e);
-        showAlertModal("Connection Error", "Failed to communicate with the server.");
+    } catch (err) {
+        triggerSafeAlert("Error", "Server connection failed.");
     }
 }
 
-export function showAlertModal(title, message) {
-    if (document.getElementById('alert-modal')) return;
-
-    const modal = document.createElement('div');
-    modal.id = 'alert-modal';
-    // Use your native overlay class to handle the backdrop natively
-    modal.className = 'popover-overlay active';
-
-    modal.innerHTML = `
-        <div class="popover-card" style="background: var(--bg-card); width: 360px; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 32px;">
-            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--error);">error</span>
-            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">${title}</h2>
-            <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">${message}</p>
-            
-            <button class="modal-btn" onclick="this.closest('#alert-modal').remove(); window.resetRemoteFocus();" style="
-                width: 100%; padding: 14px; border-radius: var(--radius-pill);
-                background: var(--surface-variant); color: var(--text-main);
-                border: 1px solid var(--outline-variant); font-size: 1rem; font-weight: 500; cursor: pointer;
-            ">OK</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    window.resetRemoteFocus();
-}
-
-// Find Duplicate Group 
-export function showDuplicateModal(groupName) {
-    if (document.getElementById('duplicate-modal')) return;
-
-    const modal = document.createElement('div');
-    modal.id = 'duplicate-modal';
-    modal.className = 'popover-overlay active';
-
-    modal.innerHTML = `
-        <div class="popover-card" style="background: var(--bg-card); width: 360px; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 32px;">
-            <span class="material-symbols-rounded" style="font-size: 48px; color: var(--primary);">info</span>
-            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 16px 0 8px 0;">Duplicate Group</h2>
-            <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">This exact combination already exists as:<br><b style="color: var(--text-main);">${groupName}</b></p>
-            
-            <button class="modal-btn" onclick="this.closest('#duplicate-modal').remove(); window.resetRemoteFocus();" style="
-                width: 100%; padding: 14px; border-radius: var(--radius-pill);
-                background: var(--primary); color: var(--on-primary);
-                border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
-            ">OK</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    window.resetRemoteFocus();
-}
-
-// Delete group logic
-export function deleteGroup() {
-    if (!editingGroupId) return;
-    if (document.getElementById('delete-confirm-modal')) return;
-
-    const modal = document.createElement('div');
-    modal.id = 'delete-confirm-modal';
-    modal.className = 'popover-overlay active';
-
-    modal.innerHTML = `
-        <div class="popover-card" style="background: var(--bg-card); width: 360px; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 32px;">
-            <div style="background: rgba(179, 38, 30, 0.15); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-                <span class="material-symbols-rounded" style="font-size: 32px; color: var(--error); font-weight: bold;">delete</span>
-            </div>
-            
-            <h2 style="color: var(--text-main); font-size: 1.4rem; font-weight: 500; margin: 0 0 8px 0;">Delete Group</h2>
-            <p style="color: var(--text-sub); font-size: 1rem; margin: 0 0 24px 0; line-height: 1.5;">Are you sure? This action cannot be undone.</p>
-            
-            <div style="display: flex; gap: 12px; width: 100%;">
-                <button class="modal-btn" onclick="closeDeleteModal()" style="
-                    flex: 1; padding: 14px; border-radius: var(--radius-pill);
-                    background: transparent; color: var(--text-main);
-                    border: 1px solid var(--outline-variant); font-size: 1rem; font-weight: 500; cursor: pointer;
-                ">Cancel</button>
-                
-                <button class="modal-btn" onclick="executeDelete()" style="
-                    flex: 1; padding: 14px; border-radius: var(--radius-pill);
-                    background: var(--error); color: var(--on-error);
-                    border: none; font-size: 1rem; font-weight: 500; cursor: pointer;
-                ">Delete</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    window.resetRemoteFocus();
-}
-
-export function closeDeleteModal() {
-    const modal = document.getElementById('delete-confirm-modal');
-    if (modal) {
-        modal.remove();
-        window.resetRemoteFocus(); // Triggers when modal CLOSES (via cancel)
-    }
-}
-
-export async function executeDelete() {
-    if (!editingGroupId) return;
-
+export async function deleteCurrentGroup() {
+    if (!currentEditId) return;
     try {
-        const r = await fetch(`/api/groups/${editingGroupId}`, { method: 'DELETE' });
-        const res = await r.json();
-
-        if (res.success) {
-            closeDeleteModal();
-            closeGroupModal();
+        const res = await fetch(`/api/groups/${currentEditId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            toggleOverlay('group-delete-confirm', false);
+            toggleOverlay('group-editor-overlay', false);
             await loadGroups();
-            window.resetRemoteFocus(); // Triggers after successful deletion
-        } else {
-            console.error("Failed to delete group: " + res.error);
-            closeDeleteModal();
         }
-    } catch (e) {
-        console.error("Delete group failed:", e);
-        closeDeleteModal();
+    } catch (err) {
+        triggerSafeAlert("Error", "Deletion failed.");
     }
 }
 
-// Window/global exposed triggers
-window.renderGroupsGrid = renderGroupsGrid;
-window.closeGroupModal = closeGroupModal;
-window.submitGroup = submitGroup;
-window.deleteGroup = deleteGroup;
-window.closeDeleteModal = closeDeleteModal;
-window.executeDelete = executeDelete;
-
-window.updateTvUI_groups = function (tvOn) {
-    const overlay = document.getElementById('tv-off-overlay-groups');
-    if (overlay) {
-        overlay.style.display = tvOn ? 'none' : 'flex';
+// --- OVERLAY UTILITIES (No body.appendChild!) ---
+function toggleOverlay(id, show) {
+    const el = document.getElementById(id);
+    if (el) {
+        if (show) el.classList.add('active');
+        else el.classList.remove('active');
     }
 }
+
+export function closeGroupModals() {
+    toggleOverlay('group-editor-overlay', false);
+    toggleOverlay('group-delete-confirm', false);
+    toggleOverlay('group-alert-modal', false);
+}
+
+function triggerSafeAlert(title, msg) {
+    const titleEl = document.getElementById('g-alert-title');
+    const msgEl = document.getElementById('g-alert-msg');
+    if (titleEl) titleEl.innerText = title;
+    if (msgEl) msgEl.innerText = msg;
+    toggleOverlay('group-alert-modal', true);
+}
+
+// Attach to window for static HTML buttons
+window.saveGroup = saveGroup;
+window.deleteCurrentGroup = deleteCurrentGroup;
+window.closeGroupModals = closeGroupModals;
+window.promptGroupDelete = () => toggleOverlay('group-delete-confirm', true);

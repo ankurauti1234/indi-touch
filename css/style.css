@@ -2404,13 +2404,11 @@ body.osk-open .main-stage {
 #groups-grid-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    /* Rigid 2 column constraints */
     gap: var(--gap, 16px);
     width: 100%;
     padding: 16px 0;
 }
 
-/* All Members configuration forces card to occupy complete top track width */
 .group-card.all-members-card {
     grid-column: span 2;
 }
@@ -2420,7 +2418,6 @@ body.osk-open .main-stage {
     border: 2px solid transparent;
     border-radius: var(--radius-card, 28px);
     padding: 16px;
-    /* Reduced padding so big avatars fit inside */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2429,7 +2426,6 @@ body.osk-open .main-stage {
     position: relative;
     transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
     min-height: 160px;
-    /* RESTORED to exactly 160px */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     overflow: hidden;
 }
@@ -2438,19 +2434,22 @@ body.osk-open .main-stage {
     transform: scale(0.97);
 }
 
-/* Bright green active state matching your toggle expectations */
 .group-card.active {
     border-color: var(--green-border, #B8F3BE) !important;
     box-shadow: var(--green-shadow) !important;
-    background: rgba(100, 210, 154, 0.08) !important;
+    background: rgba(184, 243, 190, 0.05) !important;
     opacity: 1 !important;
     filter: none !important;
 }
 
-/* FIXED: Clear visual dimming for unselected groups */
+body.light-mode .group-card.active {
+    background: rgba(76, 175, 80, 0.08) !important;
+}
+
+/* Dimmed but with visible color */
 .group-card.inactive {
-    opacity: 0.4 !important;
-    filter: grayscale(100%) !important;
+    opacity: 0.7 !important;
+    filter: grayscale(30%) !important;
 }
 
 .group-card.create-card {
@@ -2467,7 +2466,7 @@ body.osk-open .main-stage {
     margin-bottom: 8px;
 }
 
-/* --- STACKED AVATARS (EVEN BIGGER) --- */
+/* --- STACKED AVATARS --- */
 .group-avatars-container {
     display: flex;
     align-items: center;
@@ -2478,13 +2477,11 @@ body.osk-open .main-stage {
 
 .group-avatar-stacked {
     width: 96px !important;
-    /* MASSIVE 96px */
     height: 96px !important;
     border-radius: 50% !important;
     object-fit: cover !important;
     border: 4px solid var(--bg-card) !important;
     margin-left: -36px !important;
-    /* Deeper overlap to fit 96px inside the card */
     flex-shrink: 0 !important;
     position: relative;
     transition: border-color 0.2s ease;
@@ -2505,7 +2502,6 @@ body.osk-open .main-stage {
     align-items: center;
     justify-content: center;
     font-size: 22px !important;
-    /* Bigger font for the excess number */
     font-weight: 600;
     border: 4px solid var(--bg-card) !important;
     margin-left: -36px !important;
@@ -2513,14 +2509,13 @@ body.osk-open .main-stage {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* --- TEXT LAYOUT (BIGGER TEXT, HALO SHADOW) --- */
+/* --- TEXT LAYOUT --- */
 .member-overlay {
     text-align: center;
     display: flex;
     flex-direction: column;
     gap: 0px;
     margin-top: -24px !important;
-    /* Pulls text UP further to clear the massive 96px circles */
     z-index: 10 !important;
     position: relative;
     background: transparent !important;
@@ -2532,35 +2527,23 @@ body.osk-open .main-stage {
 .member-overlay .g-name {
     display: block;
     font-size: 1.4rem !important;
-    /* Much bigger title */
     font-weight: 700 !important;
-    /* Bolder text */
     color: var(--text-main) !important;
-    /* FIX: Creates a perfect halo matching the card background in BOTH modes instead of a dirty shadow */
-    text-shadow:
-        -2px -2px 0 var(--bg-card),
-        2px -2px 0 var(--bg-card),
-        -2px 2px 0 var(--bg-card),
-        2px 2px 0 var(--bg-card),
-        0px 4px 8px rgba(0, 0, 0, 0.2) !important;
+    /* Nuke any shadows or borders */
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 transparent !important;
 }
 
 .member-overlay .g-info {
     display: block;
     font-size: 1rem !important;
-    /* Bigger subtitle */
     font-weight: 500;
     color: var(--text-sub) !important;
     margin-top: 2px;
-    /* Subtitle halo */
-    text-shadow:
-        -1.5px -1.5px 0 var(--bg-card),
-        1.5px -1.5px 0 var(--bg-card),
-        -1.5px 1.5px 0 var(--bg-card),
-        1.5px 1.5px 0 var(--bg-card) !important;
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 transparent !important;
 }
 
-/* Touch-Visible Permanent Edit Button */
 .group-edit-btn {
     position: absolute;
     top: 14px;
@@ -2573,9 +2556,9 @@ body.osk-open .main-stage {
     align-items: center;
     justify-content: center;
     color: var(--text-main);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     z-index: 5;
-    transition: transform 0.1s;
+    transition: transform 0.1s, background 0.2s;
     opacity: 0.95;
 }
 
@@ -2623,7 +2606,6 @@ body.osk-open .main-stage {
     color: var(--text-main);
 }
 
-/* Selection list inside creation menu */
 .g-member-select-list {
     display: flex;
     flex-direction: column;
@@ -2649,12 +2631,10 @@ body.osk-open .main-stage {
     border-color: var(--primary);
 }
 
-/* FIXED: Force overlay list profiles to match large circle standards */
 .g-member-avatar {
     width: 64px !important;
     height: 64px !important;
     border-radius: 50% !important;
-    /* FORCES CIRCLE INSIDE MODAL */
     object-fit: cover !important;
     margin-right: 16px;
 }
@@ -2693,10 +2673,12 @@ body.osk-open .main-stage {
     border: none;
 }
 
-/* --- MODAL INPUT LIGHT/DARK FIX --- */
+.modal-btn.primary:active {
+    background: var(--primary-container);
+}
+
 #group-name-input {
     background: var(--bg-surface) !important;
-    /* Automatically #F4F4F5 in light mode */
     color: var(--text-main) !important;
     border: 2px solid var(--outline-variant, #49454F) !important;
     border-radius: 12px !important;
@@ -2710,5 +2692,4 @@ body.osk-open .main-stage {
 
 #group-name-input:focus {
     border-color: var(--primary) !important;
-    /* Purple in light mode, lavender in dark */
 }

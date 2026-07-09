@@ -34,7 +34,8 @@
     --radius-pill: 100px;
 
     --surface-item: #2B2930;
-    /* Pops perfectly against the dark card */
+    --surface-item-selected: rgba(208, 188, 255, 0.15);
+    /* 15% of your Dark Primary */
 }
 
 body.light-mode {
@@ -59,5 +60,6 @@ body.light-mode {
     --green-border: #2E7D32;
 
     --surface-item: #F4F4F5;
-    /* Soft contrast for light mode */
+    --surface-item-selected: rgba(124, 58, 237, 0.08);
+    /* 8% of your Light Primary */
 }

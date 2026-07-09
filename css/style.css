@@ -2713,8 +2713,8 @@ body.light-mode .group-card.active {
 }
 
 .g-member-select-item.selected {
-    background: var(--secondary-container);
-    border-color: var(--primary);
+    background: var(--surface-item-selected) !important;
+        border-color: var(--primary) !important;
 }
 
 .g-member-avatar {

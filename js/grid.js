@@ -168,6 +168,15 @@ export async function toggleMember(index) {
     if (toggleDebounceTimer) return;
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500); // 500ms debounce
     if (memberData[index]) {
+        
+        // 1. Update the main members grid
+        renderGrid();
+
+        // 2. ADD THIS: Update the groups grid to auto-detect the new combination
+        if (window.renderGroupsGrid) {
+            window.renderGroupsGrid();
+        }
+
         try {
             const r = await fetch('/api/members/toggle', {
                 method: 'POST',

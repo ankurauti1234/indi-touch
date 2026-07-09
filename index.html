@@ -803,26 +803,67 @@
 
   <!-- Main Creator / Editor Modal -->
   <div id="group-editor-overlay" class="safe-overlay" style="display: none;">
-    <div class="safe-modal-card">
-      <div class="g-modal-header">
-        <h3 id="group-modal-title">Create Group</h3>
-        <button class="icon-btn-ghost" onclick="closeGroupModals()"><span
-            class="material-symbols-rounded">close</span></button>
-      </div>
+    <div class="safe-modal-card split-editor-card">
   
-      <input type="text" id="group-name-input" class="setup-input" placeholder="Group Name" autocomplete="off"
-        style="margin-bottom: 8px; padding: 16px; font-size: 1.1rem; width: 100%; box-sizing: border-box;" />
+      <button class="icon-btn-ghost close-btn-abs" onclick="closeGroupModals()">
+        <span class="material-symbols-rounded">close</span>
+      </button>
   
-      <div class="g-member-select-list" id="group-members-list">
-      </div>
-  
-      <div class="popover-actions" style="margin-top: 12px; display: flex; justify-content: space-between; width: 100%;">
-        <button class="modal-btn" id="btn-group-delete" onclick="promptGroupDelete()"
-          style="background: var(--error); color: var(--on-error); display: none;">Delete</button>
-        <div style="display: flex; gap: 12px; margin-left: auto;">
-          <button class="modal-btn" onclick="closeGroupModals()">Cancel</button>
-          <button class="modal-btn primary" onclick="submitGroup()">Save</button>
+      <div class="editor-left">
+        <div>
+          <h3 id="group-modal-title"
+            style="margin: 0 0 8px 0; font-size: 28px; font-weight: 500; color: var(--text-main);">Create Group</h3>
+          <p style="color: var(--text-sub); margin: 0 0 24px 0; font-size: 15px;">Define your household group and select
+            members.</p>
+          <input type="text" id="group-name-input" class="setup-input" placeholder="Group Name" autocomplete="off" />
         </div>
+  
+        <div class="editor-actions">
+          <button class="modal-btn" id="btn-group-delete" onclick="promptGroupDelete()"
+            style="background: var(--error); color: var(--on-error); width: 100%; display: none; margin-bottom: 16px; border: none;">
+            Delete Group
+          </button>
+          <div style="display: flex; gap: 12px; width: 100%;">
+            <button class="modal-btn" style="flex: 1;" onclick="closeGroupModals()">Cancel</button>
+            <button class="modal-btn primary" style="flex: 1;" onclick="submitGroup()">Save</button>
+          </div>
+        </div>
+      </div>
+  
+      <div class="editor-right">
+        <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 500; color: var(--text-sub);">Select Members</h4>
+        <div class="g-member-select-list" id="group-members-list">
+        </div>
+      </div>
+  
+    </div>
+  </div>
+  
+  <div id="group-delete-confirm" class="safe-overlay" style="display: none; z-index: 2001;">
+    <div class="safe-modal-card alert-modal-card">
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+        <span class="material-symbols-rounded" style="font-size: 36px; color: var(--error);">delete_forever</span>
+        <h3 style="margin: 0; font-size: 22px; color: var(--text-main);">Delete Group</h3>
+      </div>
+      <p style="color: var(--text-sub); margin: 0 0 24px 0; font-size: 15px; line-height: 1.5;">Are you sure you want to
+        remove this group layout? This process is permanent.</p>
+      <div style="display: flex; gap: 12px; width: 100%; justify-content: flex-end;">
+        <button class="modal-btn" onclick="closeGroupModals()">Cancel</button>
+        <button class="modal-btn primary" style="background: var(--error); color: var(--on-error);"
+          onclick="executeDelete()">Confirm Delete</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="group-alert-modal" class="safe-overlay" style="display: none; z-index: 2002;">
+    <div class="safe-modal-card alert-modal-card">
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+        <span class="material-symbols-rounded" style="font-size: 36px; color: var(--primary);">info</span>
+        <h3 id="g-alert-title" style="margin: 0; font-size: 22px; color: var(--text-main);">Notification</h3>
+      </div>
+      <p id="g-alert-msg" style="color: var(--text-sub); margin: 0 0 24px 0; font-size: 15px; line-height: 1.5;"></p>
+      <div style="display: flex; width: 100%; justify-content: flex-end;">
+        <button class="modal-btn primary" onclick="closeGroupModals()">OK, Got it</button>
       </div>
     </div>
   </div>

@@ -2604,6 +2604,86 @@ body.light-mode .group-card.active {
     border: 1px solid var(--outline-variant);
 }
 
+/* --- SPLIT EDITOR CARD UI --- */
+.split-editor-card {
+    flex-direction: row !important;
+    width: 860px !important;
+    /* Almost full screen width */
+    max-width: 95vw !important;
+    height: 70vh !important;
+    max-height: 560px !important;
+    padding: 0 !important;
+    /* Padding handled by internal panes */
+    overflow: hidden;
+    position: relative;
+}
+
+.editor-left {
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: var(--bg-surface);
+    /* Deep background */
+    border-right: 1px solid var(--outline-variant);
+}
+
+.editor-right {
+    flex: 1.2;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    /* Elevated background */
+}
+
+.close-btn-abs {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 10;
+}
+
+/* Force the member list to consume the full right side */
+.g-member-select-list {
+    flex: 1;
+    max-height: none !important;
+    overflow-y: auto;
+    padding-right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Input adapting to split screen themes */
+#group-name-input {
+    background: var(--bg-card) !important;
+    /* Contrasts perfectly against editor-left */
+    color: var(--text-main) !important;
+    border: 2px solid var(--outline-variant) !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    font-size: 1.1rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+    transition: border-color 0.2s ease;
+}
+
+#group-name-input:focus {
+    border-color: var(--primary) !important;
+}
+
+/* --- ALERT & CONFIRM MODALS (Rectangular Layout) --- */
+.alert-modal-card {
+    width: 480px !important;
+    padding: 32px !important;
+    gap: 0 !important;
+    text-align: left !important;
+    align-items: flex-start !important;
+}
+
 .g-modal-header h3 {
     margin: 0;
     font-size: 24px;

@@ -2479,7 +2479,7 @@ body.osk-open .main-stage {
 .group-avatar-stacked {
     width: 84px !important;
     /* MASSIVE SIZE */
-    height: 84px !important;
+    height: 106px !important;
     border-radius: 50% !important;
     object-fit: cover !important;
     border: 4px solid var(--bg-card) !important;

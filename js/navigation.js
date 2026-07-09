@@ -41,6 +41,7 @@ let touchEndX = 0;
 const SWIPE_THRESHOLD = 60;
 
 let activeScrollableElement = null;
+let initialScrollTop = 0; // Tracks exactly where the scrollbar started
 
 function getScrollableParent(element) {
     if (!element || element === document.body) return null;
@@ -76,7 +77,11 @@ document.addEventListener('touchstart', (e) => {
     touchStartY = e.changedTouches[0].screenY;
     touchStartX = e.changedTouches[0].screenX;
 
+    // Log the scrollable element and exactly where its scrollbar is when the touch starts
     activeScrollableElement = getScrollableParent(e.target);
+    if (activeScrollableElement) {
+        initialScrollTop = activeScrollableElement.scrollTop;
+    }
 
 }, { passive: true });
 
@@ -94,15 +99,24 @@ function handleSwipe() {
 
     if (Math.abs(deltaY) > SWIPE_THRESHOLD && Math.abs(deltaY) > Math.abs(deltaX)) {
 
-        // SMART LOCK: Only block if actually scrolling.
+        // PERFECT LOCK LOGIC:
         if (activeScrollableElement) {
-            const scrollTop = activeScrollableElement.scrollTop;
+            const finalScrollTop = activeScrollableElement.scrollTop;
             const maxScroll = activeScrollableElement.scrollHeight - activeScrollableElement.clientHeight;
 
-            if (deltaY < 0 && scrollTop < maxScroll - 2) return;
-            if (deltaY > 0 && scrollTop > 2) return;
+            // 1. Did the native browser actually scroll the list during this gesture?
+            // If yes (diff > 2px to account for pixel rounding), abort tab switch entirely!
+            if (Math.abs(finalScrollTop - initialScrollTop) > 2) {
+                return;
+            }
+
+            // 2. If the list DID NOT scroll, it means the user was pushing against an edge.
+            // Check if they were at the correct edge to allow a tab switch.
+            if (deltaY < 0 && initialScrollTop < maxScroll - 2) return; // Swiping UP, must be at BOTTOM
+            if (deltaY > 0 && initialScrollTop > 2) return; // Swiping DOWN, must be at TOP
         }
 
+        // --- TAB SWITCHING ---
         if (deltaY < 0) {
             if (currentTabIndex < TABS.length - 1) {
                 currentTabIndex++;

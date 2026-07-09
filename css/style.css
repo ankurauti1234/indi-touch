@@ -2661,14 +2661,11 @@ body.osk-open .main-stage {
     overflow: hidden;
 }
 
-.group-card:active {
-    transform: scale(0.97);
-}
-
-/* High Contrast State Adapters */
 .group-card.active {
-    border-color: var(--green-border, #B8F3BE);
-    box-shadow: var(--green-shadow);
+    border-color: var(--green-border, #B8F3BE) !important;
+    box-shadow: var(--green-shadow) !important;
+    background: rgba(100, 210, 154, 0.08) !important;
+    /* Adds a visible green tint */
 }
 
 .group-card.inactive {
@@ -2737,9 +2734,12 @@ body.osk-open .main-stage {
     align-items: center;
     justify-content: center;
     color: var(--text-main);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    /* Stronger shadow */
     z-index: 5;
-    transition: transform 0.1s;
+    transition: transform 0.1s, background 0.2s;
+    opacity: 0.95;
+    /* ALWAYS VISIBLE FOR TOUCH */
 }
 
 .group-edit-btn:active {

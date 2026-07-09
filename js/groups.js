@@ -29,8 +29,11 @@ export function renderGroupsGrid() {
     const maxAvatars = 4;
     const avatarStyleClass = (config.avatarStyle || 'local') === 'local' ? 'local-avatar' : '';
 
-    // 1. "All Members" Card (Always spans 2 columns at the top)
-    const isAllActive = memberData.length > 0 && memberData.every(m => m.active);
+    // Get currently active members for EXACT matching
+    const activeMembers = memberData.filter(m => m.active).map(m => m.member_code);
+
+    // 1. "All Members" Card
+    const isAllActive = memberData.length > 0 && activeMembers.length === memberData.length;
     const displayAllMembers = memberData.slice(0, maxAvatars);
     const excessAllCount = memberData.length - maxAvatars;
 
@@ -54,12 +57,12 @@ export function renderGroupsGrid() {
     // 2. Custom Rendered Groups
     groupsData.forEach((g) => {
         const groupMemberCodes = g.members.map(m => m.member_code);
-        const isGroupFullyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
-            const actualMember = memberData.find(m => m.member_code === code);
-            return actualMember && actualMember.active;
-        });
 
-        const activeClass = (isGroupFullyActive && !isAllActive) ? 'active' : 'inactive';
+        // STRICT MATCHING: Card is only active if the active members match the group members EXACTLY
+        const isGroupFullyActive = activeMembers.length === groupMemberCodes.length &&
+            groupMemberCodes.every(code => activeMembers.includes(code));
+
+        const activeClass = isGroupFullyActive ? 'active' : 'inactive';
         const bentoClass = g.members.length > 4 ? 'wide-card' : '';
         const displayMembers = g.members.slice(0, maxAvatars);
         const excessCount = g.members.length - maxAvatars;
@@ -71,6 +74,8 @@ export function renderGroupsGrid() {
 
         const card = document.createElement('button');
         card.className = `group-card ${activeClass} ${avatarStyleClass} ${bentoClass}`;
+
+        // Event listener ensures clicking the edit button doesn't toggle the group
         card.onclick = (e) => {
             if (e.target.closest('.group-edit-btn')) {
                 openEditGroupModal(g.id);
@@ -95,7 +100,10 @@ export function renderGroupsGrid() {
     // 3. "Create Group" Card
     const createCard = document.createElement('button');
     createCard.className = 'group-card create-card';
-    createCard.onclick = () => openCreateGroupModal();
+    createCard.onclick = () => {
+        console.log("[Groups] Create Card Tapped");
+        openCreateGroupModal();
+    };
     createCard.innerHTML = `
         <span class="material-symbols-rounded">group_add</span>
         <div class="create-label" data-i18n="create_group">Create Group</div>
@@ -105,53 +113,59 @@ export function renderGroupsGrid() {
     applyTranslations();
 }
 
-// --- TOGGLE ACTIONS ---
+// --- MUTUALLY EXCLUSIVE TOGGLE LOGIC ---
 export async function toggleGroup(groupId) {
     if (!tvState.on || toggleDebounceTimer) return;
-    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
+
+    // API safety lock (prevents double firing)
+    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 600);
 
     try {
-        let isCurrentlyActive = false;
         let targetGroupCodes = [];
-        const isAllActive = memberData.length > 0 && memberData.every(m => m.active);
+        const activeMembers = memberData.filter(m => m.active).map(m => m.member_code);
+        let isCurrentlyActive = false;
 
         if (groupId === 'all') {
-            isCurrentlyActive = isAllActive;
-            if (!isCurrentlyActive) targetGroupCodes = memberData.map(m => m.member_code);
+            isCurrentlyActive = activeMembers.length === memberData.length;
+            if (!isCurrentlyActive) {
+                targetGroupCodes = memberData.map(m => m.member_code); // Turn everyone ON
+            } // If it WAS active, targetGroupCodes remains empty (turns everyone OFF)
         } else {
             const group = groupsData.find(g => g.id == groupId);
             if (!group) return;
 
             const groupMemberCodes = group.members.map(m => m.member_code);
-            const isGroupFullyActive = groupMemberCodes.length > 0 && groupMemberCodes.every(code => {
-                const actualMember = memberData.find(m => m.member_code === code);
-                return actualMember && actualMember.active;
-            });
+            isCurrentlyActive = activeMembers.length === groupMemberCodes.length &&
+                groupMemberCodes.every(code => activeMembers.includes(code));
 
-            isCurrentlyActive = isGroupFullyActive && !isAllActive;
-            if (!isCurrentlyActive) targetGroupCodes = groupMemberCodes;
-        }
-
-        const pendingApiIndexes = [];
-        for (let i = 0; i < memberData.length; i++) {
-            const shouldBeActive = targetGroupCodes.includes(memberData[i].member_code);
-            if (memberData[i].active !== shouldBeActive) {
-                memberData[i].active = shouldBeActive;
-                pendingApiIndexes.push(i);
+            if (!isCurrentlyActive) {
+                targetGroupCodes = groupMemberCodes; // Turn on ONLY this group
             }
         }
 
+        const pendingApiIndexes = [];
+        memberData.forEach((member, index) => {
+            const shouldBeActive = targetGroupCodes.includes(member.member_code);
+            if (member.active !== shouldBeActive) {
+                member.active = shouldBeActive;
+                pendingApiIndexes.push(index);
+            }
+        });
+
+        // 1. Optimistic UI update (Instant green border switch)
         if (window.renderGrid) window.renderGrid();
         renderGroupsGrid();
 
+        // 2. Background API Sync
         if (pendingApiIndexes.length > 0) {
             await fetch('/api/members/toggle_bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ indexes: pendingApiIndexes })
             });
+            await loadMembers(); // Validate state with server
+            renderGroupsGrid();  // Final pass
         }
-        await loadMembers();
     } catch (e) {
         console.error("Group toggle failed:", e);
     }
@@ -203,7 +217,7 @@ async function renderMembersSelectionList(selectedCodes = []) {
         item.innerHTML = `
             <img src="${getAvatarUrl(member)}" class="g-member-avatar" onerror="this.src='/img/avatars/default.png'" />
             <span class="g-member-name">${member.name}</span>
-            <span class="material-symbols-rounded check-icon">
+            <span class="material-symbols-rounded check-icon" style="transition: color 0.2s;">
                 ${isSelected ? 'check_box' : 'check_box_outline_blank'}
             </span>
         `;
@@ -233,17 +247,15 @@ export async function saveGroup() {
     const allItems = listContainer ? listContainer.querySelectorAll('.g-member-select-item') : [];
     const member_codes = Array.from(selectedItems).map(item => item.dataset.code);
 
-    // CRITICAL CONDITIONAL VALIDATIONS
     if (member_codes.length < 2) {
         showFeedbackAlert("Invalid Group", "A group must have at least 2 members.");
         return;
     }
     if (member_codes.length === allItems.length) {
-        showFeedbackAlert("Invalid Group", "An 'All Members' group already exists. Please select fewer members.");
+        showFeedbackAlert("Invalid Group", "An 'All Members' group already exists.");
         return;
     }
 
-    // DUPLICATE MEMBER COMBINATION DETECTION
     const duplicate = groupsData.find(g =>
         g.id !== editingGroupId &&
         g.members.length === member_codes.length &&
@@ -265,7 +277,7 @@ export async function saveGroup() {
         });
         const res = await r.json();
         if (res.success) {
-            toggleOverlay('group-editor-overlay', false);
+            closeGroupModals();
             await loadMembers();
             await loadGroups();
         } else {
@@ -287,8 +299,7 @@ export async function deleteCurrentGroup() {
         const r = await fetch(`/api/groups/${editingGroupId}`, { method: 'DELETE' });
         const res = await r.json();
         if (res.success) {
-            toggleOverlay('group-delete-confirm', false);
-            toggleOverlay('group-editor-overlay', false);
+            closeGroupModals();
             await loadGroups();
         }
     } catch (e) {
@@ -308,8 +319,14 @@ function showFeedbackAlert(title, message) {
 function toggleOverlay(id, show) {
     const el = document.getElementById(id);
     if (!el) return;
-    if (show) el.classList.add('active');
-    else el.classList.remove('active');
+    if (show) {
+        el.style.display = 'flex';
+        // Small delay to allow display: flex to apply before transitioning opacity
+        timers.setTimeout(() => el.classList.add('active'), 10);
+    } else {
+        el.classList.remove('active');
+        timers.setTimeout(() => el.style.display = 'none', 200); // Wait for transition
+    }
 }
 
 export function closeGroupModals() {
@@ -318,7 +335,7 @@ export function closeGroupModals() {
     toggleOverlay('group-alert-modal', false);
 }
 
-// Expose safely for template execution
+// Attach to window
 window.saveGroup = saveGroup;
 window.closeGroupModals = closeGroupModals;
 window.promptGroupDelete = promptGroupDelete;

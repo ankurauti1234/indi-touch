@@ -2446,10 +2446,9 @@ body.light-mode .group-card.active {
     background: rgba(76, 175, 80, 0.08) !important;
 }
 
-/* Dimmed but with visible color */
 .group-card.inactive {
-    opacity: 0.7 !important;
-    filter: grayscale(30%) !important;
+    opacity: 0.6 !important;
+    filter: grayscale(60%) !important;
 }
 
 .group-card.create-card {
@@ -2529,9 +2528,12 @@ body.light-mode .group-card.active {
     font-size: 1.4rem !important;
     font-weight: 700 !important;
     color: var(--text-main) !important;
-    /* Nuke any shadows or borders */
-    text-shadow: none !important;
-    -webkit-text-stroke: 0 transparent !important;
+    text-shadow:
+        -2px -2px 0 var(--bg-card),
+        2px -2px 0 var(--bg-card),
+        -2px 2px 0 var(--bg-card),
+        2px 2px 0 var(--bg-card),
+        0px 4px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
 .member-overlay .g-info {
@@ -2540,8 +2542,11 @@ body.light-mode .group-card.active {
     font-weight: 500;
     color: var(--text-sub) !important;
     margin-top: 2px;
-    text-shadow: none !important;
-    -webkit-text-stroke: 0 transparent !important;
+    text-shadow:
+        -1.5px -1.5px 0 var(--bg-card),
+        1.5px -1.5px 0 var(--bg-card),
+        -1.5px 1.5px 0 var(--bg-card),
+        1.5px 1.5px 0 var(--bg-card) !important;
 }
 
 .group-edit-btn {

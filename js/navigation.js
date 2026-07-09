@@ -38,14 +38,14 @@ let touchStartY = 0;
 let touchEndY = 0;
 let touchStartX = 0;
 let touchEndX = 0;
-const SWIPE_THRESHOLD = 80; // Increased to prevent micro-stutter thrashing
+const SWIPE_THRESHOLD = 60;
 
 let activeScrollableElement = null;
 let initialScrollTop = 0;
 
-// THE THRASHING FIX: Cooldown lock
+// ANTI-THRASHING COOLDOWN LOCK
 let isNavigating = false;
-const TRANSITION_SPEED = 200; // Matches our new snappy CSS
+const TRANSITION_SPEED = 250; // Milliseconds to lock touch after a swipe
 
 function getScrollableParent(element) {
     if (!element || element === document.body) return null;
@@ -73,7 +73,7 @@ function checkOverlayLocks() {
 }
 
 document.addEventListener('touchstart', (e) => {
-    // If we are currently transitioning, ignore the touch entirely
+    // Abort if already transitioning or overlay is open
     if (isNavigating || checkOverlayLocks()) {
         activeScrollableElement = null;
         return;
@@ -97,13 +97,12 @@ document.addEventListener('touchend', (e) => {
     handleSwipe();
 }, { passive: true });
 
-// Helper to trigger navigation and start the cooldown lock
+// Fire navigation and lock the engine until animation finishes
 function triggerSwipeNav(newIndex) {
     isNavigating = true;
     currentTabIndex = newIndex;
     navTo(TABS[currentTabIndex]);
 
-    // Release the lock exactly when the CSS transition finishes
     setTimeout(() => {
         isNavigating = false;
     }, TRANSITION_SPEED);
@@ -119,6 +118,7 @@ function handleSwipe() {
             const finalScrollTop = activeScrollableElement.scrollTop;
             const maxScroll = activeScrollableElement.scrollHeight - activeScrollableElement.clientHeight;
 
+            // If it scrolled even a tiny bit, kill the tab switch
             if (Math.abs(finalScrollTop - initialScrollTop) > 2) {
                 return;
             }

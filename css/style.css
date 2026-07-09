@@ -441,15 +441,21 @@ body {
     flex-direction: column;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0, 0, 1);
-    transform: translateY(20px);
     padding: 24px 24px 0 24px;
+    
+    /* ANTI-TEARING / GPU ACCELERATION HACKS */
+    transform: translate3d(0, 20px, 0); 
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: opacity, transform;
+    
+    transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .view.active {
     opacity: 1;
     pointer-events: all;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0); /* Must match 3D to keep GPU layer */
     z-index: 10;
 }
 

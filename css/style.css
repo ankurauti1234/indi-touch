@@ -419,7 +419,7 @@ body {
     flex-direction: column;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+    transition: opacity 0.15s ease-out, transform 0.15s cubic-bezier(0.2, 0, 0, 1);
     transform: translateY(20px);
     padding: 24px 24px 0 24px;
 }
@@ -429,6 +429,7 @@ body {
     pointer-events: all;
     transform: translateY(0);
     z-index: 10;
+    transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* GRID */
@@ -2585,10 +2586,13 @@ body.light-mode .group-card.active {
     display: none;
     align-items: center;
     justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s ease-out;
 }
 
 .safe-overlay.active {
     display: flex;
+    opacity: 1;
 }
 
 .safe-modal-card {
@@ -2602,6 +2606,12 @@ body.light-mode .group-card.active {
     gap: 20px;
     box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--outline-variant);
+    transform: scale(0.95);
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.safe-overlay.active .safe-modal-card {
+    transform: scale(1);
 }
 
 /* --- SPLIT EDITOR CARD UI --- */

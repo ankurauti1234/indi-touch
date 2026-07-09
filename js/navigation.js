@@ -38,10 +38,14 @@ let touchStartY = 0;
 let touchEndY = 0;
 let touchStartX = 0;
 let touchEndX = 0;
-const SWIPE_THRESHOLD = 60;
+const SWIPE_THRESHOLD = 80; // Increased to prevent micro-stutter thrashing
 
 let activeScrollableElement = null;
-let initialScrollTop = 0; // Tracks exactly where the scrollbar started
+let initialScrollTop = 0;
+
+// THE THRASHING FIX: Cooldown lock
+let isNavigating = false;
+const TRANSITION_SPEED = 200; // Matches our new snappy CSS
 
 function getScrollableParent(element) {
     if (!element || element === document.body) return null;
@@ -69,7 +73,8 @@ function checkOverlayLocks() {
 }
 
 document.addEventListener('touchstart', (e) => {
-    if (checkOverlayLocks()) {
+    // If we are currently transitioning, ignore the touch entirely
+    if (isNavigating || checkOverlayLocks()) {
         activeScrollableElement = null;
         return;
     }
@@ -77,7 +82,6 @@ document.addEventListener('touchstart', (e) => {
     touchStartY = e.changedTouches[0].screenY;
     touchStartX = e.changedTouches[0].screenX;
 
-    // Log the scrollable element and exactly where its scrollbar is when the touch starts
     activeScrollableElement = getScrollableParent(e.target);
     if (activeScrollableElement) {
         initialScrollTop = activeScrollableElement.scrollTop;
@@ -86,12 +90,24 @@ document.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 document.addEventListener('touchend', (e) => {
-    if (checkOverlayLocks()) return;
+    if (isNavigating || checkOverlayLocks()) return;
 
     touchEndY = e.changedTouches[0].screenY;
     touchEndX = e.changedTouches[0].screenX;
     handleSwipe();
 }, { passive: true });
+
+// Helper to trigger navigation and start the cooldown lock
+function triggerSwipeNav(newIndex) {
+    isNavigating = true;
+    currentTabIndex = newIndex;
+    navTo(TABS[currentTabIndex]);
+
+    // Release the lock exactly when the CSS transition finishes
+    setTimeout(() => {
+        isNavigating = false;
+    }, TRANSITION_SPEED);
+}
 
 function handleSwipe() {
     const deltaY = touchEndY - touchStartY;
@@ -99,34 +115,27 @@ function handleSwipe() {
 
     if (Math.abs(deltaY) > SWIPE_THRESHOLD && Math.abs(deltaY) > Math.abs(deltaX)) {
 
-        // PERFECT LOCK LOGIC:
         if (activeScrollableElement) {
             const finalScrollTop = activeScrollableElement.scrollTop;
             const maxScroll = activeScrollableElement.scrollHeight - activeScrollableElement.clientHeight;
 
-            // 1. Did the native browser actually scroll the list during this gesture?
-            // If yes (diff > 2px to account for pixel rounding), abort tab switch entirely!
             if (Math.abs(finalScrollTop - initialScrollTop) > 2) {
                 return;
             }
 
-            // 2. If the list DID NOT scroll, it means the user was pushing against an edge.
-            // Check if they were at the correct edge to allow a tab switch.
-            if (deltaY < 0 && initialScrollTop < maxScroll - 2) return; // Swiping UP, must be at BOTTOM
-            if (deltaY > 0 && initialScrollTop > 2) return; // Swiping DOWN, must be at TOP
+            if (deltaY < 0 && initialScrollTop < maxScroll - 2) return;
+            if (deltaY > 0 && initialScrollTop > 2) return;
         }
 
         // --- TAB SWITCHING ---
         if (deltaY < 0) {
             if (currentTabIndex < TABS.length - 1) {
-                currentTabIndex++;
-                navTo(TABS[currentTabIndex]);
+                triggerSwipeNav(currentTabIndex + 1);
             }
         }
         else {
             if (currentTabIndex > 0) {
-                currentTabIndex--;
-                navTo(TABS[currentTabIndex]);
+                triggerSwipeNav(currentTabIndex - 1);
             }
         }
     }

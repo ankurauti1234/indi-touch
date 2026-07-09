@@ -12,6 +12,9 @@ import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
 
+// --- NEW IMPORT FOR GROUPS ---
+import { loadGroups } from './groups.js';
+
 
 // Expose functions globally for HTML inline event handlers
 window.navTo = navTo;
@@ -41,7 +44,7 @@ export function resetHomeTimer() {
     if (typeof homeTimer !== 'undefined') clearTimeout(homeTimer);
     const onboardingLayer = document.getElementById('onboarding-layer');
     const isOnboarding = onboardingLayer && !onboardingLayer.classList.contains('hidden') && onboardingLayer.style.display !== 'none';
-    
+
     if (config.onboardingCompleted && !isOnboarding && !document.getElementById('view-home').classList.contains('active')) {
         timers.clearTimeout(window.homeTimerId); // Track specifically if needed
         window.homeTimerId = timers.setTimeout(() => {
@@ -68,7 +71,7 @@ let eggTimer;
 window.triggerEasterEgg = () => {
     eggClicks++;
     clearTimeout(eggTimer);
-    
+
     if (eggClicks === 7) {
         document.getElementById('author-overlay').classList.add('active');
         eggClicks = 0;
@@ -108,6 +111,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await checkOnboardingStatus();
     initOSK();
     renderGrid();
+
+    // --- LOAD GROUPS AFTER MAIN GRID IS READY ---
+    await loadGroups();
+
     renderGuestList();
     initLocation();
     renderNotifications();
@@ -115,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 4. Finalize - Hide app loader
     hideAppLoader();
 
-    
+
     // 3. Start Background Services
     timers.setInterval(updateClock, 1000);
     updateClock();

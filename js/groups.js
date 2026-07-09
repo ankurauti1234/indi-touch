@@ -325,12 +325,20 @@ export function closeGroupModals() {
     toggleOverlay('group-delete-confirm', false);
     toggleOverlay('group-alert-modal', false);
 }
+export function closeAlertModal() {
+    const el = document.getElementById('group-alert-modal');
+    if (el) {
+        el.classList.remove('active');
+        timers.setTimeout(() => el.style.display = 'none', 200);
+    }
+}
 
 // Expose globals for static HTML event binding
 window.submitGroup = submitGroup;
 window.saveGroup = submitGroup;
 window.closeGroupModals = closeGroupModals;
+window.closeAlertModal = closeAlertModal; // ADD THIS LINE
 window.promptGroupDelete = promptGroupDelete;
 window.executeDelete = executeDelete;
-window.deleteCurrentGroup = executeDelete; // Fallback mapping for the old bug
+window.deleteCurrentGroup = executeDelete;
 window.renderGroupsGrid = renderGroupsGrid;

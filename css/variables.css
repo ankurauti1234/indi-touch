@@ -32,6 +32,9 @@
     --radius-app: 32px;
     --radius-card: 28px;
     --radius-pill: 100px;
+
+    --surface-item: #2B2930;
+    /* Pops perfectly against the dark card */
 }
 
 body.light-mode {
@@ -54,4 +57,7 @@ body.light-mode {
 
     --green-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
     --green-border: #2E7D32;
+
+    --surface-item: #F4F4F5;
+    /* Soft contrast for light mode */
 }

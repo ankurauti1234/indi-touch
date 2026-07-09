@@ -2704,7 +2704,8 @@ body.light-mode .group-card.active {
     display: flex;
     align-items: center;
     padding: 14px 16px;
-    background: var(--bg-surface);
+    background: var(--surface-item) !important;
+    /* Uses your new global variable */
     border: 1px solid var(--outline-variant);
     border-radius: 16px;
     cursor: pointer;
@@ -2735,9 +2736,13 @@ body.light-mode .group-card.active {
 
 .g-member-name {
     flex: 1;
-    font-size: 16px;
+    font-size: 1.15rem !important;
     font-weight: 500;
     color: var(--text-main);
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding-right: 12px;
 }
 
 .modal-btn {

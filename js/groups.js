@@ -327,7 +327,8 @@ export function closeGroupModals() {
 }
 
 // Expose globals for static HTML event binding
-window.saveGroup = submitGroup;
+window.submitGroup = submitGroup; // FIX: Button was looking for this!
+window.saveGroup = submitGroup;   // Fallback
 window.closeGroupModals = closeGroupModals;
 window.promptGroupDelete = promptGroupDelete;
 window.executeDelete = executeDelete;

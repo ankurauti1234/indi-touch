@@ -2401,235 +2401,6 @@ body.osk-open .main-stage {
    GROUP FEATURE (CLEAN REBUILD)
    ========================================================= */
 
-/* --- GROUPS GRID --- */
-#groups-grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
-    width: 100%;
-    padding: 16px 0;
-}
-
-.group-card {
-    background: var(--bg-card);
-    border: 2px solid transparent;
-    border-radius: 24px;
-    padding: 24px 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-    min-height: 160px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.group-card:active {
-    transform: scale(0.96);
-}
-
-.group-card.active {
-    background: rgba(100, 210, 154, 0.1);
-    border-color: #64d29a;
-}
-
-.group-card.inactive {
-    opacity: 0.6;
-    filter: grayscale(80%);
-}
-
-.group-card.wide-card {
-    grid-column: span 2;
-    /* Bento layout for 5+ members */
-}
-
-/* --- STACKED AVATARS --- */
-.group-avatars-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 12px;
-}
-
-.group-avatar-stacked {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid var(--bg-card);
-    margin-left: -16px;
-    background: #333;
-    position: relative;
-    transition: border-color 0.2s;
-}
-
-.group-avatar-stacked:first-child {
-    margin-left: 0;
-}
-
-.group-card.active .group-avatar-stacked {
-    border-color: rgba(100, 210, 154, 0.2);
-}
-
-.group-avatar-more {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: var(--surface-variant);
-    color: var(--text-main);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
-    border: 3px solid var(--bg-card);
-    margin-left: -16px;
-    z-index: 1;
-}
-
-/* --- TEXT & ICONS --- */
-.member-overlay {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.group-edit-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.1s;
-    z-index: 5;
-}
-
-.group-card:hover .group-edit-btn {
-    opacity: 1;
-}
-
-.group-edit-btn:active {
-    transform: scale(0.9);
-    background: var(--primary);
-}
-
-.group-card.create-card {
-    border: 2px dashed var(--outline-variant);
-    background: transparent;
-    color: var(--text-sub);
-}
-
-.group-card.create-card .material-symbols-rounded {
-    font-size: 40px;
-    margin-bottom: 8px;
-}
-
-/* --- SAFE MODAL OVERLAYS (No Ghost Bugs) --- */
-.safe-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(8px);
-    z-index: 2000;
-    /* Safe z-index, guaranteed below onboarding */
-    display: none;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.safe-overlay.active {
-    display: flex;
-    opacity: 1;
-}
-
-.safe-modal-card {
-    background: var(--bg-surface-container, #1c1b1f);
-    width: 440px;
-    max-width: 90%;
-    border-radius: 28px;
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    transform: scale(0.95);
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.safe-overlay.active .safe-modal-card {
-    transform: scale(1);
-}
-
-.g-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.g-modal-header h3 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 500;
-}
-
-/* --- MODAL MEMBER LIST --- */
-.g-member-select-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 280px;
-    overflow-y: auto;
-    padding-right: 4px;
-}
-
-.g-member-select-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--bg-card);
-    border: 1px solid transparent;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.g-member-select-item.selected {
-    background: rgba(208, 188, 255, 0.1);
-    border-color: var(--primary);
-}
-
-.g-member-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 16px;
-    background: #333;
-}
-
-.g-member-name {
-    flex: 1;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-/* =========================================================
-   THEME-COMPATIBLE GRID LAYOUT & CARDS
-   ========================================================= */
 #groups-grid-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -2661,6 +2432,10 @@ body.osk-open .main-stage {
     overflow: hidden;
 }
 
+.group-card:active {
+    transform: scale(0.97);
+}
+
 .group-card.active {
     border-color: var(--green-border, #B8F3BE) !important;
     box-shadow: var(--green-shadow) !important;
@@ -2684,23 +2459,29 @@ body.osk-open .main-stage {
     margin-bottom: 8px;
 }
 
-/* Stacked Profile Items Layout */
+/* --- STACKED AVATARS & OVERLAP FIX --- */
 .group-avatars-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 14px;
+    margin-bottom: 0px;
+    /* Crucial: Removed margin to allow overlap */
+    z-index: 1;
 }
 
 .group-avatar-stacked {
-    width: 52px;
-    height: 52px;
+    width: 72px;
+    /* Bigger Avatar */
+    height: 72px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid var(--bg-card);
-    margin-left: -14px;
+    border: 4px solid var(--bg-card);
+    /* Thicker border */
+    margin-left: -24px;
+    /* Tighter stacking */
     position: relative;
     transition: border-color 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .group-avatar-stacked:first-child {
@@ -2708,44 +2489,37 @@ body.osk-open .main-stage {
 }
 
 .group-avatar-more {
-    width: 52px;
-    height: 52px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     background: var(--surface-variant);
     color: var(--text-main);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 600;
-    border: 3px solid var(--bg-card);
-    margin-left: -14px;
+    border: 4px solid var(--bg-card);
+    margin-left: -24px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.group-edit-btn {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    width: 40px;
-    height: 40px;
-    background: var(--surface-variant);
-    border-radius: 50%;
+/* FIX: This pulls the text UP over the avatars */
+.member-overlay {
+    text-align: center;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-main);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-    /* Stronger shadow */
-    z-index: 5;
-    transition: transform 0.1s, background 0.2s;
-    opacity: 0.95;
-    /* ALWAYS VISIBLE FOR TOUCH */
-}
-
-.group-edit-btn:active {
-    transform: scale(0.9);
-    background: var(--primary);
-    color: var(--on-primary);
+    flex-direction: column;
+    gap: 2px;
+    margin-top: -16px;
+    /* Pulls text UP over images */
+    z-index: 2;
+    /* Keeps text above images */
+    background: var(--bg-card);
+    /* Solid background for readability */
+    padding: 6px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--outline-variant);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .member-overlay .g-name {
@@ -2760,6 +2534,32 @@ body.osk-open .main-stage {
     font-size: 0.9rem;
     color: var(--text-sub);
     margin-top: 2px;
+}
+
+/* Touch-Visible Edit Button */
+.group-edit-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 40px;
+    height: 40px;
+    background: var(--surface-variant);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-main);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    z-index: 5;
+    transition: transform 0.1s, background 0.2s;
+    opacity: 0.95;
+    /* ALWAYS VISIBLE FOR TOUCH */
+}
+
+.group-edit-btn:active {
+    transform: scale(0.9);
+    background: var(--primary);
+    color: var(--on-primary);
 }
 
 /* =========================================================
@@ -2780,8 +2580,9 @@ body.osk-open .main-stage {
     display: flex;
 }
 
+/* FIX: Uses --bg-card to natively adapt to Light/Dark Mode */
 .safe-modal-card {
-    background: var(--bg-surface-container, #211F26);
+    background: var(--bg-card);
     width: 460px;
     max-width: 92%;
     border-radius: var(--radius-card, 28px);
@@ -2790,7 +2591,7 @@ body.osk-open .main-stage {
     flex-direction: column;
     gap: 20px;
     box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--outline-variant, #49454F);
+    border: 1px solid var(--outline-variant);
 }
 
 .g-modal-header h3 {
@@ -2798,22 +2599,6 @@ body.osk-open .main-stage {
     font-size: 24px;
     font-weight: 500;
     color: var(--text-main);
-}
-
-.input-field-v2 input {
-    width: 100%;
-    padding: 16px;
-    background: var(--bg-surface-container-low, #1C1B1F);
-    border: 1px solid var(--outline, #938F99);
-    border-radius: 12px;
-    color: var(--text-main);
-    font-size: 16px;
-    outline: none;
-    box-sizing: border-box;
-}
-
-.input-field-v2 input:focus {
-    border-color: var(--primary);
 }
 
 /* Selection list for members configuration */

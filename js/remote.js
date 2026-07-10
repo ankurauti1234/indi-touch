@@ -35,7 +35,13 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
-    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+
+    // ANTI-STRETCH FIXED POPUP CHECK
+    const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #critical-popover, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm, #wifi-warning-overlay');
+    if (!isInsidePopup) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+
     focusedElement = el;
 }
 
@@ -53,9 +59,20 @@ function getNavItems() {
 }
 
 function getContentItems() {
-    const alertModal = document.getElementById('group-alert-modal');
-    if (alertModal && alertModal.style.display !== 'none') {
-        return [...alertModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
+    // 1. Connection & Critical Popups (Highest Priority)
+    const criticalPopover = document.getElementById('critical-popover');
+    if (criticalPopover && (criticalPopover.classList.contains('active') || criticalPopover.style.display === 'flex')) {
+        return [...criticalPopover.querySelectorAll('button:not([disabled])')].filter(isVisible);
+    }
+
+    const wifiWarn = document.getElementById('wifi-warning-overlay');
+    if (wifiWarn && (wifiWarn.classList.contains('visible') || wifiWarn.classList.contains('active'))) {
+        return [...wifiWarn.querySelectorAll('button:not([disabled])')].filter(isVisible);
+    }
+
+    const groupAlert = document.getElementById('group-alert-modal');
+    if (groupAlert && groupAlert.style.display !== 'none') {
+        return [...groupAlert.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
     const deleteModal = document.getElementById('group-delete-confirm');
@@ -63,12 +80,21 @@ function getContentItems() {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
-    const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
-    if (overlay) {
-        return [...overlay.querySelectorAll('input, button:not([disabled]), .g-member-select-item')].filter(isVisible);
+    // 2. On-Screen Keyboard Trap
+    const osk = document.getElementById('osk-container');
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
+        return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
-    const activeView = document.querySelector('.view.active');
+    // 3. Modals & Group Creation Sheet Overlays
+    const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
+    if (overlay) {
+        // Target text inputs first to support input focus properties seamlessly
+        return [...overlay.querySelectorAll('input[type="text"], input:not([type="hidden"]), button:not([disabled]), .g-member-select-item')].filter(isVisible);
+    }
+
+    // 4. Standard Frame Tabs
+    const activeView = document.querySelector('#app-frame .view.active') || document.querySelector('.view.active');
     if (!activeView) return [];
 
     const activePanel = activeView.querySelector('.settings-panel.active') || activeView;
@@ -91,6 +117,11 @@ function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
+    if (document.getElementById('critical-popover')?.classList.contains('active')) return true;
+    if (document.getElementById('wifi-warning-overlay')?.classList.contains('visible')) return true;
+
+    const osk = document.getElementById('osk-container');
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -162,7 +193,6 @@ function findNextItem(items, currentEl, direction) {
         const absDx = Math.abs(dx);
         const absDy = Math.abs(dy);
 
-        // Heavily penalize cross-axis distance to lock onto the correct row/column in flexboxes
         if (direction === 'right' && cx > curCX) {
             valid = true; dist = absDx + (absDy * 4);
         } else if (direction === 'left' && cx < curCX) {
@@ -227,14 +257,29 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && osk.classList.contains('visible')) {
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
         if (window.hideOSK) window.hideOSK();
         setTimeout(enterContentZone, 150);
         return;
     }
 
-    const alertModal = document.getElementById('group-alert-modal');
-    if (alertModal && alertModal.style.display !== 'none') {
+    const criticalPopover = document.getElementById('critical-popover');
+    if (criticalPopover && criticalPopover.classList.contains('active')) {
+        if (window.handleCriticalAction) window.handleCriticalAction();
+        else criticalPopover.classList.remove('active');
+        setTimeout(enterContentZone, 150);
+        return;
+    }
+
+    const wifiWarn = document.getElementById('wifi-warning-overlay');
+    if (wifiWarn && wifiWarn.classList.contains('visible')) {
+        wifiWarn.classList.remove('visible');
+        setTimeout(enterContentZone, 150);
+        return;
+    }
+
+    const groupAlert = document.getElementById('group-alert-modal');
+    if (groupAlert && groupAlert.style.display !== 'none') {
         if (window.closeAlertModal) window.closeAlertModal();
         setTimeout(enterContentZone, 150);
         return;
@@ -290,9 +335,10 @@ function handleLongPress() {
 
 function activate() {
     if (focusedElement) {
-        elementBeforeOverlay = focusedElement;
+        if (!isNavLocked() && zone !== 'nav') {
+            elementBeforeOverlay = focusedElement;
+        }
 
-        // Track the index in case clicking destroys and recreates the DOM nodes
         const currentItems = getContentItems();
         const focusedIndex = currentItems.indexOf(focusedElement);
 
@@ -306,11 +352,10 @@ function activate() {
             if (zone === 'nav') {
                 enterContentZone();
             } else {
-                // RECOVERY LOGIC: If the card we clicked was wiped out by a DOM refresh
                 if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
                     const newItems = getContentItems();
                     if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
-                        setFocus(newItems[focusedIndex]); // Restore to the exact slot
+                        setFocus(newItems[focusedIndex]);
                     } else {
                         enterContentZone();
                     }
@@ -344,6 +389,8 @@ export function initRemote() {
                 if (el.classList?.contains('safe-overlay') && el.classList?.contains('active')) requiresFocusReset = true;
                 if (el.id === 'group-alert-modal' && el.style.display !== 'none') requiresFocusReset = true;
                 if (el.id === 'group-delete-confirm' && el.style.display !== 'none') requiresFocusReset = true;
+                if (el.id === 'critical-popover' && el.classList?.contains('active')) requiresFocusReset = true;
+                if (el.id === 'wifi-warning-overlay' && el.classList?.contains('visible')) requiresFocusReset = true;
                 if (el.id === 'osk-container' && el.classList?.contains('visible')) requiresFocusReset = true;
             }
         }
@@ -356,9 +403,18 @@ export function initRemote() {
     observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
 
     document.addEventListener('keydown', (e) => {
+        const remoteKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'ContextMenu'];
+
+        // Persistent Wakeup: Ensure we are always in remote mode if a key hits the system
+        if (remoteKeys.includes(e.key) && !isRemoteMode()) {
+            e.preventDefault();
+            applyRemoteMode(true);
+            return;
+        }
+
         if (!isRemoteMode()) return;
 
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter'].includes(e.key)) {
+        if (remoteKeys.includes(e.key)) {
             e.preventDefault();
         }
 
@@ -397,7 +453,14 @@ export function initRemote() {
         }
     });
 
-    document.addEventListener('mousemove', () => {
-        if (isRemoteMode()) clearFocus();
+    // ANTI-JITTER MOUSE ENGINE
+    let lastX = 0, lastY = 0;
+    document.addEventListener('mousemove', (e) => {
+        if (!isRemoteMode()) return;
+        if (Math.abs(e.screenX - lastX) > 12 || Math.abs(e.screenY - lastY) > 12) {
+            clearFocus();
+            lastX = e.screenX;
+            lastY = e.screenY;
+        }
     });
 }

@@ -35,7 +35,13 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
-    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+
+    // ANTI-STRETCH CHECK
+    const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm');
+    if (!isInsidePopup) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+
     focusedElement = el;
 }
 
@@ -63,9 +69,9 @@ function getContentItems() {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
-    // KEYBOARD FIX: Ensure the spatial engine maps the keyboard keys when open
+    // THE FIX: Strict class check only. No more invisible traps.
     const osk = document.getElementById('osk-container');
-    if (osk && (osk.classList.contains('visible') || isVisible(osk))) {
+    if (osk && osk.classList.contains('visible')) {
         return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
@@ -98,9 +104,9 @@ function isNavLocked() {
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
 
-    // KEYBOARD FIX: Lock background swipe/tab navigation while keyboard is active
+    // THE FIX: Locks UI swiping ONLY when keyboard is genuinely active
     const osk = document.getElementById('osk-container');
-    if (osk && (osk.classList.contains('visible') || isVisible(osk))) return true;
+    if (osk && osk.classList.contains('visible')) return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -147,7 +153,7 @@ function enterContentZone() {
     }
 }
 
-// PERFECTED SPATIAL ALGORITHM (Weighted Grid Tracking)
+// PERFECTED SPATIAL ALGORITHM (With List Escape Hatch)
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
@@ -172,7 +178,6 @@ function findNextItem(items, currentEl, direction) {
         const absDx = Math.abs(dx);
         const absDy = Math.abs(dy);
 
-        // Heavily penalize cross-axis distance to lock onto the correct row/column in flexboxes
         if (direction === 'right' && cx > curCX) {
             valid = true; dist = absDx + (absDy * 4);
         } else if (direction === 'left' && cx < curCX) {
@@ -181,6 +186,14 @@ function findNextItem(items, currentEl, direction) {
             valid = true; dist = absDy + (absDx * 4);
         } else if (direction === 'up' && cy < curCY) {
             valid = true; dist = absDy + (absDx * 4);
+        }
+
+        // Expanded Catch Net (+50px) to easily jump left/right out of tall lists
+        if (!valid) {
+            if (direction === 'left' && rect.right < curRect.left + 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'right' && rect.left > curRect.right - 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'up' && rect.bottom < curRect.top + 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'down' && rect.top > curRect.bottom - 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
         }
 
         if (valid && dist < bestDist) {
@@ -237,17 +250,13 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && (osk.classList.contains('visible') || isVisible(osk))) {
-        // KEYBOARD FIX: Bulletproof force-close logic. Click the UI button first, fallback to script, fallback to CSS hide.
-        const closeBtn = osk.querySelector('.close-btn, .osk-close, .hide-keyboard, [id*="close"]');
-        if (closeBtn) {
-            closeBtn.click();
-        } else if (typeof window.hideOSK === 'function') {
-            window.hideOSK();
-        } else {
-            osk.classList.remove('visible', 'active');
-            osk.style.display = 'none';
-        }
+    if (osk && osk.classList.contains('visible')) {
+        // Bulletproof Force Close for Keyboard
+        const closeBtn = osk.querySelector('.close-btn, .osk-close, .hide-keyboard');
+        if (closeBtn) closeBtn.click();
+        else if (typeof window.hideOSK === 'function') window.hideOSK();
+        else osk.classList.remove('visible', 'active');
+
         setTimeout(enterContentZone, 150);
         return;
     }
@@ -311,7 +320,6 @@ function activate() {
     if (focusedElement) {
         elementBeforeOverlay = focusedElement;
 
-        // Track the index in case clicking destroys and recreates the DOM nodes
         const currentItems = getContentItems();
         const focusedIndex = currentItems.indexOf(focusedElement);
 
@@ -325,11 +333,10 @@ function activate() {
             if (zone === 'nav') {
                 enterContentZone();
             } else {
-                // RECOVERY LOGIC: If the card we clicked was wiped out by a DOM refresh
                 if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
                     const newItems = getContentItems();
                     if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
-                        setFocus(newItems[focusedIndex]); // Restore to the exact slot
+                        setFocus(newItems[focusedIndex]);
                     } else {
                         enterContentZone();
                     }
@@ -377,11 +384,12 @@ export function initRemote() {
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
 
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter'].includes(e.key)) {
+        // Expanded to include ' ' (Spacebar) and 'Select' for TV click compatibility
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', ' ', 'Select'].includes(e.key)) {
             e.preventDefault();
         }
 
-        if (e.key === 'Enter' && !e.repeat) {
+        if (['Enter', ' ', 'Select'].includes(e.key) && !e.repeat) {
             isLongPress = false;
             enterPressTimer = setTimeout(() => {
                 isLongPress = true;
@@ -408,7 +416,7 @@ export function initRemote() {
 
     document.addEventListener('keyup', (e) => {
         if (!isRemoteMode()) return;
-        if (e.key === 'Enter') {
+        if (['Enter', ' ', 'Select'].includes(e.key)) {
             clearTimeout(enterPressTimer);
             if (!isLongPress) {
                 activate();

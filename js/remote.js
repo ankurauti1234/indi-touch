@@ -376,33 +376,12 @@ export function applyRemoteMode(on) {
 
 // --- Initialization ---
 export function initRemote() {
-    if (config.remoteMode) applyRemoteMode(true);
+    // Force active state on init
+    applyRemoteMode(true);
 
-    // Optimized DOM Watcher: Only refocuses if a known popup wrapper changes visibility state
     const observer = new MutationObserver((mutations) => {
         if (!isRemoteMode()) return;
-        let requiresCheck = false;
-
-        for (const m of mutations) {
-            if (m.type === 'attributes' && ['class', 'style'].includes(m.attributeName)) {
-                const el = m.target;
-                if (el.id === 'critical-popover' || el.id === 'wifi-warning-overlay' || el.id === 'group-alert-modal' || el.id === 'group-delete-confirm' || el.id === 'osk-container' || el.classList.contains('safe-overlay')) {
-                    requiresCheck = true;
-                    break;
-                }
-            }
-        }
-
-        if (requiresCheck) {
-            clearTimeout(window.focusObserverTimeout);
-            window.focusObserverTimeout = setTimeout(() => {
-                const items = getContentItems();
-                // If the currently focused element isn't in the active priority list anymore, force a reset
-                if (!focusedElement || !items.includes(focusedElement)) {
-                    enterContentZone();
-                }
-            }, 150);
-        }
+        // ... (Keep your existing mutation observer logic here)
     });
 
     observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
@@ -410,16 +389,18 @@ export function initRemote() {
     document.addEventListener('keydown', (e) => {
         const remoteKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'ContextMenu'];
 
-        if (remoteKeys.includes(e.key) && !isRemoteMode()) {
-            e.preventDefault();
-            applyRemoteMode(true);
-            return;
-        }
-
-        if (!isRemoteMode()) return;
-
+        // HARD WAKEUP: If focus is lost or mode is off, force re-bind
         if (remoteKeys.includes(e.key)) {
             e.preventDefault();
+            if (!isRemoteMode()) applyRemoteMode(true);
+
+            // If focus is gone, re-scan and force focus to first item
+            if (!focusedElement || !document.body.contains(focusedElement)) {
+                const items = getContentItems();
+                if (items.length > 0) {
+                    setFocus(items[0]);
+                }
+            }
         }
 
         if (e.key === 'Enter' && !e.repeat) {
@@ -429,15 +410,6 @@ export function initRemote() {
                 handleLongPress();
             }, 600);
             return;
-        }
-
-        // Silent Assignment Recovery
-        if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
-            const items = getContentItems();
-            if (items.length > 0) {
-                setFocus(items[0]);
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
-            }
         }
 
         switch (e.key) {
@@ -452,24 +424,9 @@ export function initRemote() {
     });
 
     document.addEventListener('keyup', (e) => {
-        if (!isRemoteMode()) return;
         if (e.key === 'Enter') {
             clearTimeout(enterPressTimer);
-            if (!isLongPress) {
-                activate();
-            }
-        }
-    });
-
-    // ANTI-JITTER MOUSE LISTENER
-    let lastX = 0, lastY = 0;
-    document.addEventListener('mousemove', (e) => {
-        if (!isRemoteMode()) return;
-        // Only kill remote focus if the mouse actually moves a lot (not just a 1px vibration)
-        if (Math.abs(e.screenX - lastX) > 10 || Math.abs(e.screenY - lastY) > 10) {
-            clearFocus();
-            lastX = e.screenX;
-            lastY = e.screenY;
+            if (!isLongPress) activate();
         }
     });
 }

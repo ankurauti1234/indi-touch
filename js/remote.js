@@ -209,21 +209,24 @@ function findNextItem(items, currentEl, direction) {
         const dx = center.x - currentCenter.x;
         const dy = center.y - currentCenter.y;
 
+        const ROW_THRESHOLD = current.height * 0.35;
+        const COL_THRESHOLD = current.width * 0.35;
+
         switch (direction) {
             case "left":
-                if (dx >= 0) continue;
+                if (dx >= -COL_THRESHOLD) continue;
                 break;
 
             case "right":
-                if (dx <= 0) continue;
+                if (dx <= COL_THRESHOLD) continue;
                 break;
 
             case "up":
-                if (dy >= 0) continue;
+                if (dy >= -ROW_THRESHOLD) continue;
                 break;
 
             case "down":
-                if (dy <= 0) continue;
+                if (dy <= ROW_THRESHOLD) continue;
                 break;
         }
 

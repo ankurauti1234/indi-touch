@@ -15,7 +15,6 @@ export function isRemoteMode() {
     return document.body.classList.contains('remote-mode');
 }
 
-// BULLETPROOF VISIBILITY CHECK: Only trusts actual screen rendering
 function isVisible(el) {
     if (!el || el.disabled) return false;
     const style = window.getComputedStyle(el);
@@ -36,13 +35,7 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
-
-    const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #critical-popover, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm');
-
-    if (!isInsidePopup) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-    }
-
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     focusedElement = el;
 }
 
@@ -60,40 +53,21 @@ function getNavItems() {
 }
 
 function getContentItems() {
-    // 1. Connection & System Popups (Highest Priority)
-    const criticalPopover = document.getElementById('critical-popover');
-    if (criticalPopover && isVisible(criticalPopover)) {
-        return [...criticalPopover.querySelectorAll('button:not([disabled])')].filter(isVisible);
-    }
-
-    const wifiWarn = document.getElementById('wifi-warning-overlay');
-    if (wifiWarn && isVisible(wifiWarn)) {
-        return [...wifiWarn.querySelectorAll('button:not([disabled])')].filter(isVisible);
-    }
-
-    const groupAlert = document.getElementById('group-alert-modal');
-    if (groupAlert && isVisible(groupAlert)) {
-        return [...groupAlert.querySelectorAll('button:not([disabled])')].filter(isVisible);
+    const alertModal = document.getElementById('group-alert-modal');
+    if (alertModal && alertModal.style.display !== 'none') {
+        return [...alertModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
     const deleteModal = document.getElementById('group-delete-confirm');
-    if (deleteModal && isVisible(deleteModal)) {
+    if (deleteModal && deleteModal.style.display !== 'none') {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
-    // 2. Keyboard Engine Trap
-    const osk = document.getElementById('osk-container');
-    if (osk && isVisible(osk)) {
-        return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
+    const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
+    if (overlay) {
+        return [...overlay.querySelectorAll('input, button:not([disabled]), .g-member-select-item')].filter(isVisible);
     }
 
-    // 3. Modals & Creation Overlays
-    const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active');
-    if (overlay && isVisible(overlay)) {
-        return [...overlay.querySelectorAll('input[type="text"], input:not([type="hidden"]), button:not([disabled]), .g-member-select-item')].filter(isVisible);
-    }
-
-    // 4. Main Tab Layouts
     const activeView = document.querySelector('.view.active');
     if (!activeView) return [];
 
@@ -114,12 +88,9 @@ function getContentItems() {
 }
 
 function isNavLocked() {
-    if (isVisible(document.querySelector('.safe-overlay.active, .popover-overlay.active'))) return true;
-    if (isVisible(document.getElementById('group-alert-modal'))) return true;
-    if (isVisible(document.getElementById('group-delete-confirm'))) return true;
-    if (isVisible(document.getElementById('critical-popover'))) return true;
-    if (isVisible(document.getElementById('wifi-warning-overlay'))) return true;
-    if (isVisible(document.getElementById('osk-container'))) return true;
+    if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
+    if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
+    if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -166,6 +137,7 @@ function enterContentZone() {
     }
 }
 
+// PERFECTED SPATIAL ALGORITHM (Weighted Grid Tracking)
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
@@ -190,6 +162,7 @@ function findNextItem(items, currentEl, direction) {
         const absDx = Math.abs(dx);
         const absDy = Math.abs(dy);
 
+        // Heavily penalize cross-axis distance to lock onto the correct row/column in flexboxes
         if (direction === 'right' && cx > curCX) {
             valid = true; dist = absDx + (absDy * 4);
         } else if (direction === 'left' && cx < curCX) {
@@ -254,46 +227,29 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && isVisible(osk)) {
+    if (osk && osk.classList.contains('visible')) {
         if (window.hideOSK) window.hideOSK();
         setTimeout(enterContentZone, 150);
         return;
     }
 
-    const criticalPopover = document.getElementById('critical-popover');
-    if (criticalPopover && isVisible(criticalPopover)) {
-        if (window.handleCriticalAction) window.handleCriticalAction();
-        else criticalPopover.classList.remove('active');
-        setTimeout(enterContentZone, 150);
-        return;
-    }
-
-    const wifiWarn = document.getElementById('wifi-warning-overlay');
-    if (wifiWarn && isVisible(wifiWarn)) {
-        wifiWarn.classList.remove('visible');
-        setTimeout(enterContentZone, 150);
-        return;
-    }
-
-    const groupAlert = document.getElementById('group-alert-modal');
-    if (groupAlert && isVisible(groupAlert)) {
+    const alertModal = document.getElementById('group-alert-modal');
+    if (alertModal && alertModal.style.display !== 'none') {
         if (window.closeAlertModal) window.closeAlertModal();
-        else groupAlert.style.display = 'none';
         setTimeout(enterContentZone, 150);
         return;
     }
 
     const deleteModal = document.getElementById('group-delete-confirm');
-    if (deleteModal && isVisible(deleteModal)) {
+    if (deleteModal && deleteModal.style.display !== 'none') {
         const cancel = deleteModal.querySelector('.modal-btn:not(.primary)');
         if (cancel) cancel.click();
-        else deleteModal.style.display = 'none';
         setTimeout(enterContentZone, 150);
         return;
     }
 
     const overlay = document.querySelector('.safe-overlay.active');
-    if (overlay && isVisible(overlay)) {
+    if (overlay) {
         const cancelBtn = overlay.querySelector('.close-btn-abs, .modal-btn:not(.primary)');
         if (cancelBtn) {
             cancelBtn.click();
@@ -334,10 +290,9 @@ function handleLongPress() {
 
 function activate() {
     if (focusedElement) {
-        if (!isNavLocked() && zone !== 'nav') {
-            elementBeforeOverlay = focusedElement;
-        }
+        elementBeforeOverlay = focusedElement;
 
+        // Track the index in case clicking destroys and recreates the DOM nodes
         const currentItems = getContentItems();
         const focusedIndex = currentItems.indexOf(focusedElement);
 
@@ -351,10 +306,11 @@ function activate() {
             if (zone === 'nav') {
                 enterContentZone();
             } else {
+                // RECOVERY LOGIC: If the card we clicked was wiped out by a DOM refresh
                 if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
                     const newItems = getContentItems();
                     if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
-                        setFocus(newItems[focusedIndex]);
+                        setFocus(newItems[focusedIndex]); // Restore to the exact slot
                     } else {
                         enterContentZone();
                     }
@@ -376,31 +332,34 @@ export function applyRemoteMode(on) {
 
 // --- Initialization ---
 export function initRemote() {
-    // Force active state on init
-    applyRemoteMode(true);
+    if (config.remoteMode) applyRemoteMode(true);
 
     const observer = new MutationObserver((mutations) => {
         if (!isRemoteMode()) return;
-        // ... (Keep your existing mutation observer logic here)
+        let requiresFocusReset = false;
+
+        for (const m of mutations) {
+            if (m.type === 'attributes') {
+                const el = m.target;
+                if (el.classList?.contains('safe-overlay') && el.classList?.contains('active')) requiresFocusReset = true;
+                if (el.id === 'group-alert-modal' && el.style.display !== 'none') requiresFocusReset = true;
+                if (el.id === 'group-delete-confirm' && el.style.display !== 'none') requiresFocusReset = true;
+                if (el.id === 'osk-container' && el.classList?.contains('visible')) requiresFocusReset = true;
+            }
+        }
+
+        if (requiresFocusReset) {
+            setTimeout(enterContentZone, 150);
+        }
     });
 
     observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
 
     document.addEventListener('keydown', (e) => {
-        const remoteKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'ContextMenu'];
+        if (!isRemoteMode()) return;
 
-        // HARD WAKEUP: If focus is lost or mode is off, force re-bind
-        if (remoteKeys.includes(e.key)) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter'].includes(e.key)) {
             e.preventDefault();
-            if (!isRemoteMode()) applyRemoteMode(true);
-
-            // If focus is gone, re-scan and force focus to first item
-            if (!focusedElement || !document.body.contains(focusedElement)) {
-                const items = getContentItems();
-                if (items.length > 0) {
-                    setFocus(items[0]);
-                }
-            }
         }
 
         if (e.key === 'Enter' && !e.repeat) {
@@ -410,6 +369,11 @@ export function initRemote() {
                 handleLongPress();
             }, 600);
             return;
+        }
+
+        if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
+            const items = getContentItems();
+            if (items.length > 0) focusedElement = items[0];
         }
 
         switch (e.key) {
@@ -424,9 +388,16 @@ export function initRemote() {
     });
 
     document.addEventListener('keyup', (e) => {
+        if (!isRemoteMode()) return;
         if (e.key === 'Enter') {
             clearTimeout(enterPressTimer);
-            if (!isLongPress) activate();
+            if (!isLongPress) {
+                activate();
+            }
         }
+    });
+
+    document.addEventListener('mousemove', () => {
+        if (isRemoteMode()) clearFocus();
     });
 }

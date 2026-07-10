@@ -35,17 +35,35 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
-    // console.log('Remote Focus:', el);
-
-    // ANTI-STRETCH CHECK
-    const isInsidePopup = el.closest(
-        '.safe-overlay, .popover-overlay, #modal-overlay, #critical-popover, #osk-container, #group-alert-modal, #group-delete-confirm'
-    );
-    if (!isInsidePopup) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-    }
 
     focusedElement = el;
+
+    // Never scroll the OSK or popups.
+    if (
+        el.closest(
+            '#osk-container, #critical-popover, #group-alert-modal, #group-delete-confirm'
+        )
+    ) {
+        return;
+    }
+
+    // Member selection list: only scroll the list container.
+    const memberList = el.closest('#group-members-list');
+    if (memberList) {
+        el.scrollIntoView({
+            block: 'nearest',
+            inline: 'nearest',
+            behavior: 'smooth'
+        });
+        return;
+    }
+
+    // Everything else.
+    el.scrollIntoView({
+        block: 'center',
+        inline: 'nearest',
+        behavior: 'smooth'
+    });
 }
 
 // --- Context Scanners ---

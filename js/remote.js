@@ -380,6 +380,9 @@ export function initRemote() {
                 if (el.classList?.contains('safe-overlay') && el.classList?.contains('active')) requiresFocusReset = true;
                 if (el.id === 'group-alert-modal' && el.style.display !== 'none') requiresFocusReset = true;
                 if (el.id === 'group-delete-confirm' && el.style.display !== 'none') requiresFocusReset = true;
+                if (el.id === 'critical-popover' && el.classList?.contains('active')) {
+                    requiresFocusReset = true;
+                }
                 if (el.id === 'osk-container' && el.classList?.contains('visible')) requiresFocusReset = true;
             }
         }

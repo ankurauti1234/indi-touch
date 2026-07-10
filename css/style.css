@@ -66,15 +66,17 @@ body.remote-mode * {
 
 /* Remote Focus ring — used for full-UI navigation in remote mode */
 .remoteFocused {
-    outline: none !important;
-    /* Box-shadow flawlessly wraps ANY border-radius shape natively */
-    box-shadow: 0 0 0 4px var(--primary), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+    /* Outline NEVER gets clipped by overflow: hidden */
+    outline: 4px solid #fff !important;
+    outline-offset: 2px !important;
+
+    /* Adds a subtle drop shadow to lift the card, but relying on outline for visibility */
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6) !important;
     z-index: 100 !important;
-    position: relative;
 
     /* Native TV "Pop" effect */
-    transform: scale(1.02);
-    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s ease-out !important;
+    transform: scale(1.03);
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), outline 0.15s ease-out !important;
 }
 
 /* Slightly larger pop for smaller elements */
@@ -82,7 +84,7 @@ body.remote-mode * {
 .remoteFocused.chip,
 .remoteFocused.modal-btn,
 .remoteFocused.action-btn {
-    transform: scale(1.05);
+    transform: scale(1.06);
 }
 
 /* Wake up inactive/disabled cards fully so the ring shines bright */

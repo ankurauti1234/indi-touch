@@ -35,7 +35,14 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
-    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+
+    // ANTI-STRETCH FIX: Do not trigger scroll calculations if inside a fixed popup/overlay
+    const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #critical-popover, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm');
+
+    if (!isInsidePopup) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+
     focusedElement = el;
 }
 

@@ -86,10 +86,10 @@ body.remote-mode * {
 }
 
 /* Wake up inactive/disabled cards fully so the ring shines bright */
-.inactive.remoteFocused {
+/* .inactive.remoteFocused {
     opacity: 1 !important;
     filter: none !important;
-}
+} */
 
 body {
     background-color: #000;

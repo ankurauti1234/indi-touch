@@ -35,10 +35,11 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
-    console.log('Remote Focus:', el);
 
     // ANTI-STRETCH CHECK
-    const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm');
+    const isInsidePopup = el.closest(
+        '.safe-overlay, .popover-overlay, #modal-overlay, #critical-popover, #osk-container, #group-alert-modal, #group-delete-confirm'
+    ); 
     if (!isInsidePopup) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     }

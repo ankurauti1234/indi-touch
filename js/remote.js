@@ -461,7 +461,15 @@ export function initRemote() {
         }
     });
 
-    document.addEventListener('mousemove', () => {
-        if (isRemoteMode()) clearFocus();
+    // ANTI-JITTER MOUSE LISTENER
+    let lastX = 0, lastY = 0;
+    document.addEventListener('mousemove', (e) => {
+        if (!isRemoteMode()) return;
+        // Only kill remote focus if the mouse actually moves a lot (not just a 1px vibration)
+        if (Math.abs(e.screenX - lastX) > 10 || Math.abs(e.screenY - lastY) > 10) {
+            clearFocus();
+            lastX = e.screenX;
+            lastY = e.screenY;
+        }
     });
 }

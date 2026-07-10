@@ -6,7 +6,6 @@ import { config } from './data.js';
 let zone = 'content';
 let focusedElement = null;
 let elementBeforeOverlay = null;
-let scrollShieldTimeout = null; // Used to block phantom mouse clicks
 const TABS = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
 
 let enterPressTimer = null;
@@ -37,7 +36,6 @@ function setFocus(el) {
 
     el.classList.add('remoteFocused');
 
-    // ANTI-STRETCH CHECK
     const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm, #critical-popover, #wifi-warning-overlay');
     if (!isInsidePopup) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
@@ -60,16 +58,6 @@ function getNavItems() {
 }
 
 function getContentItems() {
-    const criticalPopover = document.getElementById('critical-popover');
-    if (criticalPopover && criticalPopover.classList.contains('active')) {
-        return [...criticalPopover.querySelectorAll('button:not([disabled])')].filter(isVisible);
-    }
-
-    const wifiWarn = document.getElementById('wifi-warning-overlay');
-    if (wifiWarn && wifiWarn.classList.contains('visible')) {
-        return [...wifiWarn.querySelectorAll('button:not([disabled])')].filter(isVisible);
-    }
-
     const alertModal = document.getElementById('group-alert-modal');
     if (alertModal && alertModal.style.display !== 'none') {
         return [...alertModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
@@ -81,13 +69,13 @@ function getContentItems() {
     }
 
     const osk = document.getElementById('osk-container');
-    if (osk && isVisible(osk)) {
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
         return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
     if (overlay) {
-        return [...overlay.querySelectorAll('input[type="text"], input:not([type="hidden"]), button:not([disabled]), .g-member-select-item')].filter(isVisible);
+        return [...overlay.querySelectorAll('input, button:not([disabled]), .g-member-select-item')].filter(isVisible);
     }
 
     const activeView = document.querySelector('.view.active');
@@ -113,9 +101,9 @@ function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
-    if (document.getElementById('critical-popover')?.classList.contains('active')) return true;
-    if (document.getElementById('wifi-warning-overlay')?.classList.contains('visible')) return true;
-    if (isVisible(document.getElementById('osk-container'))) return true;
+
+    const osk = document.getElementById('osk-container');
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -162,7 +150,7 @@ function enterContentZone() {
     }
 }
 
-// PERFECTED SPATIAL ALGORITHM with Broad-Phase Escape Hatch
+// PERFECTED SPATIAL ALGORITHM (With Broad-Phase Escape for Overlays)
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
@@ -198,12 +186,12 @@ function findNextItem(items, currentEl, direction) {
             valid = true; dist = absDy + (absDx * 4);
         }
 
-        // Broad-Phase Escape Hatch: Jumps out of deep vertical lists easily
+        // BROAD-PHASE ESCAPE: Casts a wider net (+50px) to jump between misaligned overlay columns
         if (!valid) {
-            if (direction === 'left' && rect.right < curRect.left + 20) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'right' && rect.left > curRect.right - 20) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'up' && rect.bottom < curRect.top + 20) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'down' && rect.top > curRect.bottom - 20) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'left' && rect.right < curRect.left + 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'right' && rect.left > curRect.right - 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'up' && rect.bottom < curRect.top + 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'down' && rect.top > curRect.bottom - 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
         }
 
         if (valid && dist < bestDist) {
@@ -260,27 +248,13 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && isVisible(osk)) {
-        // Find and click the close button if it exists, otherwise use fallback function
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
+        // Find and click the close button if it exists, otherwise fallback to global function
         const closeBtn = osk.querySelector('.close-btn, .osk-close, .hide-keyboard');
         if (closeBtn) closeBtn.click();
         else if (window.hideOSK) window.hideOSK();
         else osk.classList.remove('visible', 'active');
-        setTimeout(enterContentZone, 150);
-        return;
-    }
 
-    const critical = document.getElementById('critical-popover');
-    if (critical && critical.classList.contains('active')) {
-        if (window.handleCriticalAction) window.handleCriticalAction();
-        else critical.classList.remove('active');
-        setTimeout(enterContentZone, 150);
-        return;
-    }
-
-    const wifiWarn = document.getElementById('wifi-warning-overlay');
-    if (wifiWarn && wifiWarn.classList.contains('visible')) {
-        wifiWarn.classList.remove('visible');
         setTimeout(enterContentZone, 150);
         return;
     }
@@ -395,8 +369,6 @@ export function initRemote() {
                 if (el.id === 'group-alert-modal' && el.style.display !== 'none') requiresFocusReset = true;
                 if (el.id === 'group-delete-confirm' && el.style.display !== 'none') requiresFocusReset = true;
                 if (el.id === 'osk-container' && el.classList?.contains('visible')) requiresFocusReset = true;
-                if (el.id === 'critical-popover' && el.classList?.contains('active')) requiresFocusReset = true;
-                if (el.id === 'wifi-warning-overlay' && el.classList?.contains('visible')) requiresFocusReset = true;
             }
         }
 
@@ -408,25 +380,10 @@ export function initRemote() {
     observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
 
     document.addEventListener('keydown', (e) => {
-        const remoteKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'ContextMenu'];
-
-        if (remoteKeys.includes(e.key) && !isRemoteMode()) {
-            e.preventDefault();
-            applyRemoteMode(true);
-            return;
-        }
-
         if (!isRemoteMode()) return;
 
-        if (remoteKeys.includes(e.key)) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter'].includes(e.key)) {
             e.preventDefault();
-
-            // POINTER SHIELD: Prevents phantom air-mouse hovers while navigating
-            document.body.style.pointerEvents = 'none';
-            clearTimeout(scrollShieldTimeout);
-            scrollShieldTimeout = setTimeout(() => {
-                document.body.style.pointerEvents = '';
-            }, 300);
         }
 
         if (e.key === 'Enter' && !e.repeat) {
@@ -440,10 +397,7 @@ export function initRemote() {
 
         if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
             const items = getContentItems();
-            if (items.length > 0) {
-                setFocus(items[0]);
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
-            }
+            if (items.length > 0) focusedElement = items[0];
         }
 
         switch (e.key) {
@@ -467,14 +421,7 @@ export function initRemote() {
         }
     });
 
-    // MOUSE JITTER FIX
-    let lastX = 0, lastY = 0;
-    document.addEventListener('mousemove', (e) => {
-        if (!isRemoteMode()) return;
-        if (Math.abs(e.screenX - lastX) > 10 || Math.abs(e.screenY - lastY) > 10) {
-            clearFocus();
-            lastX = e.screenX;
-            lastY = e.screenY;
-        }
+    document.addEventListener('mousemove', () => {
+        if (isRemoteMode()) clearFocus();
     });
 }

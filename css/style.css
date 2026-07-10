@@ -66,22 +66,22 @@ body.remote-mode * {
 
 /* Remote Focus ring — used for full-UI navigation in remote mode */
 .remoteFocused {
-    /* Outline natively follows the border-radius of the element */
-    outline: 4px solid var(--primary) !important;
-    outline-offset: 4px !important;
+    outline: none !important;
+    /* Nukes the buggy WebKit outline */
+    /* Box-shadow flawlessly wraps ANY border-radius shape */
+    box-shadow: 0 0 0 4px var(--primary), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
     z-index: 100 !important;
     position: relative;
 
     /* Native TV "Pop" effect */
     transform: scale(1.02);
-    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), outline 0.15s ease-out !important;
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s ease-out !important;
 }
 
 /* Slightly larger pop for smaller elements */
 .remoteFocused.nav-btn,
 .remoteFocused.chip,
 .remoteFocused.modal-btn,
-.remoteFocused.group-edit-btn,
 .remoteFocused.action-btn {
     transform: scale(1.05);
 }

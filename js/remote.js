@@ -35,7 +35,12 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
-    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+
+    const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm, #critical-popover, #wifi-warning-overlay');
+    if (!isInsidePopup) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+
     focusedElement = el;
 }
 
@@ -61,6 +66,11 @@ function getContentItems() {
     const deleteModal = document.getElementById('group-delete-confirm');
     if (deleteModal && deleteModal.style.display !== 'none') {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
+    }
+
+    const osk = document.getElementById('osk-container');
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
+        return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
@@ -91,6 +101,9 @@ function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
+
+    const osk = document.getElementById('osk-container');
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -154,30 +167,28 @@ function findNextItem(items, currentEl, direction) {
         const cy = rect.top + rect.height / 2;
 
         let valid = false;
-        let dist = 0;
+        let dist = Infinity;
 
         const dx = cx - curCX;
         const dy = cy - curCY;
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
 
-        if (direction === 'up' && rect.bottom <= curRect.bottom - 5) {
-            valid = Math.abs(dx) < Math.abs(dy) * 2;
-            dist = Math.abs(dy) * 2 + Math.abs(dx);
-        } else if (direction === 'down' && rect.top >= curRect.top + 5) {
-            valid = Math.abs(dx) < Math.abs(dy) * 2;
-            dist = Math.abs(dy) * 2 + Math.abs(dx);
-        } else if (direction === 'left' && rect.right <= curRect.right - 5) {
-            valid = Math.abs(dy) < Math.abs(dx) * 2;
-            dist = Math.abs(dx) * 2 + Math.abs(dy);
-        } else if (direction === 'right' && rect.left >= curRect.left + 5) {
-            valid = Math.abs(dy) < Math.abs(dx) * 2;
-            dist = Math.abs(dx) * 2 + Math.abs(dy);
+        if (direction === 'right' && cx > curCX) {
+            valid = true; dist = absDx + (absDy * 4);
+        } else if (direction === 'left' && cx < curCX) {
+            valid = true; dist = absDx + (absDy * 4);
+        } else if (direction === 'down' && cy > curCY) {
+            valid = true; dist = absDy + (absDx * 4);
+        } else if (direction === 'up' && cy < curCY) {
+            valid = true; dist = absDy + (absDx * 4);
         }
 
         if (!valid) {
-            if (direction === 'up' && rect.bottom < curRect.top) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'down' && rect.top > curRect.bottom) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'left' && rect.right < curRect.left) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'right' && rect.left > curRect.right) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'left' && rect.right < curRect.left + 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'right' && rect.left > curRect.right - 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'up' && rect.bottom < curRect.top + 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'down' && rect.top > curRect.bottom - 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
         }
 
         if (valid && dist < bestDist) {
@@ -234,8 +245,12 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && osk.classList.contains('visible')) {
-        if (window.hideOSK) window.hideOSK();
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
+        const closeBtn = osk.querySelector('.close-btn, .osk-close, .hide-keyboard');
+        if (closeBtn) closeBtn.click();
+        else if (window.hideOSK) window.hideOSK();
+        else osk.classList.remove('visible', 'active');
+
         setTimeout(enterContentZone, 150);
         return;
     }
@@ -298,6 +313,9 @@ function handleLongPress() {
 function activate() {
     if (focusedElement) {
         elementBeforeOverlay = focusedElement;
+        const currentItems = getContentItems();
+        const focusedIndex = currentItems.indexOf(focusedElement);
+
         focusedElement.click();
 
         if (focusedElement.tagName === 'INPUT') {
@@ -309,7 +327,12 @@ function activate() {
                 enterContentZone();
             } else {
                 if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
-                    enterContentZone();
+                    const newItems = getContentItems();
+                    if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
+                        setFocus(newItems[focusedIndex]);
+                    } else {
+                        enterContentZone();
+                    }
                 }
             }
         }, 250);
@@ -330,7 +353,6 @@ export function applyRemoteMode(on) {
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 
-    // DOM WATCHER: Auto-focus popups and overlays the moment they appear
     const observer = new MutationObserver((mutations) => {
         if (!isRemoteMode()) return;
         let requiresFocusReset = false;
@@ -346,20 +368,32 @@ export function initRemote() {
         }
 
         if (requiresFocusReset) {
-            setTimeout(enterContentZone, 150); // Jump focus into the new popup
+            setTimeout(enterContentZone, 150);
         }
     });
 
     observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
 
+    // UNBRANDED REMOTE GLOBAL CLICK HIJACKER
+    // If the remote "OK" button acts like a physical mouse click, this grabs it and forces it to the focused item.
+    document.addEventListener('click', (e) => {
+        if (!isRemoteMode() || !e.isTrusted) return; // Ignore if in touch mode or if script triggered it
+        if (focusedElement && e.target !== focusedElement) {
+            e.preventDefault();
+            e.stopPropagation();
+            activate();
+        }
+    }, true);
+
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
 
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter'].includes(e.key)) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', ' ', 'Select'].includes(e.key)) {
             e.preventDefault();
         }
 
-        if (e.key === 'Enter' && !e.repeat) {
+        // Added ' ' (Spacebar) and 'Select' which are common on unbranded remotes
+        if (['Enter', ' ', 'Select'].includes(e.key) && !e.repeat) {
             isLongPress = false;
             enterPressTimer = setTimeout(() => {
                 isLongPress = true;
@@ -378,7 +412,6 @@ export function initRemote() {
             case 'ArrowUp': navigate('up'); break;
             case 'ArrowRight': navigate('right'); break;
             case 'ArrowLeft': navigate('left'); break;
-            // Locked Tab Switching
             case 'PageUp': if (!isNavLocked()) switchTab(-1); break;
             case 'PageDown': if (!isNavLocked()) switchTab(1); break;
             case 'ContextMenu': handleBack(); break;
@@ -387,7 +420,7 @@ export function initRemote() {
 
     document.addEventListener('keyup', (e) => {
         if (!isRemoteMode()) return;
-        if (e.key === 'Enter') {
+        if (['Enter', ' ', 'Select'].includes(e.key)) {
             clearTimeout(enterPressTimer);
             if (!isLongPress) {
                 activate();

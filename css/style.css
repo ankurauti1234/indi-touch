@@ -64,31 +64,34 @@ body.remote-mode * {
     scroll-behavior: auto !important;
 }
 
-/* Remote Focus ring — used for full-UI navigation in remote mode */
-.remoteFocused {
+/* =========================================================
+   ULTRA-SPECIFIC TV FOCUS ENGINE 
+   ========================================================= */
+
+/* The 'body.remote-mode' guarantees this wins every CSS battle */
+body.remote-mode .remoteFocused,
+body.remote-mode *.remoteFocused {
+    outline: 4px solid #fff !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.8) !important;
+    z-index: 9999 !important;
+    transform: scale(1.04) !important;
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), outline 0.15s ease-out !important;
+}
+
+/* Make smaller buttons pop a bit more */
+body.remote-mode .remoteFocused.nav-btn,
+body.remote-mode .remoteFocused.chip,
+body.remote-mode .remoteFocused.modal-btn,
+body.remote-mode .remoteFocused.action-btn {
+    transform: scale(1.08) !important;
+}
+
+/* Hard-kill the old legacy grid ghost box so it stops interfering */
+.member-card.focused {
     outline: none !important;
-    /* Box-shadow flawlessly wraps ANY border-radius shape natively */
-    box-shadow: 0 0 0 4px var(--primary), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
-    z-index: 100 !important;
-    position: relative;
-
-    /* Native TV "Pop" effect */
-    transform: scale(1.02);
-    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s ease-out !important;
-}
-
-/* Slightly larger pop for smaller elements */
-.remoteFocused.nav-btn,
-.remoteFocused.chip,
-.remoteFocused.modal-btn,
-.remoteFocused.action-btn {
-    transform: scale(1.05);
-}
-
-/* Wake up inactive/disabled cards fully so the ring shines bright */
-.inactive.remoteFocused {
-    opacity: 1 !important;
-    filter: none !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
 body {
@@ -133,7 +136,6 @@ body {
     background: rgba(0, 0, 0, 0.9);
     backdrop-filter: blur(12px);
     z-index: 200000000;
-    /* Higher than screensaver */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -152,7 +154,6 @@ body {
     border-radius: 40px;
     padding: 48px;
     width: 540px;
-    /* Standardized to match critical popup */
     max-width: 90%;
     display: flex;
     flex-direction: column;
@@ -179,7 +180,6 @@ body {
 
 .conn-title {
     font-size: 34px;
-    /* Standardized to match critical popup */
     font-weight: 500;
     color: #fff;
     margin: 0;
@@ -187,7 +187,6 @@ body {
 
 .conn-body {
     font-size: 19px;
-    /* Standardized to match critical popup */
     color: var(--text-sub, rgba(255, 255, 255, 0.7));
     line-height: 1.5;
     margin: 0;
@@ -280,15 +279,11 @@ body {
     transform: scale(0.97);
 }
 
-
-
 #app-frame {
     width: 1024px;
     height: 600px;
     background-color: var(--bg-app);
     display: flex;
-    /* border-radius: var(--radius-app); */
-    /* box-shadow: 0 0 0 8px #222, 0 20px 50px rgba(0,0,0,0.6); */
     overflow: hidden;
     position: relative;
 }
@@ -449,13 +444,10 @@ body {
     opacity: 0;
     pointer-events: none;
     padding: 24px 24px 0 24px;
-
-    /* ANTI-TEARING / GPU ACCELERATION HACKS */
     transform: translate3d(0, 20px, 0);
     backface-visibility: hidden;
     perspective: 1000px;
     will-change: opacity, transform;
-
     transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -463,7 +455,6 @@ body {
     opacity: 1;
     pointer-events: all;
     transform: translate3d(0, 0, 0);
-    /* Must match 3D to keep GPU layer */
     z-index: 10;
 }
 
@@ -493,8 +484,6 @@ body {
     flex-grow: 1;
 }
 
-/* Remove mouse-based active scale */
-
 .member-card:not(.inactive) {
     box-shadow: 0 4px 12px rgba(100, 210, 154, 0.25);
     border: 4px solid #64d29a;
@@ -507,15 +496,12 @@ body {
     opacity: 0.7;
 }
 
-/* Local Avatar Specific Colors */
 .member-card.local-avatar:not(.inactive) {
     background: #64d29a !important;
-    /* Material Green */
 }
 
 .member-card.local-avatar.inactive {
     background: #4a4a4a !important;
-    /* Dull Grey */
     filter: grayscale(80%) brightness(0.8) !important;
 }
 
@@ -550,8 +536,6 @@ body {
 #wifi-status-icon.offline {
     color: #ffb4ab;
 }
-
-/* M3 Error color */
 
 /* TV Off Grid Overlay */
 .grid-lock-overlay {
@@ -591,36 +575,12 @@ body {
     opacity: 0.7;
 }
 
-/* Neutralize legacy grid.js focus, but DO NOT kill the remote focus */
-.member-card.focused:not(.remoteFocused) {
-    outline: none !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-
-/* When focused AND inactive, keep the focus ring visible */
-.member-card.focused.inactive {
-    filter: grayscale(60%) opacity(0.75);
-}
-
 .member-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     background: #333;
     transition: 0.3s;
-}
-
-.member-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
-    padding: 40px 16px 16px;
-    color: white;
-    display: flex;
-    flex-direction: column;
 }
 
 .status-pill {
@@ -733,38 +693,6 @@ body {
 .chevron {
     color: #888;
     margin-left: auto;
-}
-
-/* NEW INFO ROWS */
-.info-row {
-    padding: 16px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.info-row:last-child {
-    border-bottom: none;
-}
-
-.info-label {
-    color: var(--text-sub);
-    font-size: 14px;
-}
-
-.info-value {
-    color: var(--text-main);
-    font-weight: 500;
-}
-
-.section-title {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--primary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 16px 0 8px 0;
 }
 
 /* HARDWARE STATS */
@@ -921,20 +849,6 @@ body {
     gap: 8px;
 }
 
-.wifi-item {
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.wifi-item:hover {
-    background: var(--bg-card-hover);
-}
-
 .wifi-skeleton {
     padding: 20px;
     color: var(--text-sub);
@@ -954,13 +868,6 @@ body {
     flex-direction: column;
     animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1);
     overflow: hidden;
-}
-
-.settings-scroll-area {
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 24px;
-    min-height: 0;
 }
 
 .settings-panel.active {
@@ -1185,7 +1092,6 @@ body {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.85);
-    /* Dark solid for performance */
     z-index: 3000;
     display: none;
     align-items: center;
@@ -1269,20 +1175,32 @@ body {
     will-change: opacity;
 }
 
+#critical-popover.active {
+    display: flex;
+}
+
 #screensaver {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    inset: 0;
     background: #000;
-    z-index: 9999;
-    display: none;
+    z-index: 99999999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     opacity: 0;
-    transition: opacity 0.5s ease;
-    will-change: opacity;
-    padding: 0;
+    pointer-events: none;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #fff;
+    padding: 60px;
+    text-align: center;
+    border-radius: 42px;
     overflow: hidden;
+}
+
+#screensaver.active {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 @keyframes premiumFadeIn {
@@ -1295,10 +1213,6 @@ body {
     }
 }
 
-#critical-popover.active {
-    display: flex;
-}
-
 .critical-card {
     background: linear-gradient(135deg, rgba(30, 0, 0, 0.95), rgba(15, 0, 0, 0.98));
     color: #FFDAD6;
@@ -1306,7 +1220,6 @@ body {
     padding: 48px;
     border-radius: 40px;
     border: 2px solid #FF3131;
-    /* Neon Red */
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 49, 49, 0.4);
     text-align: center;
     transform: scale(0.9);
@@ -1347,7 +1260,6 @@ body {
 .critical-icon {
     font-size: 56px;
     color: #FF3131;
-    /* Neon Red */
     animation: premiumPulse 2s infinite ease-in-out;
 }
 
@@ -1438,22 +1350,10 @@ body {
 /* KEYBOARD SCROLL FIX */
 body.osk-open #app-frame {
     height: calc(600px + 300px);
-    /* Add space for scrolling when keyboard is open */
 }
 
 body.osk-open .main-stage {
     padding-bottom: 300px;
-}
-
-/* SEVERITY COLORS */
-/* Performance Mode: Reduce Animations */
-.reduce-animations *,
-.reduce-animations *::before,
-.reduce-animations *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
 }
 
 :root {
@@ -1503,42 +1403,15 @@ body.osk-open .main-stage {
     color: var(--sev-success);
 }
 
-
-
-#screensaver {
-    position: fixed;
-    inset: 0;
-    background: #000;
-    z-index: 99999999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-    color: #fff;
-    padding: 60px;
-    text-align: center;
-    border-radius: 42px;
-}
-
-#screensaver.active {
-    opacity: 1;
-    pointer-events: auto;
-}
-
 .saver-clock {
     margin-bottom: 20px;
 }
 
 #clock-time {
     font-size: 200px;
-    /* Reduced to fit with padding */
     font-weight: 700;
     line-height: 1;
     letter-spacing: -4px;
-    margin-bottom: 0px;
     background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.85) 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -1564,7 +1437,6 @@ body.osk-open .main-stage {
     transition: font-size 0.4s ease;
 }
 
-/* Compact view for many members */
 .compact-view .clock-main-digits {
     font-size: 130px;
 }
@@ -1586,7 +1458,6 @@ body.osk-open .main-stage {
     letter-spacing: 2px;
 }
 
-/* TV Status Tag (Screensaver) */
 .saver-tv-tag {
     display: flex;
     align-items: center;
@@ -1660,7 +1531,6 @@ body.osk-open .main-stage {
 
 .weather-desc {
     display: none;
-    /* Hide description to keep it in one line */
 }
 
 .saver-members-title {
@@ -2155,8 +2025,6 @@ body.osk-open .main-stage {
     color: #d0bcff;
 }
 
-
-
 /* ── System Info Redesign ──────────────────────────────────────────────────── */
 .info-group {
     background: rgba(255, 255, 255, 0.04);
@@ -2434,7 +2302,6 @@ body.osk-open .main-stage {
 /* =========================================================
    GROUP FEATURE (CLEAN REBUILD)
    ========================================================= */
-
 #groups-grid-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -2562,12 +2429,7 @@ body.light-mode .group-card.active {
     font-size: 1.4rem !important;
     font-weight: 700 !important;
     color: var(--text-main) !important;
-    text-shadow:
-        -2px -2px 0 var(--bg-card),
-        2px -2px 0 var(--bg-card),
-        -2px 2px 0 var(--bg-card),
-        2px 2px 0 var(--bg-card),
-        0px 4px 8px rgba(0, 0, 0, 0.2) !important;
+    text-shadow: -2px -2px 0 var(--bg-card), 2px -2px 0 var(--bg-card), -2px 2px 0 var(--bg-card), 2px 2px 0 var(--bg-card), 0px 4px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
 .member-overlay .g-info {
@@ -2576,11 +2438,7 @@ body.light-mode .group-card.active {
     font-weight: 500;
     color: var(--text-sub) !important;
     margin-top: 2px;
-    text-shadow:
-        -1.5px -1.5px 0 var(--bg-card),
-        1.5px -1.5px 0 var(--bg-card),
-        -1.5px 1.5px 0 var(--bg-card),
-        1.5px 1.5px 0 var(--bg-card) !important;
+    text-shadow: -1.5px -1.5px 0 var(--bg-card), 1.5px -1.5px 0 var(--bg-card), -1.5px 1.5px 0 var(--bg-card), 1.5px 1.5px 0 var(--bg-card) !important;
 }
 
 .group-edit-btn {
@@ -2642,12 +2500,10 @@ body.light-mode .group-card.active {
 .split-editor-card {
     flex-direction: row !important;
     width: 860px !important;
-    /* Almost full screen width */
     max-width: 95vw !important;
     height: 70vh !important;
     max-height: 560px !important;
     padding: 0 !important;
-    /* Padding handled by internal panes */
     overflow: hidden;
     position: relative;
 }
@@ -2659,7 +2515,6 @@ body.light-mode .group-card.active {
     flex-direction: column;
     justify-content: space-between;
     background: var(--bg-surface);
-    /* Deep background */
     border-right: 1px solid var(--outline-variant);
 }
 
@@ -2669,7 +2524,6 @@ body.light-mode .group-card.active {
     display: flex;
     flex-direction: column;
     background: var(--bg-card);
-    /* Elevated background */
 }
 
 .close-btn-abs {
@@ -2679,7 +2533,6 @@ body.light-mode .group-card.active {
     z-index: 10;
 }
 
-/* Force the member list to consume the full right side */
 .g-member-select-list {
     flex: 1;
     max-height: none !important;
@@ -2688,25 +2541,6 @@ body.light-mode .group-card.active {
     display: flex;
     flex-direction: column;
     gap: 12px;
-}
-
-/* Input adapting to split screen themes */
-#group-name-input {
-    background: var(--bg-card) !important;
-    /* Contrasts perfectly against editor-left */
-    color: var(--text-main) !important;
-    border: 2px solid var(--outline-variant) !important;
-    border-radius: 12px !important;
-    padding: 16px !important;
-    font-size: 1.1rem !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    outline: none !important;
-    transition: border-color 0.2s ease;
-}
-
-#group-name-input:focus {
-    border-color: var(--primary) !important;
 }
 
 /* --- ALERT & CONFIRM MODALS (Rectangular Layout) --- */
@@ -2725,21 +2559,11 @@ body.light-mode .group-card.active {
     color: var(--text-main);
 }
 
-.g-member-select-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 260px;
-    overflow-y: auto;
-    padding-right: 6px;
-}
-
 .g-member-select-item {
     display: flex;
     align-items: center;
     padding: 14px 16px;
     background: var(--surface-item) !important;
-    /* Uses your new global variable */
     border: 1px solid var(--outline-variant);
     border-radius: 16px;
     cursor: pointer;

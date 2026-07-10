@@ -40,7 +40,7 @@ function setFocus(el) {
     // ANTI-STRETCH CHECK
     const isInsidePopup = el.closest(
         '.safe-overlay, .popover-overlay, #modal-overlay, #critical-popover, #osk-container, #group-alert-modal, #group-delete-confirm'
-    ); 
+    );
     if (!isInsidePopup) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     }
@@ -265,9 +265,15 @@ function handleBack() {
     if (osk && osk.classList.contains('visible')) {
         // Bulletproof Force Close for Keyboard
         const closeBtn = osk.querySelector('.close-btn, .osk-close, .hide-keyboard');
-        if (closeBtn) closeBtn.click();
-        else if (typeof window.hideOSK === 'function') window.hideOSK();
-        else osk.classList.remove('visible', 'active');
+        if (closeBtn) {
+            closeBtn.click();
+        } else if (typeof window.closeOSK === 'function') {
+            window.closeOSK();
+        } else if (typeof window.hideOSK === 'function') {
+            window.hideOSK();
+        } else {
+            osk.classList.remove('visible', 'active');
+        }
 
         setTimeout(enterContentZone, 150);
         return;

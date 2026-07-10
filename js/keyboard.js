@@ -247,3 +247,5 @@ export function closeOSK() {
 
     hideOSK();
 }
+
+window.closeOSK = closeOSK;

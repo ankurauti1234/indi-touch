@@ -6,6 +6,7 @@ import { config } from './data.js';
 let zone = 'content';
 let focusedElement = null;
 let elementBeforeOverlay = null;
+let scrollShieldTimeout = null; // Used to block phantom mouse clicks
 const TABS = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
 
 let enterPressTimer = null;
@@ -36,7 +37,7 @@ function setFocus(el) {
 
     el.classList.add('remoteFocused');
 
-    // Anti-stretch check for fixed overlay dimensions
+    // ANTI-STRETCH CHECK
     const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm, #critical-popover, #wifi-warning-overlay');
     if (!isInsidePopup) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
@@ -59,7 +60,6 @@ function getNavItems() {
 }
 
 function getContentItems() {
-    // TIER 1: Critical System & Hardware Alerts
     const criticalPopover = document.getElementById('critical-popover');
     if (criticalPopover && criticalPopover.classList.contains('active')) {
         return [...criticalPopover.querySelectorAll('button:not([disabled])')].filter(isVisible);
@@ -70,7 +70,6 @@ function getContentItems() {
         return [...wifiWarn.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
-    // TIER 2: Dialog & Alert Modals
     const alertModal = document.getElementById('group-alert-modal');
     if (alertModal && alertModal.style.display !== 'none') {
         return [...alertModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
@@ -81,20 +80,16 @@ function getContentItems() {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
-    // TIER 3: On-Screen Keyboard System
     const osk = document.getElementById('osk-container');
-    if (osk && osk.classList.contains('visible')) {
+    if (osk && isVisible(osk)) {
         return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
-    // TIER 4: Document Creation Sheet Overlays
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
     if (overlay) {
-        // Auto-prioritize text inputs on overlay initialization
         return [...overlay.querySelectorAll('input[type="text"], input:not([type="hidden"]), button:not([disabled]), .g-member-select-item')].filter(isVisible);
     }
 
-    // TIER 5: Active Context Tab View (Your Untouched Baseline)
     const activeView = document.querySelector('.view.active');
     if (!activeView) return [];
 
@@ -120,7 +115,7 @@ function isNavLocked() {
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
     if (document.getElementById('critical-popover')?.classList.contains('active')) return true;
     if (document.getElementById('wifi-warning-overlay')?.classList.contains('visible')) return true;
-    if (document.getElementById('osk-container')?.classList.contains('visible')) return true;
+    if (isVisible(document.getElementById('osk-container'))) return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -167,7 +162,7 @@ function enterContentZone() {
     }
 }
 
-// PERFECTED SPATIAL ALGORITHM (Weighted Grid Tracking)
+// PERFECTED SPATIAL ALGORITHM with Broad-Phase Escape Hatch
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
@@ -192,6 +187,7 @@ function findNextItem(items, currentEl, direction) {
         const absDx = Math.abs(dx);
         const absDy = Math.abs(dy);
 
+        // Strict Grid Tracking
         if (direction === 'right' && cx > curCX) {
             valid = true; dist = absDx + (absDy * 4);
         } else if (direction === 'left' && cx < curCX) {
@@ -200,6 +196,14 @@ function findNextItem(items, currentEl, direction) {
             valid = true; dist = absDy + (absDx * 4);
         } else if (direction === 'up' && cy < curCY) {
             valid = true; dist = absDy + (absDx * 4);
+        }
+
+        // Broad-Phase Escape Hatch: Jumps out of deep vertical lists easily
+        if (!valid) {
+            if (direction === 'left' && rect.right < curRect.left + 20) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'right' && rect.left > curRect.right - 20) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'up' && rect.bottom < curRect.top + 20) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+            if (direction === 'down' && rect.top > curRect.bottom - 20) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
         }
 
         if (valid && dist < bestDist) {
@@ -256,8 +260,12 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && osk.classList.contains('visible')) {
-        if (window.hideOSK) window.hideOSK();
+    if (osk && isVisible(osk)) {
+        // Find and click the close button if it exists, otherwise use fallback function
+        const closeBtn = osk.querySelector('.close-btn, .osk-close, .hide-keyboard');
+        if (closeBtn) closeBtn.click();
+        else if (window.hideOSK) window.hideOSK();
+        else osk.classList.remove('visible', 'active');
         setTimeout(enterContentZone, 150);
         return;
     }
@@ -402,7 +410,6 @@ export function initRemote() {
     document.addEventListener('keydown', (e) => {
         const remoteKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'ContextMenu'];
 
-        // Persistent Wakeup Execution Instantly
         if (remoteKeys.includes(e.key) && !isRemoteMode()) {
             e.preventDefault();
             applyRemoteMode(true);
@@ -413,6 +420,13 @@ export function initRemote() {
 
         if (remoteKeys.includes(e.key)) {
             e.preventDefault();
+
+            // POINTER SHIELD: Prevents phantom air-mouse hovers while navigating
+            document.body.style.pointerEvents = 'none';
+            clearTimeout(scrollShieldTimeout);
+            scrollShieldTimeout = setTimeout(() => {
+                document.body.style.pointerEvents = '';
+            }, 300);
         }
 
         if (e.key === 'Enter' && !e.repeat) {
@@ -453,7 +467,14 @@ export function initRemote() {
         }
     });
 
-    document.addEventListener('mousemove', () => {
-        if (isRemoteMode()) clearFocus();
+    // MOUSE JITTER FIX
+    let lastX = 0, lastY = 0;
+    document.addEventListener('mousemove', (e) => {
+        if (!isRemoteMode()) return;
+        if (Math.abs(e.screenX - lastX) > 10 || Math.abs(e.screenY - lastY) > 10) {
+            clearFocus();
+            lastX = e.screenX;
+            lastY = e.screenY;
+        }
     });
 }

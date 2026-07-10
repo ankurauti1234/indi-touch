@@ -19,6 +19,7 @@ os.chmod("/tmp/runtime-root", 0o700)
 os.environ.setdefault("XDG_RUNTIME_DIR", "/tmp/runtime-root")
 os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 
+
 # ── PyQt5 imports ─────────────────────────────────────────────────────────────
 try:
     from PyQt5.QtCore    import QUrl, Qt, QTimer
@@ -221,6 +222,10 @@ def _boot_reset():
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
+    # Binds to all IPs, not just localhost
+    sys.argv.extend(["--remote-debugging-port=9222", "--remote-debugging-address=0.0.0.0"])
+    os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
+
     # 1. Database
     init_db()
 

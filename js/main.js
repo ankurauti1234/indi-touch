@@ -101,6 +101,20 @@ import { tvState, memberData, save as legacySave, initData, config } from './dat
 import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    // =========================================================
+    // REMOTE CONTROL KEY SNIFFER (Temporary)
+    // =========================================================
+    const debugBox = document.createElement('div');
+    debugBox.style.cssText = 'position:fixed; top:20px; left:20px; background:red; color:white; z-index:9999; padding:20px; font-size:32px; border-radius:12px; font-weight:bold; box-shadow:0 10px 30px rgba(0,0,0,0.8); pointer-events:none;';
+    debugBox.innerText = 'WAITING FOR REMOTE...';
+    document.body.appendChild(debugBox);
+
+    document.addEventListener('keydown', (e) => {
+        debugBox.innerText = `KEY: "${e.key}" \nCODE: "${e.code}"`;
+    });
+    // =========================================================
+
     // 1. Initialize Localization
     await initI18n();
 

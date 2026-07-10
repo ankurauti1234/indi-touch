@@ -15,6 +15,7 @@ export function isRemoteMode() {
     return document.body.classList.contains('remote-mode');
 }
 
+// BULLETPROOF VISIBILITY CHECK: Only trusts actual screen rendering
 function isVisible(el) {
     if (!el || el.disabled) return false;
     const style = window.getComputedStyle(el);
@@ -59,36 +60,40 @@ function getNavItems() {
 }
 
 function getContentItems() {
+    // 1. Connection & System Popups (Highest Priority)
     const criticalPopover = document.getElementById('critical-popover');
-    if (criticalPopover && (criticalPopover.classList.contains('active') || criticalPopover.style.display === 'flex')) {
+    if (criticalPopover && isVisible(criticalPopover)) {
         return [...criticalPopover.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
     const wifiWarn = document.getElementById('wifi-warning-overlay');
-    if (wifiWarn && (wifiWarn.classList.contains('visible') || wifiWarn.classList.contains('active') || wifiWarn.style.display !== 'none')) {
+    if (wifiWarn && isVisible(wifiWarn)) {
         return [...wifiWarn.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
     const groupAlert = document.getElementById('group-alert-modal');
-    if (groupAlert && groupAlert.style.display !== 'none') {
+    if (groupAlert && isVisible(groupAlert)) {
         return [...groupAlert.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
     const deleteModal = document.getElementById('group-delete-confirm');
-    if (deleteModal && deleteModal.style.display !== 'none') {
+    if (deleteModal && isVisible(deleteModal)) {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
+    // 2. Keyboard Engine Trap
     const osk = document.getElementById('osk-container');
-    if (osk && (osk.classList.contains('visible') || osk.classList.contains('active') || osk.style.display !== 'none')) {
+    if (osk && isVisible(osk)) {
         return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
-    const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
-    if (overlay) {
+    // 3. Modals & Creation Overlays
+    const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active');
+    if (overlay && isVisible(overlay)) {
         return [...overlay.querySelectorAll('input[type="text"], input:not([type="hidden"]), button:not([disabled]), .g-member-select-item')].filter(isVisible);
     }
 
+    // 4. Main Tab Layouts
     const activeView = document.querySelector('.view.active');
     if (!activeView) return [];
 
@@ -109,14 +114,12 @@ function getContentItems() {
 }
 
 function isNavLocked() {
-    if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
-    if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
-    if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
-    if (document.getElementById('critical-popover')?.classList.contains('active')) return true;
-    if (document.getElementById('wifi-warning-overlay')?.classList.contains('visible')) return true;
-
-    const osk = document.getElementById('osk-container');
-    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) return true;
+    if (isVisible(document.querySelector('.safe-overlay.active, .popover-overlay.active'))) return true;
+    if (isVisible(document.getElementById('group-alert-modal'))) return true;
+    if (isVisible(document.getElementById('group-delete-confirm'))) return true;
+    if (isVisible(document.getElementById('critical-popover'))) return true;
+    if (isVisible(document.getElementById('wifi-warning-overlay'))) return true;
+    if (isVisible(document.getElementById('osk-container'))) return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -251,14 +254,14 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
+    if (osk && isVisible(osk)) {
         if (window.hideOSK) window.hideOSK();
         setTimeout(enterContentZone, 150);
         return;
     }
 
     const criticalPopover = document.getElementById('critical-popover');
-    if (criticalPopover && criticalPopover.classList.contains('active')) {
+    if (criticalPopover && isVisible(criticalPopover)) {
         if (window.handleCriticalAction) window.handleCriticalAction();
         else criticalPopover.classList.remove('active');
         setTimeout(enterContentZone, 150);
@@ -266,14 +269,14 @@ function handleBack() {
     }
 
     const wifiWarn = document.getElementById('wifi-warning-overlay');
-    if (wifiWarn && wifiWarn.classList.contains('visible')) {
+    if (wifiWarn && isVisible(wifiWarn)) {
         wifiWarn.classList.remove('visible');
         setTimeout(enterContentZone, 150);
         return;
     }
 
     const groupAlert = document.getElementById('group-alert-modal');
-    if (groupAlert && groupAlert.style.display !== 'none') {
+    if (groupAlert && isVisible(groupAlert)) {
         if (window.closeAlertModal) window.closeAlertModal();
         else groupAlert.style.display = 'none';
         setTimeout(enterContentZone, 150);
@@ -281,7 +284,7 @@ function handleBack() {
     }
 
     const deleteModal = document.getElementById('group-delete-confirm');
-    if (deleteModal && deleteModal.style.display !== 'none') {
+    if (deleteModal && isVisible(deleteModal)) {
         const cancel = deleteModal.querySelector('.modal-btn:not(.primary)');
         if (cancel) cancel.click();
         else deleteModal.style.display = 'none';
@@ -290,7 +293,7 @@ function handleBack() {
     }
 
     const overlay = document.querySelector('.safe-overlay.active');
-    if (overlay) {
+    if (overlay && isVisible(overlay)) {
         const cancelBtn = overlay.querySelector('.close-btn-abs, .modal-btn:not(.primary)');
         if (cancelBtn) {
             cancelBtn.click();
@@ -375,28 +378,30 @@ export function applyRemoteMode(on) {
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 
+    // Optimized DOM Watcher: Only refocuses if a known popup wrapper changes visibility state
     const observer = new MutationObserver((mutations) => {
         if (!isRemoteMode()) return;
-        let requiresFocusReset = false;
-        let closedPopup = false;
+        let requiresCheck = false;
 
         for (const m of mutations) {
-            if (m.type === 'attributes') {
+            if (m.type === 'attributes' && ['class', 'style'].includes(m.attributeName)) {
                 const el = m.target;
-                if (el.classList?.contains('safe-overlay') && el.classList?.contains('active')) requiresFocusReset = true;
-                if (el.id === 'group-alert-modal' && el.style.display !== 'none') requiresFocusReset = true;
-                if (el.id === 'group-delete-confirm' && el.style.display !== 'none') requiresFocusReset = true;
-                if (el.id === 'critical-popover' && el.classList?.contains('active')) requiresFocusReset = true;
-                if (el.id === 'wifi-warning-overlay' && el.classList?.contains('visible')) requiresFocusReset = true;
-                if (el.id === 'osk-container' && el.classList?.contains('visible')) requiresFocusReset = true;
-
-                if (el.id === 'critical-popover' && !el.classList?.contains('active') && focusedElement?.closest('#critical-popover')) closedPopup = true;
-                if (el.id === 'wifi-warning-overlay' && !el.classList?.contains('visible') && focusedElement?.closest('#wifi-warning-overlay')) closedPopup = true;
+                if (el.id === 'critical-popover' || el.id === 'wifi-warning-overlay' || el.id === 'group-alert-modal' || el.id === 'group-delete-confirm' || el.id === 'osk-container' || el.classList.contains('safe-overlay')) {
+                    requiresCheck = true;
+                    break;
+                }
             }
         }
 
-        if (requiresFocusReset || closedPopup) {
-            setTimeout(enterContentZone, 150);
+        if (requiresCheck) {
+            clearTimeout(window.focusObserverTimeout);
+            window.focusObserverTimeout = setTimeout(() => {
+                const items = getContentItems();
+                // If the currently focused element isn't in the active priority list anymore, force a reset
+                if (!focusedElement || !items.includes(focusedElement)) {
+                    enterContentZone();
+                }
+            }, 150);
         }
     });
 
@@ -405,8 +410,6 @@ export function initRemote() {
     document.addEventListener('keydown', (e) => {
         const remoteKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'ContextMenu'];
 
-        // --- AUTO WAKE FIX ---
-        // If the user presses ANY remote button and remote mode is off, instantly turn it on!
         if (remoteKeys.includes(e.key) && !isRemoteMode()) {
             e.preventDefault();
             applyRemoteMode(true);
@@ -428,12 +431,12 @@ export function initRemote() {
             return;
         }
 
+        // Silent Assignment Recovery
         if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
             const items = getContentItems();
             if (items.length > 0) {
                 setFocus(items[0]);
-                // If this is just a recovery wake-up, stop here so we don't accidentally navigate twice
-                if (remoteKeys.includes(e.key)) return;
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
             }
         }
 

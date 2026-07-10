@@ -1401,6 +1401,10 @@ body {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
+.critical-btn.remoteFocused {
+    transform: none !important;
+}
+
 .critical-btn:hover {
     background: #FFDAD6;
     transform: translateY(-2px);

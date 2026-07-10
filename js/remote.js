@@ -63,6 +63,12 @@ function getContentItems() {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
+    // KEYBOARD FIX: Ensure the spatial engine maps the keyboard keys when open
+    const osk = document.getElementById('osk-container');
+    if (osk && (osk.classList.contains('visible') || isVisible(osk))) {
+        return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
+    }
+
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
     if (overlay) {
         return [...overlay.querySelectorAll('input, button:not([disabled]), .g-member-select-item')].filter(isVisible);
@@ -91,6 +97,10 @@ function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
+
+    // KEYBOARD FIX: Lock background swipe/tab navigation while keyboard is active
+    const osk = document.getElementById('osk-container');
+    if (osk && (osk.classList.contains('visible') || isVisible(osk))) return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -227,8 +237,17 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && osk.classList.contains('visible')) {
-        if (window.hideOSK) window.hideOSK();
+    if (osk && (osk.classList.contains('visible') || isVisible(osk))) {
+        // KEYBOARD FIX: Bulletproof force-close logic. Click the UI button first, fallback to script, fallback to CSS hide.
+        const closeBtn = osk.querySelector('.close-btn, .osk-close, .hide-keyboard, [id*="close"]');
+        if (closeBtn) {
+            closeBtn.click();
+        } else if (typeof window.hideOSK === 'function') {
+            window.hideOSK();
+        } else {
+            osk.classList.remove('visible', 'active');
+            osk.style.display = 'none';
+        }
         setTimeout(enterContentZone, 150);
         return;
     }

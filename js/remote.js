@@ -36,7 +36,6 @@ function setFocus(el) {
 
     el.classList.add('remoteFocused');
 
-    // ANTI-STRETCH FIX: Do not trigger scroll calculations if inside a fixed popup/overlay
     const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #critical-popover, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm');
 
     if (!isInsidePopup) {
@@ -404,9 +403,19 @@ export function initRemote() {
     observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
 
     document.addEventListener('keydown', (e) => {
+        const remoteKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'ContextMenu'];
+
+        // --- AUTO WAKE FIX ---
+        // If the user presses ANY remote button and remote mode is off, instantly turn it on!
+        if (remoteKeys.includes(e.key) && !isRemoteMode()) {
+            e.preventDefault();
+            applyRemoteMode(true);
+            return;
+        }
+
         if (!isRemoteMode()) return;
 
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter'].includes(e.key)) {
+        if (remoteKeys.includes(e.key)) {
             e.preventDefault();
         }
 
@@ -419,12 +428,12 @@ export function initRemote() {
             return;
         }
 
-        // SILENT ASSIGNMENT FIX: Actually visually paint the focus when recovering!
         if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
             const items = getContentItems();
             if (items.length > 0) {
                 setFocus(items[0]);
-                return; // Stop the very first keypress from navigating; use it just to wake up the cursor.
+                // If this is just a recovery wake-up, stop here so we don't accidentally navigate twice
+                if (remoteKeys.includes(e.key)) return;
             }
         }
 

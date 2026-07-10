@@ -131,7 +131,6 @@ function renderKeys() {
 
             // Interaction
             btn.onclick = (e) => {
-                console.log('OSK Click:', key);
 
                 e.stopPropagation(); // Prevent "click outside" listener from firing
                 e.preventDefault();
@@ -147,12 +146,6 @@ function renderKeys() {
 }
 
 function handleKey(key) {
-
-    console.log('handleKey', {
-        key,
-        activeInput,
-        value: activeInput?.value
-    });
 
     if (!activeInput) return;
 
@@ -216,7 +209,6 @@ function handleKey(key) {
         const val = activeInput.value;
 
         activeInput.value = val.slice(0, start) + char + val.slice(end);
-        console.log('New value:', activeInput.value);
         activeInput.selectionStart = activeInput.selectionEnd = start + 1;
 
         if (isShift) {
@@ -245,4 +237,13 @@ export function hideOSK() {
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+}
+
+export function closeOSK() {
+    if (activeInput) {
+        activeInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+        activeInput.blur();
+    }
+
+    hideOSK();
 }

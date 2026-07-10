@@ -11,12 +11,8 @@ import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
-
-// --- NEW IMPORT FOR GROUPS ---
 import { loadGroups } from './groups.js';
 
-
-// Expose functions globally for HTML inline event handlers
 window.navTo = navTo;
 window.toggleMember = toggleMember;
 window.openSetting = openSetting;
@@ -30,7 +26,6 @@ window.addGuest = addGuest;
 window.initLocation = initLocation;
 window.showToast = showToast;
 window.openSurvey = openSurvey;
-// Expose for Python/integration layer
 window.setUsbState = setUsbState;
 window.setWifiState = setWifiState;
 window.setInternetState = setInternetState;
@@ -39,18 +34,16 @@ window.renderScreensaverMembers = renderScreensaverMembers;
 window.refreshWallpaperOnScreensaver = refreshWallpaperOnScreensaver;
 window.renderGrid = renderGrid;
 
-// ─── Phase 2 Refinements ──────────────────────────────────────────────────────
 export function resetHomeTimer() {
     if (typeof homeTimer !== 'undefined') clearTimeout(homeTimer);
     const onboardingLayer = document.getElementById('onboarding-layer');
     const isOnboarding = onboardingLayer && !onboardingLayer.classList.contains('hidden') && onboardingLayer.style.display !== 'none';
 
     if (config.onboardingCompleted && !isOnboarding && !document.getElementById('view-home').classList.contains('active')) {
-        timers.clearTimeout(window.homeTimerId); // Track specifically if needed
+        timers.clearTimeout(window.homeTimerId);
         window.homeTimerId = timers.setTimeout(() => {
-            console.log("Inactivity timeout: returning to home.");
             navTo('home');
-        }, 300000); // 5 minutes
+        }, 300000);
     }
 }
 window.resetHomeTimer = resetHomeTimer;
@@ -58,7 +51,6 @@ window.resetHomeTimer = resetHomeTimer;
 let settingsClickCount = 0;
 window.handleSettingsTitleClick = () => {
     settingsClickCount++;
-    console.log("Settings click:", settingsClickCount);
     if (settingsClickCount === 3) {
         document.getElementById('btn-sys-info').style.display = 'flex';
         showToast("System Info Revealed");
@@ -102,42 +94,18 @@ import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    // =========================================================
-    // REMOTE CONTROL KEY SNIFFER (Temporary)
-    // =========================================================
-    const debugBox = document.createElement('div');
-    debugBox.style.cssText = 'position:fixed; top:20px; left:20px; background:red; color:white; z-index:9999; padding:20px; font-size:32px; border-radius:12px; font-weight:bold; box-shadow:0 10px 30px rgba(0,0,0,0.8); pointer-events:none;';
-    debugBox.innerText = 'WAITING FOR REMOTE...';
-    document.body.appendChild(debugBox);
-
-    document.addEventListener('keydown', (e) => {
-        debugBox.innerText = `KEY: "${e.key}" \nCODE: "${e.code}"`;
-    });
-    // =========================================================
-
-    // 1. Initialize Localization
     await initI18n();
-
-    // 2. Initialize Data Layer (from API)
     await initData();
-
-    // 3. Initialize Components
     await checkOnboardingStatus();
     initOSK();
     renderGrid();
-
-    // --- LOAD GROUPS AFTER MAIN GRID IS READY ---
     await loadGroups();
 
     renderGuestList();
     initLocation();
     renderNotifications();
-
-    // 4. Finalize - Hide app loader
     hideAppLoader();
 
-
-    // 3. Start Background Services
     timers.setInterval(updateClock, 1000);
     updateClock();
 
@@ -147,19 +115,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             import('./data.js').then(m => m.updateSetting('language', lang));
             applyTranslations();
             updateLanguageUI(lang);
-            renderGrid(); // Refresh grid for active status texts if any
-            renderNotifications(); // Refresh notifications
+            renderGrid();
+            renderNotifications();
         }
     };
 
     function updateLanguageUI(lang) {
-        // Toggle checks
         ['en', 'hy', 'ru'].forEach(l => {
             const check = document.getElementById('lang-check-' + l);
             if (check) check.style.display = (l === lang) ? 'block' : 'none';
         });
 
-        // Update main settings label
         const langText = document.getElementById('current-lang-text');
         if (langText) {
             const names = { en: 'English', hy: 'Հայերեն', ru: 'Русский' };
@@ -167,18 +133,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Initialize UI checks
     if (typeof updateLanguageUI === 'function') {
         updateLanguageUI(getCurrentLang());
     }
 
-    // TV Monitoring Logic
     let lastDismissTime = 0;
 
     timers.setInterval(() => {
         let isTvOn = tvState.on;
 
-        // If bluetooth is not available, TV is always considered ON
         if (!config.bleAvailable) {
             isTvOn = true;
         }
@@ -187,11 +150,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const cooldownActive = (now - lastDismissTime) < 15000;
 
         if (!isTvOn) {
-            // TV is off: hide warning popover and block interaction
             const popover = document.getElementById('critical-popover');
             if (popover) popover.classList.remove('active');
         } else if (!cooldownActive && config.onboardingCompleted) {
-            // If TV is on and no members are active, show critical warning
             const activeCount = memberData.filter(m => m.active).length;
             const popover = document.getElementById('critical-popover');
             if (activeCount === 0 && popover && !popover.classList.contains('active')) {
@@ -200,15 +161,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 popover.classList.remove('active');
             }
         }
-    }, 5000); // 5s instead of 2s to save CPU
+    }, 5000);
 
-    // Guest 2 AM Cutoff Logic
     let lastHour = new Date().getHours();
     timers.setInterval(async () => {
         const now = new Date();
         const currentHour = now.getHours();
         if (lastHour === 1 && currentHour === 2) {
-            console.log("2 AM Cutoff: Clearing guests.");
             try {
                 const r = await fetch('/api/guests/update', {
                     method: 'POST',
@@ -228,31 +187,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
         lastHour = currentHour;
-    }, 300000); // Check every 5 mins instead of 1 min
+    }, 300000);
 
     window.handleCriticalAction = () => {
         const popover = document.getElementById('critical-popover');
         if (popover) popover.classList.remove('active');
-        lastDismissTime = Date.now(); // Start 15s cooldown
+        lastDismissTime = Date.now();
         navTo('home');
-        console.log("Critical action: Navigating home with 15s cooldown.");
     };
 
     showToast("Indi Meter is ready.", 4000);
 
-    // Disable right-click context menu
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // 3. User Interaction Tracking
     document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
     document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
     resetIdle();
     resetHomeTimer();
 
-    // 4. Remote Control System
     initRemote();
-
-    // 5. Connection state monitoring
     initConnectionMonitor();
 
     console.log("System initialized.");

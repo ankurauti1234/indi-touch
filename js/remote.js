@@ -69,6 +69,11 @@ function getContentItems() {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
+    const criticalPopover = document.getElementById('critical-popover');
+    if (criticalPopover && criticalPopover.classList.contains('active')) {
+        return [...criticalPopover.querySelectorAll('button:not([disabled])')].filter(isVisible);
+    }
+
     // THE FIX: Strict class check only. No more invisible traps.
     const osk = document.getElementById('osk-container');
     if (osk && osk.classList.contains('visible')) {
@@ -101,6 +106,10 @@ function getContentItems() {
 
 function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
+
+    const criticalPopover = document.getElementById('critical-popover');
+    if (criticalPopover && criticalPopover.classList.contains('active')) return true;
+    
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
 

@@ -63,13 +63,6 @@ function getContentItems() {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
-    // --- KEYBOARD TRAP (Added perfectly to your baseline) ---
-    const osk = document.getElementById('osk-container');
-    if (osk && osk.classList.contains('visible')) {
-        return [...osk.querySelectorAll('.osk-key, button:not([disabled])')].filter(isVisible);
-    }
-    // --------------------------------------------------------
-
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
     if (overlay) {
         return [...overlay.querySelectorAll('input, button:not([disabled]), .g-member-select-item')].filter(isVisible);
@@ -98,10 +91,6 @@ function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
-
-    // --- NO SWIPE FEATURE WHEN KEYBOARD IS ON ---
-    if (document.getElementById('osk-container')?.classList.contains('visible')) return true;
-    // --------------------------------------------
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -148,6 +137,7 @@ function enterContentZone() {
     }
 }
 
+// PERFECTED SPATIAL ALGORITHM (Weighted Grid Tracking)
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
@@ -165,30 +155,22 @@ function findNextItem(items, currentEl, direction) {
         const cy = rect.top + rect.height / 2;
 
         let valid = false;
-        let dist = 0;
+        let dist = Infinity;
 
         const dx = cx - curCX;
         const dy = cy - curCY;
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
 
-        if (direction === 'up' && rect.bottom <= curRect.bottom - 5) {
-            valid = Math.abs(dx) < Math.abs(dy) * 2;
-            dist = Math.abs(dy) * 2 + Math.abs(dx);
-        } else if (direction === 'down' && rect.top >= curRect.top + 5) {
-            valid = Math.abs(dx) < Math.abs(dy) * 2;
-            dist = Math.abs(dy) * 2 + Math.abs(dx);
-        } else if (direction === 'left' && rect.right <= curRect.right - 5) {
-            valid = Math.abs(dy) < Math.abs(dx) * 2;
-            dist = Math.abs(dx) * 2 + Math.abs(dy);
-        } else if (direction === 'right' && rect.left >= curRect.left + 5) {
-            valid = Math.abs(dy) < Math.abs(dx) * 2;
-            dist = Math.abs(dx) * 2 + Math.abs(dy);
-        }
-
-        if (!valid) {
-            if (direction === 'up' && rect.bottom < curRect.top) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'down' && rect.top > curRect.bottom) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'left' && rect.right < curRect.left) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'right' && rect.left > curRect.right) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
+        // Heavily penalize cross-axis distance to lock onto the correct row/column in flexboxes
+        if (direction === 'right' && cx > curCX) {
+            valid = true; dist = absDx + (absDy * 4);
+        } else if (direction === 'left' && cx < curCX) {
+            valid = true; dist = absDx + (absDy * 4);
+        } else if (direction === 'down' && cy > curCY) {
+            valid = true; dist = absDy + (absDx * 4);
+        } else if (direction === 'up' && cy < curCY) {
+            valid = true; dist = absDy + (absDx * 4);
         }
 
         if (valid && dist < bestDist) {
@@ -309,6 +291,11 @@ function handleLongPress() {
 function activate() {
     if (focusedElement) {
         elementBeforeOverlay = focusedElement;
+
+        // Track the index in case clicking destroys and recreates the DOM nodes
+        const currentItems = getContentItems();
+        const focusedIndex = currentItems.indexOf(focusedElement);
+
         focusedElement.click();
 
         if (focusedElement.tagName === 'INPUT') {
@@ -319,8 +306,14 @@ function activate() {
             if (zone === 'nav') {
                 enterContentZone();
             } else {
+                // RECOVERY LOGIC: If the card we clicked was wiped out by a DOM refresh
                 if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
-                    enterContentZone();
+                    const newItems = getContentItems();
+                    if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
+                        setFocus(newItems[focusedIndex]); // Restore to the exact slot
+                    } else {
+                        enterContentZone();
+                    }
                 }
             }
         }, 250);

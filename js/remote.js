@@ -227,6 +227,26 @@ function navigate(dir) {
         if (dir === 'left') return;
 
         const next = findNextItem(navItems, focusedElement, dir);
+
+        // Group editor: allow escaping from the member list to the left column
+        if (
+            dir === 'left' &&
+            focusedElement?.classList?.contains('g-member-select-item')
+        ) {
+            const overlay = document.getElementById('group-editor-overlay');
+
+            if (overlay && overlay.style.display !== 'none') {
+                const target = overlay.querySelector(
+                    '#group-name-input, .editor-actions button, .close-btn-abs'
+                );
+
+                if (target) {
+                    setFocus(target);
+                    return;
+                }
+            }
+        }
+        
         if (next) setFocus(next);
         return;
     }

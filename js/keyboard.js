@@ -48,7 +48,7 @@ export function initOSK() {
     const container = document.createElement('div');
     container.id = 'osk-container';
     document.body.appendChild(container);
-    
+
     // 2. Render Initial Layout
     renderKeys();
 
@@ -57,10 +57,10 @@ export function initOSK() {
     document.addEventListener('focusin', (e) => {
         if ((e.target.tagName === 'INPUT' && e.target.type !== 'range') || e.target.tagName === 'TEXTAREA') {
             activeInput = e.target;
-            
+
             // Unified Keyboard: We no longer use a separate large numeric mode
-            isNumberMode = false; 
-            
+            isNumberMode = false;
+
             showOSK();
         }
     });
@@ -84,7 +84,7 @@ export function initOSK() {
 function renderKeys() {
     const container = document.getElementById('osk-container');
     container.innerHTML = ''; // Clear
-    
+
     let layout;
     if (isSymbol) {
         layout = keysSymbol;
@@ -101,7 +101,7 @@ function renderKeys() {
         row.forEach(key => {
             const btn = document.createElement('button');
             btn.className = 'osk-key';
-            
+
             // Text / Label Logic
             let display = key;
             if (key === 'shift') {
@@ -128,11 +128,13 @@ function renderKeys() {
             }
 
             btn.innerText = display;
-            
+
             // Interaction
             btn.onclick = (e) => {
+                console.log('OSK Click:', key);
+
                 e.stopPropagation(); // Prevent "click outside" listener from firing
-                e.preventDefault(); 
+                e.preventDefault();
                 handleKey(key);
                 if (activeInput && key !== 'enter') activeInput.focus(); // Skip focus if closing
             };
@@ -148,7 +150,7 @@ function handleKey(key) {
     if (!activeInput) return;
 
     if (key === 'shift') {
-        if (isSymbol) return; 
+        if (isSymbol) return;
         isShift = !isShift;
         renderKeys();
         return;
@@ -191,7 +193,7 @@ function handleKey(key) {
         }
     } else if (key === 'enter') {
         hideOSK();
-        activeInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+        activeInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
         activeInput.blur();
     } else if (key === 'space') {
         const start = activeInput.selectionStart;
@@ -205,16 +207,16 @@ function handleKey(key) {
         const start = activeInput.selectionStart;
         const end = activeInput.selectionEnd;
         const val = activeInput.value;
-        
+
         activeInput.value = val.slice(0, start) + char + val.slice(end);
         activeInput.selectionStart = activeInput.selectionEnd = start + 1;
-        
+
         if (isShift) {
             isShift = false;
             renderKeys();
         }
     }
-    
+
     // Trigger input event so frameworks/listeners know value changed
     activeInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
@@ -230,7 +232,7 @@ export function showOSK() {
 export function hideOSK() {
     document.getElementById('osk-container').classList.remove('visible');
     document.body.classList.remove('osk-open');
-    
+
     // Reset Viewport: Ensure UI returns to center after keyboard push
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;

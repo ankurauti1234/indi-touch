@@ -63,6 +63,13 @@ function getContentItems() {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
+    // --- KEYBOARD TRAP (Added perfectly to your baseline) ---
+    const osk = document.getElementById('osk-container');
+    if (osk && osk.classList.contains('visible')) {
+        return [...osk.querySelectorAll('.osk-key, button:not([disabled])')].filter(isVisible);
+    }
+    // --------------------------------------------------------
+
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
     if (overlay) {
         return [...overlay.querySelectorAll('input, button:not([disabled]), .g-member-select-item')].filter(isVisible);
@@ -91,6 +98,10 @@ function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
+
+    // --- NO SWIPE FEATURE WHEN KEYBOARD IS ON ---
+    if (document.getElementById('osk-container')?.classList.contains('visible')) return true;
+    // --------------------------------------------
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -330,7 +341,6 @@ export function applyRemoteMode(on) {
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 
-    // DOM WATCHER: Auto-focus popups and overlays the moment they appear
     const observer = new MutationObserver((mutations) => {
         if (!isRemoteMode()) return;
         let requiresFocusReset = false;
@@ -346,7 +356,7 @@ export function initRemote() {
         }
 
         if (requiresFocusReset) {
-            setTimeout(enterContentZone, 150); // Jump focus into the new popup
+            setTimeout(enterContentZone, 150);
         }
     });
 
@@ -378,7 +388,6 @@ export function initRemote() {
             case 'ArrowUp': navigate('up'); break;
             case 'ArrowRight': navigate('right'); break;
             case 'ArrowLeft': navigate('left'); break;
-            // Locked Tab Switching
             case 'PageUp': if (!isNavLocked()) switchTab(-1); break;
             case 'PageDown': if (!isNavLocked()) switchTab(1); break;
             case 'ContextMenu': handleBack(); break;

@@ -169,113 +169,149 @@ function enterContentZone() {
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
-    const curRect = currentEl.getBoundingClientRect();
-    const curCX = curRect.left + curRect.width / 2;
-    const curCY = curRect.top + curRect.height / 2;
+    const current = currentEl.getBoundingClientRect();
 
-    let bestItem = null;
-    let bestDist = Infinity;
+    const currentCenter = {
+        x: current.left + current.width / 2,
+        y: current.top + current.height / 2
+    };
 
-    items.forEach(item => {
-        if (item === currentEl) return;
+    let candidates = [];
+
+    for (const item of items) {
+        if (item === currentEl) continue;
+
         const rect = item.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
 
-        let valid = false;
-        let dist = Infinity;
+        const center = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        };
 
-        const dx = cx - curCX;
-        const dy = cy - curCY;
-        const absDx = Math.abs(dx);
-        const absDy = Math.abs(dy);
+        const dx = center.x - currentCenter.x;
+        const dy = center.y - currentCenter.y;
 
-        if (direction === 'right' && cx > curCX) {
-            valid = true; dist = absDx + (absDy * 4);
-        } else if (direction === 'left' && cx < curCX) {
-            valid = true; dist = absDx + (absDy * 4);
-        } else if (direction === 'down' && cy > curCY) {
-            valid = true; dist = absDy + (absDx * 4);
-        } else if (direction === 'up' && cy < curCY) {
-            valid = true; dist = absDy + (absDx * 4);
+        switch (direction) {
+            case "left":
+                if (dx >= 0) continue;
+                break;
+
+            case "right":
+                if (dx <= 0) continue;
+                break;
+
+            case "up":
+                if (dy >= 0) continue;
+                break;
+
+            case "down":
+                if (dy <= 0) continue;
+                break;
         }
 
-        // Expanded Catch Net (+50px) to easily jump left/right out of tall lists
-        if (!valid) {
-            if (direction === 'left' && rect.right < curRect.left + 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'right' && rect.left > curRect.right - 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'up' && rect.bottom < curRect.top + 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-            if (direction === 'down' && rect.top > curRect.bottom - 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
-        }
+        const primary =
+            direction === "left" || direction === "right"
+                ? Math.abs(dx)
+                : Math.abs(dy);
 
-        if (valid && dist < bestDist) {
-            bestDist = dist;
-            bestItem = item;
-        }
+        const secondary =
+            direction === "left" || direction === "right"
+                ? Math.abs(dy)
+                : Math.abs(dx);
+
+        candidates.push({
+            item,
+            primary,
+            secondary,
+            distance: Math.hypot(dx, dy)
+        });
+    }
+
+    if (!candidates.length) return null;
+
+    candidates.sort((a, b) => {
+
+        // Strongly prefer staying in the same row/column.
+        if (Math.abs(a.secondary - b.secondary) > 10)
+            return a.secondary - b.secondary;
+
+        // Then choose the closest in requested direction.
+        if (Math.abs(a.primary - b.primary) > 5)
+            return a.primary - b.primary;
+
+        // Final tie breaker.
+        return a.distance - b.distance;
     });
 
-    return bestItem;
+    return candidates[0].item;
 }
 
 function navigate(dir) {
     if (zone === 'nav') {
         const navItems = getNavItems();
+
         if (dir === 'right') {
             enterContentZone();
             return;
         }
-        if (dir === 'left') return;
+
+        if (dir === 'left') {
+            return;
+        }
 
         const next = findNextItem(navItems, focusedElement, dir);
 
-        // Group editor: allow escaping from the member list to the left column
-        if (
-            dir === 'left' &&
-            focusedElement?.classList?.contains('g-member-select-item')
-        ) {
-            const overlay = document.getElementById('group-editor-overlay');
-
-            if (overlay && overlay.style.display !== 'none') {
-                const target = overlay.querySelector(
-                    '#group-name-input, .editor-actions button, .close-btn-abs'
-                );
-
-                if (target) {
-                    setFocus(target);
-                    return;
-                }
-            }
+        if (next) {
+            setFocus(next);
         }
-        
-        if (next) setFocus(next);
+
         return;
     }
 
-    if (zone === 'content') {
-        const locked = isNavLocked();
-        const items = getContentItems();
+    // ---------------- CONTENT ----------------
 
-        if (items.length === 0) {
-            if (dir === 'left' && !locked) enterNavZone();
-            else if (dir === 'up' && !locked) switchTab(-1);
-            else if (dir === 'down' && !locked) switchTab(1);
-            return;
+    const locked = isNavLocked();
+    const items = getContentItems();
+
+    if (items.length === 0) {
+        if (!locked) {
+            if (dir === 'left') enterNavZone();
+            else if (dir === 'up') switchTab(-1);
+            else if (dir === 'down') switchTab(1);
         }
+        return;
+    }
 
-        if (!focusedElement || !document.body.contains(focusedElement)) {
-            if (items.length > 0) setFocus(items[0]);
-            return;
-        }
+    if (!focusedElement || !document.body.contains(focusedElement)) {
+        setFocus(items[0]);
+        return;
+    }
 
-        const next = findNextItem(items, focusedElement, dir);
+    const next = findNextItem(items, focusedElement, dir);
 
-        if (next) {
-            setFocus(next);
-        } else {
-            if (dir === 'left' && !locked) enterNavZone();
-            else if (dir === 'up' && !locked) switchTab(-1);
-            else if (dir === 'down' && !locked) switchTab(1);
-        }
+    if (next) {
+        setFocus(next);
+        return;
+    }
+
+    // ---------------- FALLBACKS ----------------
+
+    if (locked) {
+        return;
+    }
+
+    switch (dir) {
+        case 'left':
+            enterNavZone();
+            break;
+
+        case 'up':
+            switchTab(-1);
+            break;
+
+        case 'down':
+            switchTab(1);
+            break;
     }
 }
 

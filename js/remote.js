@@ -60,7 +60,6 @@ function getNavItems() {
 }
 
 function getContentItems() {
-    // 1. Connection & System Popups (Absolute Global Priority)
     const criticalPopover = document.getElementById('critical-popover');
     if (criticalPopover && (criticalPopover.classList.contains('active') || criticalPopover.style.display === 'flex')) {
         return [...criticalPopover.querySelectorAll('button:not([disabled])')].filter(isVisible);
@@ -81,20 +80,16 @@ function getContentItems() {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
-    // 2. Keyboard Engine Trap
     const osk = document.getElementById('osk-container');
     if (osk && (osk.classList.contains('visible') || osk.classList.contains('active') || osk.style.display !== 'none')) {
         return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
-    // 3. Modals & Creation Overlays
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
     if (overlay) {
-        // Targets the main text inputs first for high-priority display input focus
         return [...overlay.querySelectorAll('input[type="text"], input:not([type="hidden"]), button:not([disabled]), .g-member-select-item')].filter(isVisible);
     }
 
-    // 4. Main Tab Layouts
     const activeView = document.querySelector('.view.active');
     if (!activeView) return [];
 
@@ -256,7 +251,6 @@ function navigate(dir) {
 
 // --- The Master Tiered Back Button ---
 function handleBack() {
-    // TIER 1: Keyboard System Exits First
     const osk = document.getElementById('osk-container');
     if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
         if (window.hideOSK) window.hideOSK();
@@ -264,7 +258,6 @@ function handleBack() {
         return;
     }
 
-    // TIER 2: System Connection Warn / Critical Alerts
     const criticalPopover = document.getElementById('critical-popover');
     if (criticalPopover && criticalPopover.classList.contains('active')) {
         if (window.handleCriticalAction) window.handleCriticalAction();
@@ -280,7 +273,6 @@ function handleBack() {
         return;
     }
 
-    // TIER 3: Functional Dialog Overlays
     const groupAlert = document.getElementById('group-alert-modal');
     if (groupAlert && groupAlert.style.display !== 'none') {
         if (window.closeAlertModal) window.closeAlertModal();
@@ -298,7 +290,6 @@ function handleBack() {
         return;
     }
 
-    // TIER 4: Main Overlays (Creation / Editor Sheets)
     const overlay = document.querySelector('.safe-overlay.active');
     if (overlay) {
         const cancelBtn = overlay.querySelector('.close-btn-abs, .modal-btn:not(.primary)');
@@ -311,7 +302,6 @@ function handleBack() {
         return;
     }
 
-    // TIER 5: Multi-page Settings Views
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0) {
         const mainSet = document.getElementById('set-main');
@@ -342,7 +332,6 @@ function handleLongPress() {
 
 function activate() {
     if (focusedElement) {
-        // Trap input selections to preserve layout positioning memory
         if (!isNavLocked() && zone !== 'nav') {
             elementBeforeOverlay = focusedElement;
         }
@@ -387,14 +376,12 @@ export function applyRemoteMode(on) {
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 
-    // MUTATION OBSERVER: Watches for automated popups and self-closing items
     const observer = new MutationObserver((mutations) => {
         if (!isRemoteMode()) return;
         let requiresFocusReset = false;
         let closedPopup = false;
 
         for (const m of mutations) {
-            // Check both layout state attributes and structural element additions/removals
             if (m.type === 'attributes') {
                 const el = m.target;
                 if (el.classList?.contains('safe-overlay') && el.classList?.contains('active')) requiresFocusReset = true;
@@ -404,7 +391,6 @@ export function initRemote() {
                 if (el.id === 'wifi-warning-overlay' && el.classList?.contains('visible')) requiresFocusReset = true;
                 if (el.id === 'osk-container' && el.classList?.contains('visible')) requiresFocusReset = true;
 
-                // Detection for automated timeouts or self-dismissing layout blocks
                 if (el.id === 'critical-popover' && !el.classList?.contains('active') && focusedElement?.closest('#critical-popover')) closedPopup = true;
                 if (el.id === 'wifi-warning-overlay' && !el.classList?.contains('visible') && focusedElement?.closest('#wifi-warning-overlay')) closedPopup = true;
             }
@@ -433,9 +419,13 @@ export function initRemote() {
             return;
         }
 
+        // SILENT ASSIGNMENT FIX: Actually visually paint the focus when recovering!
         if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
             const items = getContentItems();
-            if (items.length > 0) focusedElement = items[0];
+            if (items.length > 0) {
+                setFocus(items[0]);
+                return; // Stop the very first keypress from navigating; use it just to wake up the cursor.
+            }
         }
 
         switch (e.key) {

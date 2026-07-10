@@ -5,10 +5,9 @@ import { config } from './data.js';
 // --- State ---
 let zone = 'content';
 let focusedElement = null;
-let elementBeforeOverlay = null; // Remembers what you clicked before a popup opened
+let elementBeforeOverlay = null;
 const TABS = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
 
-// Long press tracking
 let enterPressTimer = null;
 let isLongPress = false;
 
@@ -59,9 +58,14 @@ function getContentItems() {
         return [...alertModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
+    const deleteModal = document.getElementById('group-delete-confirm');
+    if (deleteModal && deleteModal.style.display !== 'none') {
+        return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
+    }
+
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
     if (overlay) {
-        return [...overlay.querySelectorAll('button:not([disabled]), input, .g-member-select-item')].filter(isVisible);
+        return [...overlay.querySelectorAll('input, button:not([disabled]), .g-member-select-item')].filter(isVisible);
     }
 
     const activeView = document.querySelector('.view.active');
@@ -85,6 +89,9 @@ function getContentItems() {
 
 function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
+    if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
+    if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
+
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
     return false;
@@ -119,10 +126,9 @@ function enterContentZone() {
     zone = 'content';
     const items = getContentItems();
     if (items.length > 0) {
-        // Only override if we don't already have a valid memory target
-        if (elementBeforeOverlay && document.body.contains(elementBeforeOverlay) && isVisible(elementBeforeOverlay)) {
+        if (elementBeforeOverlay && document.body.contains(elementBeforeOverlay) && isVisible(elementBeforeOverlay) && !isNavLocked()) {
             setFocus(elementBeforeOverlay);
-            elementBeforeOverlay = null; // Clear memory after use
+            elementBeforeOverlay = null;
         } else {
             setFocus(items[0]);
         }
@@ -201,7 +207,6 @@ function navigate(dir) {
         const locked = isNavLocked();
         const items = getContentItems();
 
-        // FIX: Empty Tab Escape Hatch
         if (items.length === 0) {
             if (dir === 'left' && !locked) enterNavZone();
             else if (dir === 'up' && !locked) switchTab(-1);
@@ -219,7 +224,6 @@ function navigate(dir) {
         if (next) {
             setFocus(next);
         } else {
-            // EDGE DETECTION
             if (dir === 'left' && !locked) enterNavZone();
             else if (dir === 'up' && !locked) switchTab(-1);
             else if (dir === 'down' && !locked) switchTab(1);
@@ -259,7 +263,7 @@ function handleBack() {
         } else if (window.closeGroupModals) {
             window.closeGroupModals();
         }
-        setTimeout(enterContentZone, 200); // enterContentZone now auto-checks elementBeforeOverlay!
+        setTimeout(enterContentZone, 200);
         return;
     }
 
@@ -281,12 +285,11 @@ function handleBack() {
     }
 }
 
-// Triggered on Long Press of Enter Key
 function handleLongPress() {
     if (focusedElement && focusedElement.classList.contains('group-card')) {
         const editBtn = focusedElement.querySelector('.group-edit-btn');
         if (editBtn) {
-            elementBeforeOverlay = focusedElement; // Save card memory
+            elementBeforeOverlay = focusedElement;
             editBtn.click();
         }
     }
@@ -294,7 +297,7 @@ function handleLongPress() {
 
 function activate() {
     if (focusedElement) {
-        elementBeforeOverlay = focusedElement; // ALWAYS save memory on click
+        elementBeforeOverlay = focusedElement;
         focusedElement.click();
 
         if (focusedElement.tagName === 'INPUT') {
@@ -327,6 +330,28 @@ export function applyRemoteMode(on) {
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
 
+    // DOM WATCHER: Auto-focus popups and overlays the moment they appear
+    const observer = new MutationObserver((mutations) => {
+        if (!isRemoteMode()) return;
+        let requiresFocusReset = false;
+
+        for (const m of mutations) {
+            if (m.type === 'attributes') {
+                const el = m.target;
+                if (el.classList?.contains('safe-overlay') && el.classList?.contains('active')) requiresFocusReset = true;
+                if (el.id === 'group-alert-modal' && el.style.display !== 'none') requiresFocusReset = true;
+                if (el.id === 'group-delete-confirm' && el.style.display !== 'none') requiresFocusReset = true;
+                if (el.id === 'osk-container' && el.classList?.contains('visible')) requiresFocusReset = true;
+            }
+        }
+
+        if (requiresFocusReset) {
+            setTimeout(enterContentZone, 150); // Jump focus into the new popup
+        }
+    });
+
+    observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
+
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
 
@@ -334,14 +359,13 @@ export function initRemote() {
             e.preventDefault();
         }
 
-        // Long Press Registration
         if (e.key === 'Enter' && !e.repeat) {
             isLongPress = false;
             enterPressTimer = setTimeout(() => {
                 isLongPress = true;
                 handleLongPress();
-            }, 600); // 600ms hold triggers edit mode
-            return; // Stop here, wait for keyup
+            }, 600);
+            return;
         }
 
         if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
@@ -354,13 +378,13 @@ export function initRemote() {
             case 'ArrowUp': navigate('up'); break;
             case 'ArrowRight': navigate('right'); break;
             case 'ArrowLeft': navigate('left'); break;
-            case 'PageUp': switchTab(-1); break;
-            case 'PageDown': switchTab(1); break;
+            // Locked Tab Switching
+            case 'PageUp': if (!isNavLocked()) switchTab(-1); break;
+            case 'PageDown': if (!isNavLocked()) switchTab(1); break;
             case 'ContextMenu': handleBack(); break;
         }
     });
 
-    // Execute standard click when Enter is released (if not a long press)
     document.addEventListener('keyup', (e) => {
         if (!isRemoteMode()) return;
         if (e.key === 'Enter') {

@@ -591,8 +591,8 @@ body {
     opacity: 0.7;
 }
 
-/* FOCUSED STATE — remote control cursor */
-.member-card.focused {
+/* Neutralize legacy grid.js focus, but DO NOT kill the remote focus */
+.member-card.focused:not(.remoteFocused) {
     outline: none !important;
     box-shadow: none !important;
     transform: none !important;

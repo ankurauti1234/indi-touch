@@ -153,7 +153,7 @@ function handleKey(key) {
         activeInput,
         value: activeInput?.value
     });
-    
+
     if (!activeInput) return;
 
     if (key === 'shift') {
@@ -216,6 +216,7 @@ function handleKey(key) {
         const val = activeInput.value;
 
         activeInput.value = val.slice(0, start) + char + val.slice(end);
+        console.log('New value:', activeInput.value);
         activeInput.selectionStart = activeInput.selectionEnd = start + 1;
 
         if (isShift) {

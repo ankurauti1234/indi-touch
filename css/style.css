@@ -28,9 +28,8 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent !important;
     -webkit-touch-callout: none;
-    /* Disables long-press context menu */
     outline: none;
-    /* cursor: none !important; */
+    scroll-behavior: smooth;
 }
 
 /* Allow normal text selection inside input fields only */
@@ -67,21 +66,24 @@ body.remote-mode * {
 
 /* Remote Focus ring — used for full-UI navigation in remote mode */
 .remoteFocused {
-    outline: 3px solid #fff !important;
-    outline-offset: 3px !important;
-    box-shadow: 0 0 0 6px rgba(208, 188, 255, 0.35) !important;
-    /* transform: scale(1.03); */
-    z-index: 100;
+    /* Outline natively follows the border-radius of the element */
+    outline: 4px solid var(--primary) !important;
+    outline-offset: 4px !important;
+    z-index: 100 !important;
     position: relative;
+
+    /* Native TV "Pop" effect */
+    transform: scale(1.02);
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), outline 0.15s ease-out !important;
 }
 
-/* Slightly lighter effect on smaller elements like chips/buttons */
-.remoteFocused.chip,
+/* Slightly larger pop for smaller elements */
 .remoteFocused.nav-btn,
+.remoteFocused.chip,
 .remoteFocused.modal-btn,
-.remoteFocused.osk-key {
-    outline-offset: 2px !important;
-    /* transform: scale(1.06); */
+.remoteFocused.group-edit-btn,
+.remoteFocused.action-btn {
+    transform: scale(1.05);
 }
 
 body {
@@ -442,20 +444,21 @@ body {
     opacity: 0;
     pointer-events: none;
     padding: 24px 24px 0 24px;
-    
+
     /* ANTI-TEARING / GPU ACCELERATION HACKS */
-    transform: translate3d(0, 20px, 0); 
+    transform: translate3d(0, 20px, 0);
     backface-visibility: hidden;
     perspective: 1000px;
     will-change: opacity, transform;
-    
+
     transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .view.active {
     opacity: 1;
     pointer-events: all;
-    transform: translate3d(0, 0, 0); /* Must match 3D to keep GPU layer */
+    transform: translate3d(0, 0, 0);
+    /* Must match 3D to keep GPU layer */
     z-index: 10;
 }
 
@@ -2742,7 +2745,7 @@ body.light-mode .group-card.active {
 
 .g-member-select-item.selected {
     background: var(--surface-item-selected) !important;
-        border-color: var(--primary) !important;
+    border-color: var(--primary) !important;
 }
 
 .g-member-avatar {

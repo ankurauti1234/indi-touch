@@ -223,8 +223,7 @@ def _boot_reset():
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     # Binds to all IPs, not just localhost
-    # sys.argv.extend(["--remote-debugging-port=9222", "--remote-debugging-address=0.0.0.0"])
-    os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
+    # os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
 
     # 1. Database
     init_db()

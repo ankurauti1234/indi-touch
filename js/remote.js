@@ -35,6 +35,7 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
+    console.log('Remote Focus:', el);
 
     // ANTI-STRETCH CHECK
     const isInsidePopup = el.closest(

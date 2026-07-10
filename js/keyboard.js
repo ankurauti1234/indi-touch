@@ -230,8 +230,13 @@ export function showOSK() {
 export function hideOSK() {
     document.getElementById('osk-container').classList.remove('visible');
     document.body.classList.remove('osk-open');
-    
-    // Reset Viewport: Ensure UI returns to center after keyboard push
+
+    if (activeInput) {
+        activeInput.blur();
+        activeInput = null;
+    }
+
+    // Reset Viewport...
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;

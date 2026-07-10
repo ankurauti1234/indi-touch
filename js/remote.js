@@ -35,12 +35,7 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
-
-    const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm, #critical-popover, #wifi-warning-overlay');
-    if (!isInsidePopup) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-    }
-
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     focusedElement = el;
 }
 
@@ -66,11 +61,6 @@ function getContentItems() {
     const deleteModal = document.getElementById('group-delete-confirm');
     if (deleteModal && deleteModal.style.display !== 'none') {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
-    }
-
-    const osk = document.getElementById('osk-container');
-    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
-        return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
@@ -101,9 +91,6 @@ function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
-
-    const osk = document.getElementById('osk-container');
-    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -150,7 +137,7 @@ function enterContentZone() {
     }
 }
 
-// PERFECTED SPATIAL ALGORITHM (With Broad-Phase Escape for Overlays)
+// PERFECTED SPATIAL ALGORITHM (With Broad-Phase Net Added)
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
@@ -175,7 +162,6 @@ function findNextItem(items, currentEl, direction) {
         const absDx = Math.abs(dx);
         const absDy = Math.abs(dy);
 
-        // Strict Grid Tracking
         if (direction === 'right' && cx > curCX) {
             valid = true; dist = absDx + (absDy * 4);
         } else if (direction === 'left' && cx < curCX) {
@@ -186,7 +172,7 @@ function findNextItem(items, currentEl, direction) {
             valid = true; dist = absDy + (absDx * 4);
         }
 
-        // BROAD-PHASE ESCAPE: Casts a wider net (+50px) to jump between misaligned overlay columns
+        // Broad-phase check to easily transition left out of lists
         if (!valid) {
             if (direction === 'left' && rect.right < curRect.left + 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
             if (direction === 'right' && rect.left > curRect.right - 50) { valid = true; dist = Math.pow(dx, 2) + Math.pow(dy, 2); }
@@ -248,13 +234,10 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
-        // Find and click the close button if it exists, otherwise fallback to global function
+    if (osk && osk.classList.contains('visible')) {
         const closeBtn = osk.querySelector('.close-btn, .osk-close, .hide-keyboard');
         if (closeBtn) closeBtn.click();
         else if (window.hideOSK) window.hideOSK();
-        else osk.classList.remove('visible', 'active');
-
         setTimeout(enterContentZone, 150);
         return;
     }
@@ -334,7 +317,7 @@ function activate() {
                 if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
                     const newItems = getContentItems();
                     if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
-                        setFocus(newItems[focusedIndex]);
+                        setFocus(newItems[focusedIndex]); // Restore to the exact slot
                     } else {
                         enterContentZone();
                     }

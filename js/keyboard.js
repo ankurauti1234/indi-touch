@@ -147,6 +147,13 @@ function renderKeys() {
 }
 
 function handleKey(key) {
+
+    console.log('handleKey', {
+        key,
+        activeInput,
+        value: activeInput?.value
+    });
+    
     if (!activeInput) return;
 
     if (key === 'shift') {

@@ -35,6 +35,7 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
+    console.log('Remote Focus:', el);
 
     // ANTI-STRETCH CHECK
     const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm');
@@ -109,7 +110,7 @@ function isNavLocked() {
 
     const criticalPopover = document.getElementById('critical-popover');
     if (criticalPopover && criticalPopover.classList.contains('active')) return true;
-    
+
     if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
     if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
 

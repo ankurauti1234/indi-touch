@@ -64,31 +64,40 @@ body.remote-mode * {
     scroll-behavior: auto !important;
 }
 
-/* Remote Focus ring — used for full-UI navigation in remote mode */
-.remoteFocused {
-    outline: none !important;
-    /* Box-shadow flawlessly wraps ANY border-radius shape natively */
-    box-shadow: 0 0 0 4px var(--primary), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
-    z-index: 100 !important;
-    position: relative;
+/* =========================================================
+   ULTRA-SPECIFIC TV FOCUS ENGINE 
+   ========================================================= */
 
-    /* Native TV "Pop" effect */
-    transform: scale(1.02);
-    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s ease-out !important;
+/* The 'body.remote-mode' guarantees this wins every CSS battle */
+body.remote-mode .remoteFocused,
+body.remote-mode *.remoteFocused {
+    outline: 4px solid #fff !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.8) !important;
+    z-index: 9999 !important;
+    transform: scale(1.04) !important;
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), outline 0.15s ease-out !important;
 }
 
-/* Slightly larger pop for smaller elements */
-.remoteFocused.nav-btn,
-.remoteFocused.chip,
-.remoteFocused.modal-btn,
-.remoteFocused.action-btn {
-    transform: scale(1.05);
+/* Make smaller buttons pop a bit more */
+body.remote-mode .remoteFocused.nav-btn,
+body.remote-mode .remoteFocused.chip,
+body.remote-mode .remoteFocused.modal-btn,
+body.remote-mode .remoteFocused.action-btn {
+    transform: scale(1.08) !important;
 }
 
-/* Wake up inactive/disabled cards fully so the ring shines bright */
-.inactive.remoteFocused {
+/* Ensure inactive cards wake up when hovered */
+body.remote-mode .inactive.remoteFocused {
     opacity: 1 !important;
     filter: none !important;
+}
+
+/* Hard-kill the old legacy grid ghost box so it stops interfering */
+.member-card.focused {
+    outline: none !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
 body {
@@ -589,18 +598,6 @@ body {
 .lock-msg {
     font-size: 16px;
     opacity: 0.7;
-}
-
-/* Neutralize legacy grid.js focus, but DO NOT kill the remote focus */
-.member-card.focused:not(.remoteFocused) {
-    outline: none !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-
-/* When focused AND inactive, keep the focus ring visible */
-.member-card.focused.inactive {
-    filter: grayscale(60%) opacity(0.75);
 }
 
 .member-img {

@@ -5,7 +5,12 @@ import { config } from './data.js';
 // --- State ---
 let zone = 'content';
 let focusedElement = null;
+let elementBeforeOverlay = null; // Remembers what you clicked before a popup opened
 const TABS = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
+
+// Long press tracking
+let enterPressTimer = null;
+let isLongPress = false;
 
 export function isRemoteMode() {
     return document.body.classList.contains('remote-mode');
@@ -49,25 +54,21 @@ function getNavItems() {
 }
 
 function getContentItems() {
-    // 1. Alert Modals (Highest Priority)
     const alertModal = document.getElementById('group-alert-modal');
     if (alertModal && alertModal.style.display !== 'none') {
         return [...alertModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
-    // 2. Main Overlays
     const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
     if (overlay) {
         return [...overlay.querySelectorAll('button:not([disabled]), input, .g-member-select-item')].filter(isVisible);
     }
 
-    // 3. Main View
     const activeView = document.querySelector('.view.active');
     if (!activeView) return [];
 
     const activePanel = activeView.querySelector('.settings-panel.active') || activeView;
 
-    // Notice: .group-edit-btn has been explicitly removed from this master list
     const selectors = [
         '.member-card',
         '.group-card',
@@ -82,13 +83,10 @@ function getContentItems() {
     return [...activePanel.querySelectorAll(selectors)].filter(isVisible);
 }
 
-// Check if we are trapped inside an overlay or deep settings
 function isNavLocked() {
     if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
-
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
-
     return false;
 }
 
@@ -121,9 +119,14 @@ function enterContentZone() {
     zone = 'content';
     const items = getContentItems();
     if (items.length > 0) {
-        setFocus(items[0]);
+        // Only override if we don't already have a valid memory target
+        if (elementBeforeOverlay && document.body.contains(elementBeforeOverlay) && isVisible(elementBeforeOverlay)) {
+            setFocus(elementBeforeOverlay);
+            elementBeforeOverlay = null; // Clear memory after use
+        } else {
+            setFocus(items[0]);
+        }
     } else {
-        // If tab is completely empty, stay in content zone but hide cursor
         clearFocus();
     }
 }
@@ -198,10 +201,16 @@ function navigate(dir) {
         const locked = isNavLocked();
         const items = getContentItems();
 
+        // FIX: Empty Tab Escape Hatch
+        if (items.length === 0) {
+            if (dir === 'left' && !locked) enterNavZone();
+            else if (dir === 'up' && !locked) switchTab(-1);
+            else if (dir === 'down' && !locked) switchTab(1);
+            return;
+        }
+
         if (!focusedElement || !document.body.contains(focusedElement)) {
-            // Re-acquire focus safely if we were on an empty tab
             if (items.length > 0) setFocus(items[0]);
-            else if (dir === 'left' && !locked) enterNavZone();
             return;
         }
 
@@ -210,21 +219,16 @@ function navigate(dir) {
         if (next) {
             setFocus(next);
         } else {
-            // EDGE DETECTION - Now respects the lock!
-            if (dir === 'left' && !locked) {
-                enterNavZone();
-            } else if (dir === 'up' && !locked) {
-                switchTab(-1);
-            } else if (dir === 'down' && !locked) {
-                switchTab(1);
-            }
+            // EDGE DETECTION
+            if (dir === 'left' && !locked) enterNavZone();
+            else if (dir === 'up' && !locked) switchTab(-1);
+            else if (dir === 'down' && !locked) switchTab(1);
         }
     }
 }
 
 // --- The Master Tiered Back Button ---
 function handleBack() {
-    // TIER 1: Keyboard
     const osk = document.getElementById('osk-container');
     if (osk && osk.classList.contains('visible')) {
         if (window.hideOSK) window.hideOSK();
@@ -232,7 +236,6 @@ function handleBack() {
         return;
     }
 
-    // TIER 2: Alert Modals (Info popups)
     const alertModal = document.getElementById('group-alert-modal');
     if (alertModal && alertModal.style.display !== 'none') {
         if (window.closeAlertModal) window.closeAlertModal();
@@ -240,17 +243,14 @@ function handleBack() {
         return;
     }
 
-    // TIER 3: Delete Confirm Modals
     const deleteModal = document.getElementById('group-delete-confirm');
     if (deleteModal && deleteModal.style.display !== 'none') {
-        // Find the cancel button specifically so we don't nuke the editor below it
         const cancel = deleteModal.querySelector('.modal-btn:not(.primary)');
         if (cancel) cancel.click();
         setTimeout(enterContentZone, 150);
         return;
     }
 
-    // TIER 4: Main Overlays (Create/Edit Group Editor)
     const overlay = document.querySelector('.safe-overlay.active');
     if (overlay) {
         const cancelBtn = overlay.querySelector('.close-btn-abs, .modal-btn:not(.primary)');
@@ -259,11 +259,10 @@ function handleBack() {
         } else if (window.closeGroupModals) {
             window.closeGroupModals();
         }
-        setTimeout(enterContentZone, 200);
+        setTimeout(enterContentZone, 200); // enterContentZone now auto-checks elementBeforeOverlay!
         return;
     }
 
-    // TIER 5: Deep Settings Sub-menus
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0) {
         const mainSet = document.getElementById('set-main');
@@ -277,14 +276,25 @@ function handleBack() {
         }
     }
 
-    // TIER 6: Nav Rail
     if (zone !== 'nav') {
         enterNavZone();
     }
 }
 
+// Triggered on Long Press of Enter Key
+function handleLongPress() {
+    if (focusedElement && focusedElement.classList.contains('group-card')) {
+        const editBtn = focusedElement.querySelector('.group-edit-btn');
+        if (editBtn) {
+            elementBeforeOverlay = focusedElement; // Save card memory
+            editBtn.click();
+        }
+    }
+}
+
 function activate() {
     if (focusedElement) {
+        elementBeforeOverlay = focusedElement; // ALWAYS save memory on click
         focusedElement.click();
 
         if (focusedElement.tagName === 'INPUT') {
@@ -324,10 +334,19 @@ export function initRemote() {
             e.preventDefault();
         }
 
-        // Failsafe: if element disappeared, re-scan before moving
+        // Long Press Registration
+        if (e.key === 'Enter' && !e.repeat) {
+            isLongPress = false;
+            enterPressTimer = setTimeout(() => {
+                isLongPress = true;
+                handleLongPress();
+            }, 600); // 600ms hold triggers edit mode
+            return; // Stop here, wait for keyup
+        }
+
         if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
             const items = getContentItems();
-            if (items.length > 0) focusedElement = items[0]; // Silent re-bind
+            if (items.length > 0) focusedElement = items[0];
         }
 
         switch (e.key) {
@@ -335,10 +354,20 @@ export function initRemote() {
             case 'ArrowUp': navigate('up'); break;
             case 'ArrowRight': navigate('right'); break;
             case 'ArrowLeft': navigate('left'); break;
-            case 'Enter': activate(); break;
             case 'PageUp': switchTab(-1); break;
             case 'PageDown': switchTab(1); break;
             case 'ContextMenu': handleBack(); break;
+        }
+    });
+
+    // Execute standard click when Enter is released (if not a long press)
+    document.addEventListener('keyup', (e) => {
+        if (!isRemoteMode()) return;
+        if (e.key === 'Enter') {
+            clearTimeout(enterPressTimer);
+            if (!isLongPress) {
+                activate();
+            }
         }
     });
 

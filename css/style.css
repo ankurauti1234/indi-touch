@@ -67,8 +67,7 @@ body.remote-mode * {
 /* Remote Focus ring — used for full-UI navigation in remote mode */
 .remoteFocused {
     outline: none !important;
-    /* Nukes the buggy WebKit outline */
-    /* Box-shadow flawlessly wraps ANY border-radius shape */
+    /* Box-shadow flawlessly wraps ANY border-radius shape natively */
     box-shadow: 0 0 0 4px var(--primary), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
     z-index: 100 !important;
     position: relative;
@@ -84,6 +83,12 @@ body.remote-mode * {
 .remoteFocused.modal-btn,
 .remoteFocused.action-btn {
     transform: scale(1.05);
+}
+
+/* Wake up disabled/inactive cards slightly when focused so the ring shines */
+.inactive.remoteFocused {
+    opacity: 0.95 !important;
+    filter: grayscale(20%) !important;
 }
 
 body {
@@ -588,11 +593,9 @@ body {
 
 /* FOCUSED STATE — remote control cursor */
 .member-card.focused {
-    outline: 3px solid #fff;
-    outline-offset: 3px;
-    box-shadow: 0 0 0 6px rgba(208, 188, 255, 0.35), var(--green-shadow, none);
-    transform: scale(1.03);
-    z-index: 2;
+    outline: none !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
 /* When focused AND inactive, keep the focus ring visible */

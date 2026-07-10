@@ -15,7 +15,6 @@ export function isRemoteMode() {
     return document.body.classList.contains('remote-mode');
 }
 
-// BULLETPROOF VISIBILITY CHECK: Only trusts actual screen rendering
 function isVisible(el) {
     if (!el || el.disabled) return false;
     const style = window.getComputedStyle(el);
@@ -37,6 +36,7 @@ function setFocus(el) {
 
     el.classList.add('remoteFocused');
 
+    // ANTI-STRETCH FIX: Do not trigger scroll calculations if inside a fixed popup/overlay
     const isInsidePopup = el.closest('.safe-overlay, .popover-overlay, #critical-popover, #modal-overlay, #osk-container, #group-alert-modal, #group-delete-confirm');
 
     if (!isInsidePopup) {
@@ -60,40 +60,36 @@ function getNavItems() {
 }
 
 function getContentItems() {
-    // 1. Connection & System Popups (Highest Priority)
     const criticalPopover = document.getElementById('critical-popover');
-    if (criticalPopover && isVisible(criticalPopover)) {
+    if (criticalPopover && (criticalPopover.classList.contains('active') || criticalPopover.style.display === 'flex')) {
         return [...criticalPopover.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
     const wifiWarn = document.getElementById('wifi-warning-overlay');
-    if (wifiWarn && isVisible(wifiWarn)) {
+    if (wifiWarn && (wifiWarn.classList.contains('visible') || wifiWarn.classList.contains('active') || wifiWarn.style.display !== 'none')) {
         return [...wifiWarn.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
     const groupAlert = document.getElementById('group-alert-modal');
-    if (groupAlert && isVisible(groupAlert)) {
+    if (groupAlert && groupAlert.style.display !== 'none') {
         return [...groupAlert.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
     const deleteModal = document.getElementById('group-delete-confirm');
-    if (deleteModal && isVisible(deleteModal)) {
+    if (deleteModal && deleteModal.style.display !== 'none') {
         return [...deleteModal.querySelectorAll('button:not([disabled])')].filter(isVisible);
     }
 
-    // 2. Keyboard Engine Trap
     const osk = document.getElementById('osk-container');
-    if (osk && isVisible(osk)) {
+    if (osk && (osk.classList.contains('visible') || osk.classList.contains('active') || osk.style.display !== 'none')) {
         return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
-    // 3. Modals & Creation Overlays
-    const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active');
-    if (overlay && isVisible(overlay)) {
+    const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
+    if (overlay) {
         return [...overlay.querySelectorAll('input[type="text"], input:not([type="hidden"]), button:not([disabled]), .g-member-select-item')].filter(isVisible);
     }
 
-    // 4. Main Tab Layouts
     const activeView = document.querySelector('.view.active');
     if (!activeView) return [];
 
@@ -114,12 +110,14 @@ function getContentItems() {
 }
 
 function isNavLocked() {
-    if (isVisible(document.querySelector('.safe-overlay.active, .popover-overlay.active'))) return true;
-    if (isVisible(document.getElementById('group-alert-modal'))) return true;
-    if (isVisible(document.getElementById('group-delete-confirm'))) return true;
-    if (isVisible(document.getElementById('critical-popover'))) return true;
-    if (isVisible(document.getElementById('wifi-warning-overlay'))) return true;
-    if (isVisible(document.getElementById('osk-container'))) return true;
+    if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
+    if (document.getElementById('group-alert-modal')?.style.display !== 'none') return true;
+    if (document.getElementById('group-delete-confirm')?.style.display !== 'none') return true;
+    if (document.getElementById('critical-popover')?.classList.contains('active')) return true;
+    if (document.getElementById('wifi-warning-overlay')?.classList.contains('visible')) return true;
+
+    const osk = document.getElementById('osk-container');
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) return true;
 
     const activeSettings = document.querySelectorAll('.settings-panel.active');
     if (activeSettings.length > 0 && activeSettings[0].id !== 'set-main') return true;
@@ -254,14 +252,14 @@ function navigate(dir) {
 // --- The Master Tiered Back Button ---
 function handleBack() {
     const osk = document.getElementById('osk-container');
-    if (osk && isVisible(osk)) {
+    if (osk && (osk.classList.contains('visible') || osk.style.display !== 'none')) {
         if (window.hideOSK) window.hideOSK();
         setTimeout(enterContentZone, 150);
         return;
     }
 
     const criticalPopover = document.getElementById('critical-popover');
-    if (criticalPopover && isVisible(criticalPopover)) {
+    if (criticalPopover && criticalPopover.classList.contains('active')) {
         if (window.handleCriticalAction) window.handleCriticalAction();
         else criticalPopover.classList.remove('active');
         setTimeout(enterContentZone, 150);
@@ -269,14 +267,14 @@ function handleBack() {
     }
 
     const wifiWarn = document.getElementById('wifi-warning-overlay');
-    if (wifiWarn && isVisible(wifiWarn)) {
+    if (wifiWarn && wifiWarn.classList.contains('visible')) {
         wifiWarn.classList.remove('visible');
         setTimeout(enterContentZone, 150);
         return;
     }
 
     const groupAlert = document.getElementById('group-alert-modal');
-    if (groupAlert && isVisible(groupAlert)) {
+    if (groupAlert && groupAlert.style.display !== 'none') {
         if (window.closeAlertModal) window.closeAlertModal();
         else groupAlert.style.display = 'none';
         setTimeout(enterContentZone, 150);
@@ -284,7 +282,7 @@ function handleBack() {
     }
 
     const deleteModal = document.getElementById('group-delete-confirm');
-    if (deleteModal && isVisible(deleteModal)) {
+    if (deleteModal && deleteModal.style.display !== 'none') {
         const cancel = deleteModal.querySelector('.modal-btn:not(.primary)');
         if (cancel) cancel.click();
         else deleteModal.style.display = 'none';
@@ -293,7 +291,7 @@ function handleBack() {
     }
 
     const overlay = document.querySelector('.safe-overlay.active');
-    if (overlay && isVisible(overlay)) {
+    if (overlay) {
         const cancelBtn = overlay.querySelector('.close-btn-abs, .modal-btn:not(.primary)');
         if (cancelBtn) {
             cancelBtn.click();
@@ -376,31 +374,40 @@ export function applyRemoteMode(on) {
 
 // --- Initialization ---
 export function initRemote() {
-    // Force active state on init
-    applyRemoteMode(true);
+    if (config.remoteMode) applyRemoteMode(true);
 
     const observer = new MutationObserver((mutations) => {
         if (!isRemoteMode()) return;
-        // ... (Keep your existing mutation observer logic here)
+        let requiresFocusReset = false;
+        let closedPopup = false;
+
+        for (const m of mutations) {
+            if (m.type === 'attributes') {
+                const el = m.target;
+                if (el.classList?.contains('safe-overlay') && el.classList?.contains('active')) requiresFocusReset = true;
+                if (el.id === 'group-alert-modal' && el.style.display !== 'none') requiresFocusReset = true;
+                if (el.id === 'group-delete-confirm' && el.style.display !== 'none') requiresFocusReset = true;
+                if (el.id === 'critical-popover' && el.classList?.contains('active')) requiresFocusReset = true;
+                if (el.id === 'wifi-warning-overlay' && el.classList?.contains('visible')) requiresFocusReset = true;
+                if (el.id === 'osk-container' && el.classList?.contains('visible')) requiresFocusReset = true;
+
+                if (el.id === 'critical-popover' && !el.classList?.contains('active') && focusedElement?.closest('#critical-popover')) closedPopup = true;
+                if (el.id === 'wifi-warning-overlay' && !el.classList?.contains('visible') && focusedElement?.closest('#wifi-warning-overlay')) closedPopup = true;
+            }
+        }
+
+        if (requiresFocusReset || closedPopup) {
+            setTimeout(enterContentZone, 150);
+        }
     });
 
     observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
 
     document.addEventListener('keydown', (e) => {
-        const remoteKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'ContextMenu'];
+        if (!isRemoteMode()) return;
 
-        // HARD WAKEUP: If focus is lost or mode is off, force re-bind
-        if (remoteKeys.includes(e.key)) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter'].includes(e.key)) {
             e.preventDefault();
-            if (!isRemoteMode()) applyRemoteMode(true);
-
-            // If focus is gone, re-scan and force focus to first item
-            if (!focusedElement || !document.body.contains(focusedElement)) {
-                const items = getContentItems();
-                if (items.length > 0) {
-                    setFocus(items[0]);
-                }
-            }
         }
 
         if (e.key === 'Enter' && !e.repeat) {
@@ -410,6 +417,15 @@ export function initRemote() {
                 handleLongPress();
             }, 600);
             return;
+        }
+
+        // SILENT ASSIGNMENT FIX: Actually visually paint the focus when recovering!
+        if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
+            const items = getContentItems();
+            if (items.length > 0) {
+                setFocus(items[0]);
+                return; // Stop the very first keypress from navigating; use it just to wake up the cursor.
+            }
         }
 
         switch (e.key) {
@@ -424,9 +440,16 @@ export function initRemote() {
     });
 
     document.addEventListener('keyup', (e) => {
+        if (!isRemoteMode()) return;
         if (e.key === 'Enter') {
             clearTimeout(enterPressTimer);
-            if (!isLongPress) activate();
+            if (!isLongPress) {
+                activate();
+            }
         }
+    });
+
+    document.addEventListener('mousemove', () => {
+        if (isRemoteMode()) clearFocus();
     });
 }

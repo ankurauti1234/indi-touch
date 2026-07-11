@@ -11,9 +11,6 @@ const TABS = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
 let enterPressTimer = null;
 let isLongPress = false;
 
-// --- GLOBAL FOCUS RING ENGINE ---
-let focusRing = null;
-
 export function isRemoteMode() {
     return document.body.classList.contains('remote-mode');
 }
@@ -56,7 +53,7 @@ function setFocus(el) {
         el.scrollIntoView({
             block: 'nearest',
             inline: 'nearest',
-            behavior: 'auto' // CHANGED: Prevents ring detachment during fast scrolls
+            behavior: 'smooth'
         });
         return;
     }
@@ -65,7 +62,7 @@ function setFocus(el) {
     el.scrollIntoView({
         block: 'center',
         inline: 'nearest',
-        behavior: 'auto' // CHANGED: Prevents ring detachment during fast scrolls
+        behavior: 'smooth'
     });
 }
 
@@ -188,7 +185,7 @@ function enterContentZone() {
     }
 }
 
-// PERFECTED SPATIAL ALGORITHM
+// PERFECTED SPATIAL ALGORITHM (With List Escape Hatch)
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
@@ -456,38 +453,9 @@ export function applyRemoteMode(on) {
     }
 }
 
-// --- GLOBAL FOCUS LOOP ---
-function trackFocusRing() {
-    if (!focusRing) return;
-
-    if (isRemoteMode() && focusedElement && isVisible(focusedElement)) {
-        const rect = focusedElement.getBoundingClientRect();
-        const style = window.getComputedStyle(focusedElement);
-
-        // Match the element exactly, including its border-radius!
-        focusRing.style.width = `${rect.width}px`;
-        focusRing.style.height = `${rect.height}px`;
-        focusRing.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
-        focusRing.style.borderRadius = style.borderRadius;
-        focusRing.style.opacity = '1';
-    } else {
-        focusRing.style.opacity = '0';
-    }
-
-    requestAnimationFrame(trackFocusRing);
-}
-
 // --- Initialization ---
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
-
-    // Inject the independent focus ring into the DOM
-    if (!document.getElementById('tv-focus-ring')) {
-        focusRing = document.createElement('div');
-        focusRing.id = 'tv-focus-ring';
-        document.body.appendChild(focusRing);
-        requestAnimationFrame(trackFocusRing);
-    }
 
     const observer = new MutationObserver((mutations) => {
         if (!isRemoteMode()) return;

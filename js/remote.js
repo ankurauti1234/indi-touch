@@ -481,6 +481,7 @@ export function initRemote() {
     observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
 
     document.addEventListener('keydown', (e) => {
+        console.log('REMOTE KEY:', e.key, e.keyCode);
         if (!isRemoteMode()) return;
 
         // Expanded to include ' ' (Spacebar) and 'Select' for TV click compatibility
@@ -509,7 +510,11 @@ export function initRemote() {
             case 'ArrowLeft': navigate('left'); break;
             case 'PageUp': if (!isNavLocked()) switchTab(-1); break;
             case 'PageDown': if (!isNavLocked()) switchTab(1); break;
-            case 'BrowserBack': handleBack(); break;
+            case 'BrowserBack':
+                e.preventDefault();
+                e.stopPropagation();
+                handleBack();
+                return;
         }
     });
 

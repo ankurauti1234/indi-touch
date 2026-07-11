@@ -55,9 +55,6 @@ def run_flask():
 class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        print("BrowserWindow initialized", flush=True)
-
         self.view = QWebEngineView()
         self.setCentralWidget(self.view)
 
@@ -152,6 +149,15 @@ class BrowserWindow(QMainWindow):
 
     # ── Key handling ──────────────────────────────────────────────────────────
     def keyPressEvent(self, event):
+        print(
+            "WINDOW KEY:",
+            "key =", event.key(),
+            "text =", repr(event.text()),
+            "nativeScanCode =", event.nativeScanCode(),
+            "nativeVirtualKey =", event.nativeVirtualKey(),
+            "nativeModifiers =", event.nativeModifiers(),
+            flush=True
+        )
         if event.key() == Qt.Key_F4 and event.modifiers() == Qt.AltModifier:
             self.close()
         super().keyPressEvent(event)

@@ -116,6 +116,7 @@ function getContentItems() {
         '.group-card',
         '.list-item:not(.no-click)',
         '.wifi-item',
+        '.avatar-option',
         'button:not([disabled]):not(.group-edit-btn)',
         '.g-member-select-item',
         'input',
@@ -484,7 +485,7 @@ export function initRemote() {
         if (!isRemoteMode()) return;
 
         // Expanded to include ' ' (Spacebar) and 'Select' for TV click compatibility
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', ' ', 'Select', 'BrowserBack'].includes(e.key)) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', ' ', 'Select', 'ContextMenu'].includes(e.key)) {
             e.preventDefault();
         }
 
@@ -509,9 +510,7 @@ export function initRemote() {
             case 'ArrowLeft': navigate('left'); break;
             case 'PageUp': if (!isNavLocked()) switchTab(-1); break;
             case 'PageDown': if (!isNavLocked()) switchTab(1); break;
-            case 'BrowserBack':
-                e.preventDefault();
-                e.stopPropagation();
+            case 'ContextMenu':
                 handleBack();
                 return;
         }

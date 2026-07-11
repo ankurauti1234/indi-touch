@@ -87,20 +87,26 @@ body.remote-mode * {
    This floats entirely independent of the UI layer, 
    ignoring grayscale/opacity filters completely.
    ========================================================= */
+/* =========================================================
+   THE GLOBAL TV FOCUS RING (INSTANT SNAP)
+   ========================================================= */
 #tv-focus-ring {
     position: fixed;
     top: 0;
     left: 0;
     pointer-events: none;
+    /* Let all clicks pass through */
     z-index: 200000001 !important;
+    /* Above everything */
     box-sizing: border-box;
     background: transparent;
 
+    /* The glowing border */
     box-shadow: 0 0 0 4px var(--primary, #D0BCFF), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
 
     opacity: 0;
-    /* ADDED WIDTH, HEIGHT, AND TRANSFORM TRANSITIONS FOR MICRO-GLIDE */
-    transition: opacity 0.15s ease-out, transform 0.1s cubic-bezier(0.2, 0, 0, 1), width 0.1s cubic-bezier(0.2, 0, 0, 1), height 0.1s cubic-bezier(0.2, 0, 0, 1) !important;
+    /* KILLED ALL SHIFTING ANIMATIONS: INSTANT SNAP ONLY */
+    transition: none !important;
     will-change: transform, width, height;
     margin: 0;
     padding: 0;

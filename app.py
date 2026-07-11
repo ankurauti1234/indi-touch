@@ -51,11 +51,24 @@ def run_flask():
                   debug=False, use_reloader=False, threaded=True)
 
 
+class MyWebView(QWebEngineView):
+    def keyPressEvent(self, event):
+        print(
+            "WEBVIEW KEY:",
+            event.key(),
+            repr(event.text()),
+            event.nativeScanCode(),
+            event.nativeVirtualKey(),
+            event.nativeModifiers()
+        )
+
+        super().keyPressEvent(event)
+
 # ── PyQt6 browser window ──────────────────────────────────────────────────────
 class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.view = QWebEngineView()
+        self.view = MyWebView()
         self.setCentralWidget(self.view)
 
         # ── Window chrome ──────────────────────────────────────────────────────
@@ -149,7 +162,6 @@ class BrowserWindow(QMainWindow):
 
     # ── Key handling ──────────────────────────────────────────────────────────
     def keyPressEvent(self, event):
-        self.view.page().runJavaScript("""console.log('QT keyPressEvent fired');""")
         if event.key() == Qt.Key_F4 and event.modifiers() == Qt.AltModifier:
             self.close()
         super().keyPressEvent(event)

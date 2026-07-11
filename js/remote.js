@@ -484,7 +484,7 @@ export function initRemote() {
         if (!isRemoteMode()) return;
 
         // Expanded to include ' ' (Spacebar) and 'Select' for TV click compatibility
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', ' ', 'Select'].includes(e.key)) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', ' ', 'Select', 'BrowserBack'].includes(e.key)) {
             e.preventDefault();
         }
 
@@ -509,7 +509,11 @@ export function initRemote() {
             case 'ArrowLeft': navigate('left'); break;
             case 'PageUp': if (!isNavLocked()) switchTab(-1); break;
             case 'PageDown': if (!isNavLocked()) switchTab(1); break;
-            case 'ContextMenu': handleBack(); break;
+            case 'BrowserBack':
+                e.preventDefault();
+                e.stopPropagation();
+                handleBack();
+                return;
         }
     });
 

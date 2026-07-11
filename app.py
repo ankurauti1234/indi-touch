@@ -149,7 +149,15 @@ class BrowserWindow(QMainWindow):
 
     # ── Key handling ──────────────────────────────────────────────────────────
     def keyPressEvent(self, event):
-        print("QT KEY:", event.key(), event.text(), event.modifiers())
+        print(
+            "QT KEY:",
+            "key =", event.key(),
+            "text =", repr(event.text()),
+            "mods =", int(event.modifiers()),
+            "nativeScanCode =", event.nativeScanCode(),
+            "nativeVirtualKey =", event.nativeVirtualKey(),
+            "nativeModifiers =", event.nativeModifiers(),
+        )
         if event.key() == Qt.Key_F4 and event.modifiers() == Qt.AltModifier:
             self.close()
             return

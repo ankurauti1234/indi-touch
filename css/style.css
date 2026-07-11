@@ -92,18 +92,15 @@ body.remote-mode * {
     top: 0;
     left: 0;
     pointer-events: none;
-    /* Let all clicks pass through */
     z-index: 200000001 !important;
-    /* Above everything */
     box-sizing: border-box;
     background: transparent;
 
-    /* The glowing border */
     box-shadow: 0 0 0 4px var(--primary, #D0BCFF), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
 
     opacity: 0;
-    transition: opacity 0.15s ease-out;
-    /* Only fade, DO NOT transition width/transform here */
+    /* ADDED WIDTH, HEIGHT, AND TRANSFORM TRANSITIONS FOR MICRO-GLIDE */
+    transition: opacity 0.15s ease-out, transform 0.1s cubic-bezier(0.2, 0, 0, 1), width 0.1s cubic-bezier(0.2, 0, 0, 1), height 0.1s cubic-bezier(0.2, 0, 0, 1) !important;
     will-change: transform, width, height;
     margin: 0;
     padding: 0;

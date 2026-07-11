@@ -56,7 +56,7 @@ function setFocus(el) {
         el.scrollIntoView({
             block: 'nearest',
             inline: 'nearest',
-            behavior: 'smooth'
+            behavior: 'auto' // CHANGED: Prevents ring detachment during fast scrolls
         });
         return;
     }
@@ -65,7 +65,7 @@ function setFocus(el) {
     el.scrollIntoView({
         block: 'center',
         inline: 'nearest',
-        behavior: 'smooth'
+        behavior: 'auto' // CHANGED: Prevents ring detachment during fast scrolls
     });
 }
 

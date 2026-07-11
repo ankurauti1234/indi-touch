@@ -115,6 +115,7 @@ function getContentItems() {
         '.member-card',
         '.group-card',
         '.list-item:not(.no-click)',
+        '.wifi-item',
         'button:not([disabled]):not(.group-edit-btn)',
         '.g-member-select-item',
         'input',

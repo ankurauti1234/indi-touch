@@ -149,19 +149,9 @@ class BrowserWindow(QMainWindow):
 
     # ── Key handling ──────────────────────────────────────────────────────────
     def keyPressEvent(self, event):
-        print(
-            "QT KEY:",
-            "key =", event.key(),
-            "text =", repr(event.text()),
-            "mods =", int(event.modifiers()),
-            "nativeScanCode =", event.nativeScanCode(),
-            "nativeVirtualKey =", event.nativeVirtualKey(),
-            "nativeModifiers =", event.nativeModifiers(),
-        )
+        self.view.page().runJavaScript("""console.log('QT keyPressEvent fired');""")
         if event.key() == Qt.Key_F4 and event.modifiers() == Qt.AltModifier:
             self.close()
-            return
-
         super().keyPressEvent(event)
 
     def wheelEvent(self, event):

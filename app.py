@@ -149,8 +149,11 @@ class BrowserWindow(QMainWindow):
 
     # ── Key handling ──────────────────────────────────────────────────────────
     def keyPressEvent(self, event):
+        print("QT KEY:", event.key(), event.text(), event.modifiers())
         if event.key() == Qt.Key_F4 and event.modifiers() == Qt.AltModifier:
             self.close()
+            return
+
         super().keyPressEvent(event)
 
     def wheelEvent(self, event):

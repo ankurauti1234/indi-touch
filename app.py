@@ -56,8 +56,8 @@ class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        print("BrowserWindow initialized")
-        
+        print("BrowserWindow initialized", flush=True)
+
         self.view = QWebEngineView()
         self.setCentralWidget(self.view)
 

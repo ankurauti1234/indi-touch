@@ -509,11 +509,7 @@ export function initRemote() {
             case 'ArrowLeft': navigate('left'); break;
             case 'PageUp': if (!isNavLocked()) switchTab(-1); break;
             case 'PageDown': if (!isNavLocked()) switchTab(1); break;
-            case 'BrowserBack':
-                e.preventDefault();
-                e.stopPropagation();
-                handleBack();
-                return;
+            case 'BrowserBack': handleBack(); break;
         }
     });
 

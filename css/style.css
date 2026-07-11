@@ -64,17 +64,14 @@ body.remote-mode * {
     scroll-behavior: auto !important;
 }
 
-/* Remote Focus ring — used for full-UI navigation in remote mode */
+/* Remote Focus ring — handles ONLY the physical pop effect now */
 .remoteFocused {
     outline: none !important;
-    /* Box-shadow flawlessly wraps ANY border-radius shape natively */
-    box-shadow: 0 0 0 4px var(--primary), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
     z-index: 100 !important;
     position: relative;
-
     /* Native TV "Pop" effect */
     transform: scale(1.02);
-    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s ease-out !important;
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
 /* Slightly larger pop for smaller elements */
@@ -85,11 +82,32 @@ body.remote-mode * {
     transform: scale(1.05);
 }
 
-/* Wake up inactive/disabled cards fully so the ring shines bright */
-/* .inactive.remoteFocused {
-    opacity: 1 !important;
-    filter: none !important;
-} */
+/* =========================================================
+   THE GLOBAL TV FOCUS RING
+   This floats entirely independent of the UI layer, 
+   ignoring grayscale/opacity filters completely.
+   ========================================================= */
+#tv-focus-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    /* Let all clicks pass through */
+    z-index: 200000001 !important;
+    /* Above everything */
+    box-sizing: border-box;
+    background: transparent;
+
+    /* The glowing border */
+    box-shadow: 0 0 0 4px var(--primary, #D0BCFF), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+
+    opacity: 0;
+    transition: opacity 0.15s ease-out;
+    /* Only fade, DO NOT transition width/transform here */
+    will-change: transform, width, height;
+    margin: 0;
+    padding: 0;
+}
 
 body {
     background-color: #000;
@@ -591,17 +609,11 @@ body {
     opacity: 0.7;
 }
 
-/* Neutralize legacy grid.js focus, but DO NOT kill the remote focus */
-.member-card.focused:not(.remoteFocused) {
+/* Hard-kill the old legacy grid ghost box so it stops interfering */
+.member-card.focused,
+.group-card.focused {
     outline: none !important;
     box-shadow: none !important;
-    transform: none !important;
-}
-
-/* When focused AND inactive, keep the focus ring visible */
-.member-card.remoteFocused.inactive {
-    filter: none !important;
-    opacity: 1 !important;
 }
 
 .member-img {

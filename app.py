@@ -22,7 +22,8 @@ os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 
 # ── PyQt5 imports ─────────────────────────────────────────────────────────────
 try:
-    from PyQt5.QtCore    import QUrl, Qt, QTimer
+    # from PyQt5.QtCore    import QUrl, Qt, QTimer
+    from PyQt5.QtCore import QUrl, Qt, QTimer, QObject, QEvent
     from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
     from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
     from PyQt5.QtGui     import QKeySequence
@@ -50,12 +51,30 @@ def run_flask():
     flask_app.run(host="0.0.0.0", port=FLASK_PORT,
                   debug=False, use_reloader=False, threaded=True)
 
+class KeyLogger(QObject):
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.KeyPress:
+            print(
+                "EVENT FILTER:",
+                "key =", event.key(),
+                "text =", repr(event.text()),
+                "nativeScanCode =", event.nativeScanCode(),
+                "nativeVirtualKey =", event.nativeVirtualKey(),
+                "nativeModifiers =", event.nativeModifiers(),
+                flush=True
+            )
+
+        return False
 
 # ── PyQt6 browser window ──────────────────────────────────────────────────────
 class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.view = QWebEngineView()
+
+        self.keyLogger = KeyLogger()
+        self.view.installEventFilter(self.keyLogger)
+        
         self.setCentralWidget(self.view)
 
         # ── Window chrome ──────────────────────────────────────────────────────
@@ -149,15 +168,6 @@ class BrowserWindow(QMainWindow):
 
     # ── Key handling ──────────────────────────────────────────────────────────
     def keyPressEvent(self, event):
-        print(
-            "WINDOW KEY:",
-            "key =", event.key(),
-            "text =", repr(event.text()),
-            "nativeScanCode =", event.nativeScanCode(),
-            "nativeVirtualKey =", event.nativeVirtualKey(),
-            "nativeModifiers =", event.nativeModifiers(),
-            flush=True
-        )
         if event.key() == Qt.Key_F4 and event.modifiers() == Qt.AltModifier:
             self.close()
         super().keyPressEvent(event)

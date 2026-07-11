@@ -600,7 +600,7 @@ body {
 
 /* When focused AND inactive, keep the focus ring visible */
 .member-card.remoteFocused.inactive {
-    filter: grayscale(80%) brightness(0.85) !important;
+    filter: none !important;
     opacity: 1 !important;
 }
 

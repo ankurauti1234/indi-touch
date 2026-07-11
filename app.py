@@ -51,24 +51,14 @@ def run_flask():
                   debug=False, use_reloader=False, threaded=True)
 
 
-class MyWebView(QWebEngineView):
-    def keyPressEvent(self, event):
-        print(
-            "WEBVIEW KEY:",
-            event.key(),
-            repr(event.text()),
-            event.nativeScanCode(),
-            event.nativeVirtualKey(),
-            event.nativeModifiers()
-        )
-
-        super().keyPressEvent(event)
-
 # ── PyQt6 browser window ──────────────────────────────────────────────────────
 class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.view = MyWebView()
+
+        print("BrowserWindow initialized")
+        
+        self.view = QWebEngineView()
         self.setCentralWidget(self.view)
 
         # ── Window chrome ──────────────────────────────────────────────────────

@@ -79,8 +79,8 @@ export function renderGroupsGrid() {
     const allMembersCard = document.createElement('button');
     allMembersCard.className = `group-card all-members-card ${isAllActive ? 'active' : 'inactive'} ${avatarStyleClass}`;
 
-    // --- ADDED TRACKING ID FOR REMOTE.JS ---
-    allMembersCard.dataset.groupId = 'all';
+    // --- MODIFIED: Use a real HTML ID for remote.js tracking ---
+    allMembersCard.id = 'group-card-all';
 
     allMembersCard.onclick = () => toggleGroup('all');
     allMembersCard.innerHTML = `
@@ -114,8 +114,8 @@ export function renderGroupsGrid() {
         const card = document.createElement('button');
         card.className = `group-card ${activeClass} ${avatarStyleClass} ${bentoClass}`;
 
-        // --- ADDED TRACKING ID FOR REMOTE.JS ---
-        card.dataset.groupId = g.id;
+        // --- MODIFIED: Use a real HTML ID for remote.js tracking ---
+        card.id = `group-card-${g.id}`;
 
         card.onclick = (e) => {
             if (e.target.closest('.group-edit-btn')) {

@@ -2839,3 +2839,16 @@ body.light-mode .group-card.active {
 #group-name-input:focus {
     border-color: var(--primary) !important;
 }
+
+/* =========================================================
+   BULLETPROOF REMOTE FOCUS FOR GROUPS
+   Overrides any legacy .focused or .active conflicts
+   ========================================================= */
+body.remote-mode .group-card.remoteFocused {
+    outline: none !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 0 4px var(--primary, #D0BCFF), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+    opacity: 1 !important;
+    filter: none !important;
+    z-index: 100 !important;
+}

@@ -409,8 +409,8 @@ function activate() {
         const currentItems = getContentItems();
         const focusedIndex = currentItems.indexOf(focusedElement);
 
-        // Capture the card's identity before the DOM gets wiped by groups.js
-        const trackId = focusedElement.dataset.groupId;
+        // Capture the precise ID of the card being clicked
+        const trackId = focusedElement.id || null;
 
         focusedElement.click();
 
@@ -418,35 +418,39 @@ function activate() {
             focusedElement.focus();
         }
 
-        setTimeout(() => {
-            if (zone === 'nav') {
-                enterContentZone();
-            } else {
-                if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
-                    const newItems = getContentItems();
+        // High-frequency polling to catch the exact millisecond the DOM rebuilds
+        let attempts = 0;
+        const restoreInterval = setInterval(() => {
+            attempts++;
 
-                    let restored = false;
+            // If the element wasn't deleted from the DOM, we are good
+            if (document.body.contains(focusedElement) && isVisible(focusedElement)) {
+                clearInterval(restoreInterval);
+                return;
+            }
 
-                    // 1. Hunt for the exact same card in the newly rebuilt DOM
-                    if (trackId) {
-                        const exactMatch = newItems.find(el => el.dataset.groupId == trackId);
-                        if (exactMatch) {
-                            setFocus(exactMatch);
-                            restored = true;
-                        }
-                    }
+            const newItems = getContentItems();
 
-                    // 2. Fallback to index if exact match fails
-                    if (!restored) {
-                        if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
-                            setFocus(newItems[focusedIndex]);
-                        } else {
-                            enterContentZone();
-                        }
-                    }
+            // 1. Exact ID Match (Snaps focus back to the exact group card you clicked)
+            if (trackId) {
+                const match = newItems.find(el => el.id === trackId);
+                if (match && isVisible(match)) {
+                    setFocus(match);
+                    clearInterval(restoreInterval);
+                    return;
                 }
             }
-        }, 300); // 300ms cleanly outlasts the 50ms two-way sync MutationObserver in groups.js
+
+            // 2. Give up after 20 attempts (~300ms delay for Two-Way Sync) and fallback to index
+            if (attempts > 20) {
+                clearInterval(restoreInterval);
+                if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
+                    setFocus(newItems[focusedIndex]);
+                } else {
+                    enterContentZone();
+                }
+            }
+        }, 15); // Polls every 15ms
     }
 }
 

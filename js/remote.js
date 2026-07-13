@@ -185,15 +185,14 @@ function enterContentZone() {
     }
 }
 
-// PERFECTED SPATIAL ALGORITHM (With List Escape Hatch)
+// PERFECTED SPATIAL ALGORITHM (Bounding Box Edge Detection)
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
-    const current = currentEl.getBoundingClientRect();
-
-    const currentCenter = {
-        x: current.left + current.width / 2,
-        y: current.top + current.height / 2
+    const curRect = currentEl.getBoundingClientRect();
+    const curCenter = {
+        x: curRect.left + curRect.width / 2,
+        y: curRect.top + curRect.height / 2
     };
 
     let candidates = [];
@@ -202,68 +201,53 @@ function findNextItem(items, currentEl, direction) {
         if (item === currentEl) continue;
 
         const rect = item.getBoundingClientRect();
-
         const center = {
             x: rect.left + rect.width / 2,
             y: rect.top + rect.height / 2
         };
 
-        const dx = center.x - currentCenter.x;
-        const dy = center.y - currentCenter.y;
+        // 1. Strict directional filtering (Must physically be in the direction pressed)
+        if (direction === 'right' && center.x <= curCenter.x) continue;
+        if (direction === 'left' && center.x >= curCenter.x) continue;
+        if (direction === 'down' && center.y <= curCenter.y) continue;
+        if (direction === 'up' && center.y >= curCenter.y) continue;
 
-        const ROW_THRESHOLD = current.height * 0.35;
-        const COL_THRESHOLD = current.width * 0.35;
+        // 2. Calculate Bounding Box Gap (Primary & Secondary axes)
+        // This calculates the literal pixel gap between the edges of the two elements.
+        let primary = 0;
+        let secondary = 0;
 
-        switch (direction) {
-            case "left":
-                if (dx >= -COL_THRESHOLD) continue;
-                break;
-
-            case "right":
-                if (dx <= COL_THRESHOLD) continue;
-                break;
-
-            case "up":
-                if (dy >= -ROW_THRESHOLD) continue;
-                break;
-
-            case "down":
-                if (dy <= ROW_THRESHOLD) continue;
-                break;
+        if (direction === 'right') {
+            primary = Math.max(0, rect.left - curRect.right);
+            secondary = Math.max(0, rect.top - curRect.bottom, curRect.top - rect.bottom);
+        } else if (direction === 'left') {
+            primary = Math.max(0, curRect.left - rect.right);
+            secondary = Math.max(0, rect.top - curRect.bottom, curRect.top - rect.bottom);
+        } else if (direction === 'down') {
+            primary = Math.max(0, rect.top - curRect.bottom);
+            secondary = Math.max(0, rect.left - curRect.right, curRect.left - rect.right);
+        } else if (direction === 'up') {
+            primary = Math.max(0, curRect.top - rect.bottom);
+            secondary = Math.max(0, rect.left - curRect.right, curRect.left - rect.right);
         }
 
-        const primary =
-            direction === "left" || direction === "right"
-                ? Math.abs(dx)
-                : Math.abs(dy);
+        // 3. Android TV Standard Weighting
+        // Apply a massive 10x penalty to 'secondary' (off-axis) distance.
+        // This forces the engine to strongly prefer straight lines and completely
+        // ignores diagonal jumps if a valid element exists directly underneath/next to it.
+        const score = primary + (secondary * 10);
 
-        const secondary =
-            direction === "left" || direction === "right"
-                ? Math.abs(dy)
-                : Math.abs(dx);
+        // Tie-breaker: Distance between centers in case elements overlap perfectly
+        const distance = Math.hypot(center.x - curCenter.x, center.y - curCenter.y);
 
-        candidates.push({
-            item,
-            primary,
-            secondary,
-            distance: Math.hypot(dx, dy)
-        });
+        candidates.push({ item, score, distance });
     }
 
     if (!candidates.length) return null;
 
     candidates.sort((a, b) => {
-
-        // Strongly prefer staying in the same row/column.
-        if (Math.abs(a.secondary - b.secondary) > 10)
-            return a.secondary - b.secondary;
-
-        // Then choose the closest in requested direction.
-        if (Math.abs(a.primary - b.primary) > 5)
-            return a.primary - b.primary;
-
-        // Final tie breaker.
-        return a.distance - b.distance;
+        if (a.score !== b.score) return a.score - b.score;
+        return a.distance - b.distance; // If edge scores tie, pick closest center
     });
 
     return candidates[0].item;

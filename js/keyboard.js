@@ -192,9 +192,14 @@ function handleKey(key) {
             activeInput.selectionStart = activeInput.selectionEnd = start - 1;
         }
     } else if (key === 'enter') {
+        const input = activeInput;
+
         hideOSK();
-        activeInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-        activeInput.blur();
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+        setTimeout(() => {
+            input.blur();
+        }, 0);
     } else if (key === 'space') {
         const start = activeInput.selectionStart;
         const end = activeInput.selectionEnd;

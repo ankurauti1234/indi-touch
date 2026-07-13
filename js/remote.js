@@ -178,6 +178,11 @@ function enterContentZone() {
             setFocus(elementBeforeOverlay);
             elementBeforeOverlay = null;
         } else {
+            console.log(
+                "enterContentZone",
+                items[0],
+                document.querySelector(".remoteFocused")
+            );
             setFocus(items[0]);
         }
     } else {

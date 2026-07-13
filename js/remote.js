@@ -157,11 +157,19 @@ function switchTab(dir) {
     console.log("switchTab", zone);
 
     setTimeout(() => {
-        if (zone === 'nav') {
-            const activeNav = document.querySelector('.nav-btn.active');
-            if (activeNav) setFocus(activeNav);
-        } else {
-            enterContentZone();
+        console.log("switchTab timeout", zone);
+
+        try {
+            if (zone === 'nav') {
+                const activeNav = document.querySelector('.nav-btn.active');
+                if (activeNav) setFocus(activeNav);
+            } else {
+                console.log("calling enterContentZone");
+                enterContentZone();
+                console.log("enterContentZone finished");
+            }
+        } catch (err) {
+            console.error("switchTab error:", err);
         }
     }, 250);
 }

@@ -161,11 +161,17 @@ export function renderGroupsGrid() {
 
     // THE ASYNC RE-ATTACH FIX
     // After wiping the DOM, gently tell the remote engine to glue the focus ring back on
-    // requestAnimationFrame(() => {
-    //     if (typeof window.reclaimRemoteFocus === 'function') {
-    //         window.reclaimRemoteFocus();
-    //     }
-    // });
+    requestAnimationFrame(() => {
+        const focused = document.querySelector('.remoteFocused');
+
+        if (
+            focused &&
+            (focused.classList.contains('group-card') ||
+                focused.classList.contains('group-edit-btn'))
+        ) {
+            window.reclaimRemoteFocus?.();
+        }
+    });
 }
 
 export async function toggleGroup(groupId) {

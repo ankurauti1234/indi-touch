@@ -2842,13 +2842,15 @@ body.light-mode .group-card.active {
 
 /* =========================================================
    BULLETPROOF REMOTE FOCUS FOR GROUPS
-   Overrides any legacy .focused or .active conflicts
+   Forces the ring to display above everything else
    ========================================================= */
-body.remote-mode .group-card.remoteFocused {
+body.remote-mode .group-card.remoteFocused,
+body.remote-mode button.group-card.remoteFocused {
     outline: none !important;
     border-color: transparent !important;
-    box-shadow: 0 0 0 4px var(--primary, #D0BCFF), 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 0 0 4px var(--primary, #D0BCFF), 0 8px 24px rgba(0, 0, 0, 0.4) !important;
     opacity: 1 !important;
     filter: none !important;
     z-index: 100 !important;
+    transform: scale(1.02) !important;
 }

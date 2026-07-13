@@ -506,7 +506,17 @@ export function syncFocusFromTouch(element) {
     if (!isRemoteMode()) return;
     if (!(element instanceof HTMLElement)) return;
 
-    const target = element.closest(FOCUSABLE_SELECTORS);
+    let target;
+
+    if (
+        element.matches('input, textarea') &&
+        isVisible(element)
+    ) {
+        target = element;
+    } else {
+        target = element.closest(FOCUSABLE_SELECTORS);
+    }
+    
     if (!target) return;
 
     if (!isVisible(target)) return;

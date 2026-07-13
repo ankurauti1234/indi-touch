@@ -71,7 +71,8 @@ export function renderGroupsGrid() {
     initTwoWaySync();
 
     const maxAvatars = 4;
-    const avatarStyleClass = (config.avatarStyle || 'local') === 'local' ? 'local-avatar' : '';
+    const isLocalAvatar = (config.avatarStyle || 'local') === 'local';
+    const avatarStyleClass = isLocalAvatar ? 'local-avatar' : '';
 
     const activeMemberCodes = memberData.filter(m => m.active).map(m => m.member_code);
 
@@ -86,6 +87,7 @@ export function renderGroupsGrid() {
         if (container.children[0]?.id !== 'group-card-all') {
             needsRebuild = true;
         } else {
+            // Verify exact ID match for every group card
             for (let i = 0; i < groupsData.length; i++) {
                 if (container.children[i + 1]?.id !== `group-card-${groupsData[i].id}`) {
                     needsRebuild = true;
@@ -104,21 +106,23 @@ export function renderGroupsGrid() {
     const displayAllMembers = memberData.slice(0, maxAvatars);
     const excessAllCount = memberData.length - maxAvatars;
 
-    let allAvatarsHtml = displayAllMembers.map(m =>
-        `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
-    ).join('');
-    if (excessAllCount > 0) allAvatarsHtml += `<div class="group-avatar-more">+${excessAllCount}</div>`;
-
     const allMemberCountText = `${memberData.length} ${memberData.length === 1 ? 'Member' : 'Members'}`;
-    const allCardBaseClass = `group-card all-members-card ${isAllActive ? 'active' : 'inactive'} ${avatarStyleClass}`.trim();
+
+    // Create a lightweight hash to check if avatars actually changed
+    const allMembersDataHash = displayAllMembers.map(m => m.member_code).join(',') + '|' + excessAllCount;
 
     if (needsRebuild) {
+        let allAvatarsHtml = displayAllMembers.map(m =>
+            `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
+        ).join('');
+        if (excessAllCount > 0) allAvatarsHtml += `<div class="group-avatar-more">+${excessAllCount}</div>`;
+
         const allMembersCard = document.createElement('button');
-        allMembersCard.className = allCardBaseClass;
+        allMembersCard.className = `group-card all-members-card ${isAllActive ? 'active' : 'inactive'} ${avatarStyleClass}`.trim();
         allMembersCard.id = 'group-card-all';
         allMembersCard.onclick = () => toggleGroup('all');
         allMembersCard.innerHTML = `
-            <div class="group-avatars-container">${allAvatarsHtml}</div>
+            <div class="group-avatars-container" data-hash="${allMembersDataHash}">${allAvatarsHtml}</div>
             <div class="member-overlay">
                 <span class="m-name g-name">All Members</span>
                 <span class="m-info g-info">${allMemberCountText}</span>
@@ -128,12 +132,21 @@ export function renderGroupsGrid() {
     } else {
         const allMembersCard = container.children[0];
 
-        // Safely preserve spatial engine focus ring
-        const hasFocus = allMembersCard.classList.contains('remoteFocused');
-        allMembersCard.className = allCardBaseClass + (hasFocus ? ' remoteFocused' : '');
+        // Safely toggle classes without touching runtime ones like .remoteFocused
+        allMembersCard.classList.toggle('active', isAllActive);
+        allMembersCard.classList.toggle('inactive', !isAllActive);
+        allMembersCard.classList.toggle('local-avatar', isLocalAvatar);
 
         const avatarsContainer = allMembersCard.querySelector('.group-avatars-container');
-        if (avatarsContainer.innerHTML !== allAvatarsHtml) avatarsContainer.innerHTML = allAvatarsHtml;
+        if (avatarsContainer.getAttribute('data-hash') !== allMembersDataHash) {
+            let allAvatarsHtml = displayAllMembers.map(m =>
+                `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
+            ).join('');
+            if (excessAllCount > 0) allAvatarsHtml += `<div class="group-avatar-more">+${excessAllCount}</div>`;
+
+            avatarsContainer.innerHTML = allAvatarsHtml;
+            avatarsContainer.setAttribute('data-hash', allMembersDataHash);
+        }
 
         const infoSpan = allMembersCard.querySelector('.g-info');
         if (infoSpan.textContent !== allMemberCountText) infoSpan.textContent = allMemberCountText;
@@ -147,22 +160,21 @@ export function renderGroupsGrid() {
             activeMemberCodes.length === groupCodes.length &&
             groupCodes.every(code => activeMemberCodes.includes(code));
 
-        const activeClass = isGroupFullyActive ? 'active' : 'inactive';
-        const bentoClass = g.members.length > 4 ? 'wide-card' : '';
         const displayMembers = g.members.slice(0, maxAvatars);
         const excessCount = g.members.length - maxAvatars;
-
-        let avatarsHtml = displayMembers.map(m =>
-            `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
-        ).join('');
-        if (excessCount > 0) avatarsHtml += `<div class="group-avatar-more">+${excessCount}</div>`;
+        const isWideCard = g.members.length > 4;
 
         const groupCountText = `${g.members.length} ${g.members.length === 1 ? 'Member' : 'Members'}`;
-        const cardBaseClass = `group-card ${activeClass} ${avatarStyleClass} ${bentoClass}`.trim();
+        const groupDataHash = displayMembers.map(m => m.member_code).join(',') + '|' + excessCount;
 
         if (needsRebuild) {
+            let avatarsHtml = displayMembers.map(m =>
+                `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
+            ).join('');
+            if (excessCount > 0) avatarsHtml += `<div class="group-avatar-more">+${excessCount}</div>`;
+
             const card = document.createElement('button');
-            card.className = cardBaseClass;
+            card.className = `group-card ${isGroupFullyActive ? 'active' : 'inactive'} ${avatarStyleClass} ${isWideCard ? 'wide-card' : ''}`.trim();
             card.id = `group-card-${g.id}`;
 
             card.onclick = (e) => {
@@ -177,7 +189,7 @@ export function renderGroupsGrid() {
                 <div class="group-edit-btn" title="Edit Group">
                     <span class="material-symbols-rounded">edit</span>
                 </div>
-                <div class="group-avatars-container">${avatarsHtml}</div>
+                <div class="group-avatars-container" data-hash="${groupDataHash}">${avatarsHtml}</div>
                 <div class="member-overlay">
                     <span class="m-name g-name">${g.name}</span>
                     <span class="m-info g-info">${groupCountText}</span>
@@ -187,12 +199,22 @@ export function renderGroupsGrid() {
         } else {
             const card = container.children[index + 1];
 
-            // Safely preserve spatial engine focus ring
-            const hasFocus = card.classList.contains('remoteFocused');
-            card.className = cardBaseClass + (hasFocus ? ' remoteFocused' : '');
+            // Safely toggle classes without touching runtime ones like .remoteFocused
+            card.classList.toggle('active', isGroupFullyActive);
+            card.classList.toggle('inactive', !isGroupFullyActive);
+            card.classList.toggle('local-avatar', isLocalAvatar);
+            card.classList.toggle('wide-card', isWideCard);
 
             const avatarsContainer = card.querySelector('.group-avatars-container');
-            if (avatarsContainer.innerHTML !== avatarsHtml) avatarsContainer.innerHTML = avatarsHtml;
+            if (avatarsContainer.getAttribute('data-hash') !== groupDataHash) {
+                let avatarsHtml = displayMembers.map(m =>
+                    `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
+                ).join('');
+                if (excessCount > 0) avatarsHtml += `<div class="group-avatar-more">+${excessCount}</div>`;
+
+                avatarsContainer.innerHTML = avatarsHtml;
+                avatarsContainer.setAttribute('data-hash', groupDataHash);
+            }
 
             const nameSpan = card.querySelector('.g-name');
             if (nameSpan.textContent !== g.name) nameSpan.textContent = g.name;
@@ -215,9 +237,6 @@ export function renderGroupsGrid() {
     }
 
     applyTranslations();
-
-    // Note: The async re-attach hack using requestAnimationFrame/reclaimRemoteFocus 
-    // has been removed because the focused DOM nodes are no longer destroyed.
 }
 
 export async function toggleGroup(groupId) {

@@ -2469,14 +2469,14 @@ body.osk-open .main-stage {
     justify-content: center;
     cursor: pointer;
     position: relative;
-    /* transition:
-        background-color 0.05s ease,
-        border-color 0.05s ease,
-        box-shadow 0.05s ease,
-        transform 0.05s ease; */
+    /* transition: all 0.2s cubic-bezier(0.2, 0, 0, 1); */
     min-height: 160px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     overflow: hidden;
+}
+
+.group-card>* {
+    transition: none;
 }
 
 .group-card:active {

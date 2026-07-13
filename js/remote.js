@@ -45,6 +45,7 @@ function clearFocus() {
 }
 
 function setFocus(el) {
+    console.log("setFocus ->", el?.innerText || el?.id || el?.className);
     clearFocus();
     if (!el) return;
 

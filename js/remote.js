@@ -409,7 +409,7 @@ function activate() {
         const currentItems = getContentItems();
         const focusedIndex = currentItems.indexOf(focusedElement);
 
-        // Capture the precise ID of the card being clicked
+        // Capture precise ID before the API wipes the DOM
         const trackId = focusedElement.id || null;
 
         focusedElement.click();
@@ -418,39 +418,35 @@ function activate() {
             focusedElement.focus();
         }
 
-        // High-frequency polling to catch the exact millisecond the DOM rebuilds
-        let attempts = 0;
-        const restoreInterval = setInterval(() => {
-            attempts++;
+        setTimeout(() => {
+            if (zone === 'nav') {
+                enterContentZone();
+            } else {
+                if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
+                    const newItems = getContentItems();
 
-            // If the element wasn't deleted from the DOM, we are good
-            if (document.body.contains(focusedElement) && isVisible(focusedElement)) {
-                clearInterval(restoreInterval);
-                return;
-            }
+                    let recovered = false;
 
-            const newItems = getContentItems();
+                    // 1. Instantly snap focus back to the exact ID we clicked on!
+                    if (trackId) {
+                        const match = document.getElementById(trackId);
+                        if (match && isVisible(match)) {
+                            setFocus(match);
+                            recovered = true;
+                        }
+                    }
 
-            // 1. Exact ID Match (Snaps focus back to the exact group card you clicked)
-            if (trackId) {
-                const match = newItems.find(el => el.id === trackId);
-                if (match && isVisible(match)) {
-                    setFocus(match);
-                    clearInterval(restoreInterval);
-                    return;
+                    // 2. Fallback only if the element was actually deleted
+                    if (!recovered) {
+                        if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
+                            setFocus(newItems[focusedIndex]);
+                        } else {
+                            enterContentZone();
+                        }
+                    }
                 }
             }
-
-            // 2. Give up after 20 attempts (~300ms delay for Two-Way Sync) and fallback to index
-            if (attempts > 20) {
-                clearInterval(restoreInterval);
-                if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
-                    setFocus(newItems[focusedIndex]);
-                } else {
-                    enterContentZone();
-                }
-            }
-        }, 15); // Polls every 15ms
+        }, 300);
     }
 }
 
@@ -495,7 +491,6 @@ export function initRemote() {
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
 
-        // Expanded to include ' ' (Spacebar) and 'Select' for TV click compatibility
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', ' ', 'Select', 'ContextMenu'].includes(e.key)) {
             e.preventDefault();
         }
@@ -509,10 +504,26 @@ export function initRemote() {
             return;
         }
 
+        // --- THIS BLOCK FIXES THE INVISIBLE GHOST HOVER BUG ---
         if (zone === 'content' && (!focusedElement || !document.body.contains(focusedElement))) {
             const items = getContentItems();
-            if (items.length > 0) focusedElement = items[0];
+            let recovered = false;
+
+            // Try to catch the element by ID if the backend wiped it
+            if (focusedElement && focusedElement.id) {
+                const match = document.getElementById(focusedElement.id);
+                if (match && isVisible(match)) {
+                    setFocus(match);
+                    recovered = true;
+                }
+            }
+
+            // If it failed, use setFocus() so the ring actually becomes visible!
+            if (!recovered && items.length > 0) {
+                setFocus(items[0]);
+            }
         }
+        // --------------------------------------------------------
 
         switch (e.key) {
             case 'ArrowDown': navigate('down'); break;
@@ -521,9 +532,7 @@ export function initRemote() {
             case 'ArrowLeft': navigate('left'); break;
             case 'PageUp': if (!isNavLocked()) switchTab(-1); break;
             case 'PageDown': if (!isNavLocked()) switchTab(1); break;
-            case 'ContextMenu':
-                handleBack();
-                return;
+            case 'ContextMenu': handleBack(); return;
         }
     });
 

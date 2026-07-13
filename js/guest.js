@@ -217,14 +217,14 @@ export function renderGuestList() {
             gap:8px;
         ">
             <div
-                class="guest-avatar-circle"
+                class="guest-avatar-circle guest-item"
+                onclick="deleteGuest(${g.id})"
                 title="${g.name || 'Guest'} (${g.gender}, ${g.age})"
             >
                 <img src="${url}" loading="lazy">
 
                 <div
-                    class="guest-delete-overlay guest-item"
-                    onclick="deleteGuest(${g.id})"
+                    class="guest-delete-overlay"
                 >
                     <span class="material-symbols-rounded">
                         close

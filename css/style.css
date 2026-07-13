@@ -1880,6 +1880,10 @@ body.osk-open .main-stage {
     opacity: 1;
 }
 
+.guest-avatar-circle.remoteFocused .guest-delete-overlay {
+    opacity: 1;
+}
+
 .guest-delete-overlay {
     position: absolute;
     top: 0;

@@ -376,7 +376,9 @@ function handleBack() {
 
     const overlay = document.querySelector('.safe-overlay.active');
     if (overlay) {
-        const cancelBtn = overlay.querySelector('.close-btn-abs, .modal-btn:not(.primary)');
+        const cancelBtn =
+            overlay.querySelector('.editor-actions > div > .modal-btn:not(.primary)') ??
+            overlay.querySelector('.close-btn-abs');
         if (cancelBtn) {
             cancelBtn.click();
         } else if (window.closeGroupModals) {

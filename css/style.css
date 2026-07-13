@@ -2478,6 +2478,11 @@ body.osk-open .main-stage {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     overflow: hidden;
 }
+.group-card>* {
+    transition:
+        opacity 0.1s linear,
+        filter 0.1s linear;
+}
 
 .group-card:active {
     /* transform: scale(0.97); */

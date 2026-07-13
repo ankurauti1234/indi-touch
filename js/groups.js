@@ -217,8 +217,7 @@ export async function toggleGroup(groupId) {
             });
         }
         await loadMembers();
-        renderGrid();
-        renderGroupsGrid();
+        
     } catch (e) {
         console.error("Group toggle failed:", e);
     }

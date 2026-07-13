@@ -212,6 +212,7 @@ export function renderGuestList() {
         return `
         <div
             class="guest-item"
+            onclick="deleteGuest(${g.id})"
             style="
                 display:flex;
                 flex-direction:column;

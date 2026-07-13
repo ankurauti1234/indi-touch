@@ -183,6 +183,11 @@ function enterNavZone() {
 function enterContentZone() {
     zone = 'content';
     const items = getContentItems();
+    console.log(
+        "items.length",
+        items.length,
+        items.map(el => el.id || el.className)
+    );
     if (items.length > 0) {
         if (elementBeforeOverlay && document.body.contains(elementBeforeOverlay) && isVisible(elementBeforeOverlay) && !isNavLocked()) {
             setFocus(elementBeforeOverlay);

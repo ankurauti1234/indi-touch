@@ -31,8 +31,6 @@ function clearFocus() {
 }
 
 function setFocus(el) {
-    console.count('setFocus');
-    console.trace('setFocus');
     clearFocus();
     if (!el) return;
 
@@ -428,35 +426,35 @@ function activate() {
             focusedElement.focus();
         }
 
-        // setTimeout(() => {
-        //     if (zone === 'nav') {
-        //         enterContentZone();
-        //     } else {
-        //         if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
-        //             const newItems = getContentItems();
+        setTimeout(() => {
+            if (zone === 'nav') {
+                enterContentZone();
+            } else {
+                if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
+                    const newItems = getContentItems();
 
-        //             let recovered = false;
+                    let recovered = false;
 
-        //             // 1. Instantly snap focus back to the exact ID we clicked on!
-        //             if (trackId) {
-        //                 const match = document.getElementById(trackId);
-        //                 if (match && isVisible(match)) {
-        //                     setFocus(match);
-        //                     recovered = true;
-        //                 }
-        //             }
+                    // 1. Instantly snap focus back to the exact ID we clicked on!
+                    if (trackId) {
+                        const match = document.getElementById(trackId);
+                        if (match && isVisible(match)) {
+                            setFocus(match);
+                            recovered = true;
+                        }
+                    }
 
-        //             // 2. Fallback only if the element was actually deleted
-        //             if (!recovered) {
-        //                 if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
-        //                     setFocus(newItems[focusedIndex]);
-        //                 } else {
-        //                     enterContentZone();
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }, 300);
+                    // 2. Fallback only if the element was actually deleted
+                    if (!recovered) {
+                        if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
+                            setFocus(newItems[focusedIndex]);
+                        } else {
+                            enterContentZone();
+                        }
+                    }
+                }
+            }
+        }, 300);
     }
 }
 

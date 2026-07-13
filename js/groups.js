@@ -67,14 +67,37 @@ function initTwoWaySync() {
 export function renderGroupsGrid() {
     const container = document.getElementById('groups-grid-container');
     if (!container) return;
-    container.innerHTML = '';
 
-    // initTwoWaySync();
+    initTwoWaySync();
 
     const maxAvatars = 4;
     const avatarStyleClass = (config.avatarStyle || 'local') === 'local' ? 'local-avatar' : '';
 
     const activeMemberCodes = memberData.filter(m => m.active).map(m => m.member_code);
+
+    // --- CHECK IF FULL REBUILD IS REQUIRED ---
+    // Rebuild only if nodes were added, deleted, or ordering got out of sync.
+    let needsRebuild = false;
+    const expectedNodeCount = groupsData.length + 2; // 1 All Members + N Groups + 1 Create Group
+
+    if (container.children.length !== expectedNodeCount) {
+        needsRebuild = true;
+    } else {
+        if (container.children[0]?.id !== 'group-card-all') {
+            needsRebuild = true;
+        } else {
+            for (let i = 0; i < groupsData.length; i++) {
+                if (container.children[i + 1]?.id !== `group-card-${groupsData[i].id}`) {
+                    needsRebuild = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (needsRebuild) {
+        container.innerHTML = '';
+    }
 
     // --- 1. "ALL MEMBERS" CARD ---
     const isAllActive = memberData.length > 0 && activeMemberCodes.length === memberData.length;
@@ -86,24 +109,38 @@ export function renderGroupsGrid() {
     ).join('');
     if (excessAllCount > 0) allAvatarsHtml += `<div class="group-avatar-more">+${excessAllCount}</div>`;
 
-    const allMembersCard = document.createElement('button');
-    allMembersCard.className = `group-card all-members-card ${isAllActive ? 'active' : 'inactive'} ${avatarStyleClass}`;
+    const allMemberCountText = `${memberData.length} ${memberData.length === 1 ? 'Member' : 'Members'}`;
+    const allCardBaseClass = `group-card all-members-card ${isAllActive ? 'active' : 'inactive'} ${avatarStyleClass}`.trim();
 
-    // Strict HTML ID for remote tracking
-    allMembersCard.id = 'group-card-all';
+    if (needsRebuild) {
+        const allMembersCard = document.createElement('button');
+        allMembersCard.className = allCardBaseClass;
+        allMembersCard.id = 'group-card-all';
+        allMembersCard.onclick = () => toggleGroup('all');
+        allMembersCard.innerHTML = `
+            <div class="group-avatars-container">${allAvatarsHtml}</div>
+            <div class="member-overlay">
+                <span class="m-name g-name">All Members</span>
+                <span class="m-info g-info">${allMemberCountText}</span>
+            </div>
+        `;
+        container.appendChild(allMembersCard);
+    } else {
+        const allMembersCard = container.children[0];
 
-    allMembersCard.onclick = () => toggleGroup('all');
-    allMembersCard.innerHTML = `
-        <div class="group-avatars-container">${allAvatarsHtml}</div>
-        <div class="member-overlay">
-            <span class="m-name g-name">All Members</span>
-            <span class="m-info g-info">${memberData.length} ${memberData.length === 1 ? 'Member' : 'Members'}</span>
-        </div>
-    `;
-    container.appendChild(allMembersCard);
+        // Safely preserve spatial engine focus ring
+        const hasFocus = allMembersCard.classList.contains('remoteFocused');
+        allMembersCard.className = allCardBaseClass + (hasFocus ? ' remoteFocused' : '');
+
+        const avatarsContainer = allMembersCard.querySelector('.group-avatars-container');
+        if (avatarsContainer.innerHTML !== allAvatarsHtml) avatarsContainer.innerHTML = allAvatarsHtml;
+
+        const infoSpan = allMembersCard.querySelector('.g-info');
+        if (infoSpan.textContent !== allMemberCountText) infoSpan.textContent = allMemberCountText;
+    }
 
     // --- 2. REGULAR GROUP CARDS ---
-    groupsData.forEach((g) => {
+    groupsData.forEach((g, index) => {
         const groupCodes = g.members.map(m => m.member_code);
 
         const isGroupFullyActive = activeMemberCodes.length > 0 &&
@@ -120,58 +157,67 @@ export function renderGroupsGrid() {
         ).join('');
         if (excessCount > 0) avatarsHtml += `<div class="group-avatar-more">+${excessCount}</div>`;
 
-        const card = document.createElement('button');
-        card.className = `group-card ${activeClass} ${avatarStyleClass} ${bentoClass}`;
+        const groupCountText = `${g.members.length} ${g.members.length === 1 ? 'Member' : 'Members'}`;
+        const cardBaseClass = `group-card ${activeClass} ${avatarStyleClass} ${bentoClass}`.trim();
 
-        // Strict HTML ID for remote tracking
-        card.id = `group-card-${g.id}`;
+        if (needsRebuild) {
+            const card = document.createElement('button');
+            card.className = cardBaseClass;
+            card.id = `group-card-${g.id}`;
 
-        card.onclick = (e) => {
-            if (e.target.closest('.group-edit-btn')) {
-                openEditGroupModal(g.id);
-                return;
-            }
-            toggleGroup(g.id);
-        };
+            card.onclick = (e) => {
+                if (e.target.closest('.group-edit-btn')) {
+                    openEditGroupModal(g.id);
+                    return;
+                }
+                toggleGroup(g.id);
+            };
 
-        card.innerHTML = `
-            <div class="group-edit-btn" title="Edit Group">
-                <span class="material-symbols-rounded">edit</span>
-            </div>
-            <div class="group-avatars-container">${avatarsHtml}</div>
-            <div class="member-overlay">
-                <span class="m-name g-name">${g.name}</span>
-                <span class="m-info g-info">${g.members.length} ${g.members.length === 1 ? 'Member' : 'Members'}</span>
-            </div>
-        `;
-        container.appendChild(card);
+            card.innerHTML = `
+                <div class="group-edit-btn" title="Edit Group">
+                    <span class="material-symbols-rounded">edit</span>
+                </div>
+                <div class="group-avatars-container">${avatarsHtml}</div>
+                <div class="member-overlay">
+                    <span class="m-name g-name">${g.name}</span>
+                    <span class="m-info g-info">${groupCountText}</span>
+                </div>
+            `;
+            container.appendChild(card);
+        } else {
+            const card = container.children[index + 1];
+
+            // Safely preserve spatial engine focus ring
+            const hasFocus = card.classList.contains('remoteFocused');
+            card.className = cardBaseClass + (hasFocus ? ' remoteFocused' : '');
+
+            const avatarsContainer = card.querySelector('.group-avatars-container');
+            if (avatarsContainer.innerHTML !== avatarsHtml) avatarsContainer.innerHTML = avatarsHtml;
+
+            const nameSpan = card.querySelector('.g-name');
+            if (nameSpan.textContent !== g.name) nameSpan.textContent = g.name;
+
+            const infoSpan = card.querySelector('.g-info');
+            if (infoSpan.textContent !== groupCountText) infoSpan.textContent = groupCountText;
+        }
     });
 
     // --- 3. CREATE CARD ---
-    const createCard = document.createElement('button');
-    createCard.className = 'group-card create-card';
-    createCard.onclick = openCreateGroupModal;
-    createCard.innerHTML = `
-        <span class="material-symbols-rounded">group_add</span>
-        <div class="create-label" data-i18n="create_group">Create Group</div>
-    `;
-    container.appendChild(createCard);
+    if (needsRebuild) {
+        const createCard = document.createElement('button');
+        createCard.className = 'group-card create-card';
+        createCard.onclick = openCreateGroupModal;
+        createCard.innerHTML = `
+            <span class="material-symbols-rounded">group_add</span>
+            <div class="create-label" data-i18n="create_group">Create Group</div>
+        `;
+        container.appendChild(createCard);
+    }
 
     applyTranslations();
 
-    // THE ASYNC RE-ATTACH FIX
-    // After wiping the DOM, gently tell the remote engine to glue the focus ring back on
-    requestAnimationFrame(() => {
-    const focused = document.querySelector('.remoteFocused');
-
-    if (
-        focused &&
-        (focused.classList.contains('group-card') ||
-         focused.classList.contains('group-edit-btn'))
-    ) {
-        window.reclaimRemoteFocus?.();
-    }
-});
+    // Note: The async re-attach hack using requestAnimationFrame/reclaimRemoteFocus 
+    // has been removed because the focused DOM nodes are no longer destroyed.
 }
 
 export async function toggleGroup(groupId) {

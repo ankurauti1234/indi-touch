@@ -61,6 +61,10 @@ export function initOSK() {
             // Unified Keyboard: We no longer use a separate large numeric mode
             isNumberMode = false;
 
+            if (window.setRemoteRestoreElement) {
+                window.setRemoteRestoreElement(activeInput);
+            }
+
             showOSK();
         }
     });
@@ -69,6 +73,9 @@ export function initOSK() {
     document.addEventListener('click', (e) => {
         if ((e.target.tagName === 'INPUT' && e.target.type !== 'range') || e.target.tagName === 'TEXTAREA') {
             activeInput = e.target;
+            if (window.setRemoteRestoreElement) {
+                window.setRemoteRestoreElement(activeInput);
+            }
             showOSK();
         }
     });
@@ -192,14 +199,9 @@ function handleKey(key) {
             activeInput.selectionStart = activeInput.selectionEnd = start - 1;
         }
     } else if (key === 'enter') {
-        const input = activeInput;
-
         hideOSK();
-        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-
-        setTimeout(() => {
-            input.blur();
-        }, 0);
+        activeInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+        activeInput.blur();
     } else if (key === 'space') {
         const start = activeInput.selectionStart;
         const end = activeInput.selectionEnd;

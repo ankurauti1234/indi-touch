@@ -598,6 +598,10 @@ export function initRemote() {
         syncFocusFromTouch(e.target);
     }, { passive: true });
 
+    window.setRemoteRestoreElement = function (el) {
+        elementBeforeOverlay = el;
+    };
+
     // --- CLEAN ASYNC RE-ATTACH HOOK ---
     // Allows other files to safely request the remote engine to fix itself after a DOM wipe
     window.reclaimRemoteFocus = function () {

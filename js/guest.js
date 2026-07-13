@@ -223,7 +223,7 @@ export function renderGuestList() {
                 <img src="${url}" loading="lazy">
 
                 <div
-                    class="guest-delete-overlay"
+                    class="guest-delete-overlay guest-item"
                     onclick="deleteGuest(${g.id})"
                 >
                     <span class="material-symbols-rounded">

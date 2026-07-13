@@ -19,7 +19,7 @@ const FOCUSABLE_SELECTORS = [
     'input',
     '.chip',
     '.action-btn',
-    '.guest-delete-overlay'
+    '.guest-item'
 ].join(', ');
 
 let enterPressTimer = null;

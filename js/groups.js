@@ -218,7 +218,7 @@ export async function toggleGroup(groupId) {
                 body: JSON.stringify({ indexes: pendingApiIndexes })
             });
         }
-        await loadMembers();
+        // await loadMembers();
     } catch (e) {
         console.error("Group toggle failed:", e);
     }

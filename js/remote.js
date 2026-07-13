@@ -591,10 +591,10 @@ export function initRemote() {
         clearFocus();
     });
 
-    document.addEventListener('click', (e) => {
-        if (!(e.target instanceof HTMLElement)) return;
-        syncFocusFromTouch(e.target);
-    }, { passive: true });
+    // document.addEventListener('pointerdown', (e) => {
+    //     if (!(e.target instanceof HTMLElement)) return;
+    //     syncFocusFromTouch(e.target);
+    // }, { passive: true });
 
     // --- CLEAN ASYNC RE-ATTACH HOOK ---
     // Allows other files to safely request the remote engine to fix itself after a DOM wipe

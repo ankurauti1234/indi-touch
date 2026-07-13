@@ -546,48 +546,30 @@ export function initRemote() {
         }
     });
 
-    // --- THE SYNTHETIC MOUSE FIX ---
-    let lastMouseX = -1;
-    let lastMouseY = -1;
-
+    // --- PERFECT PHANTOM MOUSE BLOCKER ---
     document.addEventListener('mousemove', (e) => {
         if (!isRemoteMode()) return;
 
-        // If the mouse hasn't actually changed physical pixels, it's a synthetic
-        // event caused by the page scrolling. Ignore it completely!
-        if (e.screenX === lastMouseX && e.screenY === lastMouseY) {
-            return;
-        }
+        // If movementX/Y are 0, the page scrolled but the physical mouse didn't move.
+        // This flawlessly ignores the fake mouse events caused by smooth scrolling!
+        if (e.movementX === 0 && e.movementY === 0) return;
 
-        lastMouseX = e.screenX;
-        lastMouseY = e.screenY;
-
-        // If it was a real physical mouse movement, clear the TV remote focus
         clearFocus();
     });
 
-    // --- FOCUS AUTO-HEALER (GOD MODE) ---
-    // If external API calls wipe the DOM and rebuild it in the background,
-    // this instantly catches the detached focus and snaps it to the new clone.
-    setInterval(() => {
-        if (!isRemoteMode() || zone !== 'content' || !focusedElement) return;
+    // --- CLEAN ASYNC RE-ATTACH HOOK ---
+    // Allows other files to safely request the remote engine to fix itself after a DOM wipe
+    window.reclaimRemoteFocus = function () {
+        if (!isRemoteMode() || !focusedElement) return;
 
-        // 1. Did the backend API wipe the DOM element we were sitting on?
-        if (!document.body.contains(focusedElement)) {
-            // Hunt for the newly created clone using the precise ID
-            if (focusedElement.id) {
-                const newClone = document.getElementById(focusedElement.id);
-                if (newClone) {
-                    focusedElement = newClone; // Update engine memory
-                    focusedElement.classList.add('remoteFocused'); // Restore ring
-                }
+        if (!document.body.contains(focusedElement) && focusedElement.id) {
+            const newClone = document.getElementById(focusedElement.id);
+            if (newClone) {
+                focusedElement = newClone; // Update memory to the new clone
+                focusedElement.classList.add('remoteFocused'); // Restore the ring silently
             }
+        } else if (!focusedElement.classList.contains('remoteFocused')) {
+            focusedElement.classList.add('remoteFocused');
         }
-        // 2. Element survived, but did a render cycle accidentally strip its CSS?
-        else {
-            if (!focusedElement.classList.contains('remoteFocused')) {
-                focusedElement.classList.add('remoteFocused');
-            }
-        }
-    }, 15); // Runs at 60fps - 0ms visual lag
+    };
 }

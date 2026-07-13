@@ -67,24 +67,13 @@ function initTwoWaySync() {
 export function renderGroupsGrid() {
     const container = document.getElementById('groups-grid-container');
     if (!container) return;
-
-    // --- THE INVISIBLE RING FIX: SNAPSHOT FOCUS STATE ---
-    // Check if the remote ring is currently sitting on any card inside this container
-    let previouslyFocusedId = null;
-    const currentFocused = container.querySelector('.remoteFocused');
-    if (currentFocused && currentFocused.id) {
-        previouslyFocusedId = currentFocused.id;
-    }
-
     container.innerHTML = '';
 
-    // Guarantee the two-way sync listener is running
     initTwoWaySync();
 
     const maxAvatars = 4;
     const avatarStyleClass = (config.avatarStyle || 'local') === 'local' ? 'local-avatar' : '';
 
-    // STRICT MATCHING: Get an array of exactly who is currently active
     const activeMemberCodes = memberData.filter(m => m.active).map(m => m.member_code);
 
     // --- 1. "ALL MEMBERS" CARD ---
@@ -117,7 +106,6 @@ export function renderGroupsGrid() {
     groupsData.forEach((g) => {
         const groupCodes = g.members.map(m => m.member_code);
 
-        // STRICT MATCHING: Lengths must be identical, and every active code must be in the group
         const isGroupFullyActive = activeMemberCodes.length > 0 &&
             activeMemberCodes.length === groupCodes.length &&
             groupCodes.every(code => activeMemberCodes.includes(code));
@@ -171,14 +159,13 @@ export function renderGroupsGrid() {
 
     applyTranslations();
 
-    // --- THE INVISIBLE RING FIX: RESTORE FOCUS STATE ---
-    // If a card was focused before the wipe, violently shove the CSS class onto the newly built clone!
-    if (previouslyFocusedId) {
-        const restoredCard = document.getElementById(previouslyFocusedId);
-        if (restoredCard) {
-            restoredCard.classList.add('remoteFocused');
+    // THE ASYNC RE-ATTACH FIX
+    // After wiping the DOM, gently tell the remote engine to glue the focus ring back on
+    setTimeout(() => {
+        if (typeof window.reclaimRemoteFocus === 'function') {
+            window.reclaimRemoteFocus();
         }
-    }
+    }, 10);
 }
 
 export async function toggleGroup(groupId) {

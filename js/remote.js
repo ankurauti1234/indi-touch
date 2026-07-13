@@ -5,7 +5,6 @@ import { config } from './data.js';
 // --- State ---
 let zone = 'content';
 let focusedElement = null;
-let focusedElementId = null;
 let elementBeforeOverlay = null;
 const TABS = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
 
@@ -38,7 +37,6 @@ function setFocus(el) {
     el.classList.add('remoteFocused');
 
     focusedElement = el;
-    focusedElementId = el.id || null;
 
     // Never scroll the OSK or popups.
     if (
@@ -297,23 +295,8 @@ function navigate(dir) {
     }
 
     if (!focusedElement || !document.body.contains(focusedElement)) {
-
-        // Try to restore the previously focused element by its persistent ID.
-        if (focusedElementId) {
-            const restored = document.getElementById(focusedElementId);
-
-            if (restored && isVisible(restored)) {
-                setFocus(restored);
-                focusedElement = restored;
-                // Continue navigation from the restored element.
-            } else {
-                setFocus(items[0]);
-                return;
-            }
-        } else {
-            setFocus(items[0]);
-            return;
-        }
+        setFocus(items[0]);
+        return;
     }
 
     const next = findNextItem(items, focusedElement, dir);

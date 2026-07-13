@@ -45,7 +45,6 @@ function clearFocus() {
 }
 
 function setFocus(el) {
-    console.trace("setFocus ->", el?.innerText || el?.id || el?.className);
     clearFocus();
     if (!el) return;
 
@@ -505,7 +504,13 @@ export function initRemote() {
                 if (el.id === 'critical-popover' && el.classList?.contains('active')) {
                     requiresFocusReset = true;
                 }
-                if (el.id === 'osk-container' && el.classList?.contains('visible')) requiresFocusReset = true;
+                if (
+                    el.id === 'osk-container' &&
+                    el.classList?.contains('visible') &&
+                    lastInputMethod === 'remote'
+                ) {
+                    requiresFocusReset = true;
+                }
             }
         }
 

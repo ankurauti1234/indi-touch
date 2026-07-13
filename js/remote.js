@@ -23,6 +23,7 @@ const FOCUSABLE_SELECTORS = [
 
 let enterPressTimer = null;
 let isLongPress = false;
+let lastInputMethod = 'remote';
 
 export function isRemoteMode() {
     return document.body.classList.contains('remote-mode');
@@ -48,8 +49,11 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
-
     focusedElement = el;
+
+    if (lastInputMethod !== 'remote') {
+        return;
+    }
 
     // Never scroll the OSK or popups.
     if (
@@ -479,6 +483,7 @@ export function syncFocusFromTouch(element) {
 
     if (target === focusedElement) return;
 
+    lastInputMethod = 'touch';
     setFocus(target);
 }
 
@@ -512,6 +517,7 @@ export function initRemote() {
 
     document.addEventListener('keydown', (e) => {
         if (!isRemoteMode()) return;
+        lastInputMethod = 'remote';
 
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', ' ', 'Select', 'ContextMenu'].includes(e.key)) {
             e.preventDefault();

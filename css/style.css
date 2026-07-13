@@ -2844,7 +2844,7 @@ body.light-mode .group-card.active {
    BULLETPROOF REMOTE FOCUS FOR GROUPS
    Forces the ring to display above everything else
    ========================================================= */
-/* body.remote-mode .group-card.remoteFocused,
+body.remote-mode .group-card.remoteFocused,
 body.remote-mode button.group-card.remoteFocused {
     outline: none !important;
     border-color: transparent !important;
@@ -2853,4 +2853,4 @@ body.remote-mode button.group-card.remoteFocused {
     filter: none !important;
     z-index: 100 !important;
     transform: scale(1.02) !important;
-} */
+}

@@ -154,6 +154,8 @@ function switchTab(dir) {
 
     window.navTo(TABS[idx]);
 
+    console.log("switchTab", zone);
+
     setTimeout(() => {
         if (zone === 'nav') {
             const activeNav = document.querySelector('.nav-btn.active');

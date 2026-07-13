@@ -201,7 +201,7 @@ export async function toggleGroup(groupId) {
         }
 
         renderGrid();
-        renderGroupsGrid();
+        // renderGroupsGrid();
 
         if (pendingApiIndexes.length > 0) {
             await fetch('/api/members/toggle_bulk', {

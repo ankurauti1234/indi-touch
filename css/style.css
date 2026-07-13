@@ -2469,11 +2469,11 @@ body.osk-open .main-stage {
     justify-content: center;
     cursor: pointer;
     position: relative;
-    transition:
-        background-color 0.10s ease,
-        border-color 0.10s ease,
-        box-shadow 0.10s ease,
-        transform 0.10s ease;
+    /* transition:
+        background-color 0.05s ease,
+        border-color 0.05s ease,
+        box-shadow 0.05s ease,
+        transform 0.05s ease; */
     min-height: 160px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     overflow: hidden;

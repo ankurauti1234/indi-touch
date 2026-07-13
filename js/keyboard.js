@@ -249,3 +249,52 @@ export function closeOSK() {
 }
 
 window.closeOSK = closeOSK;
+
+
+//  , i reverted the mousemove listener also to:
+
+
+
+// document.addEventListener('mousemove', () => {
+
+//     if (isRemoteMode()) clearFocus();
+
+// });
+
+
+
+// , its still working and i also removed the:
+
+
+
+// /* =========================================================
+
+//    BULLETPROOF REMOTE FOCUS FOR GROUPS
+
+//    Forces the ring to display above everything else
+
+//    ========================================================= */
+
+// body.remote - mode.group - card.remoteFocused,
+
+//     body.remote - mode button.group - card.remoteFocused {
+
+//     outline: none!important;
+
+//     border - color: transparent!important;
+
+//     box - shadow: 0 0 0 4px var(--primary, #D0BCFF), 0 8px 24px rgba(0, 0, 0, 0.4)!important;
+
+//     opacity: 1!important;
+
+//     filter: none!important;
+
+//     z - index: 100!important;
+
+//     transform: scale(1.02)!important;
+
+// }
+
+
+
+// , its also working fine, now the only thing is when the activa

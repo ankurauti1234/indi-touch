@@ -67,6 +67,15 @@ function initTwoWaySync() {
 export function renderGroupsGrid() {
     const container = document.getElementById('groups-grid-container');
     if (!container) return;
+
+    // --- THE INVISIBLE RING FIX: SNAPSHOT FOCUS STATE ---
+    // Check if the remote ring is currently sitting on any card inside this container
+    let previouslyFocusedId = null;
+    const currentFocused = container.querySelector('.remoteFocused');
+    if (currentFocused && currentFocused.id) {
+        previouslyFocusedId = currentFocused.id;
+    }
+
     container.innerHTML = '';
 
     // Guarantee the two-way sync listener is running
@@ -161,6 +170,15 @@ export function renderGroupsGrid() {
     container.appendChild(createCard);
 
     applyTranslations();
+
+    // --- THE INVISIBLE RING FIX: RESTORE FOCUS STATE ---
+    // If a card was focused before the wipe, violently shove the CSS class onto the newly built clone!
+    if (previouslyFocusedId) {
+        const restoredCard = document.getElementById(previouslyFocusedId);
+        if (restoredCard) {
+            restoredCard.classList.add('remoteFocused');
+        }
+    }
 }
 
 export async function toggleGroup(groupId) {

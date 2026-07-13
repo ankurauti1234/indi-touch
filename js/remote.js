@@ -364,6 +364,14 @@ function handleBack() {
         return;
     }
 
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalOverlay && modalOverlay.classList.contains('active')) {
+        if (typeof window.closeModal === 'function') {
+            window.closeModal();
+        }
+        return;
+    }
+
     const alertModal = document.getElementById('group-alert-modal');
     if (alertModal && alertModal.style.display !== 'none') {
         if (window.closeAlertModal) window.closeAlertModal();
@@ -509,6 +517,9 @@ export function initRemote() {
                 if (el.id === 'group-alert-modal' && el.style.display !== 'none') requiresFocusReset = true;
                 if (el.id === 'group-delete-confirm' && el.style.display !== 'none') requiresFocusReset = true;
                 if (el.id === 'critical-popover' && el.classList?.contains('active')) {
+                    requiresFocusReset = true;
+                }
+                if (el.id === 'modal-overlay' && el.classList?.contains('active')) {
                     requiresFocusReset = true;
                 }
                 if (

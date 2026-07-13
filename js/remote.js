@@ -8,6 +8,19 @@ let focusedElement = null;
 let elementBeforeOverlay = null;
 const TABS = ['home', 'groups', 'guest-add', 'notifications', 'settings'];
 
+const FOCUSABLE_SELECTORS = [
+    '.member-card',
+    '.group-card',
+    '.list-item:not(.no-click)',
+    '.wifi-item',
+    '.avatar-option',
+    'button:not([disabled]):not(.group-edit-btn)',
+    '.g-member-select-item',
+    'input',
+    '.chip',
+    '.action-btn'
+].join(', ');
+
 let enterPressTimer = null;
 let isLongPress = false;
 
@@ -111,20 +124,7 @@ function getContentItems() {
 
     const activePanel = activeView.querySelector('.settings-panel.active') || activeView;
 
-    const selectors = [
-        '.member-card',
-        '.group-card',
-        '.list-item:not(.no-click)',
-        '.wifi-item',
-        '.avatar-option',
-        'button:not([disabled]):not(.group-edit-btn)',
-        '.g-member-select-item',
-        'input',
-        '.chip',
-        '.action-btn'
-    ].join(', ');
-
-    return [...activePanel.querySelectorAll(selectors)].filter(isVisible);
+    return [...activePanel.querySelectorAll(FOCUSABLE_SELECTORS)].filter(isVisible);
 }
 
 function isNavLocked() {
@@ -468,6 +468,20 @@ export function applyRemoteMode(on) {
     }
 }
 
+export function syncFocusFromTouch(element) {
+    if (!isRemoteMode()) return;
+    if (!(element instanceof HTMLElement)) return;
+
+    const target = element.closest(FOCUSABLE_SELECTORS);
+    if (!target) return;
+
+    if (!isVisible(target)) return;
+
+    if (target === focusedElement) return;
+
+    setFocus(target);
+}
+
 // --- Initialization ---
 export function initRemote() {
     if (config.remoteMode) applyRemoteMode(true);
@@ -564,6 +578,11 @@ export function initRemote() {
 
         clearFocus();
     });
+
+    document.addEventListener('pointerdown', (e) => {
+        if (!(e.target instanceof HTMLElement)) return;
+        syncFocusFromTouch(e.target);
+    }, { passive: true });
 
     // --- CLEAN ASYNC RE-ATTACH HOOK ---
     // Allows other files to safely request the remote engine to fix itself after a DOM wipe

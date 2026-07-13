@@ -175,8 +175,6 @@ export function renderGroupsGrid() {
 }
 
 export async function toggleGroup(groupId) {
-    console.time('toggleGroup');
-    console.count('toggleGroup');
     if (!tvState.on) return;
     if (toggleDebounceTimer) return;
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
@@ -218,11 +216,10 @@ export async function toggleGroup(groupId) {
                 body: JSON.stringify({ indexes: pendingApiIndexes })
             });
         }
-        // await loadMembers();
+        await loadMembers();
     } catch (e) {
         console.error("Group toggle failed:", e);
     }
-    console.timeEnd('toggleGroup');
 }
 
 // --- MODAL & UI LOGIC ---

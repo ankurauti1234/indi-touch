@@ -18,7 +18,8 @@ const FOCUSABLE_SELECTORS = [
     '.g-member-select-item',
     'input',
     '.chip',
-    '.action-btn'
+    '.action-btn',
+    '.guest-item'
 ].join(', ');
 
 let enterPressTimer = null;
@@ -601,7 +602,7 @@ export function initRemote() {
     window.setRemoteRestoreElement = function (el) {
         elementBeforeOverlay = el;
     };
-    
+
     window.restoreRemoteFocus = function () {
         enterContentZone();
     };

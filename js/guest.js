@@ -210,12 +210,15 @@ export function renderGuestList() {
         const url = getAvatarUrl(g);
 
         return `
-        <div style="
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:8px;
-        ">
+        <div
+            class="guest-item"
+            style="
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                gap:8px;
+            "
+        >
             <div
                 class="guest-avatar-circle"
                 title="${g.name || 'Guest'} (${g.gender}, ${g.age})"

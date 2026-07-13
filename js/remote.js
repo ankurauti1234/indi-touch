@@ -189,6 +189,12 @@ function enterContentZone() {
         items.map(el => el.id || el.className)
     );
     if (items.length > 0) {
+        console.log({
+            elementBeforeOverlay,
+            contains: elementBeforeOverlay ? document.body.contains(elementBeforeOverlay) : null,
+            visible: elementBeforeOverlay ? isVisible(elementBeforeOverlay) : null,
+            activeView: elementBeforeOverlay?.closest('.view')?.id
+        });
         if (elementBeforeOverlay && document.body.contains(elementBeforeOverlay) && isVisible(elementBeforeOverlay) && !isNavLocked()) {
             setFocus(elementBeforeOverlay);
             elementBeforeOverlay = null;

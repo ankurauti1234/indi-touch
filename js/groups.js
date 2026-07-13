@@ -175,6 +175,7 @@ export function renderGroupsGrid() {
 }
 
 export async function toggleGroup(groupId) {
+    console.count('toggleGroup');
     if (!tvState.on) return;
     if (toggleDebounceTimer) return;
     toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500);
@@ -206,8 +207,8 @@ export async function toggleGroup(groupId) {
             }
         }
 
-        // renderGrid();
-        // renderGroupsGrid();
+        renderGrid();
+        renderGroupsGrid();
 
         if (pendingApiIndexes.length > 0) {
             await fetch('/api/members/toggle_bulk', {
@@ -217,7 +218,6 @@ export async function toggleGroup(groupId) {
             });
         }
         await loadMembers();
-        
     } catch (e) {
         console.error("Group toggle failed:", e);
     }

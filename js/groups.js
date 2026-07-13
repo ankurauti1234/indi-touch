@@ -78,6 +78,10 @@ export function renderGroupsGrid() {
 
     const allMembersCard = document.createElement('button');
     allMembersCard.className = `group-card all-members-card ${isAllActive ? 'active' : 'inactive'} ${avatarStyleClass}`;
+
+    // --- ADDED TRACKING ID FOR REMOTE.JS ---
+    allMembersCard.dataset.groupId = 'all';
+
     allMembersCard.onclick = () => toggleGroup('all');
     allMembersCard.innerHTML = `
         <div class="group-avatars-container">${allAvatarsHtml}</div>
@@ -109,6 +113,9 @@ export function renderGroupsGrid() {
 
         const card = document.createElement('button');
         card.className = `group-card ${activeClass} ${avatarStyleClass} ${bentoClass}`;
+
+        // --- ADDED TRACKING ID FOR REMOTE.JS ---
+        card.dataset.groupId = g.id;
 
         card.onclick = (e) => {
             if (e.target.closest('.group-edit-btn')) {

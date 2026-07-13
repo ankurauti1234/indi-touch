@@ -2479,12 +2479,17 @@ body.osk-open .main-stage {
     transform: scale(0.97);
 }
 
+/* Active state base */
 .group-card.active {
     border-color: var(--green-border, #B8F3BE) !important;
-    box-shadow: var(--green-shadow) !important;
     background: rgba(184, 243, 190, 0.05) !important;
     opacity: 1 !important;
     filter: none !important;
+}
+
+/* Apply the green shadow ONLY when the remote focus ring is NOT present */
+.group-card.active:not(.remoteFocused) {
+    box-shadow: var(--green-shadow, 0 4px 12px rgba(100, 210, 154, 0.25)) !important;
 }
 
 body.light-mode .group-card.active {

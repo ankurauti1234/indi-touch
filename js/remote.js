@@ -409,6 +409,9 @@ function activate() {
         const currentItems = getContentItems();
         const focusedIndex = currentItems.indexOf(focusedElement);
 
+        // Capture the card's identity before the DOM gets wiped by groups.js
+        const trackId = focusedElement.dataset.groupId;
+
         focusedElement.click();
 
         if (focusedElement.tagName === 'INPUT') {
@@ -421,14 +424,29 @@ function activate() {
             } else {
                 if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
                     const newItems = getContentItems();
-                    if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
-                        setFocus(newItems[focusedIndex]);
-                    } else {
-                        enterContentZone();
+
+                    let restored = false;
+
+                    // 1. Hunt for the exact same card in the newly rebuilt DOM
+                    if (trackId) {
+                        const exactMatch = newItems.find(el => el.dataset.groupId == trackId);
+                        if (exactMatch) {
+                            setFocus(exactMatch);
+                            restored = true;
+                        }
+                    }
+
+                    // 2. Fallback to index if exact match fails
+                    if (!restored) {
+                        if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
+                            setFocus(newItems[focusedIndex]);
+                        } else {
+                            enterContentZone();
+                        }
                     }
                 }
             }
-        }, 250);
+        }, 300); // 300ms cleanly outlasts the 50ms two-way sync MutationObserver in groups.js
     }
 }
 

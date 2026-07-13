@@ -119,7 +119,9 @@ function getContentItems() {
         return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
-    const overlay = document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]');
+    const overlay = document.querySelector(
+        '.safe-overlay.active, .popover-overlay.active, #modal-overlay.active'
+    );
     if (overlay) {
         return [...overlay.querySelectorAll('input, button:not([disabled]), .g-member-select-item')].filter(isVisible);
     }
@@ -133,7 +135,9 @@ function getContentItems() {
 }
 
 function isNavLocked() {
-    if (document.querySelector('.safe-overlay.active, .popover-overlay.active, #modal-overlay[style*="display: flex"]')) return true;
+    if (document.querySelector(
+        '.safe-overlay.active, .popover-overlay.active, #modal-overlay.active'
+    )) return true;
 
     const criticalPopover = document.getElementById('critical-popover');
     if (criticalPopover && criticalPopover.classList.contains('active')) return true;

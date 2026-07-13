@@ -601,6 +601,10 @@ export function initRemote() {
     window.setRemoteRestoreElement = function (el) {
         elementBeforeOverlay = el;
     };
+    
+    window.restoreRemoteFocus = function () {
+        enterContentZone();
+    };
 
     // --- CLEAN ASYNC RE-ATTACH HOOK ---
     // Allows other files to safely request the remote engine to fix itself after a DOM wipe

@@ -199,9 +199,19 @@ function handleKey(key) {
             activeInput.selectionStart = activeInput.selectionEnd = start - 1;
         }
     } else if (key === 'enter') {
+        const input = activeInput;
+
+        if (window.setRemoteRestoreElement) {
+            window.setRemoteRestoreElement(input);
+        }
+
         hideOSK();
-        activeInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-        activeInput.blur();
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+        input.blur();
+
+        setTimeout(() => {
+            window.restoreRemoteFocus?.();
+        }, 0);
     } else if (key === 'space') {
         const start = activeInput.selectionStart;
         const end = activeInput.selectionEnd;

@@ -2476,7 +2476,7 @@ body.osk-open .main-stage {
 }
 
 .group-card:active {
-    transform: scale(0.97);
+    /* transform: scale(0.97); */
 }
 
 /* Active state base */

@@ -131,6 +131,21 @@ function getContentItems() {
 
     const activePanel = activeView.querySelector('.settings-panel.active') || activeView;
 
+    // Guest tab custom order
+    if (activeView.id === 'view-guest-add') {
+        const input = [...activePanel.querySelectorAll('input')];
+        const genderChips = [...activePanel.querySelectorAll('.chip-group:first-of-type .chip')];
+        const addButton = [...activePanel.querySelectorAll('.action-btn')];
+        const guests = [...activePanel.querySelectorAll('#guest-list-container .guest-item')];
+
+        return [
+            ...input,
+            ...genderChips,
+            ...addButton,
+            ...guests
+        ].filter(isVisible);
+    }
+
     return [...activePanel.querySelectorAll(FOCUSABLE_SELECTORS)].filter(isVisible);
 }
 

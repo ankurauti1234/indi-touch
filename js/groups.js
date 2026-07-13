@@ -161,11 +161,11 @@ export function renderGroupsGrid() {
 
     // THE ASYNC RE-ATTACH FIX
     // After wiping the DOM, gently tell the remote engine to glue the focus ring back on
-    requestAnimationFrame(() => {
-        if (typeof window.reclaimRemoteFocus === 'function') {
-            window.reclaimRemoteFocus();
-        }
-    });
+    // requestAnimationFrame(() => {
+    //     if (typeof window.reclaimRemoteFocus === 'function') {
+    //         window.reclaimRemoteFocus();
+    //     }
+    // });
 }
 
 export async function toggleGroup(groupId) {

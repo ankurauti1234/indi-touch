@@ -556,7 +556,7 @@ export function initRemote() {
         // If the mouse hasn't actually changed physical pixels, it's a synthetic
         // event caused by the page scrolling. Ignore it completely!
         if (e.screenX === lastMouseX && e.screenY === lastMouseY) {
-            return; 
+            return;
         }
 
         lastMouseX = e.screenX;
@@ -565,4 +565,29 @@ export function initRemote() {
         // If it was a real physical mouse movement, clear the TV remote focus
         clearFocus();
     });
+
+    // --- FOCUS AUTO-HEALER (GOD MODE) ---
+    // If external API calls wipe the DOM and rebuild it in the background,
+    // this instantly catches the detached focus and snaps it to the new clone.
+    setInterval(() => {
+        if (!isRemoteMode() || zone !== 'content' || !focusedElement) return;
+
+        // 1. Did the backend API wipe the DOM element we were sitting on?
+        if (!document.body.contains(focusedElement)) {
+            // Hunt for the newly created clone using the precise ID
+            if (focusedElement.id) {
+                const newClone = document.getElementById(focusedElement.id);
+                if (newClone) {
+                    focusedElement = newClone; // Update engine memory
+                    focusedElement.classList.add('remoteFocused'); // Restore ring
+                }
+            }
+        }
+        // 2. Element survived, but did a render cycle accidentally strip its CSS?
+        else {
+            if (!focusedElement.classList.contains('remoteFocused')) {
+                focusedElement.classList.add('remoteFocused');
+            }
+        }
+    }, 15); // Runs at 60fps - 0ms visual lag
 }

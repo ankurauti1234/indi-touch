@@ -143,6 +143,24 @@ export async function deleteGuest(id) {
         updateGuestBadge();
         renderGuestList();
 
+        setTimeout(() => {
+            const guests = document.querySelectorAll('#guest-list-container .guest-avatar-circle.guest-item');
+
+            if (guests.length > 0) {
+                const next = guests[Math.min(index, guests.length - 1)];
+
+                window.setRemoteRestoreElement?.(next);
+                window.restoreRemoteFocus?.();
+            } else {
+                const addBtn = document.querySelector('#view-guest-add .action-btn');
+
+                if (addBtn) {
+                    window.setRemoteRestoreElement?.(addBtn);
+                    window.restoreRemoteFocus?.();
+                }
+            }
+        }, 0);
+
     } catch (e) {
         console.error("Failed to delete guest:", e);
 

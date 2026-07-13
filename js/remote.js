@@ -154,22 +154,12 @@ function switchTab(dir) {
 
     window.navTo(TABS[idx]);
 
-    console.log("switchTab", zone);
-
     setTimeout(() => {
-        console.log("switchTab timeout", zone);
-
-        try {
-            if (zone === 'nav') {
-                const activeNav = document.querySelector('.nav-btn.active');
-                if (activeNav) setFocus(activeNav);
-            } else {
-                console.log("calling enterContentZone");
-                enterContentZone();
-                console.log("enterContentZone finished");
-            }
-        } catch (err) {
-            console.error("switchTab error:", err);
+        if (zone === 'nav') {
+            const activeNav = document.querySelector('.nav-btn.active');
+            if (activeNav) setFocus(activeNav);
+        } else {
+            enterContentZone();
         }
     }, 250);
 }
@@ -183,27 +173,19 @@ function enterNavZone() {
 function enterContentZone() {
     zone = 'content';
     const items = getContentItems();
-    console.log(
-        "items.length",
-        items.length,
-        items.map(el => el.id || el.className)
-    );
     if (items.length > 0) {
-        console.log({
-            elementBeforeOverlay,
-            contains: elementBeforeOverlay ? document.body.contains(elementBeforeOverlay) : null,
-            visible: elementBeforeOverlay ? isVisible(elementBeforeOverlay) : null,
-            activeView: elementBeforeOverlay?.closest('.view')?.id
-        });
-        if (elementBeforeOverlay && document.body.contains(elementBeforeOverlay) && isVisible(elementBeforeOverlay) && !isNavLocked()) {
+        const activeView = document.querySelector('.view.active');
+        if (
+            elementBeforeOverlay &&
+            document.body.contains(elementBeforeOverlay) &&
+            isVisible(elementBeforeOverlay) &&
+            !isNavLocked() &&
+            activeView &&
+            activeView.contains(elementBeforeOverlay)
+        ) {
             setFocus(elementBeforeOverlay);
             elementBeforeOverlay = null;
         } else {
-            console.log(
-                "enterContentZone",
-                items[0],
-                document.querySelector(".remoteFocused")
-            );
             setFocus(items[0]);
         }
     } else {

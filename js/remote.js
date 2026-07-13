@@ -31,6 +31,8 @@ function clearFocus() {
 }
 
 function setFocus(el) {
+    console.count('setFocus');
+    console.trace('setFocus');
     clearFocus();
     if (!el) return;
 

@@ -185,7 +185,7 @@ function enterContentZone() {
     }
 }
 
-// PERFECTED SPATIAL ALGORITHM (Bounding Box Edge Detection)
+// PERFECTED SPATIAL ALGORITHM (Edge Detection + Threshold Filtering)
 function findNextItem(items, currentEl, direction) {
     if (!currentEl || items.length === 0) return null;
 
@@ -206,14 +206,22 @@ function findNextItem(items, currentEl, direction) {
             y: rect.top + rect.height / 2
         };
 
-        // 1. Strict directional filtering (Must physically be in the direction pressed)
-        if (direction === 'right' && center.x <= curCenter.x) continue;
-        if (direction === 'left' && center.x >= curCenter.x) continue;
-        if (direction === 'down' && center.y <= curCenter.y) continue;
-        if (direction === 'up' && center.y >= curCenter.y) continue;
+        const dx = center.x - curCenter.x;
+        const dy = center.y - curCenter.y;
 
-        // 2. Calculate Bounding Box Gap (Primary & Secondary axes)
-        // This calculates the literal pixel gap between the edges of the two elements.
+        // 1. Threshold Directional Filtering (The fix for the split-pane list)
+        // This requires the target element to be at least 30% deep in the pressed 
+        // direction, completely ignoring 1px micro-shifts in vertical lists.
+        const ROW_THRESHOLD = curRect.height * 0.30;
+        const COL_THRESHOLD = curRect.width * 0.30;
+
+        if (direction === 'right' && dx <= COL_THRESHOLD) continue;
+        if (direction === 'left' && dx >= -COL_THRESHOLD) continue;
+        if (direction === 'down' && dy <= ROW_THRESHOLD) continue;
+        if (direction === 'up' && dy >= -ROW_THRESHOLD) continue;
+
+        // 2. Bounding Box Edge Gap (The fix for the Guest Tab wide input)
+        // Measures the literal pixel gap between edges rather than centers.
         let primary = 0;
         let secondary = 0;
 
@@ -231,23 +239,20 @@ function findNextItem(items, currentEl, direction) {
             secondary = Math.max(0, rect.left - curRect.right, curRect.left - rect.right);
         }
 
-        // 3. Android TV Standard Weighting
-        // Apply a massive 10x penalty to 'secondary' (off-axis) distance.
-        // This forces the engine to strongly prefer straight lines and completely
-        // ignores diagonal jumps if a valid element exists directly underneath/next to it.
+        // 3. Score calculation
+        // Massively penalize off-axis distance to force straight-line navigation
         const score = primary + (secondary * 10);
-
-        // Tie-breaker: Distance between centers in case elements overlap perfectly
-        const distance = Math.hypot(center.x - curCenter.x, center.y - curCenter.y);
+        const distance = Math.hypot(dx, dy);
 
         candidates.push({ item, score, distance });
     }
 
     if (!candidates.length) return null;
 
+    // Sort by best score. If scores perfectly tie, pick the closest center point.
     candidates.sort((a, b) => {
         if (a.score !== b.score) return a.score - b.score;
-        return a.distance - b.distance; // If edge scores tie, pick closest center
+        return a.distance - b.distance;
     });
 
     return candidates[0].item;

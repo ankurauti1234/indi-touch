@@ -804,11 +804,7 @@
   <!-- Main Creator / Editor Modal -->
   <div id="group-editor-overlay" class="safe-overlay" style="display: none;">
     <div class="safe-modal-card split-editor-card">
-  
-      <button class="icon-btn-ghost close-btn-abs" onclick="closeGroupModals()">
-        <span class="material-symbols-rounded">close</span>
-      </button>
-  
+
       <div class="editor-left">
         <div>
           <h3 id="group-modal-title"
@@ -817,7 +813,7 @@
             members.</p>
           <input type="text" id="group-name-input" class="setup-input" placeholder="Group Name" autocomplete="off" />
         </div>
-  
+
         <div class="editor-actions">
           <button class="modal-btn" id="btn-group-delete" onclick="promptGroupDelete()"
             style="background: var(--error); color: var(--on-error); width: 100%; display: none; margin-bottom: 16px; border: none;">
@@ -829,16 +825,16 @@
           </div>
         </div>
       </div>
-  
+
       <div class="editor-right">
         <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 500; color: var(--text-sub);">Select Members</h4>
         <div class="g-member-select-list" id="group-members-list">
         </div>
       </div>
-  
+
     </div>
   </div>
-  
+
   <div id="group-delete-confirm" class="safe-overlay" style="display: none; z-index: 2001;">
     <div class="safe-modal-card alert-modal-card">
       <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
@@ -854,7 +850,7 @@
       </div>
     </div>
   </div>
-  
+
   <div id="group-alert-modal" class="safe-overlay" style="display: none; z-index: 2002;">
     <div class="safe-modal-card alert-modal-card">
       <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">

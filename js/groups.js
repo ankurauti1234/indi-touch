@@ -6,6 +6,7 @@ import { renderGrid } from './grid.js';
 export let groupsData = [];
 let toggleDebounceTimer = null;
 let editingGroupId = null;
+let syncObserverInitialized = false;
 
 export async function loadGroups() {
     try {
@@ -20,10 +21,44 @@ export async function loadGroups() {
     }
 }
 
+// --- TWO-WAY SYNC ENGINE ---
+// Quietly watches the member grid. If you click a member (via mouse or remote),
+// this detects the CSS class change and instantly syncs the Group cards.
+function initTwoWaySync() {
+    if (syncObserverInitialized) return;
+    const gridContainer = document.getElementById('grid-container');
+    if (!gridContainer) return;
+
+    const observer = new MutationObserver((mutations) => {
+        let needsSync = false;
+        for (const m of mutations) {
+            // Check if any member card had its active/inactive class modified
+            if (m.type === 'attributes' && m.target.classList?.contains('member-card')) {
+                needsSync = true;
+                break;
+            }
+        }
+
+        if (needsSync) {
+            // Debounce to prevent lag if multiple cards toggle at the exact same time
+            if (window._groupSyncTimer) clearTimeout(window._groupSyncTimer);
+            window._groupSyncTimer = setTimeout(() => {
+                renderGroupsGrid();
+            }, 50);
+        }
+    });
+
+    observer.observe(gridContainer, { attributes: true, subtree: true, attributeFilter: ['class'] });
+    syncObserverInitialized = true;
+}
+
 export function renderGroupsGrid() {
     const container = document.getElementById('groups-grid-container');
     if (!container) return;
     container.innerHTML = '';
+
+    // Guarantee the two-way sync listener is running
+    initTwoWaySync();
 
     const maxAvatars = 4;
     const avatarStyleClass = (config.avatarStyle || 'local') === 'local' ? 'local-avatar' : '';
@@ -203,7 +238,6 @@ async function renderMembersSelectionList(selectedCodes = []) {
         item.className = `g-member-select-item ${isSelected ? 'selected' : ''}`;
         item.dataset.code = member.member_code;
 
-        // Your preferred checkbox list UI
         item.innerHTML = `
             <img src="${getAvatarUrl(member)}" class="g-member-avatar" onerror="this.src='/img/avatars/default.png'" />
             <span class="g-member-name">${member.name}</span>
@@ -337,7 +371,7 @@ export function closeAlertModal() {
 window.submitGroup = submitGroup;
 window.saveGroup = submitGroup;
 window.closeGroupModals = closeGroupModals;
-window.closeAlertModal = closeAlertModal; // ADD THIS LINE
+window.closeAlertModal = closeAlertModal;
 window.promptGroupDelete = promptGroupDelete;
 window.executeDelete = executeDelete;
 window.deleteCurrentGroup = executeDelete;

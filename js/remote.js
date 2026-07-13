@@ -546,23 +546,7 @@ export function initRemote() {
         }
     });
 
-    // --- THE SYNTHETIC MOUSE FIX ---
-    let lastMouseX = -1;
-    let lastMouseY = -1;
-
-    document.addEventListener('mousemove', (e) => {
-        if (!isRemoteMode()) return;
-
-        // If the mouse hasn't actually changed physical pixels, it's a synthetic
-        // event caused by the page scrolling. Ignore it completely!
-        if (e.screenX === lastMouseX && e.screenY === lastMouseY) {
-            return;
-        }
-
-        lastMouseX = e.screenX;
-        lastMouseY = e.screenY;
-
-        // If it was a real physical mouse movement, clear the TV remote focus
-        clearFocus();
+    document.addEventListener('mousemove', () => {
+        if (isRemoteMode()) clearFocus();
     });
 }

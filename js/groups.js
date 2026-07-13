@@ -65,19 +65,11 @@ function initTwoWaySync() {
 }
 
 export function renderGroupsGrid() {
-    console.log(
-        'Focused before render:',
-        document.querySelector('.remoteFocused')?.id
-    );
     const container = document.getElementById('groups-grid-container');
     if (!container) return;
     container.innerHTML = '';
-    console.log(
-        'Focused after clear:',
-        document.querySelector('.remoteFocused')?.id
-    );
 
-    initTwoWaySync();
+    // initTwoWaySync();
 
     const maxAvatars = 4;
     const avatarStyleClass = (config.avatarStyle || 'local') === 'local' ? 'local-avatar' : '';
@@ -170,16 +162,16 @@ export function renderGroupsGrid() {
     // THE ASYNC RE-ATTACH FIX
     // After wiping the DOM, gently tell the remote engine to glue the focus ring back on
     requestAnimationFrame(() => {
-        const focused = document.querySelector('.remoteFocused');
+    const focused = document.querySelector('.remoteFocused');
 
-        if (
-            focused &&
-            (focused.classList.contains('group-card') ||
-                focused.classList.contains('group-edit-btn'))
-        ) {
-            window.reclaimRemoteFocus?.();
-        }
-    });
+    if (
+        focused &&
+        (focused.classList.contains('group-card') ||
+         focused.classList.contains('group-edit-btn'))
+    ) {
+        window.reclaimRemoteFocus?.();
+    }
+});
 }
 
 export async function toggleGroup(groupId) {

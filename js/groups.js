@@ -21,9 +21,7 @@ export async function loadGroups() {
     }
 }
 
-// --- TWO-WAY SYNC ENGINE ---
-// Quietly watches the member grid. If you click a member (via mouse or remote),
-// this detects the CSS class change and instantly syncs the Group cards.
+// --- TWO-WAY SYNC ENGINE (FIXED RACING CONDITION) ---
 function initTwoWaySync() {
     if (syncObserverInitialized) return;
     const gridContainer = document.getElementById('grid-container');
@@ -32,15 +30,23 @@ function initTwoWaySync() {
     const observer = new MutationObserver((mutations) => {
         let needsSync = false;
         for (const m of mutations) {
-            // Check if any member card had its active/inactive class modified
-            if (m.type === 'attributes' && m.target.classList?.contains('member-card')) {
-                needsSync = true;
-                break;
+            if (m.type === 'attributes' && m.attributeName === 'class' && m.target.classList?.contains('member-card')) {
+                const oldClass = m.oldValue || '';
+                const newClass = m.target.className || '';
+
+                // THE FIX: Strip out the focus classes before comparing.
+                // If only the focus ring changed, the clean strings will match, and we IGNORE the change!
+                const cleanOld = oldClass.replace(/remoteFocused|focused/g, '').replace(/\s+/g, ' ').trim();
+                const cleanNew = newClass.replace(/remoteFocused|focused/g, '').replace(/\s+/g, ' ').trim();
+
+                if (cleanOld !== cleanNew) {
+                    needsSync = true;
+                    break;
+                }
             }
         }
 
         if (needsSync) {
-            // Debounce to prevent lag if multiple cards toggle at the exact same time
             if (window._groupSyncTimer) clearTimeout(window._groupSyncTimer);
             window._groupSyncTimer = setTimeout(() => {
                 renderGroupsGrid();
@@ -48,7 +54,13 @@ function initTwoWaySync() {
         }
     });
 
-    observer.observe(gridContainer, { attributes: true, subtree: true, attributeFilter: ['class'] });
+    // We MUST include attributeOldValue: true so we can compare the before and after states
+    observer.observe(gridContainer, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['class'],
+        attributeOldValue: true
+    });
     syncObserverInitialized = true;
 }
 
@@ -79,7 +91,7 @@ export function renderGroupsGrid() {
     const allMembersCard = document.createElement('button');
     allMembersCard.className = `group-card all-members-card ${isAllActive ? 'active' : 'inactive'} ${avatarStyleClass}`;
 
-    // THE FIX: Assign strict HTML ID for remote tracking
+    // Strict HTML ID for remote tracking
     allMembersCard.id = 'group-card-all';
 
     allMembersCard.onclick = () => toggleGroup('all');
@@ -114,7 +126,7 @@ export function renderGroupsGrid() {
         const card = document.createElement('button');
         card.className = `group-card ${activeClass} ${avatarStyleClass} ${bentoClass}`;
 
-        // THE FIX: Assign strict HTML ID for remote tracking
+        // Strict HTML ID for remote tracking
         card.id = `group-card-${g.id}`;
 
         card.onclick = (e) => {
@@ -162,10 +174,7 @@ export async function toggleGroup(groupId) {
 
         if (groupId === 'all') {
             const isAllActive = activeMemberCodes.length === memberData.length;
-            // If turning ON, select everyone. If turning OFF, array remains empty.
-            if (!isAllActive) {
-                targetGroupCodes = memberData.map(m => m.member_code);
-            }
+            if (!isAllActive) targetGroupCodes = memberData.map(m => m.member_code);
         } else {
             const group = groupsData.find(g => g.id == groupId);
             if (!group) return;
@@ -174,10 +183,7 @@ export async function toggleGroup(groupId) {
             const isCurrentlyActive = activeMemberCodes.length === groupCodes.length &&
                 groupCodes.every(code => activeMemberCodes.includes(code));
 
-            // If turning ON, select ONLY this group.
-            if (!isCurrentlyActive) {
-                targetGroupCodes = groupCodes;
-            }
+            if (!isCurrentlyActive) targetGroupCodes = groupCodes;
         }
 
         const pendingApiIndexes = [];
@@ -189,7 +195,6 @@ export async function toggleGroup(groupId) {
             }
         }
 
-        // Optimistic update
         renderGrid();
         renderGroupsGrid();
 

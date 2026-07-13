@@ -39,7 +39,7 @@ function isVisible(el) {
 
 function clearFocus() {
     if (focusedElement) {
-        // focusedElement.classList.remove('remoteFocused');
+        focusedElement.classList.remove('remoteFocused');
         focusedElement = null;
     }
 }

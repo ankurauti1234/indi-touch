@@ -65,9 +65,17 @@ function initTwoWaySync() {
 }
 
 export function renderGroupsGrid() {
+    console.log(
+        'Focused before render:',
+        document.querySelector('.remoteFocused')?.id
+    );
     const container = document.getElementById('groups-grid-container');
     if (!container) return;
     container.innerHTML = '';
+    console.log(
+        'Focused after clear:',
+        document.querySelector('.remoteFocused')?.id
+    );
 
     initTwoWaySync();
 

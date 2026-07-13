@@ -206,8 +206,8 @@ export async function toggleGroup(groupId) {
             }
         }
 
-        renderGrid();
-        renderGroupsGrid();
+        // renderGrid();
+        // renderGroupsGrid();
 
         if (pendingApiIndexes.length > 0) {
             await fetch('/api/members/toggle_bulk', {
@@ -217,6 +217,8 @@ export async function toggleGroup(groupId) {
             });
         }
         await loadMembers();
+        renderGrid();
+        renderGroupsGrid();
     } catch (e) {
         console.error("Group toggle failed:", e);
     }

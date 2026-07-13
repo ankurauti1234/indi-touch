@@ -591,7 +591,7 @@ export function initRemote() {
         clearFocus();
     });
 
-    document.addEventListener('pointerdown', (e) => {
+    document.addEventListener('click', (e) => {
         if (!(e.target instanceof HTMLElement)) return;
         syncFocusFromTouch(e.target);
     }, { passive: true });

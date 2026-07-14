@@ -146,7 +146,18 @@ function getContentItems() {
         ].filter(isVisible);
     }
 
-    return [...activePanel.querySelectorAll(FOCUSABLE_SELECTORS)].filter(isVisible);
+    const items = [...activePanel.querySelectorAll(FOCUSABLE_SELECTORS)].filter(isVisible);
+
+    return items.filter(el => {
+        if (
+            el.classList.contains('list-item') &&
+            el.querySelector('input, textarea')
+        ) {
+            return false;
+        }
+
+        return true;
+    });
 }
 
 function isNavLocked() {

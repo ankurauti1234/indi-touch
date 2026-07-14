@@ -451,7 +451,7 @@ function loadMemberSettings() {
     const list = document.getElementById('member-settings-list');
     if (!list) return;
     list.innerHTML = memberData.map((m, index) => `
-        <div class="member-setting-row" style="cursor:default">
+        <div class="list-item" style="cursor:default">
             <div class="icon-box"><span class="material-symbols-rounded">person</span></div>
             <div class="item-content" style="flex:1">
                 <div style="display:flex;align-items:center;justify-content:space-between">

@@ -2509,7 +2509,7 @@ body.light-mode .group-card.active {
     background: rgba(40, 40, 40, 0.8) !important;
 }
 body.light-mode .group-card.inactive {
-    background: rgba(0, 0, 0, 0.05) !important;
+    background: rgba(0, 0, 0, 0.03) !important;
 }
 
 /* 2. Move the filter and opacity to the contents INSIDE the card */

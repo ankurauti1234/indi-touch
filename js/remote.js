@@ -369,6 +369,13 @@ function navigate(dir) {
     const locked = isNavLocked();
     const items = getContentItems();
 
+    console.log(
+        'OSK:',
+        document.getElementById('osk-container')?.classList.contains('visible'),
+        'Items:',
+        items.map(i => i.innerText)
+    );
+
     if (items.length === 0) {
         if (!locked) {
             if (dir === 'left') enterNavZone();

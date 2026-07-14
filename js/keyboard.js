@@ -152,6 +152,7 @@ function renderKeys() {
     });
 
     const hint = document.createElement('div');
+    hint.id = 'osk-exit-hint';
     hint.className = 'osk-exit-hint';
     hint.innerHTML = `
         <span class="material-symbols-rounded">keyboard_arrow_down</span>

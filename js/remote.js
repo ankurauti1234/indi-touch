@@ -52,12 +52,6 @@ function setFocus(el) {
     el.classList.add('remoteFocused');
     focusedElement = el;
 
-    const hint = document.querySelector('.osk-exit-hint');
-    if (hint) {
-        const lastRow = el.closest('.osk-row:last-of-type');
-        hint.classList.toggle('active', !!lastRow);
-    }
-
     if (lastInputMethod !== 'remote') {
         return;
     }
@@ -328,6 +322,33 @@ function navigate(dir) {
         }
 
         const next = findNextItem(navItems, focusedElement, dir);
+
+        // ---------- Keyboard Exit ----------
+        const osk = document.getElementById('osk-container');
+
+        if (
+            osk &&
+            osk.classList.contains('visible')
+        ) {
+            const hint = document.getElementById('osk-exit-hint');
+
+            // Highlight hint only when there is no item below
+            hint?.classList.toggle(
+                'active',
+                dir === 'down' && !next
+            );
+
+            // Down from the last keyboard row closes the keyboard
+            if (dir === 'down' && !next) {
+                window.closeOSK?.();
+
+                setTimeout(() => {
+                    window.restoreRemoteFocus?.();
+                }, 0);
+
+                return;
+            }
+        }
 
         if (next) {
             setFocus(next);

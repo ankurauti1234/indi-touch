@@ -146,6 +146,14 @@ function getContentItems() {
         ].filter(isVisible);
     }
 
+    // Member Settings custom order
+    if (activePanel.id === 'set-members') {
+        return [
+            ...activePanel.querySelectorAll('#member-settings-list input'),
+            ...activePanel.querySelectorAll('#member-settings-list .list-item')
+        ].filter(isVisible);
+    }
+
     return [...activePanel.querySelectorAll(FOCUSABLE_SELECTORS)].filter(isVisible);
 }
 
@@ -506,17 +514,7 @@ export function syncFocusFromTouch(element) {
     if (!isRemoteMode()) return;
     if (!(element instanceof HTMLElement)) return;
 
-    let target;
-
-    if (
-        element.matches('input, textarea') &&
-        isVisible(element)
-    ) {
-        target = element;
-    } else {
-        target = element.closest(FOCUSABLE_SELECTORS);
-    }
-    
+    const target = element.closest(FOCUSABLE_SELECTORS);
     if (!target) return;
 
     if (!isVisible(target)) return;

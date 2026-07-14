@@ -119,10 +119,10 @@ function getContentItems() {
         return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
-    const internetPopup = document.getElementById('internet-warning-overlay');
-    if (internetPopup && internetPopup.classList.contains('visible')) {
+    const connPopup = document.querySelector('.conn-overlay.visible');
+    if (connPopup) {
         return [
-            ...internetPopup.querySelectorAll('button:not([disabled])')
+            ...connPopup.querySelectorAll('button:not([disabled])')
         ].filter(isVisible);
     }
 
@@ -397,12 +397,14 @@ function handleBack() {
         return;
     }
 
-    const internetPopup = document.getElementById('internet-warning-overlay');
-    if (internetPopup && internetPopup.classList.contains('visible')) {
-        const dismissBtn = document.getElementById('internet-warn-dismiss');
-        if (dismissBtn) {
+    const connPopup = document.querySelector('.conn-overlay.visible');
+    if (connPopup) {
+        const dismissBtn = connPopup.querySelector('.conn-btn-secondary');
+
+        if (dismissBtn instanceof HTMLElement) {
             dismissBtn.click();
         }
+
         return;
     }
 
@@ -564,7 +566,7 @@ export function initRemote() {
                 if (el.id === 'modal-overlay' && el.classList?.contains('active')) {
                     requiresFocusReset = true;
                 }
-                if (el.id === 'internet-warning-overlay' && el.classList.contains('visible')) {
+                if (el.classList?.contains('conn-overlay') && el.classList?.contains('visible')) {
                     requiresFocusReset = true;
                 }
                 if (

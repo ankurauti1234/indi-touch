@@ -458,6 +458,7 @@ function loadMemberSettings() {
                     <input type="text" class="input-box"
                         value="${m.name}"
                         style="width:60%;height:40px;font-size:18px"
+                        onfocus="this.setSelectionRange(this.value.length, this.value.length)"
                         oninput="updateMemberName(${index},this.value)">
                     <span style="font-size:14px;color:var(--text-sub);opacity:0.8">${m.gender}, ${m.age}</span>
                 </div>

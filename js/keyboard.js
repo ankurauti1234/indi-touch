@@ -105,6 +105,10 @@ function renderKeys() {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'osk-row';
 
+        if (row === layout[layout.length - 1]) {
+            rowDiv.classList.add('osk-last-row');
+        }
+
         row.forEach(key => {
             const btn = document.createElement('button');
             btn.className = 'osk-key';

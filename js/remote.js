@@ -323,29 +323,15 @@ function navigate(dir) {
 
         const next = findNextItem(navItems, focusedElement, dir);
 
-        console.log({
-            dir,
-            current: focusedElement?.innerText,
-            next: next?.innerText ?? null
-        });
-
-        // ---------- Keyboard Exit ----------
         const osk = document.getElementById('osk-container');
 
-        if (
-            osk &&
-            osk.classList.contains('visible')
-        ) {
+        if (osk && osk.classList.contains('visible')) {
             const hint = document.getElementById('osk-exit-hint');
+            const onLastRow = !!focusedElement?.closest('.osk-last-row');
 
-            // Highlight hint only when there is no item below
-            hint?.classList.toggle(
-                'active',
-                dir === 'down' && !next
-            );
+            hint?.classList.toggle('active', onLastRow);
 
-            // Down from the last keyboard row closes the keyboard
-            if (dir === 'down' && !next) {
+            if (dir === 'down' && onLastRow && !next) {
                 window.closeOSK?.();
 
                 setTimeout(() => {
@@ -367,13 +353,6 @@ function navigate(dir) {
 
     const locked = isNavLocked();
     const items = getContentItems();
-
-    console.log(
-        'OSK:',
-        document.getElementById('osk-container')?.classList.contains('visible'),
-        'Items:',
-        items.map(i => i.innerText)
-    );
 
     if (items.length === 0) {
         if (!locked) {

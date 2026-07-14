@@ -325,9 +325,8 @@ function navigate(dir) {
 
         console.log({
             dir,
-            focused: focusedElement?.innerText,
-            next: next?.innerText,
-            oskVisible: document.getElementById('osk-container')?.classList.contains('visible')
+            current: focusedElement?.innerText,
+            next: next?.innerText ?? null
         });
 
         // ---------- Keyboard Exit ----------

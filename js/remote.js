@@ -146,14 +146,6 @@ function getContentItems() {
         ].filter(isVisible);
     }
 
-    // Member Settings custom order
-    if (activePanel.id === 'set-members') {
-        return [
-            ...activePanel.querySelectorAll('#member-settings-list input'),
-            ...activePanel.querySelectorAll('#member-settings-list .list-item')
-        ].filter(isVisible);
-    }
-
     return [...activePanel.querySelectorAll(FOCUSABLE_SELECTORS)].filter(isVisible);
 }
 

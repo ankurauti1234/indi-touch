@@ -1064,7 +1064,7 @@ body {
 
 .input-box:focus {
     border-bottom: 2px solid var(--primary);
-    background: #34353A;
+    background: color-mix(in srgb, var(--bg-card) 92%, var(--primary));
 }
 
 .chip-group {
@@ -2507,6 +2507,9 @@ body.light-mode .group-card.active {
 /* 1. Parent card gets NO filter/opacity */
 .group-card.inactive {
     background: rgba(40, 40, 40, 0.8) !important;
+}
+body.light-mode .group-card.inactive {
+    background: rgba(0, 0, 0, 0.05) !important;
 }
 
 /* 2. Move the filter and opacity to the contents INSIDE the card */

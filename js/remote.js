@@ -52,6 +52,12 @@ function setFocus(el) {
     el.classList.add('remoteFocused');
     focusedElement = el;
 
+    const hint = document.querySelector('.osk-exit-hint');
+    if (hint) {
+        const lastRow = el.closest('.osk-row:last-of-type');
+        hint.classList.toggle('active', !!lastRow);
+    }
+
     if (lastInputMethod !== 'remote') {
         return;
     }

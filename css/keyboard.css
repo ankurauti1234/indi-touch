@@ -127,3 +127,32 @@
     flex: 1.5;
     background: #38393F;
 }
+
+.osk-exit-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    width: 100%;
+    margin-top: 6px;
+    padding-top: 6px;
+
+    color: rgba(230, 225, 229, 0.65);
+    font-size: 13px;
+    font-weight: 500;
+
+    user-select: none;
+    pointer-events: none;
+
+    opacity: 0.35;
+    transition: opacity 0.2s ease;
+}
+
+.osk-exit-hint.active {
+    opacity: 0.9;
+}
+
+.osk-exit-hint .material-symbols-rounded {
+    font-size: 18px;
+}

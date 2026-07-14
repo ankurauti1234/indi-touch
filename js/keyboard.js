@@ -150,6 +150,15 @@ function renderKeys() {
 
         container.appendChild(rowDiv);
     });
+
+    const hint = document.createElement('div');
+    hint.className = 'osk-exit-hint';
+    hint.innerHTML = `
+        <span class="material-symbols-rounded">keyboard_arrow_down</span>
+        <span>Press Down to close keyboard</span>
+    `;
+
+    container.appendChild(hint);
 }
 
 function handleKey(key) {

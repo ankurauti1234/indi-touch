@@ -52,6 +52,13 @@ function setFocus(el) {
     el.classList.add('remoteFocused');
     focusedElement = el;
 
+    // --- OSK HINT SYNC ---
+    // Instantly highlight the hint if the element is inside the last row
+    const oskHint = document.getElementById('osk-exit-hint');
+    if (oskHint) {
+        oskHint.classList.toggle('active', !!el.closest('.osk-last-row'));
+    }
+
     if (lastInputMethod !== 'remote') {
         return;
     }
@@ -323,25 +330,6 @@ function navigate(dir) {
 
         const next = findNextItem(navItems, focusedElement, dir);
 
-        const osk = document.getElementById('osk-container');
-
-        if (osk && osk.classList.contains('visible')) {
-            const hint = document.getElementById('osk-exit-hint');
-            const onLastRow = !!focusedElement?.closest('.osk-last-row');
-
-            hint?.classList.toggle('active', onLastRow);
-
-            if (dir === 'down' && onLastRow && !next) {
-                window.closeOSK?.();
-
-                setTimeout(() => {
-                    window.restoreRemoteFocus?.();
-                }, 0);
-
-                return;
-            }
-        }
-
         if (next) {
             setFocus(next);
         }
@@ -350,6 +338,17 @@ function navigate(dir) {
     }
 
     // ---------------- CONTENT ----------------
+
+    // --- OSK DOWN-TO-EXIT INTERCEPT ---
+    // Hijack the Down arrow before the engine does any math if we are on the last OSK row
+    const osk = document.getElementById('osk-container');
+    if (osk && osk.classList.contains('visible') && dir === 'down') {
+        if (focusedElement && focusedElement.closest('.osk-last-row')) {
+            if (typeof window.closeOSK === 'function') window.closeOSK();
+            if (typeof window.restoreRemoteFocus === 'function') window.restoreRemoteFocus();
+            return;
+        }
+    }
 
     const locked = isNavLocked();
     const items = getContentItems();

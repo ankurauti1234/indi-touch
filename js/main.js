@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     showToast("Indi Meter is ready.", 4000);
 
-    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('', e => e.preventDefault());
 
     document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
     document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });

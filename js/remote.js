@@ -405,6 +405,7 @@ function handleBack() {
             dismissBtn.click();
         }
 
+        setTimeout(enterContentZone, 150);
         return;
     }
 
@@ -413,6 +414,8 @@ function handleBack() {
         if (typeof window.closeModal === 'function') {
             window.closeModal();
         }
+
+        setTimeout(enterContentZone, 150);
         return;
     }
 
@@ -490,30 +493,28 @@ function activate() {
         }
 
         setTimeout(() => {
-            if (zone === 'nav') {
-                enterContentZone();
-            } else {
-                if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
-                    const newItems = getContentItems();
+            if (zone === 'nav') return;
 
-                    let recovered = false;
+            if (!document.body.contains(focusedElement) || !isVisible(focusedElement)) {
+                const newItems = getContentItems();
 
-                    // 1. Instantly snap focus back to the exact ID we clicked on!
-                    if (trackId) {
-                        const match = document.getElementById(trackId);
-                        if (match && isVisible(match)) {
-                            setFocus(match);
-                            recovered = true;
-                        }
+                let recovered = false;
+
+                // 1. Instantly snap focus back to the exact ID we clicked on!
+                if (trackId) {
+                    const match = document.getElementById(trackId);
+                    if (match && isVisible(match)) {
+                        setFocus(match);
+                        recovered = true;
                     }
+                }
 
-                    // 2. Fallback only if the element was actually deleted
-                    if (!recovered) {
-                        if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
-                            setFocus(newItems[focusedIndex]);
-                        } else {
-                            enterContentZone();
-                        }
+                // 2. Fallback only if the element was actually deleted
+                if (!recovered) {
+                    if (newItems.length > 0 && focusedIndex !== -1 && focusedIndex < newItems.length) {
+                        setFocus(newItems[focusedIndex]);
+                    } else {
+                        enterContentZone();
                     }
                 }
             }
@@ -590,7 +591,7 @@ export function initRemote() {
         if (!isRemoteMode()) return;
         lastInputMethod = 'remote';
 
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', ' ', 'Select', 'ContextMenu'].includes(e.key)) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' ', 'Select'].includes(e.key)) {
             e.preventDefault();
         }
 
@@ -629,9 +630,6 @@ export function initRemote() {
             case 'ArrowUp': navigate('up'); break;
             case 'ArrowRight': navigate('right'); break;
             case 'ArrowLeft': navigate('left'); break;
-            case 'PageUp': if (!isNavLocked()) switchTab(-1); break;
-            case 'PageDown': if (!isNavLocked()) switchTab(1); break;
-            case 'ContextMenu': handleBack(); return;
         }
     });
 

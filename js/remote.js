@@ -119,6 +119,13 @@ function getContentItems() {
         return [...osk.querySelectorAll('.osk-key, button')].filter(isVisible);
     }
 
+    const internetPopup = document.getElementById('internet-warning-overlay');
+    if (internetPopup && internetPopup.classList.contains('visible')) {
+        return [
+            ...internetPopup.querySelectorAll('button:not([disabled])')
+        ].filter(isVisible);
+    }
+
     const overlay = document.querySelector(
         '.safe-overlay.active, .popover-overlay.active, #modal-overlay.active'
     );
@@ -390,6 +397,15 @@ function handleBack() {
         return;
     }
 
+    const internetPopup = document.getElementById('internet-warning-overlay');
+    if (internetPopup && internetPopup.classList.contains('visible')) {
+        const dismissBtn = document.getElementById('internet-warn-dismiss');
+        if (dismissBtn) {
+            dismissBtn.click();
+        }
+        return;
+    }
+
     const modalOverlay = document.getElementById('modal-overlay');
     if (modalOverlay && modalOverlay.classList.contains('active')) {
         if (typeof window.closeModal === 'function') {
@@ -546,6 +562,9 @@ export function initRemote() {
                     requiresFocusReset = true;
                 }
                 if (el.id === 'modal-overlay' && el.classList?.contains('active')) {
+                    requiresFocusReset = true;
+                }
+                if (el.id === 'internet-warning-overlay' && el.classList.contains('visible')) {
                     requiresFocusReset = true;
                 }
                 if (

@@ -323,6 +323,13 @@ function navigate(dir) {
 
         const next = findNextItem(navItems, focusedElement, dir);
 
+        console.log({
+            dir,
+            focused: focusedElement?.innerText,
+            next: next?.innerText,
+            oskVisible: document.getElementById('osk-container')?.classList.contains('visible')
+        });
+
         // ---------- Keyboard Exit ----------
         const osk = document.getElementById('osk-container');
 

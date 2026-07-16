@@ -39,10 +39,14 @@ function isVisible(el) {
 }
 
 function clearFocus() {
-    if (focusedElement) {
-        focusedElement.classList.remove('remoteFocused');
-        focusedElement = null;
-    }
+    if (!focusedElement) return;
+
+    focusedElement.classList.remove('remoteFocused');
+
+    const wrapper = focusedElement.closest('.input-field-v2');
+    wrapper?.classList.remove('remoteFocused');
+
+    focusedElement = null;
 }
 
 function setFocus(el) {
@@ -50,6 +54,12 @@ function setFocus(el) {
     if (!el) return;
 
     el.classList.add('remoteFocused');
+
+    const wrapper = el.closest('.input-field-v2');
+    if (wrapper) {
+        wrapper.classList.add('remoteFocused');
+    }
+
     focusedElement = el;
 
     // --- OSK HINT SYNC ---

@@ -1533,18 +1533,20 @@ body.osk-open .main-stage {
     padding: 60px;
     text-align: center;
     border-radius: 42px;
-    isolation: isolate;
-    overflow: hidden;
 }
 
-#screensaver::before {
-    content: "";
+.screensaver-black-layer {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    /* Adjust 0.45–0.70 to taste */
-    pointer-events: none;
+    background: #000;
     z-index: 0;
+    pointer-events: none;
+}
+
+.saver-clock,
+.saver-active-area {
+    position: relative;
+    z-index: 1;
 }
 
 #screensaver.active {
@@ -2540,7 +2542,6 @@ body.light-mode .group-card.active {
 .group-card.inactive {
     background: rgba(40, 40, 40, 0.8) !important;
 }
-
 body.light-mode .group-card.inactive {
     background: rgba(0, 0, 0, 0.03) !important;
 }

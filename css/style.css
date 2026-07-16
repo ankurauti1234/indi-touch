@@ -1540,7 +1540,7 @@ body.osk-open .main-stage {
     position: fixed;
     inset: 0;
     background: #000;
-    z-index: -1;
+    z-index: 88888888888;
     pointer-events: none;
 }
 
@@ -2543,6 +2543,7 @@ body.light-mode .group-card.active {
 .group-card.inactive {
     background: rgba(40, 40, 40, 0.8) !important;
 }
+
 body.light-mode .group-card.inactive {
     background: rgba(0, 0, 0, 0.03) !important;
 }

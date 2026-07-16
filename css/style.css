@@ -1541,9 +1541,10 @@ body.osk-open .main-stage {
     content: "";
     position: absolute;
     inset: 0;
-    background: #000;
-    z-index: -1;
+    background: rgba(0, 0, 0, 0.45);
+    /* Adjust 0.45–0.70 to taste */
     pointer-events: none;
+    z-index: 0;
 }
 
 #screensaver.active {

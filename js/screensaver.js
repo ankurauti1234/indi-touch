@@ -193,11 +193,7 @@ export function renderScreensaverMembers() {
 // ── WALLPAPER BACKGROUND ─────────────────────────────────────────────────────
 async function applyWallpaper() {
     const saver = document.getElementById('screensaver');
-    const wallpaper = saver?.querySelector('.screensaver-wallpaper');
-
-    if (!saver || !(wallpaper instanceof HTMLDivElement)) {
-        return;
-    }
+    if (!saver) return;
 
     try {
         const r = await fetch('/api/wallpaper/status');
@@ -206,10 +202,10 @@ async function applyWallpaper() {
         if (d.hasWallpaper) {
             // Add cache buster to ensure new uploads show up immediately
             const cacheBuster = `?t=${Date.now()}`;
-            wallpaper.style.backgroundImage = `url('${d.url}${cacheBuster}')`;
+            saver.style.backgroundImage = `url('${d.url}${cacheBuster}')`;
             saver.classList.add('has-wallpaper');
         } else {
-            wallpaper.style.backgroundImage = '';
+            saver.style.backgroundImage = '';
             saver.classList.remove('has-wallpaper');
         }
     } catch (e) {

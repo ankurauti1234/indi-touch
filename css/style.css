@@ -1982,6 +1982,7 @@ body.osk-open .main-stage {
 .input-field-v2>input.remoteFocused {
     box-shadow: none !important;
     transform: none !important;
+    z-index: auto !important;
 }
 
 .input-field-v2 input::placeholder {

@@ -1979,6 +1979,12 @@ body.osk-open .main-stage {
     outline: none;
 }
 
+.input-field-v2>input.remoteFocused {
+    box-shadow: none !important;
+    transform: none !important;
+    z-index: auto !important;
+}
+
 .input-field-v2 input::placeholder {
     color: var(--text-sub);
 }
@@ -1988,7 +1994,16 @@ body.osk-open .main-stage {
     border: none;
     color: var(--text-sub);
     cursor: pointer;
-    padding: 8px;
+
+    width: 40px;
+    height: 40px;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
 }
 
 .popover-actions {

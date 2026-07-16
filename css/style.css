@@ -1994,7 +1994,16 @@ body.osk-open .main-stage {
     border: none;
     color: var(--text-sub);
     cursor: pointer;
-    padding: 8px;
+
+    width: 40px;
+    height: 40px;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
 }
 
 .popover-actions {

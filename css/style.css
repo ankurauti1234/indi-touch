@@ -1974,9 +1974,13 @@ body.osk-open .main-stage {
     background: transparent;
     border: none;
     padding: 12px 0;
-    color: #fff;
+    color: var(--text-main);
     font-size: 18px;
     outline: none;
+}
+
+.input-field-v2 input::placeholder {
+    color: var(--text-sub);
 }
 
 .eye-toggle {

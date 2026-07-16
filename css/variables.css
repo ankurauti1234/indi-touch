@@ -41,6 +41,11 @@
 body.light-mode {
     --bg-app: #FAFAFA;
     --bg-surface: #F4F4F5;
+
+    --bg-surface-container-low: #F5F5F6;
+    --bg-surface-container: #FFFFFF;
+    --bg-surface-container-high: #ECECEF;
+
     --bg-card: #FFFFFF;
     --bg-card-hover: #E4E4E7;
 

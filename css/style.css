@@ -1979,10 +1979,19 @@ body.osk-open .main-stage {
     outline: none;
 }
 
+/* Draw the remote focus ring on the whole field */
+.input-field-v2:has(input.remoteFocused) {
+    box-shadow: 0 0 0 4px var(--primary),
+        0 8px 24px rgba(0, 0, 0, .3);
+    transform: scale(1.02);
+    transition: transform .15s cubic-bezier(.2, 0, 0, 1),
+        box-shadow .15s ease-out;
+}
+
+/* Remove the ring from the actual input */
 .input-field-v2>input.remoteFocused {
     box-shadow: none !important;
     transform: none !important;
-    z-index: auto !important;
 }
 
 .input-field-v2 input::placeholder {

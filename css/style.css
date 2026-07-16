@@ -1519,7 +1519,7 @@ body.osk-open .main-stage {
 
 #screensaver {
     position: fixed;
-    inset: 0;
+    inset: 8px;
     background: #000;
     z-index: 99999999;
     display: flex;
@@ -1540,8 +1540,15 @@ body.osk-open .main-stage {
     position: fixed;
     inset: 0;
     background: #000;
-    z-index: 88888888888;
+    z-index: 99999998;
+    /* One below #screensaver */
+    opacity: 0;
     pointer-events: none;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.screensaver-black-layer.active {
+    opacity: 1;
 }
 
 .saver-clock,
@@ -2543,7 +2550,6 @@ body.light-mode .group-card.active {
 .group-card.inactive {
     background: rgba(40, 40, 40, 0.8) !important;
 }
-
 body.light-mode .group-card.inactive {
     background: rgba(0, 0, 0, 0.03) !important;
 }

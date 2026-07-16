@@ -5,7 +5,12 @@ let idleTimer;
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
+
+    const backdrop = document.querySelector('.screensaver-black-layer');
+
     s.classList.remove('active');
+    backdrop?.classList.remove('active');
+
     clearTimeout(idleTimer);
 
     // Disable screensaver only during ACTIVE onboarding
@@ -29,6 +34,7 @@ export function resetIdle(isPriority = false) {
         if (s) {
             console.log("Screensaver activating now...");
             s.classList.add('active');
+            backdrop?.classList.add('active');
             applyWallpaper(); // Fetch latest wallpaper state
             renderScreensaverMembers();
         }

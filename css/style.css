@@ -1531,11 +1531,20 @@ body.osk-open .main-stage {
     color: #fff;
     padding: 60px;
     text-align: center;
-    border-radius: 40px;
+    border-radius: inherit;
     overflow: hidden;
 }
 
-
+.screensaver-black-layer {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 99999998;
+    /* One below #screensaver */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
 .screensaver-black-layer.active {
     opacity: 1;

@@ -137,7 +137,20 @@ function getContentItems() {
         '.safe-overlay.active, .popover-overlay.active, #modal-overlay.active'
     );
     if (overlay) {
-        return [...overlay.querySelectorAll('input, button:not([disabled]), .g-member-select-item')].filter(isVisible);
+        // WiFi password popup: focus the whole input container instead of just the input.
+        if (overlay.id === 'wifi-password-overlay') {
+            return [
+                ...overlay.querySelectorAll(
+                    '.input-field-v2, button:not([disabled])'
+                )
+            ].filter(isVisible);
+        }
+
+        return [
+            ...overlay.querySelectorAll(
+                'input, button:not([disabled]), .g-member-select-item'
+            )
+        ].filter(isVisible);
     }
 
     const activeView = document.querySelector('.view.active');

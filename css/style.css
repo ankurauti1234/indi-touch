@@ -1520,7 +1520,7 @@ body.osk-open .main-stage {
 #screensaver {
     position: fixed;
     inset: 0;
-    background: #000;
+    /* background: #000; */
     z-index: 99999999;
     display: flex;
     flex-direction: column;
@@ -1533,20 +1533,33 @@ body.osk-open .main-stage {
     padding: 60px;
     text-align: center;
     border-radius: 42px;
+    overflow: hidden;
+}
+
+.screensaver-black-layer,
+.screensaver-wallpaper {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
 }
 
 .screensaver-black-layer {
-    position: absolute;
-    inset: 0;
     background: #000;
     z-index: 0;
-    pointer-events: none;
+}
+
+.screensaver-wallpaper {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    z-index: 1;
 }
 
 .saver-clock,
 .saver-active-area {
     position: relative;
-    z-index: 1;
+    z-index: 2;
 }
 
 #screensaver.active {

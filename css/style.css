@@ -1533,6 +1533,17 @@ body.osk-open .main-stage {
     padding: 60px;
     text-align: center;
     border-radius: 42px;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+#screensaver::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: #000;
+    z-index: -1;
+    pointer-events: none;
 }
 
 #screensaver.active {
@@ -2528,6 +2539,7 @@ body.light-mode .group-card.active {
 .group-card.inactive {
     background: rgba(40, 40, 40, 0.8) !important;
 }
+
 body.light-mode .group-card.inactive {
     background: rgba(0, 0, 0, 0.03) !important;
 }

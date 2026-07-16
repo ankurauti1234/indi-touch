@@ -57,7 +57,12 @@ function setFocus(el) {
 
     const wrapper = el.closest('.input-field-v2');
     if (wrapper) {
-        wrapper.classList.add('remoteFocused');
+        // Mirror the focus only when the INPUT is focused.
+        if (el.tagName === 'INPUT') {
+            wrapper.classList.add('remoteFocused');
+        } else {
+            wrapper.classList.remove('remoteFocused');
+        }
     }
 
     focusedElement = el;

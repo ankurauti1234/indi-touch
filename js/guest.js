@@ -92,6 +92,7 @@ export async function addGuest() {
         updateGuestBadge();
         renderGuestList();
 
+        ageInput.blur();
         ageInput.value = "";
 
     } catch (e) {

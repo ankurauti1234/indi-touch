@@ -1,4 +1,5 @@
 import { renderGrid } from './grid.js';
+import { renderGroupsGrid } from './groups.js';
 import { config, save, memberData, updateSetting } from './data.js';
 import { applyRemoteMode, isRemoteMode } from './remote.js';
 import { t } from './i18n.js';
@@ -123,6 +124,7 @@ export async function selectAvatarStyle(style) {
 
     // Re-render grid to show new avatars
     renderGrid();
+    renderGroupsGrid();
 }
 
 

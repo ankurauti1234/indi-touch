@@ -125,6 +125,7 @@ export async function selectAvatarStyle(style) {
     // Re-render grid to show new avatars
     renderGrid();
     renderGroupsGrid();
+    renderGuestList();
 }
 
 

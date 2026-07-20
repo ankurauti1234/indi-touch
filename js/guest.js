@@ -92,7 +92,8 @@ export async function addGuest() {
         updateGuestBadge();
         renderGuestList();
 
-        ageInput.blur();
+        window.closeOSK();
+        
         ageInput.value = "";
 
     } catch (e) {

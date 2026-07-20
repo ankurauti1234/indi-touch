@@ -138,7 +138,7 @@ export function renderGroupsGrid() {
         allMembersCard.classList.toggle('local-avatar', isLocalAvatar);
 
         const avatarsContainer = allMembersCard.querySelector('.group-avatars-container');
-        if (avatarsContainer.getAttribute('data-hash') !== allMembersDataHash) {
+        if (true) {
             let allAvatarsHtml = displayAllMembers.map(m =>
                 `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
             ).join('');
@@ -206,7 +206,7 @@ export function renderGroupsGrid() {
             card.classList.toggle('wide-card', isWideCard);
 
             const avatarsContainer = card.querySelector('.group-avatars-container');
-            if (avatarsContainer.getAttribute('data-hash') !== groupDataHash) {
+            if (true) {
                 let avatarsHtml = displayMembers.map(m =>
                     `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
                 ).join('');

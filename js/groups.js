@@ -109,7 +109,7 @@ export function renderGroupsGrid() {
     const allMemberCountText = `${memberData.length} ${memberData.length === 1 ? 'Member' : 'Members'}`;
 
     // Create a lightweight hash to check if avatars actually changed
-    const allMembersDataHash = displayAllMembers.map(m => m.member_code).join(',') + '|' + excessAllCount;
+    const allMembersDataHash = displayAllMembers.map(m => m.member_code).join(',') + '|' + excessAllCount + '|' + config.avatarStyle;
 
     if (needsRebuild) {
         let allAvatarsHtml = displayAllMembers.map(m =>
@@ -138,7 +138,7 @@ export function renderGroupsGrid() {
         allMembersCard.classList.toggle('local-avatar', isLocalAvatar);
 
         const avatarsContainer = allMembersCard.querySelector('.group-avatars-container');
-        if (true) {
+        if (avatarsContainer.getAttribute('data-hash') !== allMembersDataHash) {
             let allAvatarsHtml = displayAllMembers.map(m =>
                 `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
             ).join('');
@@ -165,7 +165,7 @@ export function renderGroupsGrid() {
         const isWideCard = g.members.length > 4;
 
         const groupCountText = `${g.members.length} ${g.members.length === 1 ? 'Member' : 'Members'}`;
-        const groupDataHash = displayMembers.map(m => m.member_code).join(',') + '|' + excessCount;
+        const groupDataHash = displayMembers.map(m => m.member_code).join(',') + '|' + excessCount + '|' + config.avatarStyle;
 
         if (needsRebuild) {
             let avatarsHtml = displayMembers.map(m =>
@@ -206,7 +206,7 @@ export function renderGroupsGrid() {
             card.classList.toggle('wide-card', isWideCard);
 
             const avatarsContainer = card.querySelector('.group-avatars-container');
-            if (true) {
+            if (avatarsContainer.getAttribute('data-hash') !== groupDataHash) {
                 let avatarsHtml = displayMembers.map(m =>
                     `<img src="${getAvatarUrl(m)}" class="group-avatar-stacked" onerror="this.src='/img/avatars/default.png'" loading="lazy">`
                 ).join('');

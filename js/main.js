@@ -63,26 +63,6 @@ window.handleSettingsTitleClick = () => {
     }
 };
 
-let eggClicks = 0;
-let eggTimer;
-window.triggerEasterEgg = () => {
-    eggClicks++;
-    clearTimeout(eggTimer);
-    
-    if (eggClicks === 7) {
-        document.getElementById('author-overlay').classList.add('active');
-        eggClicks = 0;
-    } else {
-        eggTimer = setTimeout(() => {
-            eggClicks = 0;
-        }, 1000);
-    }
-};
-
-window.closeEasterEgg = () => {
-    document.getElementById('author-overlay').classList.remove('active');
-};
-
 export function hideAppLoader() {
     const loader = document.getElementById('app-loading');
     if (loader) {

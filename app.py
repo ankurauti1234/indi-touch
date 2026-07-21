@@ -11,6 +11,7 @@ import sys
 import time
 import threading
 import socket
+from waitress import serve
 
 # ── Chromium / Qt environment ─────────────────────────────────────────────────
 os.environ.setdefault("QTWEBENGINE_CHROMIUM_FLAGS", "--no-sandbox")
@@ -18,7 +19,6 @@ os.makedirs("/tmp/runtime-root", exist_ok=True)
 os.chmod("/tmp/runtime-root", 0o700)
 os.environ.setdefault("XDG_RUNTIME_DIR", "/tmp/runtime-root")
 os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
-
 
 # ── PyQt5 imports ─────────────────────────────────────────────────────────────
 try:
@@ -47,8 +47,12 @@ POLL_INTERVAL_MS = 5000   # how often to check /run files in the Qt event loop
 # ── Flask runner ──────────────────────────────────────────────────────────────
 def run_flask():
     flask_app = create_app()
-    flask_app.run(host="0.0.0.0", port=FLASK_PORT,
-                  debug=False, use_reloader=False, threaded=True)
+    serve(
+        flask_app,
+        host="0.0.0.0",
+        port=FLASK_PORT,
+        threads=8,
+    )
 
 
 # ── PyQt6 browser window ──────────────────────────────────────────────────────
@@ -222,9 +226,6 @@ def _boot_reset():
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
-    # Binds to all IPs, not just localhost
-    # os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
-
     # 1. Database
     init_db()
 

@@ -44,6 +44,6 @@ def create_app() -> Flask:
         if any(part.startswith(".") for part in path.split("/")):
             abort(404)
 
-    return send_from_directory(root, path)
+        return send_from_directory(root, path)
 
     return app

@@ -9,7 +9,7 @@ from flask_cors import CORS
 def create_app() -> Flask:
     # Serve static files from the parent directory (index.html, css/, js/, etc.)
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    app  = Flask(__name__, static_folder=root, static_url_path="")
+    app = Flask(__name__, static_folder=None)
     CORS(app)
 
     # ── Blueprints ─────────────────────────────────────────────────────────────

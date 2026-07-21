@@ -2,7 +2,7 @@
 # api/__init__.py — Flask application factory
 
 import os
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, abort
 from flask_cors import CORS
 
 
@@ -40,6 +40,10 @@ def create_app() -> Flask:
 
     @app.route("/<path:path>")
     def static_files(path):
-        return send_from_directory(root, path)
+        # Block access to hidden files/directories such as .git, .env, .vscode, etc.
+        if any(part.startswith(".") for part in path.split("/")):
+            abort(404)
+
+    return send_from_directory(root, path)
 
     return app

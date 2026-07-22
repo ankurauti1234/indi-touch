@@ -2,15 +2,22 @@
 # api/__init__.py — Flask application factory
 
 import os
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, abort
 from flask_cors import CORS
 
 
 def create_app() -> Flask:
     # Serve static files from the parent directory (index.html, css/, js/, etc.)
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    app  = Flask(__name__, static_folder=root, static_url_path="")
+    app = Flask(__name__, static_folder=None)
     CORS(app)
+
+    @app.after_request
+    def add_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        return response
 
     # ── Blueprints ─────────────────────────────────────────────────────────────
     from .wifi       import wifi_bp
@@ -40,6 +47,10 @@ def create_app() -> Flask:
 
     @app.route("/<path:path>")
     def static_files(path):
+        # Block access to hidden files/directories such as .git, .env, .vscode, etc.
+        if any(part.startswith(".") for part in path.split("/")):
+            abort(404)
+
         return send_from_directory(root, path)
 
     return app

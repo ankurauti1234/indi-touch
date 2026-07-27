@@ -3,7 +3,7 @@
 
 from flask import Blueprint, jsonify, request
 from .config import METER_ID
-from .db import load_members_data, toggle_member_in_db, rename_member_in_db
+from .db import load_members_data, toggle_member_in_db, rename_member_in_db, deactivate_all_members_in_db
 from .collector_service import publish_member_event
 
 members_bp = Blueprint("members", __name__)
@@ -57,6 +57,24 @@ def toggle_members_bulk():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
     
+@members_bp.route("/deactivate_all", methods=["POST"])
+def deactivate_all_members():
+    try:
+        updated = deactivate_all_members_in_db()
+
+        if updated:
+            publish_member_event()
+
+        return jsonify({
+            "success": True,
+            "updated": updated
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 @members_bp.route("/rename", methods=["POST"])
 def rename_member():

@@ -204,6 +204,21 @@ def toggle_member_in_db(index: int) -> tuple:
 
     return members[index], members[index]["active"]
 
+def deactivate_all_members_in_db() -> int:
+    data = load_members_data()
+    members = data.get("members", [])
+
+    updated = 0
+
+    for member in members:
+        if member.get("active", False):
+            member["active"] = False
+            updated += 1
+
+    if updated > 0:
+        save_members_data(data)
+
+    return updated
 
 def rename_member_in_db(index: int, new_name: str) -> dict:
     data = load_members_data()

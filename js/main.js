@@ -69,13 +69,73 @@ export function hideAppLoader() {
 }
 window.hideAppLoader = hideAppLoader;
 
-import { tvState, memberData, save as legacySave, initData, config } from './data.js';
+import { tvState, memberData, save as legacySave, initData, config, loadMembers, updateSetting } from './data.js';
 import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
+
+async function runDailyMaintenanceIfNeeded() {
+    const now = new Date();
+
+    // Don't do anything before 2:00 AM
+    if (now.getHours() < 2) {
+        return;
+    }
+
+    const today = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0")
+    ].join("-");
+
+    // Already ran today
+    if (config.lastAutoResetDate === today) {
+        return;
+    }
+
+    try {
+        // Deactivate all members
+        const response = await fetch("/api/members/deactivate_all", {
+            method: "POST"
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to deactivate members.");
+        }
+
+        // Refresh member and group data
+        await loadMembers();
+        await loadGroups();
+        renderGrid();
+
+        // guest reset
+        const r = await fetch('/api/guests/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ guests: [] })
+        });
+        if (r.ok) {
+            const { guests: guestsData } = await import('./data.js');
+            guestsData.length = 0;
+
+            const { renderGuestList, updateGuestBadge } = await import('./guest.js');
+            renderGuestList();
+            updateGuestBadge();
+        }
+
+        // Remember today's maintenance
+        await updateSetting("lastAutoResetDate", today);
+        config.lastAutoResetDate = today;
+
+        console.log("[Maintenance] Members deactivated and guests cleared.");
+    } catch (err) {
+        console.error("[Maintenance] Failed:", err);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
 
     await initI18n();
     await initData();
+    await runDailyMaintenanceIfNeeded();
     await checkOnboardingStatus();
     initOSK();
     renderGrid();
@@ -148,23 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const now = new Date();
         const currentHour = now.getHours();
         if (lastHour === 1 && currentHour === 2) {
-            try {
-                const r = await fetch('/api/guests/update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ guests: [] })
-                });
-                if (r.ok) {
-                    const { guests: guestsData } = await import('./data.js');
-                    guestsData.length = 0;
-                    const { renderGuestList, updateGuestBadge } = await import('./guest.js');
-                    renderGuestList();
-                    updateGuestBadge();
-                    showToast("System Reset: Guests cleared at 2 AM.");
-                }
-            } catch (e) {
-                console.error("Failed to clear guests at 2 AM", e);
-            }
+            await runDailyMaintenanceIfNeeded();
         }
         lastHour = currentHour;
     }, 300000);
@@ -189,4 +233,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     initConnectionMonitor();
 
     console.log("System initialized.");
-});
+}); 

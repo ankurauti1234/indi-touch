@@ -13,7 +13,8 @@ export let config = {
     onboardingCompleted: false,
     avatarStyle: 'local',
     reduceAnimations: false,
-    bleAvailable: true
+    bleAvailable: true,
+    lastAutoResetDate: null
 };
 
 // --- API Sync Helpers ---
@@ -43,6 +44,7 @@ export async function loadConfig() {
         config.avatarStyle = dSettings.avatarStyle || 'local';
         config.reduceAnimations = dSettings.reduceAnimations === true;
         config.brightness = dSettings.brightness !== undefined ? dSettings.brightness : 255;
+        config.lastAutoResetDate = dSettings.lastAutoResetDate || null;
 
         // Bluetooth / TV availability — strict: only true if explicitly true
         config.bleAvailable = dStatus.ble_available === true;

@@ -12,6 +12,13 @@ def create_app() -> Flask:
     app = Flask(__name__, static_folder=None)
     CORS(app)
 
+    @app.after_request
+    def add_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        return response
+
     # ── Blueprints ─────────────────────────────────────────────────────────────
     from .wifi       import wifi_bp
     from .members    import members_bp

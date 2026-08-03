@@ -131,6 +131,89 @@ async function runDailyMaintenanceIfNeeded() {
     }
 }
 
+
+function showStillWatchingPopup() {
+    const popup = document.getElementById("still-watching-popover");
+    if (!popup) return;
+
+    popup.classList.add("visible");
+
+    timers.clearTimeout(stillWatchingDismissTimer);
+
+    stillWatchingDismissTimer = timers.setTimeout(() => {
+        popup.classList.remove("visible");
+        restartStillWatchingTimer();
+    }, 5 * 60 * 1000);
+}
+
+function restartStillWatchingTimer() {
+    timers.clearTimeout(stillWatchingTimer);
+
+    stillWatchingTimer = timers.setTimeout(() => {
+        showStillWatchingPopup();
+    }, 2 * 60 * 60 * 1000);
+}
+
+function updateStillWatchingState() {
+    const activeCount = memberData.filter(m => m.active).length;
+
+    if (activeCount === 0) {
+        timers.clearTimeout(stillWatchingTimer);
+        timers.clearTimeout(stillWatchingDismissTimer);
+
+        document
+            .getElementById("still-watching-popover")
+            ?.classList.remove("visible");
+
+        return;
+    }
+
+    restartStillWatchingTimer();
+}
+
+window.updateStillWatchingState = updateStillWatchingState;
+
+async function endViewingSession() {
+    timers.clearTimeout(stillWatchingDismissTimer);
+
+    document
+        .getElementById("still-watching-popover")
+        ?.classList.remove("visible");
+
+    const response = await fetch("/api/members/deactivate_all", {
+        method: "POST"
+    });
+
+    if (!response.ok) return;
+
+    await loadMembers();
+    await loadGroups();
+    renderGrid();
+
+    const r = await fetch("/api/guests/update", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ guests: [] })
+    });
+
+    if (r.ok) {
+        const { guests: guestsData } = await import("./data.js");
+        guestsData.length = 0;
+
+        const {
+            renderGuestList,
+            updateGuestBadge
+        } = await import("./guest.js");
+
+        renderGuestList();
+        updateGuestBadge();
+    }
+
+    updateStillWatchingState();
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
 
     await initI18n();
@@ -148,6 +231,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     timers.setInterval(updateClock, 1000);
     updateClock();
+
+    // ---------------- Still Watching Popup ----------------
+    const continueBtn = document.getElementById('still-watch-continue');
+    const endBtn = document.getElementById('still-watch-end');
+
+    continueBtn?.addEventListener('click', () => {
+        document
+            .getElementById('still-watching-popover')
+            ?.classList.remove('visible');
+
+        restartStillWatchingTimer();
+    });
+
+    endBtn?.addEventListener('click', async () => {
+        await endViewingSession();
+    });
+
+    // TEMPORARY FOR TESTING
+    showStillWatchingPopup();
+    // ------------------------------------------------------
 
     window.changeAppLanguage = async (lang) => {
         const success = await loadLanguage(lang);
@@ -207,9 +310,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     timers.setInterval(async () => {
         const now = new Date();
         const currentHour = now.getHours();
+
         if (lastHour === 1 && currentHour === 2) {
             await runDailyMaintenanceIfNeeded();
         }
+
         lastHour = currentHour;
     }, 300000);
 
@@ -224,8 +329,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.addEventListener('', e => e.preventDefault());
 
-    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
-    document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
+    document.addEventListener('keydown', () => {
+        resetIdle();
+        resetHomeTimer();
+    });
+
+    document.addEventListener('click', () => {
+        resetIdle();
+        resetHomeTimer();
+    });
+
     resetIdle();
     resetHomeTimer();
 
@@ -233,4 +346,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     initConnectionMonitor();
 
     console.log("System initialized.");
-}); 
+});

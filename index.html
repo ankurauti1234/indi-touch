@@ -787,6 +787,38 @@
     </div>
   </div>
 
+  <!-- Still Watching Popover -->
+  <div id="still-watching-popover" class="conn-overlay">
+    <div class="conn-card">
+      <div class="conn-icon" style="background:rgba(208,188,255,0.15)">
+        <span class="material-symbols-rounded" style="color:var(--primary);font-size:64px">
+          live_tv
+        </span>
+      </div>
+
+      <h2 class="conn-title">
+        Are you still watching?
+      </h2>
+
+      <p class="conn-body">
+        We haven't detected any interaction for the last 2 hours.
+        <br><br>
+        If you're still watching TV, select <b>I'm Watching</b>.
+        Otherwise, end the current viewing session.
+      </p>
+
+      <div class="conn-actions">
+        <button id="still-watch-end" class="conn-btn-secondary">
+          End Session
+        </button>
+
+        <button id="still-watch-continue" class="conn-btn-primary">
+          I'm Watching
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- =========================================================
        HOUSEHOLD GROUPS CONFIGURATION MODALS
        Isolated at root level under <body> away from stacking context

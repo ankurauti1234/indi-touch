@@ -14,8 +14,7 @@ DEFAULT_SETTINGS = {
     "avatarStyle": "local",
     "reduceAnimations": False,
     "theme": "dark",
-    "brightness": 255,
-    "lastAutoResetDate": None
+    "brightness": 255
 }
 
 def load_settings():

@@ -771,19 +771,56 @@
     </div>
   </div>
 
-  <!-- Critical Warning Popover -->
+  <!-- Active Members Reminder -->
   <div id="critical-popover">
     <div class="critical-card">
       <div class="critical-icon-container">
-        <span class="material-symbols-rounded critical-icon">report_problem</span>
+        <span class="material-symbols-rounded critical-icon">group</span>
       </div>
-      <h2 class="critical-title" data-i18n="active_m_req">Active Members Required</h2>
-      <p class="critical-msg" data-i18n="tv_active_msg">The TV system is active, but no household members are currently
-        declared. Please identify
-        who is watching to ensure accurate monitoring.</p>
+  
+      <h2 class="critical-title" data-i18n="active_m_req">
+        Who's watching?
+      </h2>
+  
+      <p class="critical-msg" data-i18n="tv_active_msg">
+        Select a household member to get started.
+      </p>
+  
       <button class="critical-btn" onclick="window.handleCriticalAction()" data-i18n="identify_now">
         Identify Members Now
       </button>
+    </div>
+  </div>
+
+  <!-- Still Watching Popover -->
+  <div id="still-watching-popover" class="conn-overlay">
+    <div class="conn-card">
+      <div class="conn-icon" style="background:rgba(208,188,255,0.15)">
+        <span class="material-symbols-rounded" style="color:var(--primary);font-size:64px">
+          live_tv
+        </span>
+      </div>
+  
+      <h2 class="conn-title">
+        Are you still watching?
+      </h2>
+  
+      <p class="conn-body">
+        We haven't detected any interaction for the last 2 hours.
+        <br><br>
+        If you're still watching TV, select <b>I'm Watching</b>.
+        Otherwise, end the current viewing session.
+      </p>
+  
+      <div class="conn-actions">
+        <button id="still-watch-end" class="conn-btn-secondary">
+          End Session
+        </button>
+  
+        <button id="still-watch-continue" class="conn-btn-primary">
+          I'm Watching
+        </button>
+      </div>
     </div>
   </div>
 

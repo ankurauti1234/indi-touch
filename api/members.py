@@ -59,3 +59,21 @@ def undeclare_all():
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@members_bp.route("/auto_undeclare", methods=["POST"])
+def auto_undeclare_all():
+    try:
+        from .db import undeclare_all_members_in_db
+
+        undeclare_all_members_in_db()
+
+        return jsonify({
+            "success": True
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500

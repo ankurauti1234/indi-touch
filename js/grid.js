@@ -178,10 +178,23 @@ export async function toggleMember(index) {
             if (res.success) {
                 // Update local state and redraw
                 memberData[index].active = res.active;
+
+                // Record the most recent member declaration
+                if (res.active && window.recordMemberDeclaration) {
+                    window.recordMemberDeclaration();
+                }
+
                 renderGrid();
-                
-                // Also update saver if active (using the shared global function if available)
-                if (window.renderScreensaverMembers) window.renderScreensaverMembers();
+
+                // Update Still Watching timer
+                if (window.updateStillWatchingState) {
+                    window.updateStillWatchingState();
+                }
+
+                // Also update screensaver if active
+                if (window.renderScreensaverMembers) {
+                    window.renderScreensaverMembers();
+                }
             }
         } catch (e) {
             console.error("Toggle member failed", e);

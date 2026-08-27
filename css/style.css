@@ -203,6 +203,37 @@ body {
     }
 }
 
+/* ── STILL WATCHING POPUP ───────────────────────────────────────────── */
+
+#still-watching-popover .conn-card {
+    width: 560px;
+    max-width: 90%;
+    padding: 40px 44px;
+
+    gap: 24px;
+
+    height: auto;
+    max-height: none;
+    min-height: 0;
+
+    justify-content: flex-start;
+}
+
+#still-watching-popover .conn-body {
+    max-width: 100%;
+}
+
+#still-watching-popover .conn-actions {
+    width: 100%;
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+#still-watching-popover .conn-actions button {
+    flex: 1;
+}
+
 /* WiFi popup buttons */
 .conn-actions {
     display: flex;
@@ -1220,20 +1251,6 @@ body {
     opacity: 0.7;
 }
 
-#critical-popover {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 200000000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    animation: premiumFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: opacity;
-}
 
 #screensaver {
     position: fixed;
@@ -1261,61 +1278,6 @@ body {
     }
 }
 
-#critical-popover.active {
-    display: flex;
-}
-
-.critical-card {
-    background: linear-gradient(135deg, rgba(30, 0, 0, 0.95), rgba(15, 0, 0, 0.98));
-    color: #FFDAD6;
-    width: 540px;
-    padding: 48px;
-    border-radius: 40px;
-    border: 2px solid #FF3131;
-    /* Neon Red */
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 49, 49, 0.4);
-    text-align: center;
-    transform: scale(0.9);
-    transition: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-#critical-popover.active .critical-card {
-    transform: scale(1);
-    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
-}
-
-.critical-card::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255, 84, 71, 0.05) 0%, transparent 70%);
-    pointer-events: none;
-}
-
-.critical-icon-container {
-    width: 100px;
-    height: 100px;
-    background: rgba(255, 180, 171, 0.1);
-    border-radius: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 32px;
-    border: 1px solid rgba(255, 180, 171, 0.2);
-    box-shadow: 0 0 20px rgba(255, 84, 71, 0.1);
-}
-
-.critical-icon {
-    font-size: 56px;
-    color: #FF3131;
-    /* Neon Red */
-    animation: premiumPulse 2s infinite ease-in-out;
-}
 
 @keyframes premiumPulse {
     0% {
@@ -1334,48 +1296,256 @@ body {
     }
 }
 
-.critical-title {
-    font-size: 34px;
-    font-weight: 500;
-    margin: 0 0 16px 0;
-    letter-spacing: -0.5px;
-    background: linear-gradient(to bottom, #FFDAD6, #FFB4AB);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+/* ── ACTIVE MEMBER REMINDER ─────────────────────────────────────────── */
+
+#critical-popover {
+    position: fixed;
+    inset: 0;
+    z-index: 200000000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+
+    background:
+        radial-gradient(circle at 50% 45%,
+            rgba(94, 72, 155, 0.16),
+            transparent 46%),
+        rgba(5, 5, 8, 0.80);
+
+    backdrop-filter: blur(16px);
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+        opacity 0.35s ease,
+        visibility 0.35s ease;
 }
+
+#critical-popover.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* ── MAIN CARD ─────────────────────────────────────────────────────── */
+
+.critical-card {
+    position: relative;
+    overflow: hidden;
+
+    width: min(600px, 90vw);
+    padding: 46px 54px 48px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    text-align: center;
+
+    background:
+        linear-gradient(#19181f, #19181f) padding-box,
+        linear-gradient(135deg,
+            rgba(208, 188, 255, 0.42),
+            rgba(208, 188, 255, 0.16) 55%,
+            rgba(79, 196, 183, 0.35)) border-box;
+
+    border: 2px solid transparent;
+    border-radius: 32px;
+
+    box-shadow:
+        0 35px 100px rgba(0, 0, 0, 0.70),
+        0 0 70px rgba(94, 72, 155, 0.10);
+
+    transform: translateY(18px) scale(0.96);
+
+    transition:
+        transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.35s ease;
+}
+
+#critical-popover.active .critical-card {
+    transform: translateY(0) scale(1);
+}
+
+/* ── ICON ──────────────────────────────────────────────────────────── */
+
+.critical-icon-container {
+    position: relative;
+    z-index: 2;
+
+    width: 108px;
+    height: 108px;
+
+    margin-bottom: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 30px;
+
+    background:
+        linear-gradient(145deg,
+            rgba(139, 110, 214, 0.24),
+            rgba(139, 110, 214, 0.08));
+
+    border: 1px solid rgba(208, 188, 255, 0.22);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 15px 35px rgba(0, 0, 0, 0.35),
+        0 0 35px rgba(139, 110, 214, 0.12);
+}
+
+.critical-icon-container::after {
+    content: '';
+
+    position: absolute;
+
+    bottom: -8px;
+    right: -8px;
+
+    width: 28px;
+    height: 28px;
+
+    border-radius: 50%;
+
+    background: #4fc4b7;
+
+    border: 4px solid #19181f;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.35),
+        0 0 14px rgba(79, 196, 183, 0.18);
+
+    pointer-events: none;
+}
+
+.critical-icon {
+    position: relative;
+    z-index: 1;
+
+    font-size: 58px !important;
+
+    color: #e8e0ff;
+
+    filter:
+        drop-shadow(0 4px 12px rgba(139, 110, 214, 0.25));
+
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 450,
+        'GRAD' 0,
+        'opsz' 48;
+}
+
+/* ── TITLE ─────────────────────────────────────────────────────────── */
+
+.critical-title {
+    position: relative;
+    z-index: 2;
+
+    margin: 0 0 14px;
+
+    font-size: 34px;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.6px;
+
+    color: #ffffff;
+}
+
+.critical-title::after {
+    content: '';
+
+    display: block;
+
+    width: 42px;
+    height: 3px;
+
+    margin: 15px auto 0;
+
+    border-radius: 10px;
+
+    background: #4fc4b7;
+}
+
+/* ── MESSAGE ───────────────────────────────────────────────────────── */
 
 .critical-msg {
+    position: relative;
+    z-index: 2;
+
+    max-width: 430px;
+
+    margin: 0 0 34px;
+
     font-size: 19px;
-    line-height: 1.6;
-    margin-bottom: 40px;
-    color: #FFDAD6;
-    font-weight: 300;
+    line-height: 1.55;
+    font-weight: 400;
+
+    color: rgba(255, 255, 255, 0.70);
 }
 
+/* ── CTA ───────────────────────────────────────────────────────────── */
+
 .critical-btn {
-    background: #FFB4AB;
-    color: #690005;
+    position: relative;
+    z-index: 2;
+
     width: 100%;
-    padding: 20px;
-    border-radius: 20px;
-    border: none;
-    font-size: 19px;
-    font-weight: 600;
+    max-width: 350px;
+
+    min-height: 64px;
+
+    padding: 17px 32px;
+
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 18px;
+
+    background: #d0bcff;
+
+    color: #29213c;
+
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 650;
+
     cursor: pointer;
-    transition: 0.3s cubic-bezier(0.2, 0, 0, 1);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+    box-shadow:
+        0 12px 30px rgba(92, 68, 145, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.40);
+
+    transition:
+        transform 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
 .critical-btn:hover {
-    background: #FFDAD6;
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    background: #d9caff;
+
+    box-shadow:
+        0 15px 36px rgba(92, 68, 145, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .critical-btn:active {
     transform: scale(0.97);
 }
+
+.critical-btn:focus-visible {
+    outline: 3px solid rgba(79, 196, 183, 0.35);
+    outline-offset: 4px;
+}
+
+/* ── LEGACY ANIMATION ──────────────────────────────────────────────── */
 
 @keyframes shake {
 

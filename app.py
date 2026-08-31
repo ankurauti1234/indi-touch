@@ -49,7 +49,7 @@ def run_flask():
     flask_app = create_app()
     serve(
         flask_app,
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=FLASK_PORT,
         threads=8,
     )

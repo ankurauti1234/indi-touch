@@ -10,7 +10,13 @@ def create_app() -> Flask:
     # Serve static files from the parent directory (index.html, css/, js/, etc.)
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     app  = Flask(__name__, static_folder=root, static_url_path="")
-    CORS(app)
+    CORS(
+        app,
+        resources={r"/*": {"origins": ["http://127.0.0.1:5000", "http://localhost:5000"]}},
+        supports_credentials=True,
+        allow_headers=["Content-Type", "Authorization"],
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    )
 
     # ── Blueprints ─────────────────────────────────────────────────────────────
     from .wifi       import wifi_bp

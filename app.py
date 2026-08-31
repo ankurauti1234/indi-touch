@@ -46,7 +46,7 @@ POLL_INTERVAL_MS = 5000   # how often to check /run files in the Qt event loop
 # ── Flask runner ──────────────────────────────────────────────────────────────
 def run_flask():
     flask_app = create_app()
-    flask_app.run(host="0.0.0.0", port=FLASK_PORT,
+    flask_app.run(host="127.0.0.1", port=FLASK_PORT,
                   debug=False, use_reloader=False, threaded=True)
 
 

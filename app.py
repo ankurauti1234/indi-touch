@@ -228,11 +228,6 @@ def _boot_reset():
 def main():
     # Binds to all IPs, not just localhost
     os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
-<<<<<<< HEAD
-    os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
-=======
-    #os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
->>>>>>> 7787ea096075bcd219831d72254cf02e9cd1bf82
 
     # 1. Database
     init_db()

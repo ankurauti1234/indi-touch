@@ -49,7 +49,7 @@ def run_flask():
     flask_app = create_app()
     serve(
         flask_app,
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=FLASK_PORT,
         threads=8,
     )
@@ -227,7 +227,11 @@ def _boot_reset():
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     # Binds to all IPs, not just localhost
+<<<<<<< HEAD
     os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
+=======
+    #os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
+>>>>>>> 7787ea096075bcd219831d72254cf02e9cd1bf82
 
     # 1. Database
     init_db()

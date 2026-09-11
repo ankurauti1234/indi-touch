@@ -4,11 +4,11 @@ import { openSetting } from './settings.js';
 import { timers } from './utils.js';
 import { config } from './data.js';
 
-const API_STATUS_URL = '/api/system/status';
-const POLL_INTERVAL  = 8000;       // 8 s
-const WIFI_COOLDOWN  = 2 * 60_000; // 2 min
+const API_STATUS_URL = '/api/system/flags';
+const POLL_INTERVAL = 8000;       // 8 s
+const WIFI_COOLDOWN = 2 * 60_000; // 2 min
 
-let _usbConnected  = true;
+let _usbConnected = true;
 let _wifiConnected = true;
 let _internetConnected = true;
 
@@ -17,9 +17,9 @@ function isOnboarding() {
     const layer = document.getElementById('onboarding-layer');
     if (!layer) return false;
     // Layer is visible and doesn't have 'hidden' class
-    return !layer.classList.contains('hidden') && 
-           layer.style.display !== 'none' && 
-           layer.style.opacity !== '0';
+    return !layer.classList.contains('hidden') &&
+        layer.style.display !== 'none' &&
+        layer.style.opacity !== '0';
 }
 
 // ─── USB Popup ────────────────────────────────────────────────────────────────
@@ -55,17 +55,17 @@ function hideUsbPopup() {
 export function setUsbState(connected) {
     _usbConnected = connected;
     if (connected) { hideUsbPopup(); }
-    else           { injectUsbPopup(); }
+    else { injectUsbPopup(); }
 }
 
 // ─── WiFi Popup ───────────────────────────────────────────────────────────────
 let _wifiCooldownTimer = null;
-let _wifiPopupVisible  = false;
+let _wifiPopupVisible = false;
 
 function injectWifiPopup() {
     if (isOnboarding()) return; // Suppress during onboarding
     if (_wifiPopupVisible || _wifiCooldownTimer) return;
-    
+
     // Don't show if we are in the middle of connecting or entering password
     const pwdOverlay = document.getElementById('wifi-password-overlay');
     if (pwdOverlay && pwdOverlay.classList.contains('active')) return;
@@ -93,7 +93,9 @@ function injectWifiPopup() {
     document.getElementById('wifi-warn-connect').addEventListener('click', () => {
         _dismissWifi();
         if (window.navTo) window.navTo('settings');
-        timers.setTimeout(() => { if (window.openSetting) window.openSetting('connectivity'); }, 200);
+        timers.setTimeout(() => {
+            if (window.openSetting) window.openSetting('connectivity');
+        }, 200);
     });
 }
 
@@ -119,19 +121,19 @@ function hideWifiPopup() {
 export function setWifiState(connected) {
     _wifiConnected = connected;
     if (connected) { hideWifiPopup(); }
-    else           { injectWifiPopup(); }
+    else { injectWifiPopup(); }
     _updateSidebarWifiIcon();
     if (window.refreshConnectivityUI) window.refreshConnectivityUI();
 }
 
 // ─── Internet Popup ───────────────────────────────────────────────────────────
 let _internetCooldownTimer = null;
-let _internetPopupVisible  = false;
+let _internetPopupVisible = false;
 
 function injectInternetPopup() {
     if (isOnboarding()) return; // Suppress during onboarding
     if (_internetPopupVisible || _internetCooldownTimer) return;
-    
+
     // Don't show if we are in the middle of connecting or entering password
     const pwdOverlay = document.getElementById('wifi-password-overlay');
     if (pwdOverlay && pwdOverlay.classList.contains('active')) return;
@@ -159,7 +161,9 @@ function injectInternetPopup() {
     document.getElementById('internet-warn-settings').addEventListener('click', () => {
         _dismissInternet();
         if (window.navTo) window.navTo('settings');
-        timers.setTimeout(() => { if (window.openSetting) window.openSetting('connectivity'); }, 200);
+        timers.setTimeout(() => {
+            if (window.openSetting) window.openSetting('connectivity');
+        }, 200);
     });
 }
 
@@ -185,7 +189,7 @@ function hideInternetPopup() {
 export function setInternetState(connected) {
     _internetConnected = connected;
     if (connected) { hideInternetPopup(); }
-    else           { injectInternetPopup(); }
+    else { injectInternetPopup(); }
     _updateSidebarWifiIcon();
     if (window.refreshConnectivityUI) window.refreshConnectivityUI();
 }
@@ -195,6 +199,7 @@ function _updateSidebarWifiIcon() {
     if (wifiIcon) {
         wifiIcon.innerText = _wifiConnected ? 'wifi' : 'wifi_off';
         wifiIcon.classList.remove('online', 'offline', 'no-internet');
+
         if (_wifiConnected) {
             if (!_internetConnected) {
                 wifiIcon.classList.add('no-internet');
@@ -219,11 +224,11 @@ async function _pollStatus() {
         const r = await fetch(API_STATUS_URL);
         if (!r.ok) return;
         const d = await r.json();
-        
+
         // USB: either jack or hdmi counts as "connected"
         const usbOk = d.usb_jack || d.hdmi_vcc;
-        if (usbOk  !== _usbConnected)  setUsbState(usbOk);
-        
+        if (usbOk !== _usbConnected) setUsbState(usbOk);
+
         // Update sidebar icon
         _updateSidebarWifiIcon();
 
@@ -253,13 +258,15 @@ async function _pollStatus() {
             if (m.tvState.on !== d.tv_on) {
                 console.log(`[TV Status Change] ${m.tvState.on} -> ${d.tv_on}`);
                 m.toggleTv(d.tv_on);
-                
+
                 // If TV just went off, call undeclare API FIRST
                 if (d.tv_on === false) {
                     try {
                         console.log("TV Off: Undeclaring members...");
                         await fetch('/api/members/undeclare', { method: 'POST' });
-                    } catch(e) { console.error("Undeclare failed", e); }
+                    } catch (e) {
+                        console.error("Undeclare failed", e);
+                    }
                 }
 
                 // THEN force data reload and UI refresh
@@ -275,7 +282,7 @@ async function _pollStatus() {
                     console.log(`Triggering resetIdle (priority=${isOff}) due to TV status change`);
                     window.resetIdle(isOff);
                 }
-                
+
                 // Refresh screensaver if active
                 const s = document.getElementById('screensaver');
                 if (s && s.classList.contains('active')) {
@@ -284,7 +291,10 @@ async function _pollStatus() {
             }
         });
 
-    } catch { /* network not available yet */ }
+    } catch (e) {
+        // Network may not be available during boot.
+        console.debug('[Connection Monitor] Status poll unavailable:', e);
+    }
 }
 
 export function initConnectionMonitor() {
@@ -292,7 +302,7 @@ export function initConnectionMonitor() {
     timers.setTimeout(_pollStatus, 1500);
     // Then poll every POLL_INTERVAL
     timers.setInterval(_pollStatus, POLL_INTERVAL);
-    
+
     // Periodically re-evaluate popups in case they were suppressed during boot/onboarding
     timers.setInterval(() => {
         if (!_usbConnected) injectUsbPopup();

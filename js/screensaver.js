@@ -1,7 +1,7 @@
 import { config, memberData, tvState, getAvatarUrl } from './data.js';
 
 let idleTimer;
-let clockInterval;
+let clockTimer;
 let lastClockDate = '';
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -37,13 +37,11 @@ export function resetIdle(isPriority = false) {
     console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
 
     idleTimer = setTimeout(() => {
-        if (s) {
-            console.log("Screensaver activating now...");
-            s.classList.add('active');
-            applyWallpaper();
-            renderScreensaverMembers();
-            startClock();
-        }
+        console.log("Screensaver activating now...");
+        s.classList.add('active');
+        applyWallpaper();
+        renderScreensaverMembers();
+        startClock();
     }, timeout);
 }
 
@@ -56,23 +54,17 @@ window.setScreensaverTimeout = (ms) => {
 export function updateClock() {
     const now = new Date();
 
-    // 24-hour format with seconds for dynamic feel
+    // 24-hour format without seconds
     const hours = now.getHours().toString().padStart(2, '0');
     const mins = now.getMinutes().toString().padStart(2, '0');
-    const secs = now.getSeconds().toString().padStart(2, '0');
     const hhmm = `${hours}:${mins}`;
 
     const digits = document.getElementById('clock-time-digits');
-    const secsEl = document.getElementById('clock-time-secs');
     const dateEl = document.getElementById('clock-date');
 
     // Only update the minute display when it actually changes
     if (digits && digits.textContent !== hhmm) {
         digits.textContent = hhmm;
-    }
-
-    if (secsEl && secsEl.textContent !== secs) {
-        secsEl.textContent = secs;
     }
 
     // Only recompute/update the date when the calendar day changes
@@ -84,17 +76,37 @@ export function updateClock() {
     }
 }
 
+function scheduleNextClockUpdate() {
+    if (!clockTimer) return;
+
+    const now = new Date();
+    const delay = (60 - now.getSeconds()) * 1000 - now.getMilliseconds() + 50;
+
+    clockTimer = setTimeout(() => {
+        updateClock();
+        scheduleNextClockUpdate();
+    }, Math.max(delay, 100));
+}
+
 export function startClock() {
-    if (clockInterval) return;
+    if (clockTimer) return;
 
     updateClock();
-    clockInterval = setInterval(updateClock, 1000);
+
+    // Schedule the next update at the start of the next minute
+    clockTimer = setTimeout(() => {
+        updateClock();
+        scheduleNextClockUpdate();
+    }, Math.max(
+        (60 - new Date().getSeconds()) * 1000 - new Date().getMilliseconds() + 50,
+        100
+    ));
 }
 
 export function stopClock() {
-    if (clockInterval) {
-        clearInterval(clockInterval);
-        clockInterval = null;
+    if (clockTimer) {
+        clearTimeout(clockTimer);
+        clockTimer = null;
     }
 }
 

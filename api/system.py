@@ -13,7 +13,9 @@ from flask import Blueprint, jsonify, request
 
 from .config import SYSTEM_FILES, METER_ID
 
+
 system_bp = Blueprint("system", __name__)
+
 
 # Common RPi backlight paths
 
@@ -22,6 +24,7 @@ BACKLIGHT_PATHS = [
     "/sys/class/backlight/rpi_backlight",
     "/sys/class/backlight/soc:backlight"
 ]
+
 
 # ── Cached system status ──────────────────────────────────────────────────────
 
@@ -118,35 +121,37 @@ def get_wifi_status():
 
     now = time.monotonic()
 
+    # Only hold the lock while checking the cache.
+    # The subprocess runs outside the lock.
     with _wifi_cache_lock:
         if now - _wifi_cache_timestamp < _WIFI_CACHE_TTL:
             return _wifi_cache_value
 
-        try:
-            result = subprocess.run(
-                [
-                    "nmcli",
-                    "-t",
-                    "-g",
-                    "GENERAL.STATE",
-                    "device",
-                    "show",
-                    "wlan0"
-                ],
-                capture_output=True,
-                text=True,
-                timeout=2,
-                check=False
-            )
+    try:
+        result = subprocess.run(
+            [
+                "nmcli",
+                "-t",
+                "-g",
+                "GENERAL.STATE",
+                "device",
+                "show",
+                "wlan0"
+            ],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False
+        )
 
-            wifi_ok = "connected" in result.stdout.lower()
+        wifi_ok = "connected" in result.stdout.lower()
 
-        except (OSError, subprocess.SubprocessError):
-            wifi_ok = os.path.exists(SYSTEM_FILES["wifi_up"])
+    except (OSError, subprocess.SubprocessError):
+        wifi_ok = os.path.exists(SYSTEM_FILES["wifi_up"])
 
+    with _wifi_cache_lock:
         _wifi_cache_value = wifi_ok
         _wifi_cache_timestamp = time.monotonic()
-
         return _wifi_cache_value
 
 
@@ -226,13 +231,11 @@ def _get_system_flags():
     )
 
     return {
-        "wifi": get_wifi_status(),
-        "gsm": os.path.exists(SYSTEM_FILES["gsm_up"]),
         "usb_jack": os.path.exists(SYSTEM_FILES["jack_status"]),
         "hdmi_vcc": os.path.exists(SYSTEM_FILES["hdmi_input"]),
-        "video_detection": os.path.exists(
-            SYSTEM_FILES["video_detection"]
-        )
+        "wifi": get_wifi_status(),
+        "internet": os.path.exists(SYSTEM_FILES["internet_ok"]),
+        "tv_on": _get_tv_status(ble_available)
     }
 
 

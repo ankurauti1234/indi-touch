@@ -1637,18 +1637,24 @@ body.osk-open .main-stage {
     align-items: center;
     justify-content: center;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s linear 1.2s;
     color: #fff;
     padding: 60px;
     text-align: center;
-    border-radius: 42px;
     overflow: hidden;
 }
 
 #screensaver.active {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
+    transition:
+        opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s linear 0s;
 }
 
 .saver-clock {
@@ -1657,7 +1663,6 @@ body.osk-open .main-stage {
 
 #clock-time {
     font-size: 200px;
-    /* Reduced to fit with padding */
     font-weight: 700;
     line-height: 1;
     letter-spacing: -4px;
@@ -1678,9 +1683,7 @@ body.osk-open .main-stage {
     font-size: inherit;
     line-height: 0.9;
     font-weight: 200;
-    background: linear-gradient(180deg,
-            #fff 0%,
-            rgba(255, 255, 255, 0.85) 100%);
+    background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.85) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1708,7 +1711,7 @@ body.osk-open .main-stage {
     font-weight: 400;
     margin-top: -10px;
     letter-spacing: 2px;
-    /* -webkit-text-fill-color: #fff; */
+    -webkit-text-fill-color: #fff;
 }
 
 /* TV Status Tag (Screensaver) */

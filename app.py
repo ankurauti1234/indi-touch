@@ -1,160 +1,345 @@
 #!/usr/bin/env python3
-# main.py — Single entry point for Inditronics APM on Raspberry Pi
+# app.py — Single entry point for Inditronics APM on Raspberry Pi
 #
-# Starts Flask API server in the background, then launches the PyQt6 browser
-# window pointing at http://127.0.0.1:5000.
+# Starts the Flask API server in the background, then launches the PyQt5
+# browser window pointing at http://127.0.0.1:5000.
 #
-# Run:  python main.py
+# Run: python app.py
 
+import logging
 import os
-import sys
-import time
-import threading
 import socket
+import sys
+import threading
+import time
+
 from waitress import serve
 
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
+logger = logging.getLogger(__name__)
+
+
 # ── Chromium / Qt environment ─────────────────────────────────────────────────
-os.environ.setdefault("QTWEBENGINE_CHROMIUM_FLAGS", "--no-sandbox")
-os.makedirs("/tmp/runtime-root", exist_ok=True)
-os.chmod("/tmp/runtime-root", 0o700)
-os.environ.setdefault("XDG_RUNTIME_DIR", "/tmp/runtime-root")
+#
+# Do NOT disable the Chromium sandbox here.
+# The service must run as an unprivileged user so QtWebEngine can use its
+# sandbox normally.
+
 os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 
+
 # ── PyQt5 imports ─────────────────────────────────────────────────────────────
+
 try:
-    from PyQt5.QtCore    import QUrl, Qt, QTimer
+    from PyQt5.QtCore import QUrl, Qt, QTimer
     from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
     from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
-    from PyQt5.QtGui     import QKeySequence
+    from PyQt5.QtGui import QKeySequence
 except ImportError:
     print("[ERROR] PyQt5 / PyQt5-WebEngine not found.")
-    print("        pip install PyQt5 PyQtWebEngine")
+    print("        pip install PyQt5 PyQt5-WebEngine")
     sys.exit(1)
 
+
 # ── API imports ───────────────────────────────────────────────────────────────
-from api         import create_app
-from api.config  import SYSTEM_FILES, is_installation_done, is_fresh_boot, save_boot_id
-from api.db      import init_db
-from api.collector_service import (
-    publish_member_event, publish_guest_event, send_event
+
+from api import create_app
+from api.config import (
+    SYSTEM_FILES,
+    is_installation_done,
+    is_fresh_boot,
+    save_boot_id,
 )
-from api.db import load_members_data, load_guests_data, calculate_age
+from api.db import (
+    calculate_age,
+    init_db,
+    load_members_data,
+)
+from api.collector_service import send_event
+from api.system import get_wifi_status, _get_tv_status
+
 
 FLASK_PORT = 5000
-POLL_INTERVAL_MS = 5000   # how often to check /run files in the Qt event loop
+
+
+# ── Connection state polling ──────────────────────────────────────────────────
+#
+# The Qt/Python layer is the single controller for connection state.
+# JavaScript does not independently poll the API.
+
+POLL_INTERVAL_MS = 5000
+
+
+# ── Flask readiness polling ───────────────────────────────────────────────────
+
+FLASK_READY_TIMEOUT = 15.0
+FLASK_READY_POLL_INTERVAL = 0.1
 
 
 # ── Flask runner ──────────────────────────────────────────────────────────────
+
 def run_flask():
     flask_app = create_app()
+
     serve(
         flask_app,
         host="127.0.0.1",
         port=FLASK_PORT,
-        threads=8,
+        threads=2,
     )
 
 
-# ── PyQt6 browser window ──────────────────────────────────────────────────────
+def wait_for_flask():
+    """
+    Wait until the local Flask/Waitress server is actually accepting
+    connections.
+
+    Returns True when the port is ready and False when the deadline expires.
+    """
+
+    deadline = time.monotonic() + FLASK_READY_TIMEOUT
+
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection(
+                ("127.0.0.1", FLASK_PORT),
+                timeout=0.2,
+            ):
+                return True
+        except OSError:
+            time.sleep(FLASK_READY_POLL_INTERVAL)
+
+    return False
+
+
+# ── PyQt5 browser window ──────────────────────────────────────────────────────
+
 class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
         self.view = QWebEngineView()
         self.setCentralWidget(self.view)
 
-        # ── Window chrome ──────────────────────────────────────────────────────
+        # ── Window chrome ─────────────────────────────────────────────────────
+
         self.setCursor(Qt.BlankCursor)
         self.view.setContextMenuPolicy(Qt.NoContextMenu)
         self.showFullScreen()
 
-        # ── WebEngine settings ─────────────────────────────────────────────────
-        settings = self.view.settings()
-        settings.setAttribute(QWebEngineSettings.LocalStorageEnabled,             True)
-        settings.setAttribute(QWebEngineSettings.JavascriptEnabled,               True)
-        settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
-        settings.setAttribute(QWebEngineSettings.AllowRunningInsecureContent,     True)
-        settings.setAttribute(QWebEngineSettings.ShowScrollBars,                  False)
+        # ── WebEngine settings ────────────────────────────────────────────────
 
-        # ── Block zoom shortcuts ───────────────────────────────────────────────
+        settings = self.view.settings()
+
+        settings.setAttribute(
+            QWebEngineSettings.LocalStorageEnabled,
+            True,
+        )
+
+        settings.setAttribute(
+            QWebEngineSettings.JavascriptEnabled,
+            True,
+        )
+
+        settings.setAttribute(
+            QWebEngineSettings.LocalContentCanAccessRemoteUrls,
+            True,
+        )
+
+        settings.setAttribute(
+            QWebEngineSettings.AllowRunningInsecureContent,
+            True,
+        )
+
+        settings.setAttribute(
+            QWebEngineSettings.ShowScrollBars,
+            False,
+        )
+
+        # ── Block zoom shortcuts ──────────────────────────────────────────────
+
         for seq in ("Ctrl++", "Ctrl+-", "Ctrl+=", "Ctrl+0"):
-            QShortcut(QKeySequence(seq), self).activated.connect(lambda: None)
+            QShortcut(
+                QKeySequence(seq),
+                self,
+            ).activated.connect(lambda: None)
 
         # ── Touch / gesture protection JS ─────────────────────────────────────
+
         self._protect_js = """
         (function(){
             var m = document.createElement('meta');
             m.name = 'viewport';
             m.content = 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no';
             document.head.appendChild(m);
+
             var b = function(e){ e.preventDefault(); };
-            document.addEventListener('gesturestart',  b, {passive:false});
-            document.addEventListener('gesturechange', b, {passive:false});
-            document.addEventListener('gestureend',    b, {passive:false});
-            document.addEventListener('touchmove', function(e){
-                if(e.touches.length>1) e.preventDefault();
-            }, {passive:false});
-            document.addEventListener('wheel', function(e){
-                if(e.ctrlKey) e.preventDefault();
-            }, {passive:false});
+
+            document.addEventListener(
+                'gesturestart',
+                b,
+                {passive:false}
+            );
+
+            document.addEventListener(
+                'gesturechange',
+                b,
+                {passive:false}
+            );
+
+            document.addEventListener(
+                'gestureend',
+                b,
+                {passive:false}
+            );
+
+            document.addEventListener(
+                'touchmove',
+                function(e){
+                    if(e.touches.length > 1) e.preventDefault();
+                },
+                {passive:false}
+            );
+
+            document.addEventListener(
+                'wheel',
+                function(e){
+                    if(e.ctrlKey) e.preventDefault();
+                },
+                {passive:false}
+            );
         })();
         """
+
+        # ── Frontend readiness handshake ──────────────────────────────────────
+        #
+        # main.js changes document.title to "APM_READY" after
+        # DOMContentLoaded initialization is complete.
+
+        self.view.titleChanged.connect(self._on_title_changed)
+
+        # Load failures are still useful to log.
         self.view.loadFinished.connect(self._on_load_finished)
 
-        # ── Connection state polling (every POLL_INTERVAL_MS) ─────────────────
-        self._last_usb  = None
-        self._last_wifi = None
-        self._last_internet = None
+        # ── Connection state controller ───────────────────────────────────────
+
+        self._last_state = None
+        self._page_ready = False
+
         self._poll_timer = QTimer(self)
         self._poll_timer.setInterval(POLL_INTERVAL_MS)
         self._poll_timer.timeout.connect(self._poll_connections)
-        self._poll_timer.start()
 
         # ── Load the app ───────────────────────────────────────────────────────
-        self.view.setUrl(QUrl(f"http://127.0.0.1:{FLASK_PORT}"))
+
+        self.view.setUrl(
+            QUrl(f"http://127.0.0.1:{FLASK_PORT}")
+        )
 
     def _on_load_finished(self, ok: bool):
-        if ok:
-            self.view.page().runJavaScript(self._protect_js)
-            # Push current connection state immediately after load
-            self._push_usb_state()
-            self._push_wifi_state()
-            self._push_internet_state()
+        if not ok:
+            logger.error("[APP] Web page failed to load")
+            return
 
-    # ── Connection polling ────────────────────────────────────────────────────
-    def _push_usb_state(self):
-        connected = os.path.exists(SYSTEM_FILES["jack_status"])
-        js = f"if(window.setUsbState) window.setUsbState({'true' if connected else 'false'});"
-        self.view.page().runJavaScript(js)
-        self._last_usb = connected
+        self.view.page().runJavaScript(self._protect_js)
 
-    def _push_wifi_state(self):
-        connected = os.path.exists(SYSTEM_FILES["wifi_up"])
-        js = f"if(window.setWifiState) window.setWifiState({'true' if connected else 'false'});"
-        self.view.page().runJavaScript(js)
-        self._last_wifi = connected
+    def _on_title_changed(self, title: str):
+        """
+        Receive the frontend readiness signal from main.js.
+        """
 
-    def _push_internet_state(self):
-        connected = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
-        js = f"if(window.setInternetState) window.setInternetState({'true' if connected else 'false'});"
+        if title != "APM_READY":
+            return
+
+        if self._page_ready:
+            return
+
+        self._page_ready = True
+
+        logger.info("[APP] Frontend ready")
+
+        # Push the current state immediately once the page is actually ready.
+        self._poll_connections()
+
+        self._poll_timer.start()
+
+    # ── Connection state ──────────────────────────────────────────────────────
+
+    def _read_state(self):
+        """
+        Read one complete snapshot of the connection-related state.
+
+        All connection state comes from the Qt/Python side so there is
+        one source of truth for the UI.
+        """
+
+        ble_available = os.path.exists(
+            SYSTEM_FILES["bluetooth_available"]
+        )
+
+        return {
+            "usb_jack": os.path.exists(
+                SYSTEM_FILES["jack_status"]
+            ),
+            "hdmi_vcc": os.path.exists(
+                SYSTEM_FILES["hdmi_input"]
+            ),
+            "wifi": get_wifi_status(),
+            "internet": os.path.exists(
+                SYSTEM_FILES["internet_ok"]
+            ),
+            "tv_on": _get_tv_status(ble_available),
+        }
+
+    def _push_state(self, state):
+        """
+        Push one complete connection-state snapshot into the renderer.
+        """
+
+        js_state = (
+            "{"
+            f"usb_jack: {'true' if state['usb_jack'] else 'false'}, "
+            f"hdmi_vcc: {'true' if state['hdmi_vcc'] else 'false'}, "
+            f"wifi: {'true' if state['wifi'] else 'false'}, "
+            f"internet: {'true' if state['internet'] else 'false'}, "
+            f"tv_on: {'true' if state['tv_on'] else 'false'}"
+            "}"
+        )
+
+        js = (
+            "if (window.applyDeviceState) "
+            f"window.applyDeviceState({js_state});"
+        )
+
         self.view.page().runJavaScript(js)
-        self._last_internet = connected
 
     def _poll_connections(self):
-        usb  = os.path.exists(SYSTEM_FILES["jack_status"])
-        wifi = os.path.exists(SYSTEM_FILES["wifi_up"])
-        internet = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
+        """
+        Read and push one complete state snapshot only when it changes.
+        """
 
-        if usb != self._last_usb:
-            self._push_usb_state()
-        if wifi != self._last_wifi:
-            self._push_wifi_state()
-        if internet != self._last_internet:
-            self._push_internet_state()
+        if not self._page_ready:
+            return
+
+        state = self._read_state()
+
+        if state != self._last_state:
+            self._last_state = state
+            self._push_state(state)
 
     # ── Key handling ──────────────────────────────────────────────────────────
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_F4 and event.modifiers() == Qt.AltModifier:
             self.close()
+
         super().keyPressEvent(event)
 
     def wheelEvent(self, event):
@@ -165,95 +350,269 @@ class BrowserWindow(QMainWindow):
 
 
 # ── Background Internet Checker ───────────────────────────────────────────────
-def check_internet_loop():
-    while True:
-        internet_ok = False
+
+INTERNET_TARGETS = (
+    ("1.1.1.1", 53),
+    ("8.8.8.8", 53),
+    ("9.9.9.9", 53),
+)
+
+INTERNET_CONNECT_TIMEOUT = 3.0
+
+# Stable/up interval.
+INTERNET_OK_INTERVAL = 60.0
+
+# Three complete failed checks before declaring the connection down.
+INTERNET_FAIL_THRESHOLD = 3
+
+# When down, retry using exponential backoff, capped at 60 seconds.
+INTERNET_BACKOFF_INITIAL = 5.0
+INTERNET_BACKOFF_MAX = 60.0
+
+
+def _check_internet_once():
+    """
+    Return True if any of the configured connectivity targets accepts
+    a TCP connection.
+    """
+
+    for host, port in INTERNET_TARGETS:
+        sock = socket.socket(
+            socket.AF_INET,
+            socket.SOCK_STREAM,
+        )
+
         try:
-            # 8.8.8.8:53 is Google DNS (TCP), very reliable for internet checking
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(3.0)
-            s.connect(("8.8.8.8", 53))
-            s.close()
-            internet_ok = True
-        except Exception:
-            internet_ok = False
+            sock.settimeout(INTERNET_CONNECT_TIMEOUT)
+            sock.connect((host, port))
+            return True
 
-        flag_path = SYSTEM_FILES.get("internet_ok", "/run/internet_ok")
+        except OSError:
+            continue
+
+        finally:
+            sock.close()
+
+    return False
+
+
+def _set_internet_flag(internet_ok):
+    """
+    Create or remove the internet flag only when necessary.
+
+    OSError is logged so permissions or filesystem problems are visible.
+    """
+
+    flag_path = SYSTEM_FILES["internet_ok"]
+
+    if internet_ok:
+        if os.path.exists(flag_path):
+            return
+
+        try:
+            with open(flag_path, "w"):
+                pass
+        except OSError as exc:
+            logger.error(
+                "[INTERNET] Failed to create %s: %s",
+                flag_path,
+                exc,
+            )
+
+    else:
+        if not os.path.exists(flag_path):
+            return
+
+        try:
+            os.remove(flag_path)
+        except OSError as exc:
+            logger.error(
+                "[INTERNET] Failed to remove %s: %s",
+                flag_path,
+                exc,
+            )
+
+
+def check_internet_loop():
+    """
+    Maintain /run/internet_ok using multiple connectivity targets,
+    failure debounce, and backoff.
+
+    A single failed probe never immediately declares the internet down.
+    """
+
+    consecutive_failures = 0
+
+    internet_ok = os.path.exists(
+        SYSTEM_FILES["internet_ok"]
+    )
+
+    backoff = INTERNET_BACKOFF_INITIAL
+
+    while True:
+        probe_ok = _check_internet_once()
+
+        if probe_ok:
+            consecutive_failures = 0
+            backoff = INTERNET_BACKOFF_INITIAL
+
+            if not internet_ok:
+                internet_ok = True
+                _set_internet_flag(True)
+
+            time.sleep(INTERNET_OK_INTERVAL)
+            continue
+
+        # Probe failed.
+        consecutive_failures += 1
+
         if internet_ok:
-            if not os.path.exists(flag_path):
-                try:
-                    open(flag_path, "w").close()
-                except Exception:
-                    pass
-        else:
-            if os.path.exists(flag_path):
-                try:
-                    os.remove(flag_path)
-                except Exception:
-                    pass
+            if consecutive_failures < INTERNET_FAIL_THRESHOLD:
+                # Keep the existing "up" state while failures are
+                # being debounced.
+                time.sleep(INTERNET_OK_INTERVAL)
+                continue
 
-        time.sleep(5)  # Next check in 5 seconds
+            internet_ok = False
+            _set_internet_flag(False)
+
+            backoff = INTERNET_BACKOFF_INITIAL
+            time.sleep(backoff)
+            continue
+
+        # Already down: use exponential backoff.
+        time.sleep(backoff)
+
+        backoff = min(
+            backoff * 2,
+            INTERNET_BACKOFF_MAX,
+        )
 
 
 # ── Boot sequence ─────────────────────────────────────────────────────────────
+
 def _boot_reset():
     """On first boot: reset all members/guests to inactive and publish."""
-    from api.config import load_hhid, METER_ID
+
+    from api.config import load_hhid, METER_ID, DB_PATH
+
     hhid = load_hhid()
+
     if not hhid:
         print("[BOOT] No HHID — skipping reset")
         return
 
-    import sqlite3, time as _t
-    from api.config import DB_PATH
+    import sqlite3
 
     with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("UPDATE members SET active = 0 WHERE meter_id = ? AND hhid = ?", (METER_ID, hhid))
-        conn.execute("DELETE FROM guests WHERE meter_id = ? AND hhid = ?", (METER_ID, hhid))
+        conn.execute(
+            """
+            UPDATE members
+            SET active = 0
+            WHERE meter_id = ? AND hhid = ?
+            """,
+            (METER_ID, hhid),
+        )
+
+        conn.execute(
+            """
+            DELETE FROM guests
+            WHERE meter_id = ? AND hhid = ?
+            """,
+            (METER_ID, hhid),
+        )
+
         conn.commit()
 
-    data    = load_members_data()
+    data = load_members_data()
+
     members = [
-        {"member_id": m["member_code"], "age": calculate_age(m["dob"]),
-         "gender": m["gender"], "active": False}
+        {
+            "member_id": m["member_code"],
+            "age": calculate_age(m["dob"]),
+            "gender": m["gender"],
+            "active": False,
+        }
         for m in data.get("members", [])
-        if "dob" in m and "gender" in m and calculate_age(m["dob"]) is not None
+        if (
+            "dob" in m
+            and "gender" in m
+            and calculate_age(m["dob"]) is not None
+        )
     ]
-    send_event(3, {"members": members})
-    send_event(4, {"guests": []})
-    print(f"[BOOT] Reset {len(members)} members to inactive, cleared guests")
+
+    send_event(
+        3,
+        {"members": members},
+    )
+
+    send_event(
+        4,
+        {"guests": []},
+    )
+
+    print(
+        f"[BOOT] Reset {len(members)} members to inactive, "
+        "cleared guests"
+    )
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
+
 def main():
-    # Binds to all IPs, not just localhost
-    #os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
 
     # 1. Database
     init_db()
 
-    # 2. Boot sequence / Fresh-boot detection
+    # 2. Boot sequence / fresh-boot detection
     if is_fresh_boot():
         print("[BOOT] Fresh boot — resetting session")
         _boot_reset()
+
     save_boot_id()
 
-    # 4. Flask in background thread
-    flask_thread = threading.Thread(target=run_flask, daemon=True, name="flask")
+    # 3. Flask API server
+    flask_thread = threading.Thread(
+        target=run_flask,
+        daemon=True,
+        name="flask",
+    )
     flask_thread.start()
-    
-    # 4.5 Internet monitor in background thread
-    internet_thread = threading.Thread(target=check_internet_loop, daemon=True, name="internet_check")
-    internet_thread.start()
-    
-    time.sleep(1.5)  # wait for Flask to bind before Qt loads the URL
-    print(f"[APP] Flask running at http://127.0.0.1:{FLASK_PORT}")
-    print(f"[APP] Installation done: {is_installation_done()}")
 
-    # 5. PyQt6 Qt window
+    # 4. Internet monitor
+    internet_thread = threading.Thread(
+        target=check_internet_loop,
+        daemon=True,
+        name="internet_check",
+    )
+    internet_thread.start()
+
+    # 5. Wait for Flask to actually accept connections.
+    if not wait_for_flask():
+        logger.error(
+            "[APP] Flask failed to bind to "
+            "127.0.0.1:%d within %.1f seconds",
+            FLASK_PORT,
+            FLASK_READY_TIMEOUT,
+        )
+        sys.exit(1)
+
+    print(
+        f"[APP] Flask running at "
+        f"http://127.0.0.1:{FLASK_PORT}"
+    )
+
+    print(
+        f"[APP] Installation done: "
+        f"{is_installation_done()}"
+    )
+
+    # 6. PyQt5 Qt window
     qt_app = QApplication(sys.argv)
+
     window = BrowserWindow()
     window.show()
+
     sys.exit(qt_app.exec_())
 
 

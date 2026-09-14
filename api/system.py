@@ -13,15 +13,18 @@ from flask import Blueprint, jsonify, request
 
 from .config import SYSTEM_FILES, METER_ID
 
+
 system_bp = Blueprint("system", __name__)
 
-# Common RPi backlight paths
+
+# ── Common RPi backlight paths ────────────────────────────────────────────────
 
 BACKLIGHT_PATHS = [
     "/sys/class/backlight/1-0045",      # User's specific path
     "/sys/class/backlight/rpi_backlight",
-    "/sys/class/backlight/soc:backlight"
+    "/sys/class/backlight/soc:backlight",
 ]
+
 
 # ── Cached system status ──────────────────────────────────────────────────────
 
@@ -35,22 +38,25 @@ _mac_address_lock = threading.Lock()
 
 
 def get_backlight_path():
-    for p in BACKLIGHT_PATHS:
-        if os.path.exists(p):
-            return p
+    for path in BACKLIGHT_PATHS:
+        if os.path.exists(path):
+            return path
     return None
 
 
 def get_ip_address():
-    """Find the local IP address, prioritizing external connectivity but falling back to interface-specific checks."""
+    """
+    Find the local IP address, prioritizing external connectivity
+    but falling back to interface-specific checks.
+    """
 
-    # 1. Try connecting to an external address
-    # (best for multi-homed hosts)
+    # 1. Try connecting to an external address.
+    #    This is useful for multi-homed hosts.
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.settimeout(0.5)
-            s.connect(("8.8.8.8", 80))
-            ip = s.getsockname()[0]
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.settimeout(0.5)
+            sock.connect(("8.8.8.8", 80))
+            ip = sock.getsockname()[0]
 
             if ip and not ip.startswith("127."):
                 return ip
@@ -58,11 +64,11 @@ def get_ip_address():
     except (OSError, socket.timeout):
         pass
 
-    # 2. Fallback: use a private broadcast address
+    # 2. Fallback: use a private broadcast address.
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("10.255.255.255", 1))
-            ip = s.getsockname()[0]
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("10.255.255.255", 1))
+            ip = sock.getsockname()[0]
 
             if ip and not ip.startswith("127."):
                 return ip
@@ -85,15 +91,15 @@ def get_mac_address():
         if _mac_address_cache is not None:
             return _mac_address_cache
 
-        for interface in ["wlan0", "eth0", "enp1s0"]:
+        for interface in ("wlan0", "eth0", "enp1s0"):
             path = f"/sys/class/net/{interface}/address"
 
             if not os.path.exists(path):
                 continue
 
             try:
-                with open(path, "r") as f:
-                    mac = f.read().strip().upper()
+                with open(path, "r") as file:
+                    mac = file.read().strip().upper()
 
                 if mac:
                     _mac_address_cache = mac
@@ -108,50 +114,55 @@ def get_mac_address():
 
 def get_wifi_status():
     """
-    Return WiFi connection state.
+    Return Wi-Fi connection state.
 
     nmcli is relatively expensive compared with reading the /run flag,
     so cache its result for a short period.
+
+    The cache lock is intentionally not held while nmcli runs.
     """
 
     global _wifi_cache_value, _wifi_cache_timestamp
 
     now = time.monotonic()
 
+    # Only hold the lock while checking the cache.
+    # The subprocess must run outside the lock.
     with _wifi_cache_lock:
         if now - _wifi_cache_timestamp < _WIFI_CACHE_TTL:
             return _wifi_cache_value
 
-        try:
-            result = subprocess.run(
-                [
-                    "nmcli",
-                    "-t",
-                    "-g",
-                    "GENERAL.STATE",
-                    "device",
-                    "show",
-                    "wlan0"
-                ],
-                capture_output=True,
-                text=True,
-                timeout=2,
-                check=False
-            )
+    try:
+        result = subprocess.run(
+            [
+                "nmcli",
+                "-t",
+                "-g",
+                "GENERAL.STATE",
+                "device",
+                "show",
+                "wlan0",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
 
-            wifi_ok = "connected" in result.stdout.lower()
+        wifi_ok = "connected" in result.stdout.lower()
 
-        except (OSError, subprocess.SubprocessError):
-            wifi_ok = os.path.exists(SYSTEM_FILES["wifi_up"])
+    except (OSError, subprocess.SubprocessError):
+        wifi_ok = os.path.exists(SYSTEM_FILES["wifi_up"])
 
+    # Update the cache after the subprocess has completed.
+    with _wifi_cache_lock:
         _wifi_cache_value = wifi_ok
         _wifi_cache_timestamp = time.monotonic()
-
         return _wifi_cache_value
 
 
 def invalidate_wifi_status_cache():
-    """Force the next WiFi status request to query nmcli again."""
+    """Force the next Wi-Fi status request to query nmcli again."""
 
     global _wifi_cache_timestamp
 
@@ -171,8 +182,8 @@ def _get_tv_status(ble_available):
         return False
 
     try:
-        with open(tv_status_path, "r") as f:
-            tv_state = f.read().strip().upper()
+        with open(tv_status_path, "r") as file:
+            tv_state = file.read().strip().upper()
 
         return tv_state == "ON"
 
@@ -190,8 +201,8 @@ def _get_software_versions():
         return sw_versions
 
     try:
-        with open(sw_version_path, "r") as f:
-            sw_versions = json.load(f)
+        with open(sw_version_path, "r") as file:
+            sw_versions = json.load(file)
 
     except (OSError, json.JSONDecodeError):
         pass
@@ -208,8 +219,8 @@ def _get_installation_done():
         return False
 
     try:
-        with open(path, "r") as f:
-            return f.read().strip() == "1"
+        with open(path, "r") as file:
+            return file.read().strip() == "1"
 
     except OSError:
         return False
@@ -219,6 +230,10 @@ def _get_system_flags():
     """
     Return the small set of system flags needed by the
     connection monitor.
+
+    Kept for the API endpoint and other callers. The main Qt
+    application now supplies connection state directly to the
+    frontend instead of JavaScript polling this endpoint.
     """
 
     ble_available = os.path.exists(
@@ -226,13 +241,17 @@ def _get_system_flags():
     )
 
     return {
+        "usb_jack": os.path.exists(
+            SYSTEM_FILES["jack_status"]
+        ),
+        "hdmi_vcc": os.path.exists(
+            SYSTEM_FILES["hdmi_input"]
+        ),
         "wifi": get_wifi_status(),
-        "gsm": os.path.exists(SYSTEM_FILES["gsm_up"]),
-        "usb_jack": os.path.exists(SYSTEM_FILES["jack_status"]),
-        "hdmi_vcc": os.path.exists(SYSTEM_FILES["hdmi_input"]),
-        "video_detection": os.path.exists(
-            SYSTEM_FILES["video_detection"]
-        )
+        "internet": os.path.exists(
+            SYSTEM_FILES["internet_ok"]
+        ),
+        "tv_on": _get_tv_status(ble_available),
     }
 
 
@@ -241,8 +260,10 @@ def _get_system_flags():
 @system_bp.route("/flags", methods=["GET"])
 def system_flags():
     """
-    Lightweight system status endpoint used by the
-    frontend connection monitor.
+    Lightweight system status endpoint.
+
+    This endpoint remains available for compatibility and diagnostics.
+    The normal frontend connection monitor is driven by Qt/Python.
     """
 
     return jsonify(_get_system_flags())
@@ -264,9 +285,15 @@ def system_status():
         "success": True,
         "meter_id": METER_ID,
         "wifi": get_wifi_status(),
-        "gsm": os.path.exists(SYSTEM_FILES["gsm_up"]),
-        "usb_jack": os.path.exists(SYSTEM_FILES["jack_status"]),
-        "hdmi_vcc": os.path.exists(SYSTEM_FILES["hdmi_input"]),
+        "gsm": os.path.exists(
+            SYSTEM_FILES["gsm_up"]
+        ),
+        "usb_jack": os.path.exists(
+            SYSTEM_FILES["jack_status"]
+        ),
+        "hdmi_vcc": os.path.exists(
+            SYSTEM_FILES["hdmi_input"]
+        ),
         "video_detection": os.path.exists(
             SYSTEM_FILES["video_detection"]
         ),
@@ -275,7 +302,9 @@ def system_status():
         "installation_done": _get_installation_done(),
         "ip_address": get_ip_address(),
         "mac_address": get_mac_address(),
-        "internet": os.path.exists(SYSTEM_FILES["internet_ok"]),
+        "internet": os.path.exists(
+            SYSTEM_FILES["internet_ok"]
+        ),
         "sw_versions": _get_software_versions(),
     })
 
@@ -289,7 +318,7 @@ def set_brightness():
     if not path:
         return jsonify({
             "success": False,
-            "error": "No backlight device found"
+            "error": "No backlight device found",
         }), 404
 
     data = request.get_json(force=True) or {}
@@ -299,34 +328,37 @@ def set_brightness():
 
         max_b_path = f"{path}/max_brightness"
 
-        with open(max_b_path) as f:
-            max_b = int(f.read().strip())
+        with open(max_b_path) as file:
+            max_b = int(file.read().strip())
 
-        # Ensure we don't go too dark
-        value = max(int(max_b * 0.1), min(value, max_b))
+        # Ensure we don't go too dark.
+        value = max(
+            int(max_b * 0.1),
+            min(value, max_b),
+        )
 
-        # Use subprocess for better sudo handling
+        # Use subprocess for sudo handling.
         subprocess.run(
             [
                 "sudo",
                 "tee",
-                f"{path}/brightness"
+                f"{path}/brightness",
             ],
             input=str(value),
             text=True,
             capture_output=True,
-            check=False
+            check=False,
         )
 
         return jsonify({
             "success": True,
-            "brightness": value
+            "brightness": value,
         })
 
-    except (OSError, ValueError, TypeError) as e:
+    except (OSError, ValueError, TypeError) as exc:
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": str(exc),
         }), 500
 
 
@@ -339,46 +371,53 @@ def get_brightness():
     if not path:
         return jsonify({
             "success": False,
-            "error": "No backlight device found"
+            "error": "No backlight device found",
         }), 404
 
     try:
-        with open(f"{path}/brightness") as f:
-            b = int(f.read().strip())
+        with open(f"{path}/brightness") as file:
+            brightness = int(file.read().strip())
 
-        with open(f"{path}/max_brightness") as f:
-            max_b = int(f.read().strip())
+        with open(f"{path}/max_brightness") as file:
+            max_brightness = int(file.read().strip())
 
         return jsonify({
             "success": True,
-            "brightness": b,
-            "max": max_b
+            "brightness": brightness,
+            "max": max_brightness,
         })
 
-    except (OSError, ValueError) as e:
+    except (OSError, ValueError) as exc:
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": str(exc),
         }), 500
 
 
-# ── POST /api/system/reboot ────────────────────────────────────────────────────
+# ── POST /api/system/reboot ───────────────────────────────────────────────────
 
 @system_bp.route("/reboot", methods=["POST"])
 def reboot():
     try:
-        # Run in background after 1s delay so we can return the response
+        # Delay the reboot so the HTTP response can be returned first.
+        #
+        # The command is deliberately passed as an argument list rather
+        # than through shell=True.
         subprocess.Popen(
-            "sleep 1 && sudo reboot",
-            shell=True
+            [
+                "systemd-run",
+                "--on-active=1",
+                "systemctl",
+                "reboot",
+            ]
         )
 
         return jsonify({"success": True})
 
-    except (OSError, subprocess.SubprocessError) as e:
+    except (OSError, subprocess.SubprocessError) as exc:
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": str(exc),
         }), 500
 
 
@@ -387,18 +426,25 @@ def reboot():
 @system_bp.route("/shutdown", methods=["POST"])
 def shutdown():
     try:
-        # Run in background after 1s delay so we can return the response
+        # Delay the shutdown so the HTTP response can be returned first.
+        #
+        # The command is deliberately passed as an argument list rather
+        # than through shell=True.
         subprocess.Popen(
-            "sleep 1 && sudo shutdown -h now",
-            shell=True
+            [
+                "systemd-run",
+                "--on-active=1",
+                "systemctl",
+                "poweroff",
+            ]
         )
 
         return jsonify({"success": True})
 
-    except (OSError, subprocess.SubprocessError) as e:
+    except (OSError, subprocess.SubprocessError) as exc:
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": str(exc),
         }), 500
 
 

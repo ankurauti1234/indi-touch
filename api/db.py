@@ -2,93 +2,134 @@
 # api/db.py — SQLite database initialization and helpers
 
 import sqlite3
+import threading
 from datetime import datetime
+
 from .config import DB_PATH, METER_ID, load_hhid, FALLBACK_AVATAR
 
 
+# ── SQLite connection handling ────────────────────────────────────────────────
+
+_local = threading.local()
+
+
 def get_conn():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    """
+    Return a SQLite connection dedicated to the current thread.
+
+    SQLite connections are kept thread-local so each worker/thread reuses
+    its own connection instead of opening a new connection for every query.
+    """
+
+    conn = getattr(_local, "conn", None)
+
+    if conn is not None:
+        return conn
+
+    conn = sqlite3.connect(
+        DB_PATH,
+        timeout=10.0,
+    )
+
     conn.row_factory = sqlite3.Row
+
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA busy_timeout=10000")
+    conn.execute("PRAGMA foreign_keys=ON")
+
+    _local.conn = conn
+
     return conn
 
 
+# ── Database initialization ──────────────────────────────────────────────────
+
 def init_db():
-    with get_conn() as conn:
-        cur = conn.cursor()
+    conn = get_conn()
 
-        # Members table
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS members (
-                id             INTEGER PRIMARY KEY AUTOINCREMENT,
-                meter_id       TEXT NOT NULL,
-                hhid           TEXT NOT NULL,
-                member_code    TEXT,
-                name           TEXT,
-                dob            TEXT,
-                gender         TEXT,
-                created_at     TEXT,
-                avatar_url     TEXT,
-                offline_avatar TEXT,
-                active         INTEGER DEFAULT 0
+    cur = conn.cursor()
+
+    # Members table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS members (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            meter_id       TEXT NOT NULL,
+            hhid           TEXT NOT NULL,
+            member_code    TEXT,
+            name           TEXT,
+            dob            TEXT,
+            gender         TEXT,
+            created_at     TEXT,
+            avatar_url     TEXT,
+            offline_avatar TEXT,
+            active         INTEGER DEFAULT 0
+        )
+    """)
+
+    # Column upgrade path
+    cur.execute("PRAGMA table_info(members)")
+    cols = {c[1] for c in cur.fetchall()}
+
+    added = []
+
+    for col, typedef in [
+        ("name", "TEXT"),
+        ("avatar_url", "TEXT"),
+        ("offline_avatar", "TEXT"),
+    ]:
+        if col not in cols:
+            print(f"[DB] Adding '{col}' column to members")
+            cur.execute(
+                f"ALTER TABLE members ADD COLUMN {col} {typedef}"
             )
+            added.append(col)
+
+    # If name already existed, this preserves the existing migration
+    # behavior. If name was just added, it is also initialized correctly.
+    if "name" in cols or "name" in added:
+        cur.execute("""
+            UPDATE members
+            SET name = member_code
+            WHERE name IS NULL AND member_code IS NOT NULL
         """)
 
-        # Column upgrade path
-        cur.execute("PRAGMA table_info(members)")
-        cols = {c[1] for c in cur.fetchall()}
+    # Guests table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS guests (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            meter_id   TEXT NOT NULL,
+            hhid       TEXT NOT NULL,
+            age        INTEGER,
+            gender     TEXT,
+            seed       TEXT,
+            duration   TEXT,
+            active     INTEGER DEFAULT 1,
+            created_at TEXT
+        )
+    """)
 
-        for col, typedef in [
-            ("name", "TEXT"),
-            ("avatar_url", "TEXT"),
-            ("offline_avatar", "TEXT"),
-        ]:
-            if col not in cols:
-                print(f"[DB] Adding '{col}' column to members")
-                cur.execute(f"ALTER TABLE members ADD COLUMN {col} {typedef}")
+    # App settings table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key   TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
 
-        if "name" in cols:
-            cur.execute("""
-                UPDATE members
-                SET name = member_code
-                WHERE name IS NULL AND member_code IS NOT NULL
-            """)
+    # Notifications table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS notifications (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            title      TEXT NOT NULL,
+            message    TEXT,
+            type       TEXT DEFAULT 'info',
+            read       INTEGER DEFAULT 0,
+            created_at TEXT
+        )
+    """)
 
-        # Guests table
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS guests (
-                id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                meter_id   TEXT NOT NULL,
-                hhid       TEXT NOT NULL,
-                age        INTEGER,
-                gender     TEXT,
-                seed       TEXT,
-                duration   TEXT,
-                active     INTEGER DEFAULT 1,
-                created_at TEXT
-            )
-        """)
-
-        # App settings table
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS app_settings (
-                key   TEXT PRIMARY KEY,
-                value TEXT
-            )
-        """)
-
-        # Notifications table
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS notifications (
-                id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                title      TEXT NOT NULL,
-                message    TEXT,
-                type       TEXT DEFAULT 'info',
-                read       INTEGER DEFAULT 0,
-                created_at TEXT
-            )
-        """)
-
-        conn.commit()
+    conn.commit()
 
     print("[DB] Database initialized")
 
@@ -98,42 +139,44 @@ def init_db():
 def load_members_data() -> dict:
     hhid = load_hhid()
 
-    with get_conn() as conn:
-        cur = conn.cursor()
+    conn = get_conn()
 
-        cur.execute("""
-            SELECT member_code,
-                   name,
-                   dob,
-                   gender,
-                   created_at,
-                   avatar_url,
-                   offline_avatar,
-                   active
-            FROM members
-            WHERE meter_id = ? AND hhid = ?
-            ORDER BY id
-        """, (METER_ID, hhid))
+    cur = conn.cursor()
 
-        members = []
+    cur.execute("""
+        SELECT
+            member_code,
+            name,
+            dob,
+            gender,
+            created_at,
+            avatar_url,
+            offline_avatar,
+            active
+        FROM members
+        WHERE meter_id = ? AND hhid = ?
+        ORDER BY id
+    """, (METER_ID, hhid))
 
-        for row in cur.fetchall():
-            members.append({
-                "member_code": row[0],
-                "name": row[1] or row[0],
-                "dob": row[2],
-                "gender": row[3],
-                "created_at": row[4],
-                "avatar_url": row[5] or FALLBACK_AVATAR,
-                "offline_avatar": row[6] or FALLBACK_AVATAR,
-                "active": bool(row[7]),
-                "age": calculate_age(row[2])
-            })
+    members = []
+
+    for row in cur.fetchall():
+        members.append({
+            "member_code": row[0],
+            "name": row[1] or row[0],
+            "dob": row[2],
+            "gender": row[3],
+            "created_at": row[4],
+            "avatar_url": row[5] or FALLBACK_AVATAR,
+            "offline_avatar": row[6] or FALLBACK_AVATAR,
+            "active": bool(row[7]),
+            "age": calculate_age(row[2]),
+        })
 
     return {
         "meter_id": METER_ID,
         "hhid": hhid,
-        "members": members
+        "members": members,
     }
 
 
@@ -142,43 +185,44 @@ def save_members_data(data: dict):
     hhid = data.get("hhid", load_hhid())
     members = data.get("members", [])
 
-    with get_conn() as conn:
-        cur = conn.cursor()
+    conn = get_conn()
 
-        cur.execute(
-            "DELETE FROM members WHERE meter_id = ? AND hhid = ?",
-            (meter_id, hhid)
-        )
+    cur = conn.cursor()
 
-        for m in members:
-            cur.execute("""
-                INSERT INTO members (
-                    meter_id,
-                    hhid,
-                    member_code,
-                    name,
-                    dob,
-                    gender,
-                    created_at,
-                    avatar_url,
-                    offline_avatar,
-                    active
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
+    cur.execute(
+        "DELETE FROM members WHERE meter_id = ? AND hhid = ?",
+        (meter_id, hhid),
+    )
+
+    for m in members:
+        cur.execute("""
+            INSERT INTO members (
                 meter_id,
                 hhid,
-                m.get("member_code"),
-                m.get("name", m.get("member_code")),
-                m.get("dob"),
-                m.get("gender"),
-                m.get("created_at"),
-                m.get("avatar_url"),
-                m.get("offline_avatar"),
-                int(m.get("active", False)),
-            ))
+                member_code,
+                name,
+                dob,
+                gender,
+                created_at,
+                avatar_url,
+                offline_avatar,
+                active
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            meter_id,
+            hhid,
+            m.get("member_code"),
+            m.get("name", m.get("member_code")),
+            m.get("dob"),
+            m.get("gender"),
+            m.get("created_at"),
+            m.get("avatar_url"),
+            m.get("offline_avatar"),
+            int(m.get("active", False)),
+        ))
 
-        conn.commit()
+    conn.commit()
 
 
 def toggle_member_in_db(index: int) -> tuple:
@@ -212,176 +256,187 @@ def rename_member_in_db(index: int, new_name: str) -> dict:
 def update_member_offline_avatar(member_code: str, filename: str):
     hhid = load_hhid()
 
-    with get_conn() as conn:
-        conn.execute("""
-            UPDATE members
-            SET offline_avatar = ?
-            WHERE meter_id = ?
-              AND hhid = ?
-              AND member_code = ?
-        """, (filename, METER_ID, hhid, member_code))
+    conn = get_conn()
 
-        conn.commit()
+    conn.execute("""
+        UPDATE members
+        SET offline_avatar = ?
+        WHERE meter_id = ?
+          AND hhid = ?
+          AND member_code = ?
+    """, (filename, METER_ID, hhid, member_code))
+
+    conn.commit()
 
 
 def undeclare_all_members_in_db():
     hhid = load_hhid()
 
-    with get_conn() as conn:
-        conn.execute("""
-            UPDATE members
-            SET active = 0
-            WHERE meter_id = ? AND hhid = ?
-        """, (METER_ID, hhid))
+    conn = get_conn()
 
-        conn.execute("""
-            DELETE FROM guests
-            WHERE meter_id = ? AND hhid = ?
-        """, (METER_ID, hhid))
+    conn.execute("""
+        UPDATE members
+        SET active = 0
+        WHERE meter_id = ? AND hhid = ?
+    """, (METER_ID, hhid))
 
-        conn.commit()
+    conn.execute("""
+        DELETE FROM guests
+        WHERE meter_id = ? AND hhid = ?
+    """, (METER_ID, hhid))
 
+    conn.commit()
 
-# ── Guests ────────────────────────────────────────────────────────────────────
 
 # ── Guests ────────────────────────────────────────────────────────────────────
 
 def load_guests_data() -> list:
     hhid = load_hhid()
 
-    with get_conn() as conn:
-        cur = conn.cursor()
+    conn = get_conn()
 
-        cur.execute("""
-            SELECT
-                id,
-                age,
-                gender,
-                active
-            FROM guests
-            WHERE meter_id = ? AND hhid = ?
-            ORDER BY id
-        """, (METER_ID, hhid))
+    cur = conn.cursor()
 
-        guests = []
+    cur.execute("""
+        SELECT
+            id,
+            age,
+            gender,
+            active
+        FROM guests
+        WHERE meter_id = ? AND hhid = ?
+        ORDER BY id
+    """, (METER_ID, hhid))
 
-        for r in cur.fetchall():
-            guests.append({
-                "id": r[0],
-                "age": r[1],
-                "gender": r[2],
-                "active": bool(r[3]),
-            })
+    guests = []
 
-        return guests
+    for row in cur.fetchall():
+        guests.append({
+            "id": row[0],
+            "age": row[1],
+            "gender": row[2],
+            "active": bool(row[3]),
+        })
+
+    return guests
 
 
 def save_guests_data(guest_list: list):
     hhid = load_hhid()
 
-    with get_conn() as conn:
-        cur = conn.cursor()
+    conn = get_conn()
 
+    cur = conn.cursor()
+
+    cur.execute("""
+        DELETE FROM guests
+        WHERE meter_id = ? AND hhid = ?
+    """, (METER_ID, hhid))
+
+    for g in guest_list:
         cur.execute("""
-            DELETE FROM guests
-            WHERE meter_id = ? AND hhid = ?
-        """, (METER_ID, hhid))
-
-        for g in guest_list:
-            cur.execute("""
-                INSERT INTO guests (
-                    meter_id,
-                    hhid,
-                    age,
-                    gender,
-                    active
-                )
-                VALUES (?, ?, ?, ?, ?)
-            """, (
-                METER_ID,
+            INSERT INTO guests (
+                meter_id,
                 hhid,
-                g.get("age"),
-                g.get("gender"),
-                int(g.get("active", True)),
-            ))
+                age,
+                gender,
+                active
+            )
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            METER_ID,
+            hhid,
+            g.get("age"),
+            g.get("gender"),
+            int(g.get("active", True)),
+        ))
 
-        conn.commit()
+    conn.commit()
 
     print(f"[DB] Saved {len(guest_list)} guests")
 
 
-# ── App Settings ──────────────────────────────────────────────────────────────
+# ── App Settings ─────────────────────────────────────────────────────────────
 
 def get_setting(key: str, default=None):
-    with get_conn() as conn:
-        row = conn.execute(
-            "SELECT value FROM app_settings WHERE key = ?",
-            (key,)
-        ).fetchone()
+    conn = get_conn()
 
-        return row[0] if row else default
+    row = conn.execute(
+        "SELECT value FROM app_settings WHERE key = ?",
+        (key,),
+    ).fetchone()
+
+    return row[0] if row else default
 
 
 def set_setting(key: str, value):
-    with get_conn() as conn:
-        conn.execute("""
-            INSERT INTO app_settings (key, value)
-            VALUES (?, ?)
-            ON CONFLICT(key)
-            DO UPDATE SET value = excluded.value
-        """, (key, str(value)))
+    conn = get_conn()
 
-        conn.commit()
+    conn.execute("""
+        INSERT INTO app_settings (key, value)
+        VALUES (?, ?)
+        ON CONFLICT(key)
+        DO UPDATE SET value = excluded.value
+    """, (key, str(value)))
+
+    conn.commit()
 
 
-# ── Notifications ─────────────────────────────────────────────────────────────
+# ── Notifications ────────────────────────────────────────────────────────────
 
 def get_notifications(unread_only: bool = False) -> list:
-    with get_conn() as conn:
-        cur = conn.cursor()
+    conn = get_conn()
 
-        query = "SELECT * FROM notifications"
+    cur = conn.cursor()
 
-        if unread_only:
-            query += " WHERE read = 0"
+    query = "SELECT * FROM notifications"
 
-        query += " ORDER BY id DESC"
+    if unread_only:
+        query += " WHERE read = 0"
 
-        cur.execute(query)
+    query += " ORDER BY id DESC"
 
-        return [dict(row) for row in cur.fetchall()]
+    cur.execute(query)
+
+    return [dict(row) for row in cur.fetchall()]
 
 
 def mark_notification_read(notif_id: int):
-    with get_conn() as conn:
-        conn.execute("""
-            UPDATE notifications
-            SET read = 1
-            WHERE id = ?
-        """, (notif_id,))
+    conn = get_conn()
 
-        conn.commit()
+    conn.execute("""
+        UPDATE notifications
+        SET read = 1
+        WHERE id = ?
+    """, (notif_id,))
+
+    conn.commit()
 
 
-def save_notification(title: str, message: str, n_type: str = "info"):
-    with get_conn() as conn:
-        conn.execute("""
-            INSERT INTO notifications (
-                title,
-                message,
-                type,
-                read,
-                created_at
-            )
-            VALUES (?, ?, ?, 0, ?)
-        """, (
+def save_notification(
+    title: str,
+    message: str,
+    n_type: str = "info",
+):
+    conn = get_conn()
+
+    conn.execute("""
+        INSERT INTO notifications (
             title,
             message,
-            n_type,
-            datetime.now().isoformat()
-        ))
+            type,
+            read,
+            created_at
+        )
+        VALUES (?, ?, ?, 0, ?)
+    """, (
+        title,
+        message,
+        n_type,
+        datetime.now().isoformat(),
+    ))
 
-        conn.commit()
+    conn.commit()
 
 
 # ── Utilities ─────────────────────────────────────────────────────────────────

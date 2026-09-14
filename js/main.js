@@ -9,8 +9,9 @@ import { showToast } from './ui.js';
 import { renderNotifications } from './notifications.js';
 import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
-import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
+import { tvState, memberData, initData, config, loadMembers, updateSetting } from './data.js';
+import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
 
 
 // Expose functions globally for HTML inline event handlers
@@ -27,35 +28,46 @@ window.addGuest = addGuest;
 window.initLocation = initLocation;
 window.showToast = showToast;
 window.openSurvey = openSurvey;
-// Expose for Python/integration layer
-window.setUsbState = setUsbState;
-window.setWifiState = setWifiState;
-window.setInternetState = setInternetState;
 window.resetIdle = resetIdle;
 window.renderScreensaverMembers = renderScreensaverMembers;
 window.refreshWallpaperOnScreensaver = refreshWallpaperOnScreensaver;
 window.renderGrid = renderGrid;
 
+
 // ─── Phase 2 Refinements ──────────────────────────────────────────────────────
 export function resetHomeTimer() {
     if (typeof homeTimer !== 'undefined') clearTimeout(homeTimer);
-    const onboardingLayer = document.getElementById('onboarding-layer');
-    const isOnboarding = onboardingLayer && !onboardingLayer.classList.contains('hidden') && onboardingLayer.style.display !== 'none';
 
-    if (config.onboardingCompleted && !isOnboarding && !document.getElementById('view-home').classList.contains('active')) {
-        timers.clearTimeout(window.homeTimerId); // Track specifically if needed
+    const onboardingLayer = document.getElementById('onboarding-layer');
+    const isOnboarding =
+        onboardingLayer &&
+        !onboardingLayer.classList.contains('hidden') &&
+        onboardingLayer.style.display !== 'none';
+
+    if (
+        config.onboardingCompleted &&
+        !isOnboarding &&
+        !document.getElementById('view-home').classList.contains('active')
+    ) {
+        timers.clearTimeout(window.homeTimerId);
+
         window.homeTimerId = timers.setTimeout(() => {
             console.log("Inactivity timeout: returning to home.");
             navTo('home');
-        }, 300000); // 5 minutes
+        }, 300000);
     }
 }
+
 window.resetHomeTimer = resetHomeTimer;
 
+
 let settingsClickCount = 0;
+
 window.handleSettingsTitleClick = () => {
     settingsClickCount++;
+
     console.log("Settings click:", settingsClickCount);
+
     if (settingsClickCount === 3) {
         document.getElementById('btn-sys-info').style.display = 'flex';
         showToast("System Info Revealed");
@@ -63,6 +75,8 @@ window.handleSettingsTitleClick = () => {
     }
 };
 
+
+// ---------------- Maintenance ----------------
 
 // Current UI-session declaration timestamp.
 // This is intentionally not persisted yet.
@@ -78,6 +92,7 @@ function recordMemberDeclaration() {
 }
 
 window.recordMemberDeclaration = recordMemberDeclaration;
+
 
 let maintenanceResetInProgress = false;
 
@@ -248,10 +263,13 @@ async function runDailyMaintenanceIfNeeded() {
     }
 }
 
+
 export function hideAppLoader() {
     const loader = document.getElementById('app-loading');
+
     if (loader) {
         loader.classList.add('fade-out');
+
         setTimeout(() => {
             loader.style.display = 'none';
         }, 600);
@@ -262,20 +280,22 @@ window.hideAppLoader = hideAppLoader;
 
 
 // ---------------- Still Watching ----------------
+
 let stillWatchingTimer = null;
 let stillWatchingDismissTimer = null;
 let stillWatchingReminderTimer = null;
 
 function showStillWatchingPopup() {
     const popup = document.getElementById("still-watching-popover");
+
     if (!popup) return;
 
-    // Don't create another popup while one is already visible
+    // Don't create another popup while one is already visible.
     if (popup.classList.contains("visible")) {
         return;
     }
 
-    // No need for a pending reminder once the popup is visible
+    // No need for a pending reminder once the popup is visible.
     timers.clearTimeout(stillWatchingReminderTimer);
 
     popup.classList.add("visible");
@@ -287,18 +307,17 @@ function showStillWatchingPopup() {
     stillWatchingDismissTimer = timers.setTimeout(() => {
         popup.classList.remove("visible");
 
-        // Wait 1 minute before showing it again
+        // Wait 1 minute before showing it again.
         timers.clearTimeout(stillWatchingReminderTimer);
 
         stillWatchingReminderTimer = timers.setTimeout(() => {
             const activeCount = memberData.filter(m => m.active).length;
 
-            // Only continue reminding while someone is still active
+            // Only continue reminding while someone is still active.
             if (activeCount > 0) {
                 showStillWatchingPopup();
             }
         }, 60 * 1000);
-
     }, 10 * 1000);
 }
 
@@ -308,7 +327,7 @@ function restartStillWatchingTimer() {
 
     stillWatchingTimer = timers.setTimeout(() => {
         showStillWatchingPopup();
-    }, 2 * 60 * 60 * 1000); // 2 hours
+    }, 2 * 60 * 60 * 1000);
 }
 
 function updateStillWatchingState() {
@@ -330,6 +349,7 @@ function updateStillWatchingState() {
 }
 
 window.updateStillWatchingState = updateStillWatchingState;
+
 
 async function endViewingSession() {
     // Stop all Still Watching timers immediately.
@@ -355,7 +375,6 @@ async function endViewingSession() {
         }
 
         await loadMembers();
-        // await loadGroups();
 
         renderGrid();
 
@@ -386,14 +405,12 @@ async function endViewingSession() {
     }
 }
 
-import { tvState, memberData, save as legacySave, initData, config, loadMembers, updateSetting } from './data.js';
-import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Initialize Localization
     await initI18n();
 
-    // 2. Initialize Data Layer (from API)
+    // 2. Initialize Data Layer
     await initData();
 
     await runDailyMaintenanceIfNeeded();
@@ -410,9 +427,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     hideAppLoader();
 
 
-    // 3. Start Background Services
-
     // ---------------- Still Watching Popup ----------------
+
     const continueBtn = document.getElementById('still-watch-continue');
     const endBtn = document.getElementById('still-watch-end');
 
@@ -434,46 +450,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     updateStillWatchingState();
-    // ------------------------------------------------------
+
 
     window.changeAppLanguage = async (lang) => {
         const success = await loadLanguage(lang);
+
         if (success) {
             import('./data.js').then(m => m.updateSetting('language', lang));
+
             applyTranslations();
             updateLanguageUI(lang);
-            renderGrid(); // Refresh grid for active status texts if any
-            renderNotifications(); // Refresh notifications
+            renderGrid();
+            renderNotifications();
         }
     };
 
     function updateLanguageUI(lang) {
-        // Toggle checks
+        // Toggle checks.
         ['en', 'hy', 'ru'].forEach(l => {
             const check = document.getElementById('lang-check-' + l);
-            if (check) check.style.display = (l === lang) ? 'block' : 'none';
+
+            if (check) {
+                check.style.display = (l === lang) ? 'block' : 'none';
+            }
         });
 
-        // Update main settings label
+        // Update main settings label.
         const langText = document.getElementById('current-lang-text');
+
         if (langText) {
-            const names = { en: 'English', hy: 'Հայերեն', ru: 'Русский' };
+            const names = {
+                en: 'English',
+                hy: 'Հայերեն',
+                ru: 'Русский'
+            };
+
             langText.innerText = names[lang] || lang;
         }
     }
 
-    // Initialize UI checks
-    if (typeof updateLanguageUI === 'function') {
-        updateLanguageUI(getCurrentLang());
-    }
+    // Initialize UI checks.
+    updateLanguageUI(getCurrentLang());
 
-    // TV Monitoring Logic
+
+    // ---------------- TV Monitoring Logic ----------------
+
     let activeMemberReminderDismissTimer = null;
     let activeMemberReminderRepeatTimer = null;
     let activeMemberReminderCycleStarted = false;
 
     function showActiveMemberReminder() {
         const popover = document.getElementById('critical-popover');
+
         if (!popover) return;
 
         // Don't show if the TV is off or onboarding isn't complete.
@@ -529,6 +557,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 10 * 1000);
     }
 
+
     // Check the current TV/member state regularly.
     timers.setInterval(() => {
         let isTvOn = tvState.on;
@@ -583,11 +612,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }, 5000);
 
-    // Automatic member/guest reset scheduler
+
+    // Automatic member/guest reset scheduler.
     // Check every minute for the 02:00, 10:00, and 18:00 reset times.
     timers.setInterval(async () => {
         await runDailyMaintenanceIfNeeded();
     }, 60000);
+
 
     window.handleCriticalAction = () => {
         const popover = document.getElementById('critical-popover');
@@ -599,7 +630,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         timers.clearTimeout(activeMemberReminderDismissTimer);
         timers.clearTimeout(activeMemberReminderRepeatTimer);
 
-        // Keep the reminder cycle active so the 5-second monitor
+        // Keep the reminder cycle active so the monitor
         // does not immediately reopen the popup.
         activeMemberReminderCycleStarted = true;
 
@@ -613,22 +644,47 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("Critical action: Navigating home.");
     };
 
+
     showToast("Indi Meter is ready.", 4000);
 
-    // Disable right-click context menu
+
+    // Disable right-click context menu.
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // 3. User Interaction Tracking
-    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
-    document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
+
+    // User Interaction Tracking.
+    document.addEventListener('keydown', () => {
+        resetIdle();
+        resetHomeTimer();
+    });
+
+    document.addEventListener('click', () => {
+        resetIdle();
+        resetHomeTimer();
+    });
+
     resetIdle();
     resetHomeTimer();
 
-    // 4. Remote Control System
+
+    // Remote Control System.
     initRemote();
 
-    // 5. Connection state monitoring
-    initConnectionMonitor();
+
+    /*
+     * Connection state is now pushed by the Python/Qt layer.
+     * No browser polling or connection-monitor initialization is required.
+     */
+
+
+    /*
+     * Signal to the Python integration layer that the page has
+     * completed its DOMContentLoaded initialization.
+     *
+     * app.py listens for this title change instead of relying
+     * on a fixed startup delay.
+     */
+    document.title = "APM_READY";
 
     console.log("System initialized.");
 });

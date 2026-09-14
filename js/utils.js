@@ -25,6 +25,7 @@ class TimerManager {
             fn(...args);
             this.timeouts.delete(id);
         }, delay);
+
         this.timeouts.add(id);
         return id;
     }
@@ -40,6 +41,10 @@ class TimerManager {
         this.intervals.clear();
         this.timeouts.clear();
     }
+
+    get activeCount() {
+        return this.intervals.size + this.timeouts.size;
+    }
 }
 
 export const timers = new TimerManager();
@@ -49,6 +54,7 @@ export const timers = new TimerManager();
  */
 export function debounce(fn, ms) {
     let timeoutId;
+
     return (...args) => {
         timers.clearTimeout(timeoutId);
         timeoutId = timers.setTimeout(() => fn(...args), ms);
@@ -60,8 +66,10 @@ export function debounce(fn, ms) {
  */
 export function throttle(fn, ms) {
     let last = 0;
+
     return (...args) => {
         const now = Date.now();
+
         if (now - last > ms) {
             last = now;
             fn(...args);

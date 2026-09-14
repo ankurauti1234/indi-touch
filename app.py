@@ -8,9 +8,11 @@
 # Run: python app.py
 
 
+import json
 import logging
 import os
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -28,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# ── Chromium / Qt environment ─────────────────────────────────────────────────
+# ── Chromium / Qt environment ────────────────────────────────────────────────
 
 # Do NOT disable the Chromium sandbox here.
 # The service runs as an unprivileged user so QtWebEngine can use its
@@ -37,7 +39,7 @@ logger = logging.getLogger(__name__)
 os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 
 
-# ── PyQt5 imports ─────────────────────────────────────────────────────────────
+# ── PyQt5 imports ────────────────────────────────────────────────────────────
 
 try:
     from PyQt5.QtCore import QUrl, Qt, QTimer
@@ -72,18 +74,128 @@ from api.db import (
 )
 
 from api.collector_service import send_event
-from api.system import get_wifi_status, _get_tv_status
+from api.system import _get_tv_status
 
 
 FLASK_PORT = 5000
 
 
-# ── Connection state polling ──────────────────────────────────────────────────
+# ── Connection state controller ──────────────────────────────────────────────
 #
 # Qt/Python is the single controller for connection state.
 # JavaScript does not independently poll the API.
 
 POLL_INTERVAL_MS = 5000
+
+
+# ── Wi-Fi state cache ─────────────────────────────────────────────────────────
+#
+# Wi-Fi state is owned by the Qt/Python connection-state controller.
+# The nmcli call is cached so the 5-second Qt polling loop does not spawn
+# nmcli on every iteration.
+
+_WIFI_INTERFACE = "wlan0"
+_WIFI_CACHE_TTL = 30.0
+
+_wifi_cache_lock = threading.Lock()
+_wifi_cache_value = False
+_wifi_cache_timestamp = 0.0
+
+
+def get_wifi_state():
+    """
+    Return cached Wi-Fi connection state.
+
+    The subprocess call is performed outside the cache lock so a slow
+    NetworkManager command cannot block another caller holding the lock.
+    """
+
+    global _wifi_cache_value
+    global _wifi_cache_timestamp
+
+    now = time.monotonic()
+
+    with _wifi_cache_lock:
+        if now - _wifi_cache_timestamp < _WIFI_CACHE_TTL:
+            return _wifi_cache_value
+
+    try:
+        result = subprocess.run(
+            [
+                "nmcli",
+                "-t",
+                "-g",
+                "GENERAL.STATE",
+                "device",
+                "show",
+                _WIFI_INTERFACE,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=2.0,
+            check=False,
+        )
+
+        state = result.stdout.strip()
+        connected = state.startswith("100")
+
+    except (OSError, subprocess.SubprocessError) as exc:
+        logger.warning("[WIFI] Failed to read Wi-Fi state: %s", exc)
+        connected = False
+
+    with _wifi_cache_lock:
+        _wifi_cache_value = connected
+        _wifi_cache_timestamp = time.monotonic()
+
+    return connected
+
+
+# ── TV state cache ────────────────────────────────────────────────────────────
+#
+# tv_on is also owned by the Qt/Python connection-state controller.
+# Keep a short cache so repeated Qt polling does not repeatedly query the
+# underlying Bluetooth state.
+
+_TV_CACHE_TTL = 5.0
+
+_tv_cache_lock = threading.Lock()
+_tv_cache_value = False
+_tv_cache_timestamp = 0.0
+
+
+def get_tv_state():
+    """
+    Return cached TV power state.
+
+    The low-level TV state reader remains in api.system.py.
+    app.py owns the cached connection-state value used by the UI.
+    """
+
+    global _tv_cache_value
+    global _tv_cache_timestamp
+
+    now = time.monotonic()
+
+    with _tv_cache_lock:
+        if now - _tv_cache_timestamp < _TV_CACHE_TTL:
+            return _tv_cache_value
+
+    ble_available = os.path.exists(
+        SYSTEM_FILES["bluetooth_available"]
+    )
+
+    try:
+        state = bool(_get_tv_status(ble_available))
+
+    except Exception as exc:
+        logger.warning("[TV] Failed to read TV state: %s", exc)
+        state = False
+
+    with _tv_cache_lock:
+        _tv_cache_value = state
+        _tv_cache_timestamp = time.monotonic()
+
+    return state
 
 
 # ── Flask readiness polling ───────────────────────────────────────────────────
@@ -97,6 +209,8 @@ FLASK_READY_POLL_INTERVAL = 0.1
 def run_flask():
     flask_app = create_app()
 
+    # Keep the API loopback-only. The kiosk's Flask API must not be exposed
+    # directly to the LAN.
     serve(
         flask_app,
         host="127.0.0.1",
@@ -164,9 +278,11 @@ class BrowserWindow(QMainWindow):
             True,
         )
 
+        # Do not permit insecure HTTP content to bypass Chromium's
+        # mixed-content protections.
         settings.setAttribute(
             QWebEngineSettings.AllowRunningInsecureContent,
-            True,
+            False,
         )
 
         settings.setAttribute(
@@ -231,7 +347,7 @@ class BrowserWindow(QMainWindow):
 
         # ── Frontend readiness handshake ──────────────────────────────────────
         #
-        # main.js changes document.title to "APM_READY" after
+        # main.js changes document.title to "APM_READY" only after
         # DOMContentLoaded initialization is complete.
 
         self.view.titleChanged.connect(self._on_title_changed)
@@ -291,10 +407,6 @@ class BrowserWindow(QMainWindow):
         one source of truth for the UI.
         """
 
-        ble_available = os.path.exists(
-            SYSTEM_FILES["bluetooth_available"]
-        )
-
         return {
             "usb_jack": os.path.exists(
                 SYSTEM_FILES["jack_status"]
@@ -302,11 +414,11 @@ class BrowserWindow(QMainWindow):
             "hdmi_vcc": os.path.exists(
                 SYSTEM_FILES["hdmi_input"]
             ),
-            "wifi": get_wifi_status(),
+            "wifi": get_wifi_state(),
             "internet": os.path.exists(
                 SYSTEM_FILES["internet_ok"]
             ),
-            "tv_on": _get_tv_status(ble_available),
+            "tv_on": get_tv_state(),
         }
 
     def _push_state(self, state):
@@ -314,14 +426,15 @@ class BrowserWindow(QMainWindow):
         Push one complete connection-state snapshot into the renderer.
         """
 
-        js_state = (
-            "{"
-            f"usb_jack: {'true' if state['usb_jack'] else 'false'}, "
-            f"hdmi_vcc: {'true' if state['hdmi_vcc'] else 'false'}, "
-            f"wifi: {'true' if state['wifi'] else 'false'}, "
-            f"internet: {'true' if state['internet'] else 'false'}, "
-            f"tv_on: {'true' if state['tv_on'] else 'false'}"
-            "}"
+        js_state = json.dumps(
+            {
+                "usb_jack": bool(state["usb_jack"]),
+                "hdmi_vcc": bool(state["hdmi_vcc"]),
+                "wifi": bool(state["wifi"]),
+                "internet": bool(state["internet"]),
+                "tv_on": bool(state["tv_on"]),
+            },
+            separators=(",", ":"),
         )
 
         js = (
@@ -373,6 +486,9 @@ INTERNET_CONNECT_TIMEOUT = 3.0
 # Stable/up interval.
 INTERNET_OK_INTERVAL = 60.0
 
+# Retry interval while debouncing failures.
+INTERNET_FAILURE_RETRY_INTERVAL = 5.0
+
 # Three complete failed checks before declaring the connection down.
 INTERNET_FAIL_THRESHOLD = 3
 
@@ -385,6 +501,9 @@ def _check_internet_once():
     """
     Return True if any configured connectivity target accepts
     a TCP connection.
+
+    Targets are checked in order and the first successful connection
+    immediately reports the internet as available.
     """
 
     for host, port in INTERNET_TARGETS:
@@ -451,15 +570,24 @@ def check_internet_loop():
     Maintain the internet status flag using multiple connectivity targets,
     failure debounce, and backoff.
 
-    A single failed probe never immediately declares the internet down.
-    """
+    Healthy state:
+        - Check every 60 seconds.
 
-    consecutive_failures = 0
+    Failure debounce:
+        - A failed healthy check is retried every 5 seconds.
+        - Three consecutive failures are required before declaring
+          the connection down.
+
+    Down state:
+        - Retry using exponential backoff: 5, 10, 20, 40, 60 seconds.
+        - A successful probe immediately restores the connection.
+    """
 
     internet_ok = os.path.exists(
         SYSTEM_FILES["internet_ok"]
     )
 
+    consecutive_failures = 0
     backoff = INTERNET_BACKOFF_INITIAL
 
     while True:
@@ -480,17 +608,22 @@ def check_internet_loop():
         consecutive_failures += 1
 
         if internet_ok:
+            # Keep the existing "up" state while failures are being
+            # debounced. Retry quickly instead of waiting the full
+            # healthy-state interval.
             if consecutive_failures < INTERNET_FAIL_THRESHOLD:
-                # Keep the existing "up" state while failures are
-                # being debounced.
-                time.sleep(INTERNET_OK_INTERVAL)
+                time.sleep(INTERNET_FAILURE_RETRY_INTERVAL)
                 continue
 
             internet_ok = False
             _set_internet_flag(False)
 
+            consecutive_failures = 0
             backoff = INTERNET_BACKOFF_INITIAL
+
+            # Give the down-state loop its first retry delay.
             time.sleep(backoff)
+
             continue
 
         # Already down: use exponential backoff.

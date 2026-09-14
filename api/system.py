@@ -6,8 +6,6 @@ import json
 import os
 import socket
 import subprocess
-import threading
-import time
 
 from flask import Blueprint, jsonify, request
 
@@ -26,21 +24,11 @@ BACKLIGHT_PATHS = [
 ]
 
 
-# ── Cached system status ──────────────────────────────────────────────────────
-
-_WIFI_CACHE_TTL = 30.0
-_wifi_cache_lock = threading.Lock()
-_wifi_cache_value = False
-_wifi_cache_timestamp = 0.0
-
-_mac_address_cache = None
-_mac_address_lock = threading.Lock()
-
-
 def get_backlight_path():
     for path in BACKLIGHT_PATHS:
         if os.path.exists(path):
             return path
+
     return None
 
 
@@ -54,14 +42,13 @@ def get_ip_address():
     #    This is useful for multi-homed hosts.
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-            sock.settimeout(0.5)
             sock.connect(("8.8.8.8", 80))
             ip = sock.getsockname()[0]
 
             if ip and not ip.startswith("127."):
                 return ip
 
-    except (OSError, socket.timeout):
+    except OSError:
         pass
 
     # 2. Fallback: use a private broadcast address.
@@ -73,101 +60,55 @@ def get_ip_address():
             if ip and not ip.startswith("127."):
                 return ip
 
-    except (OSError, socket.timeout):
+    except OSError:
         pass
 
     return "127.0.0.1"
 
 
 def get_mac_address():
-    """Return the MAC address, cached for the lifetime of the process."""
+    """Return the MAC address for the first available network interface."""
 
-    global _mac_address_cache
+    for interface in ("wlan0", "eth0", "enp1s0"):
+        path = f"/sys/class/net/{interface}/address"
 
-    if _mac_address_cache is not None:
-        return _mac_address_cache
+        if not os.path.exists(path):
+            continue
 
-    with _mac_address_lock:
-        if _mac_address_cache is not None:
-            return _mac_address_cache
+        try:
+            with open(path, "r") as file:
+                mac = file.read().strip().upper()
 
-        for interface in ("wlan0", "eth0", "enp1s0"):
-            path = f"/sys/class/net/{interface}/address"
+            if mac:
+                return mac
 
-            if not os.path.exists(path):
-                continue
+        except OSError:
+            continue
 
-            try:
-                with open(path, "r") as file:
-                    mac = file.read().strip().upper()
-
-                if mac:
-                    _mac_address_cache = mac
-                    return mac
-
-            except OSError:
-                continue
-
-        _mac_address_cache = "00:00:00:00:00:00"
-        return _mac_address_cache
+    return "00:00:00:00:00:00"
 
 
 def get_wifi_status():
     """
-    Return Wi-Fi connection state.
+    Return the current Wi-Fi state from the system runtime flag.
 
-    nmcli is relatively expensive compared with reading the /run flag,
-    so cache its result for a short period.
-
-    The cache lock is intentionally not held while nmcli runs.
+    Connection-state polling is owned by app.py. This API helper is kept
+    for compatibility with the system status endpoints and does not spawn
+    nmcli or maintain a second polling cache.
     """
 
-    global _wifi_cache_value, _wifi_cache_timestamp
-
-    now = time.monotonic()
-
-    # Only hold the lock while checking the cache.
-    # The subprocess must run outside the lock.
-    with _wifi_cache_lock:
-        if now - _wifi_cache_timestamp < _WIFI_CACHE_TTL:
-            return _wifi_cache_value
-
-    try:
-        result = subprocess.run(
-            [
-                "nmcli",
-                "-t",
-                "-g",
-                "GENERAL.STATE",
-                "device",
-                "show",
-                "wlan0",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=2,
-            check=False,
-        )
-
-        wifi_ok = "connected" in result.stdout.lower()
-
-    except (OSError, subprocess.SubprocessError):
-        wifi_ok = os.path.exists(SYSTEM_FILES["wifi_up"])
-
-    # Update the cache after the subprocess has completed.
-    with _wifi_cache_lock:
-        _wifi_cache_value = wifi_ok
-        _wifi_cache_timestamp = time.monotonic()
-        return _wifi_cache_value
+    return os.path.exists(SYSTEM_FILES["wifi_up"])
 
 
 def invalidate_wifi_status_cache():
-    """Force the next Wi-Fi status request to query nmcli again."""
+    """
+    Compatibility no-op.
 
-    global _wifi_cache_timestamp
+    Wi-Fi polling/cache ownership now belongs to app.py, so there is no
+    cache in this module to invalidate.
+    """
 
-    with _wifi_cache_lock:
-        _wifi_cache_timestamp = 0.0
+    return None
 
 
 def _get_tv_status(ble_available):
@@ -228,12 +169,11 @@ def _get_installation_done():
 
 def _get_system_flags():
     """
-    Return the small set of system flags needed by the
-    connection monitor.
+    Return the small set of system flags needed by the connection monitor.
 
-    Kept for the API endpoint and other callers. The main Qt
-    application now supplies connection state directly to the
-    frontend instead of JavaScript polling this endpoint.
+    Kept for the API endpoint and other callers. The main Qt application
+    supplies connection state directly to the frontend instead of
+    JavaScript polling this endpoint.
     """
 
     ble_available = os.path.exists(

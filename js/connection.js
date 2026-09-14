@@ -1,6 +1,5 @@
 /* js/connection.js — USB, WiFi and internet connection warning popups */
 
-import { openSetting } from './settings.js';
 import { timers } from './utils.js';
 import { config } from './data.js';
 
@@ -71,7 +70,7 @@ export function setUsbState(connected) {
 }
 
 
-// ─── WiFi Popup ───────────────────────────────────────────────────────────────
+// ─── WiFi Popup ──────────────────────────────────────────────────────────────
 
 let _wifiCooldownTimer = null;
 let _wifiPopupVisible = false;
@@ -346,7 +345,10 @@ window.applyDeviceState = function (state) {
 
     if (Boolean(state.wifi) !== _wifiConnected) {
         setWifiState(Boolean(state.wifi));
-    } else if (state.wifi && document.getElementById('wifi-warning-overlay')) {
+    } else if (
+        state.wifi &&
+        document.getElementById('wifi-warning-overlay')
+    ) {
         hideWifiPopup();
     }
 
@@ -436,15 +438,3 @@ window.applyDeviceState = function (state) {
         }
     });
 };
-
-
-// ─── Initialization ────────────────────────────────────────────────────────────
-
-export function initConnectionMonitor() {
-    /*
-     * Connection state is now supplied by app.py through
-     * window.applyDeviceState().
-     *
-     * No HTTP polling is started here.
-     */
-}

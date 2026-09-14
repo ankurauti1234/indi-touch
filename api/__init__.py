@@ -4,7 +4,7 @@
 
 import os
 
-from flask import Flask, send_from_directory, abort
+from flask import Flask, abort, send_from_directory
 from flask_cors import CORS
 
 
@@ -49,7 +49,7 @@ def create_app() -> Flask:
         response.headers["Referrer-Policy"] = "no-referrer"
         return response
 
-    # ── Blueprints ───────────────────────────────────────────────────────────
+    # ── Blueprints ───────────────────────────────────────────────────────
 
     from .wifi import wifi_bp
     from .members import members_bp
@@ -61,40 +61,40 @@ def create_app() -> Flask:
 
     app.register_blueprint(
         wifi_bp,
-        url_prefix="/api/wifi"
+        url_prefix="/api/wifi",
     )
 
     app.register_blueprint(
         members_bp,
-        url_prefix="/api/members"
+        url_prefix="/api/members",
     )
 
     app.register_blueprint(
         guests_bp,
-        url_prefix="/api/guests"
+        url_prefix="/api/guests",
     )
 
     app.register_blueprint(
         onboarding_bp,
-        url_prefix="/api/onboarding"
+        url_prefix="/api/onboarding",
     )
 
     app.register_blueprint(
         system_bp,
-        url_prefix="/api/system"
+        url_prefix="/api/system",
     )
 
     app.register_blueprint(
         notifications_bp,
-        url_prefix="/api/notifications"
+        url_prefix="/api/notifications",
     )
 
     app.register_blueprint(
         wallpaper_bp,
-        url_prefix="/api/wallpaper"
+        url_prefix="/api/wallpaper",
     )
 
-    # ── Serve frontend ───────────────────────────────────────────────────────
+    # ── Serve frontend ───────────────────────────────────────────────────
 
     @app.route("/")
     def index():

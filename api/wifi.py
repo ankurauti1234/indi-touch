@@ -11,7 +11,6 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 
 from .config import SYSTEM_FILES
-from .system import invalidate_wifi_status_cache
 
 
 wifi_bp = Blueprint("wifi", __name__)
@@ -19,19 +18,20 @@ wifi_bp = Blueprint("wifi", __name__)
 
 def _run(cmd: list) -> tuple[bool, str]:
     try:
-        r = subprocess.run(
+        result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
-        return True, r.stdout
 
-    except subprocess.CalledProcessError as e:
-        return False, e.stderr
+        return True, result.stdout
 
-    except (OSError, subprocess.SubprocessError) as e:
-        return False, str(e)
+    except subprocess.CalledProcessError as exc:
+        return False, exc.stderr
+
+    except (OSError, subprocess.SubprocessError) as exc:
+        return False, str(exc)
 
 
 def _set_reg_domain():
@@ -45,9 +45,8 @@ def _set_reg_domain():
 def wifi_status():
     """Fast status check via /run file (no nmcli needed)."""
 
-    connected = (
+    connected = os.path.exists(
         SYSTEM_FILES["wifi_up"]
-        and os.path.exists(SYSTEM_FILES["wifi_up"])
     )
 
     return jsonify({
@@ -66,13 +65,13 @@ def current_wifi():
         "NAME,TYPE,DEVICE",
         "connection",
         "show",
-        "--active"
+        "--active",
     ])
 
     if not ok:
         return jsonify({
             "connected": False,
-            "error": "nmcli failed"
+            "error": "nmcli failed",
         }), 500
 
     for line in out.strip().splitlines():
@@ -85,11 +84,14 @@ def current_wifi():
 
         if (
             ctype == "802-11-wireless"
-            and (device.startswith("wlan") or device.startswith("wlx"))
+            and (
+                device.startswith("wlan")
+                or device.startswith("wlx")
+            )
         ):
             return jsonify({
                 "connected": True,
-                "ssid": name
+                "ssid": name,
             })
 
     return jsonify({
@@ -101,18 +103,18 @@ def current_wifi():
 
 @wifi_bp.route("/networks")
 def list_networks():
-    """Scan available Wi-Fi networks + merge with saved NetworkManager connections."""
+    """Scan available Wi-Fi networks and merge with saved NetworkManager connections."""
 
-    # Ensure 5GHz is unlocked
+    # Ensure 5GHz is unlocked.
     _set_reg_domain()
 
-    # Rescan
+    # Rescan.
     _run([
         "sudo",
         "nmcli",
         "device",
         "wifi",
-        "rescan"
+        "rescan",
     ])
 
     time.sleep(2.5)
@@ -124,13 +126,13 @@ def list_networks():
         "SSID,SIGNAL,SECURITY",
         "device",
         "wifi",
-        "list"
+        "list",
     ])
 
     if not ok:
         return jsonify({
             "success": False,
-            "error": "Scan failed"
+            "error": "Scan failed",
         }), 500
 
     merged: dict[str, dict] = {}
@@ -151,7 +153,7 @@ def list_networks():
                 "signal": int(signal) if signal.isdigit() else 0,
                 "security": security,
                 "saved": False,
-                "open": security.lower() in ("--", "open", "")
+                "open": security.lower() in ("--", "open", ""),
             }
 
     # Add saved networks from NetworkManager.
@@ -162,17 +164,22 @@ def list_networks():
         ok2, file_list = _run([
             "sudo",
             "ls",
-            str(nm_dir)
+            str(nm_dir),
         ])
 
         if ok2:
             for fname in file_list.strip().splitlines():
-                fpath = nm_dir / fname.strip()
+                fname = fname.strip()
+
+                if not fname:
+                    continue
+
+                fpath = nm_dir / fname
 
                 ok3, content = _run([
                     "sudo",
                     "cat",
-                    str(fpath)
+                    str(fpath),
                 ])
 
                 if not ok3:
@@ -181,7 +188,10 @@ def list_networks():
                 parser = configparser.RawConfigParser()
 
                 try:
-                    parser.read_string(content, source=fname)
+                    parser.read_string(
+                        content,
+                        source=fname,
+                    )
                 except configparser.Error:
                     continue
 
@@ -191,7 +201,7 @@ def list_networks():
                     except (
                         configparser.NoSectionError,
                         configparser.NoOptionError,
-                        ValueError
+                        ValueError,
                     ):
                         return None
 
@@ -205,19 +215,19 @@ def list_networks():
                 if not ssid:
                     continue
 
-                # Match against scanned networks
+                # Match against scanned networks.
                 if ssid in merged:
                     merged[ssid]["saved"] = True
 
     # Prioritize saved networks, then signal strength.
     result = sorted(
         merged.values(),
-        key=lambda x: (not x["saved"], -x["signal"])
+        key=lambda x: (not x["saved"], -x["signal"]),
     )
 
     return jsonify({
         "success": True,
-        "networks": result
+        "networks": result,
     })
 
 
@@ -233,19 +243,19 @@ def wifi_connect():
     if not ssid:
         return jsonify({
             "success": False,
-            "error": "SSID required"
+            "error": "SSID required",
         }), 400
 
-    # Ensure 5GHz is unlocked before connecting
+    # Ensure 5GHz is unlocked before connecting.
     _set_reg_domain()
 
-    # Remove old saved connection (ignore errors)
+    # Remove old saved connection (ignore errors).
     _run([
         "sudo",
         "nmcli",
         "connection",
         "delete",
-        ssid
+        ssid,
     ])
 
     if pwd:
@@ -257,17 +267,17 @@ def wifi_connect():
             "connect",
             ssid,
             "password",
-            pwd
+            pwd,
         ]
     else:
-        # Open network — no password
+        # Open network — no password.
         cmd = [
             "sudo",
             "nmcli",
             "device",
             "wifi",
             "connect",
-            ssid
+            ssid,
         ]
 
     ok, out = _run(cmd)
@@ -276,35 +286,31 @@ def wifi_connect():
         return jsonify({
             "success": False,
             "error": "Connection failed",
-            "details": out.strip()
+            "details": out.strip(),
         }), 500
 
-    # Touch the /run flag (nmcli success ≈ connected)
+    # Touch the /run flag (nmcli success ≈ connected).
     try:
         subprocess.run(
             [
                 "sudo",
                 "tee",
-                SYSTEM_FILES["wifi_up"]
+                SYSTEM_FILES["wifi_up"],
             ],
             input="1",
             text=True,
             capture_output=True,
-            check=True
+            check=True,
         )
 
-        # The WiFi state has changed, so force the next
-        # system status check to refresh its cached value.
-        invalidate_wifi_status_cache()
-
-    except (OSError, subprocess.SubprocessError) as e:
-        print(f"[WiFi] Failed to update wifi_up flag: {e}")
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"[WiFi] Failed to update wifi_up flag: {exc}")
 
     print(f"[WiFi] Connected to {ssid}")
 
     return jsonify({
         "success": True,
-        "ssid": ssid
+        "ssid": ssid,
     })
 
 
@@ -317,11 +323,8 @@ def wifi_disconnect():
         "nmcli",
         "device",
         "disconnect",
-        "wlan0"
+        "wlan0",
     ])
-
-    if ok:
-        invalidate_wifi_status_cache()
 
     return jsonify({
         "success": ok

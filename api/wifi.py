@@ -6,13 +6,13 @@ import configparser
 import os
 import subprocess
 import time
-from io import StringIO
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 
 from .config import SYSTEM_FILES
 from .system import invalidate_wifi_status_cache
+
 
 wifi_bp = Blueprint("wifi", __name__)
 
@@ -50,7 +50,9 @@ def wifi_status():
         and os.path.exists(SYSTEM_FILES["wifi_up"])
     )
 
-    return jsonify({"connected": connected})
+    return jsonify({
+        "connected": connected
+    })
 
 
 # ── GET /api/wifi/current ─────────────────────────────────────────────────────
@@ -90,7 +92,9 @@ def current_wifi():
                 "ssid": name
             })
 
-    return jsonify({"connected": False})
+    return jsonify({
+        "connected": False
+    })
 
 
 # ── GET /api/wifi/networks ────────────────────────────────────────────────────
@@ -147,12 +151,11 @@ def list_networks():
                 "signal": int(signal) if signal.isdigit() else 0,
                 "security": security,
                 "saved": False,
-                "password": None,
                 "open": security.lower() in ("--", "open", "")
             }
 
-    # Add saved from NetworkManager
-    # ONLY if they are also in the scan results
+    # Add saved networks from NetworkManager.
+    # ONLY if they are also in the scan results.
     nm_dir = Path("/etc/NetworkManager/system-connections")
 
     if nm_dir.exists():
@@ -206,28 +209,7 @@ def list_networks():
                 if ssid in merged:
                     merged[ssid]["saved"] = True
 
-                    km = (
-                        safe("wifi-security", "key-mgmt")
-                        or safe(
-                            "802-11-wireless-security",
-                            "key-mgmt"
-                        )
-                        or "none"
-                    ).lower()
-
-                    pwd = (
-                        safe("wifi-security", "psk")
-                        if km in ("wpa-psk", "wpa-eap")
-                        else ""
-                    )
-
-                    merged[ssid]["password"] = (
-                        pwd
-                        if merged[ssid]["password"] is None
-                        else merged[ssid]["password"]
-                    )
-
-    # Prioritize saved networks, then signal strength
+    # Prioritize saved networks, then signal strength.
     result = sorted(
         merged.values(),
         key=lambda x: (not x["saved"], -x["signal"])
@@ -341,4 +323,6 @@ def wifi_disconnect():
     if ok:
         invalidate_wifi_status_cache()
 
-    return jsonify({"success": ok})
+    return jsonify({
+        "success": ok
+    })

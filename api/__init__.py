@@ -1,21 +1,45 @@
 #!/usr/bin/env python3
+
 # api/__init__.py — Flask application factory
 
 import os
+
 from flask import Flask, send_from_directory, abort
 from flask_cors import CORS
 
 
 def create_app() -> Flask:
-    # Serve static files from the parent directory (index.html, css/, js/, etc.)
-    root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    # Serve static files from the parent directory
+    # (index.html, css/, js/, assets/, fonts/, lang/, etc.)
+    root = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..")
+    )
+
     app = Flask(__name__, static_folder=None)
+
     CORS(
         app,
-        resources={r"/*": {"origins": ["http://127.0.0.1:5000", "http://localhost:5000"]}},
+        resources={
+            r"/*": {
+                "origins": [
+                    "http://127.0.0.1:5000",
+                    "http://localhost:5000",
+                ]
+            }
+        },
         supports_credentials=True,
-        allow_headers=["Content-Type", "Authorization"],
-        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=[
+            "Content-Type",
+            "Authorization",
+        ],
+        methods=[
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS",
+        ],
     )
 
     @app.after_request
@@ -25,24 +49,53 @@ def create_app() -> Flask:
         response.headers["Referrer-Policy"] = "no-referrer"
         return response
 
-    # ── Blueprints ─────────────────────────────────────────────────────────────
-    from .wifi       import wifi_bp
-    from .members    import members_bp
-    from .guests     import guests_bp
+    # ── Blueprints ───────────────────────────────────────────────────────────
+
+    from .wifi import wifi_bp
+    from .members import members_bp
+    from .guests import guests_bp
     from .onboarding import onboarding_bp
-    from .system     import system_bp
+    from .system import system_bp
     from .notifications import notifications_bp
-    from .wallpaper    import wallpaper_bp
+    from .wallpaper import wallpaper_bp
 
-    app.register_blueprint(wifi_bp,       url_prefix="/api/wifi")
-    app.register_blueprint(members_bp,    url_prefix="/api/members")
-    app.register_blueprint(guests_bp,     url_prefix="/api/guests")
-    app.register_blueprint(onboarding_bp, url_prefix="/api/onboarding")
-    app.register_blueprint(system_bp,     url_prefix="/api/system")
-    app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
-    app.register_blueprint(wallpaper_bp,  url_prefix="/api/wallpaper")
+    app.register_blueprint(
+        wifi_bp,
+        url_prefix="/api/wifi"
+    )
 
-    # ── Serve frontend ─────────────────────────────────────────────────────────
+    app.register_blueprint(
+        members_bp,
+        url_prefix="/api/members"
+    )
+
+    app.register_blueprint(
+        guests_bp,
+        url_prefix="/api/guests"
+    )
+
+    app.register_blueprint(
+        onboarding_bp,
+        url_prefix="/api/onboarding"
+    )
+
+    app.register_blueprint(
+        system_bp,
+        url_prefix="/api/system"
+    )
+
+    app.register_blueprint(
+        notifications_bp,
+        url_prefix="/api/notifications"
+    )
+
+    app.register_blueprint(
+        wallpaper_bp,
+        url_prefix="/api/wallpaper"
+    )
+
+    # ── Serve frontend ───────────────────────────────────────────────────────
+
     @app.route("/")
     def index():
         return send_from_directory(root, "index.html")
@@ -51,10 +104,26 @@ def create_app() -> Flask:
     def upload_page():
         return send_from_directory(root, "upload.html")
 
+    # Only these directories are allowed to be served as static resources.
+    # Application/source files such as app.py, requirements.txt, and files
+    # inside api/ must never be exposed through the frontend catch-all route.
+    STATIC_DIRS = {
+        "css",
+        "js",
+        "assets",
+        "fonts",
+        "lang",
+    }
+
     @app.route("/<path:path>")
     def static_files(path):
-        # Block access to hidden files/directories such as .git, .env, .vscode, etc.
+        # Block hidden files/directories such as .git, .env, .vscode, etc.
         if any(part.startswith(".") for part in path.split("/")):
+            abort(404)
+
+        top = path.split("/", 1)[0]
+
+        if top not in STATIC_DIRS:
             abort(404)
 
         return send_from_directory(root, path)

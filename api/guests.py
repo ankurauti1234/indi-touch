@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
+
 # api/guests.py — Guest management routes
 
+import json
+import traceback
+
 from flask import Blueprint, jsonify, request
+
 from .config import METER_ID
 from .db import load_guests_data, save_guests_data
 from .collector_service import publish_guest_event
-import traceback
-import json
+
 
 guests_bp = Blueprint("guests", __name__)
 
@@ -47,9 +51,12 @@ def add_guest():
         guests = load_guests_data()
 
         # Generate safe ID
-        next_id = max([g.get("id", 0) for g in guests], default=0) + 1
-        new_guest["id"] = next_id
+        next_id = max(
+            [g.get("id", 0) for g in guests],
+            default=0
+        ) + 1
 
+        new_guest["id"] = next_id
         guests.append(new_guest)
 
         # Save guests
@@ -71,6 +78,7 @@ def add_guest():
         try:
             publish_guest_event(guests)
             print("Guest add event published successfully")
+
         except Exception as mqtt_error:
             print("MQTT PUBLISH ERROR:", str(mqtt_error))
             traceback.print_exc()
@@ -105,7 +113,10 @@ def remove_guest():
 
         guests = load_guests_data()
 
-        guests = [g for g in guests if g.get("id") != guest_id]
+        guests = [
+            g for g in guests
+            if g.get("id") != guest_id
+        ]
 
         save_guests_data(guests)
 
@@ -133,12 +144,12 @@ def remove_guest():
             "error": str(e)
         }), 500
 
+
 @guests_bp.route("/update", methods=["POST"])
 def update_guests():
     """
     Replace guest list and publish update event.
     """
-
     try:
         data = request.get_json(force=True) or {}
 
@@ -166,8 +177,9 @@ def update_guests():
         print("Publishing guest update event...")
 
         try:
-            publish_guest_event(guests)
+            publish_guest_event(guest_list)
             print("Guest update event published successfully")
+
         except Exception as mqtt_error:
             print("MQTT PUBLISH ERROR:", str(mqtt_error))
             traceback.print_exc()

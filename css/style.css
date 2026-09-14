@@ -1626,7 +1626,7 @@ body.osk-open .main-stage {
 }
 
 
-
+/* ===================== Screensaver Styles ==================================*/
 #screensaver {
     position: fixed;
     inset: 0;
@@ -1675,15 +1675,13 @@ body.osk-open .main-stage {
     justify-content: center;
 }
 
-#clock-time.massive {
-    font-size: 350px;
-}
-
 .clock-main-digits {
     font-size: inherit;
     line-height: 0.9;
     font-weight: 200;
-    background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: linear-gradient(180deg,
+            #fff 0%,
+            rgba(255, 255, 255, 0.85) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1703,15 +1701,6 @@ body.osk-open .main-stage {
 
 .compact-view .saver-member-name {
     font-size: 24px;
-}
-
-.clock-secs {
-    font-size: 0.25em;
-    opacity: 0.5;
-    font-weight: 400;
-    margin-top: -10px;
-    letter-spacing: 2px;
-    -webkit-text-fill-color: #fff;
 }
 
 /* TV Status Tag (Screensaver) */

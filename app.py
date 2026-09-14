@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+
 # app.py — Single entry point for Inditronics APM on Raspberry Pi
 #
 # Starts the Flask API server in the background, then launches the PyQt5
 # browser window pointing at http://127.0.0.1:5000.
 #
 # Run: python app.py
+
 
 import logging
 import os
@@ -27,9 +29,9 @@ logger = logging.getLogger(__name__)
 
 
 # ── Chromium / Qt environment ─────────────────────────────────────────────────
-#
+
 # Do NOT disable the Chromium sandbox here.
-# The service must run as an unprivileged user so QtWebEngine can use its
+# The service runs as an unprivileged user so QtWebEngine can use its
 # sandbox normally.
 
 os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
@@ -42,6 +44,7 @@ try:
     from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
     from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
     from PyQt5.QtGui import QKeySequence
+
 except ImportError:
     print("[ERROR] PyQt5 / PyQt5-WebEngine not found.")
     print("        pip install PyQt5 PyQt5-WebEngine")
@@ -51,17 +54,23 @@ except ImportError:
 # ── API imports ───────────────────────────────────────────────────────────────
 
 from api import create_app
+
 from api.config import (
     SYSTEM_FILES,
     is_installation_done,
     is_fresh_boot,
     save_boot_id,
+    load_hhid,
+    METER_ID,
 )
+
 from api.db import (
     calculate_age,
+    get_conn,
     init_db,
     load_members_data,
 )
+
 from api.collector_service import send_event
 from api.system import get_wifi_status, _get_tv_status
 
@@ -71,7 +80,7 @@ FLASK_PORT = 5000
 
 # ── Connection state polling ──────────────────────────────────────────────────
 #
-# The Qt/Python layer is the single controller for connection state.
+# Qt/Python is the single controller for connection state.
 # JavaScript does not independently poll the API.
 
 POLL_INTERVAL_MS = 5000
@@ -113,6 +122,7 @@ def wait_for_flask():
                 timeout=0.2,
             ):
                 return True
+
         except OSError:
             time.sleep(FLASK_READY_POLL_INTERVAL)
 
@@ -122,6 +132,7 @@ def wait_for_flask():
 # ── PyQt5 browser window ──────────────────────────────────────────────────────
 
 class BrowserWindow(QMainWindow):
+
     def __init__(self):
         super().__init__()
 
@@ -274,7 +285,7 @@ class BrowserWindow(QMainWindow):
 
     def _read_state(self):
         """
-        Read one complete snapshot of the connection-related state.
+        Read one complete snapshot of connection-related state.
 
         All connection state comes from the Qt/Python side so there is
         one source of truth for the UI.
@@ -349,7 +360,7 @@ class BrowserWindow(QMainWindow):
             super().wheelEvent(event)
 
 
-# ── Background Internet Checker ───────────────────────────────────────────────
+# ── Background Internet Checker ──────────────────────────────────────────────
 
 INTERNET_TARGETS = (
     ("1.1.1.1", 53),
@@ -372,7 +383,7 @@ INTERNET_BACKOFF_MAX = 60.0
 
 def _check_internet_once():
     """
-    Return True if any of the configured connectivity targets accepts
+    Return True if any configured connectivity target accepts
     a TCP connection.
     """
 
@@ -412,6 +423,7 @@ def _set_internet_flag(internet_ok):
         try:
             with open(flag_path, "w"):
                 pass
+
         except OSError as exc:
             logger.error(
                 "[INTERNET] Failed to create %s: %s",
@@ -425,6 +437,7 @@ def _set_internet_flag(internet_ok):
 
         try:
             os.remove(flag_path)
+
         except OSError as exc:
             logger.error(
                 "[INTERNET] Failed to remove %s: %s",
@@ -435,7 +448,7 @@ def _set_internet_flag(internet_ok):
 
 def check_internet_loop():
     """
-    Maintain /run/internet_ok using multiple connectivity targets,
+    Maintain the internet status flag using multiple connectivity targets,
     failure debounce, and backoff.
 
     A single failed probe never immediately declares the internet down.
@@ -494,35 +507,32 @@ def check_internet_loop():
 def _boot_reset():
     """On first boot: reset all members/guests to inactive and publish."""
 
-    from api.config import load_hhid, METER_ID, DB_PATH
-
     hhid = load_hhid()
 
     if not hhid:
         print("[BOOT] No HHID — skipping reset")
         return
 
-    import sqlite3
+    conn = get_conn()
 
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            """
-            UPDATE members
-            SET active = 0
-            WHERE meter_id = ? AND hhid = ?
-            """,
-            (METER_ID, hhid),
-        )
+    conn.execute(
+        """
+        UPDATE members
+        SET active = 0
+        WHERE meter_id = ? AND hhid = ?
+        """,
+        (METER_ID, hhid),
+    )
 
-        conn.execute(
-            """
-            DELETE FROM guests
-            WHERE meter_id = ? AND hhid = ?
-            """,
-            (METER_ID, hhid),
-        )
+    conn.execute(
+        """
+        DELETE FROM guests
+        WHERE meter_id = ? AND hhid = ?
+        """,
+        (METER_ID, hhid),
+    )
 
-        conn.commit()
+    conn.commit()
 
     data = load_members_data()
 
@@ -577,6 +587,7 @@ def main():
         daemon=True,
         name="flask",
     )
+
     flask_thread.start()
 
     # 4. Internet monitor
@@ -585,6 +596,7 @@ def main():
         daemon=True,
         name="internet_check",
     )
+
     internet_thread.start()
 
     # 5. Wait for Flask to actually accept connections.
@@ -595,6 +607,7 @@ def main():
             FLASK_PORT,
             FLASK_READY_TIMEOUT,
         )
+
         sys.exit(1)
 
     print(

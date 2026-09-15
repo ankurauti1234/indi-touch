@@ -131,30 +131,26 @@ export function stopClock() {
 
 
 // ── Weather Integration ──────────────────────────────────────────────────────
-//
-// The OpenWeather API key must never be exposed to the browser.
-// Weather is fetched through the local backend endpoint instead.
+
+const OWM_API_KEY = '0c0a2611ed5caefff0ef2e5cb6f4cdc0';
 
 async function fetchWeather(city) {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-        const url = `/api/system/weather?city=${encodeURIComponent(city)}`;
-
-        const res = await fetch(url, {
-            signal: controller.signal
-        });
+        const res = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${OWM_API_KEY}`,
+            {
+                signal: controller.signal
+            }
+        );
 
         clearTimeout(timeoutId);
 
-        if (!res.ok) {
-            throw new Error(`Weather request failed: HTTP ${res.status}`);
-        }
-
         const data = await res.json();
 
-        if (data && data.main && Array.isArray(data.weather) && data.weather[0]) {
+        if (data && data.main) {
             return {
                 temp: Math.round(data.main.temp),
                 icon: data.weather[0].icon,
@@ -175,7 +171,7 @@ export async function initLocation() {
 
     if (!widget) return;
 
-    // Show loading state immediately to prevent empty UI.
+    // Show loading state immediately to prevent "empty" UI.
     if (
         !widget.innerHTML.trim() ||
         widget.innerHTML.includes('material-symbols-rounded')

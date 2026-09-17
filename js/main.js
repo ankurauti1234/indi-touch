@@ -65,18 +65,19 @@ window.handleSettingsTitleClick = () => {
 
 // Current UI-session declaration timestamp.
 // This is intentionally not persisted yet.
-let lastMemberDeclaredAt = null;
+let lastMemberInteractionAt = null;
 
-function recordMemberDeclaration() {
-    lastMemberDeclaredAt = Date.now();
+function recordMemberInteraction() {
+    lastMemberInteractionAt = Date.now();
 
     console.log(
-        "[Maintenance] Member declaration timestamp updated:",
-        new Date(lastMemberDeclaredAt).toLocaleString()
+        `[Maintenance] Member interaction recorded at ${new Date(
+            lastMemberInteractionAt
+        ).toLocaleTimeString()}`
     );
 }
 
-window.recordMemberDeclaration = recordMemberDeclaration;
+window.recordMemberInteraction = recordMemberInteraction;
 
 let maintenanceResetInProgress = false;
 
@@ -116,16 +117,14 @@ async function runDailyMaintenanceIfNeeded() {
     }
 
     /*
-     * First check whether there are any active members.
-     *
-     * This applies to ALL reset slots.
-     *
-     * If nobody is active:
+     * If nobody is currently active:
      * - Do not call /undeclare.
-     * - Do not publish a member event.
-     * - Mark this scheduled slot as handled.
+     * - Do not publish an event.
+     * - Mark this slot as handled.
      */
-    const activeCount = memberData.filter(m => m.active).length;
+    const activeCount = memberData.filter(
+        (member) => member.active
+    ).length;
 
     if (activeCount === 0) {
         await updateSetting("lastAutoResetId", resetId);
@@ -140,51 +139,56 @@ async function runDailyMaintenanceIfNeeded() {
 
     /*
      * 02:00:
-     * Reset all currently active members.
+     * Always reset if there are active members.
      *
      * 10:00 / 18:00:
-     * Reset only if the current declaration session
-     * was already at least one hour old AT THE SCHEDULED TIME.
-     *
-     * If the session is less than one hour old at 10:00/18:00,
-     * that reset slot is skipped completely.
-     *
-     * It must NOT become eligible later.
+     * Reset only when the most recent member interaction
+     * (DECLARE or UNDECLARE) happened at least one hour
+     * before the scheduled reset time.
      */
     if (resetSlot !== "02:00") {
         /*
-         * We only know the declaration time for the current UI session.
-         * If it is unavailable, do not perform the scheduled reset.
+         * We cannot safely determine whether the session is old
+         * enough if there has been no recorded interaction.
          */
-        if (lastMemberDeclaredAt === null) {
+        if (lastMemberInteractionAt === null) {
             await updateSetting("lastAutoResetId", resetId);
             config.lastAutoResetId = resetId;
 
             console.log(
-                `[Maintenance] ${resetSlot} reset skipped: declaration time unavailable.`
+                `[Maintenance] ${resetSlot} reset skipped: ` +
+                `last member interaction time unavailable.`
             );
 
             return;
         }
 
         const oneHour = 60 * 60 * 1000;
-        const activeDuration = now.getTime() - lastMemberDeclaredAt;
+        const interactionAge =
+            now.getTime() - lastMemberInteractionAt;
 
         /*
-         * The decision is made at the scheduled reset time only.
+         * The decision is made at the scheduled reset time.
          *
          * Example:
-         * Declared at 17:15
-         * 18:00 = 45 minutes
-         * => skip 18:00
-         * => do NOT reset at 18:15
+         * 17:15 DECLARE
+         * 17:45 UNDECLARE
+         * 18:00 RESET CHECK
+         *
+         * Last interaction = 17:45
+         * Age = 15 minutes
+         * => SKIP 18:00
+         *
+         * The slot is then marked handled and will not become
+         * eligible later at 18:45.
          */
-        if (activeDuration < oneHour) {
+        if (interactionAge < oneHour) {
             await updateSetting("lastAutoResetId", resetId);
             config.lastAutoResetId = resetId;
 
             console.log(
-                `[Maintenance] ${resetSlot} reset skipped: declaration session is less than 1 hour old.`
+                `[Maintenance] ${resetSlot} reset skipped: ` +
+                `last member interaction was less than 1 hour ago.`
             );
 
             return;
@@ -203,7 +207,9 @@ async function runDailyMaintenanceIfNeeded() {
         });
 
         if (!response.ok) {
-            throw new Error("Failed to automatically undeclare members.");
+            throw new Error(
+                "Failed to automatically undeclare members."
+            );
         }
 
         // Refresh member state from the backend.
@@ -212,8 +218,8 @@ async function runDailyMaintenanceIfNeeded() {
         // End the current Still Watching session.
         updateStillWatchingState();
 
-        // Clear the current declaration timestamp.
-        lastMemberDeclaredAt = null;
+        // Clear the current interaction timestamp.
+        lastMemberInteractionAt = null;
 
         // Clear guest data locally.
         const { guests: guestsData } = await import("./data.js");
@@ -229,7 +235,6 @@ async function runDailyMaintenanceIfNeeded() {
 
         /*
          * Mark this exact scheduled slot as completed.
-         * This prevents the same slot from triggering again.
          */
         await updateSetting("lastAutoResetId", resetId);
         config.lastAutoResetId = resetId;
@@ -246,6 +251,7 @@ async function runDailyMaintenanceIfNeeded() {
         maintenanceResetInProgress = false;
     }
 }
+
 export function hideAppLoader() {
     const loader = document.getElementById('app-loading');
     if (loader) {
@@ -334,9 +340,6 @@ async function endViewingSession() {
     timers.clearTimeout(stillWatchingDismissTimer);
     timers.clearTimeout(stillWatchingReminderTimer);
 
-    // Clear the declaration timestamp for the current UI session.
-    lastMemberDeclaredAt = null;
-
     // Hide the popup immediately.
     document
         .getElementById("still-watching-popover")
@@ -349,6 +352,10 @@ async function endViewingSession() {
 
         if (!response.ok) {
             throw new Error("Failed to end viewing session.");
+        }
+
+        if (window.recordMemberInteraction) {
+            window.recordMemberInteraction();
         }
 
         await loadMembers();

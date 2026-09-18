@@ -7,12 +7,21 @@ from .config import DB_PATH, METER_ID, load_hhid, FALLBACK_AVATAR, AVATAR_DIR
 
 
 def get_conn():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=10.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA synchronous = NORMAL;")
+    conn.execute("PRAGMA busy_timeout = 5000;")
+    conn.execute("PRAGMA cache_size = -2000;")
+    conn.execute("PRAGMA temp_store = MEMORY;")
     return conn
 
 
 def init_db():
+    # Set WAL mode outside a transaction block
+    raw_conn = sqlite3.connect(DB_PATH, timeout=10.0)
+    raw_conn.execute("PRAGMA journal_mode=WAL;")
+    raw_conn.close()
+
     with get_conn() as conn:
         cur = conn.cursor()
 
@@ -128,7 +137,7 @@ def load_members_data() -> dict:
                         mtime = int(os.path.getmtime(avatar_path))
                     except OSError:
                         mtime = 0
-                        
+
             members.append({
                 "member_code": m_code,
                 "name": row[1] or m_code,

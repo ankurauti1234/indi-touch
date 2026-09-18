@@ -1,5 +1,5 @@
 import { renderGrid } from './grid.js';
-import { config, save, memberData, updateSetting } from './data.js';
+import { config, memberData, updateSetting } from './data.js';
 import { applyRemoteMode, isRemoteMode } from './remote.js';
 import { t } from './i18n.js';
 

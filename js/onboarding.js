@@ -1,5 +1,5 @@
 import { t } from './i18n.js';
-import { config, save } from './data.js';
+import { config } from './data.js';
 
 let currentStep = 1;
 const totalSteps = 7; 

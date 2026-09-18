@@ -2,7 +2,7 @@ import { navTo } from './navigation.js';
 import { renderGrid, toggleMember } from './grid.js';
 import { openSetting, closeSetting, toggleTheme, selectAvatarStyle, toggleRemoteMode, toggleAnimations } from './settings.js';
 import { selectChip, addGuest, renderGuestList } from './guest.js';
-import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver } from './screensaver.js';
+import { resetIdle, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver } from './screensaver.js';
 import { initOSK } from './keyboard.js';
 import { checkOnboardingStatus } from './onboarding.js';
 import { showToast } from './ui.js';
@@ -405,11 +405,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 4. Finalize - Hide app loader
     hideAppLoader();
-
-
-    // 3. Start Background Services
-    timers.setInterval(updateClock, 1000);
-    updateClock();
 
     // ---------------- Still Watching Popup ----------------
     const continueBtn = document.getElementById('still-watch-continue');

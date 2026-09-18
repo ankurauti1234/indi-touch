@@ -1,5 +1,14 @@
 import { config, memberData, tvState, getAvatarUrl } from './data.js';
 
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+});
+let lastDateDay = -1;
+let cachedDateStr = '';
+let clockInterval = null;
+
 let idleTimer;
 
 export function resetIdle(isPriority = false) {
@@ -7,6 +16,7 @@ export function resetIdle(isPriority = false) {
     if (!s) return;
     s.classList.remove('active');
     clearTimeout(idleTimer);
+    stopClock(); // <-- Stop clock when screensaver is hidden
 
     // Disable screensaver only during ACTIVE onboarding
     if (!config.onboardingCompleted) {
@@ -23,12 +33,12 @@ export function resetIdle(isPriority = false) {
 
     // Use 5s if priority (e.g. TV Off), otherwise use config or 15s default
     const timeout = isPriority ? 5000 : (config.screenTimeout || 15000);
-    console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
+    // console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
     
     idleTimer = setTimeout(() => {
         if (s) {
-            console.log("Screensaver activating now...");
             s.classList.add('active');
+            startClock(); // <-- Start clock only when screensaver activates
             applyWallpaper(); // Fetch latest wallpaper state
             renderScreensaverMembers();
         }
@@ -43,26 +53,44 @@ window.setScreensaverTimeout = (ms) => {
 
 export function updateClock() {
     const now = new Date();
-    // 24-hour format with seconds for dynamic feel
     const hours = now.getHours().toString().padStart(2, '0');
-    const mins  = now.getMinutes().toString().padStart(2, '0');
-    const secs  = now.getSeconds().toString().padStart(2, '0');
-    
+    const mins = now.getMinutes().toString().padStart(2, '0');
+    const secs = now.getSeconds().toString().padStart(2, '0');
+
     const digits = document.getElementById('clock-time-digits');
     const secsEl = document.getElementById('clock-time-secs');
-    
-    if (digits) digits.textContent = `${hours}:${mins}`;
-    if (secsEl) secsEl.textContent = secs;
+    const currentHhmm = `${hours}:${mins}`;
 
-    const clock = document.getElementById('clock-time');
-    if (clock) {
-        if (!tvState.on) clock.classList.add('massive');
-        else clock.classList.remove('massive');
+    // Only update digits DOM when minute changes (skips 59/60 invalidations)
+    if (digits && digits.textContent !== currentHhmm) {
+        digits.textContent = currentHhmm;
+    }
+    if (secsEl) {
+        secsEl.textContent = secs;
     }
 
-    const dateStr = now.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
-    const dateEl = document.getElementById('clock-date');
-    if (dateEl) dateEl.innerText = dateStr;
+    // Only reformat date when calendar day changes
+    const todayDay = now.getDate();
+    if (todayDay !== lastDateDay) {
+        cachedDateStr = dateFormatter.format(now);
+        lastDateDay = todayDay;
+        const dateEl = document.getElementById('clock-date');
+        if (dateEl) dateEl.textContent = cachedDateStr;
+    }
+}
+
+export function startClock() {
+    if (!clockInterval) {
+        updateClock();
+        clockInterval = setInterval(updateClock, 1000);
+    }
+}
+
+export function stopClock() {
+    if (clockInterval) {
+        clearInterval(clockInterval);
+        clockInterval = null;
+    }
 }
 
 // OpenWeatherMap Integration

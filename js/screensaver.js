@@ -66,14 +66,12 @@ export function updateClock() {
 }
 
 // OpenWeatherMap Integration
-const OWM_API_KEY = '0c0a2611ed5caefff0ef2e5cb6f4cdc0';
-
 async function fetchWeather(city) {
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${OWM_API_KEY}`, {
+        const res = await fetch(`/api/system/weather?city=${encodeURIComponent(city)}`, {
             signal: controller.signal
         });
         clearTimeout(timeoutId);

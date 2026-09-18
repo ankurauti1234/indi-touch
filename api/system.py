@@ -4,6 +4,8 @@
 import os
 import subprocess
 import socket
+import time
+import requests
 
 from flask import Blueprint, jsonify, request
 
@@ -141,8 +143,8 @@ def set_brightness():
         # Ensure we don't go too dark
         value = max(int(max_b * 0.1), min(value, max_b))
         
-        # Use subprocess for better sudo handling
-        subprocess.run(["sudo", "tee", f"{path}/brightness"], input=str(value), text=True, capture_output=True)
+        with open(os.path.join(path, "brightness"), "w") as f:
+            f.write(str(value))
         return jsonify({"success": True, "brightness": value})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -168,8 +170,7 @@ def get_brightness():
 @system_bp.route("/reboot", methods=["POST"])
 def reboot():
     try:
-        # Run in background after 1s delay so we can return the response
-        subprocess.Popen("sleep 1 && sudo reboot", shell=True)
+        subprocess.Popen(["systemd-run", "--on-active=1", "systemctl", "reboot"])
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -179,8 +180,7 @@ def reboot():
 @system_bp.route("/shutdown", methods=["POST"])
 def shutdown():
     try:
-        # Run in background after 1s delay so we can return the response
-        subprocess.Popen("sleep 1 && sudo shutdown -h now", shell=True)
+        subprocess.Popen(["systemd-run", "--on-active=1", "systemctl", "poweroff"])
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -202,3 +202,33 @@ def save_app_settings():
     data = request.get_json(force=True) or {}
     save_settings(data)
     return jsonify({"success": True})
+
+
+# ── WEATHER ─────────────────────────────────────────────────
+_weather_cache = {"data": None, "timestamp": 0, "city": None}
+OWM_API_KEY = os.environ.get("OWM_API_KEY", "0c0a2611ed5caefff0ef2e5cb6f4cdc0")
+
+# ── GET /api/system/weather ──────────────────────────────────────────────────
+@system_bp.route("/weather", methods=["GET"])
+def get_weather():
+    city = request.args.get("city", "Yerevan")
+    now = time.time()
+    
+    # Return cached data if fresh (15 minutes = 900 seconds)
+    if _weather_cache["data"] and _weather_cache["city"] == city and (now - _weather_cache["timestamp"] < 900):
+        return jsonify(_weather_cache["data"])
+
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&appid={OWM_API_KEY}"
+    try:
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            _weather_cache["data"] = data
+            _weather_cache["timestamp"] = now
+            _weather_cache["city"] = city
+            return jsonify(data)
+        return jsonify({"error": "Failed to fetch weather"}), resp.status_code
+    except Exception as e:
+        if _weather_cache["data"]:
+            return jsonify(_weather_cache["data"])
+        return jsonify({"error": str(e)}), 500

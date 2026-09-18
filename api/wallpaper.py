@@ -9,6 +9,9 @@ from PIL import Image, ImageOps
 from flask import Blueprint, jsonify, request, send_from_directory, send_file
 from .config import WALLPAPER_DIR, AVATAR_DIR
 from .db import load_members_data, update_member_offline_avatar
+import re
+
+MEMBER_CODE_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
 wallpaper_bp = Blueprint("wallpaper", __name__)
 
@@ -158,8 +161,8 @@ def upload_avatar():
         return jsonify({"success": False, "error": "No file provided"}), 400
     
     member_code = request.form.get("member_code")
-    if not member_code:
-        return jsonify({"success": False, "error": "Member code required"}), 400
+    if not member_code or not MEMBER_CODE_RE.match(member_code):
+        return jsonify({"success": False, "error": "Invalid or missing member code"}), 400
 
     file = request.files["file"]
     if not file.filename:
@@ -212,8 +215,8 @@ def upload_avatar():
 @wallpaper_bp.route("/avatar_image", methods=["GET"])
 def get_avatar_image():
     code = request.args.get("code")
-    if not code:
-        return jsonify({"error": "Member code required"}), 400
+    if not code or not MEMBER_CODE_RE.match(code):
+        return jsonify({"error": "Invalid or missing member code"}), 400
     
     # Find the file
     matches = glob.glob(os.path.join(AVATAR_DIR, f"avatar_{code}.*"))

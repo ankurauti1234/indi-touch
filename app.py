@@ -121,8 +121,13 @@ class BrowserWindow(QMainWindow):
             self._push_internet_state()
 
     # ── Connection polling ────────────────────────────────────────────────────
+    def _is_usb_connected(self):
+        jack = os.path.exists(SYSTEM_FILES["jack_status"])
+        hdmi = os.path.exists(SYSTEM_FILES["hdmi_input"])
+        return jack or hdmi
+
     def _push_usb_state(self):
-        connected = os.path.exists(SYSTEM_FILES["jack_status"])
+        connected = self._is_usb_connected()
         js = f"if(window.setUsbState) window.setUsbState({'true' if connected else 'false'});"
         self.view.page().runJavaScript(js)
         self._last_usb = connected
@@ -140,7 +145,7 @@ class BrowserWindow(QMainWindow):
         self._last_internet = connected
 
     def _poll_connections(self):
-        usb  = os.path.exists(SYSTEM_FILES["jack_status"])
+        usb = self._is_usb_connected()
         wifi = os.path.exists(SYSTEM_FILES["wifi_up"])
         internet = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
 

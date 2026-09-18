@@ -100,7 +100,7 @@ async function runDailyMaintenanceIfNeeded() {
 
     if (
         currentHour > 14 ||
-        (currentHour === 14 && currentMinute >= 47)
+        (currentHour === 14 && currentMinute >= 50)
     ) {
         resetSlot = "02:00";
     } else {

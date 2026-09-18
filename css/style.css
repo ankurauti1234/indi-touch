@@ -1252,50 +1252,6 @@ body {
 }
 
 
-#screensaver {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-    z-index: 9999;
-    display: none;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    will-change: opacity;
-    padding: 0;
-    overflow: hidden;
-}
-
-@keyframes premiumFadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-
-@keyframes premiumPulse {
-    0% {
-        transform: scale(1);
-        filter: drop-shadow(0 0 0px rgba(255, 180, 171, 0));
-    }
-
-    50% {
-        transform: scale(1.15);
-        filter: drop-shadow(0 0 15px rgba(255, 180, 171, 0.6));
-    }
-
-    100% {
-        transform: scale(1);
-        filter: drop-shadow(0 0 0px rgba(255, 180, 171, 0));
-    }
-}
-
 /* ── ACTIVE MEMBER REMINDER ─────────────────────────────────────────── */
 
 #critical-popover {
@@ -1651,17 +1607,20 @@ body.osk-open .main-stage {
     align-items: center;
     justify-content: center;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 1.2s;
     color: #fff;
     padding: 60px;
     text-align: center;
-    border-radius: 42px;
 }
 
 #screensaver.active {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0s;
 }
 
 .saver-clock {

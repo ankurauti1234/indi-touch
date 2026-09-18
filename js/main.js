@@ -63,8 +63,6 @@ window.handleSettingsTitleClick = () => {
     }
 };
 
-// Current UI-session declaration timestamp.
-// This is intentionally not persisted yet.
 let lastMemberInteractionAt = null;
 
 function recordMemberInteraction() {
@@ -96,22 +94,28 @@ async function runDailyMaintenanceIfNeeded() {
     ].join("-");
 
     const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
 
     let resetSlot = null;
 
-    if (currentHour >= 18) {
-        resetSlot = "18:00";
-    } else if (currentHour >= 10) {
-        resetSlot = "10:00";
-    } else if (currentHour >= 2) {
+    if (
+        currentHour > 14 ||
+        (currentHour === 14 && currentMinute >= 45)
+    ) {
         resetSlot = "02:00";
     } else {
         return;
     }
+    // const currentHour = now.getHours();
 
-    const resetId = `${today}_${resetSlot}`;
+    // // The automatic reset is only performed at/after 02:00.
+    // if (currentHour < 2) {
+    //     return;
+    // }
 
-    // This scheduled reset has already been decided/processed.
+    const resetId = `${today}_02:00`;
+
+    // This day's 02:00 reset has already been handled.
     if (config.lastAutoResetId === resetId) {
         return;
     }
@@ -120,7 +124,7 @@ async function runDailyMaintenanceIfNeeded() {
      * If nobody is currently active:
      * - Do not call /undeclare.
      * - Do not publish an event.
-     * - Mark this slot as handled.
+     * - Mark the 02:00 reset as handled.
      */
     const activeCount = memberData.filter(
         (member) => member.active
@@ -131,70 +135,16 @@ async function runDailyMaintenanceIfNeeded() {
         config.lastAutoResetId = resetId;
 
         console.log(
-            `[Maintenance] ${resetSlot} reset skipped: no active members.`
+            "[Maintenance] 02:00 reset skipped: no active members."
         );
 
         return;
     }
 
     /*
-     * 02:00:
-     * Always reset if there are active members.
-     *
-     * 10:00 / 18:00:
-     * Reset only when the most recent member interaction
-     * (DECLARE or UNDECLARE) happened at least one hour
-     * before the scheduled reset time.
+     * At 02:00, always reset all currently active members.
+     * There is no one-hour condition.
      */
-    if (resetSlot !== "02:00") {
-        /*
-         * We cannot safely determine whether the session is old
-         * enough if there has been no recorded interaction.
-         */
-        if (lastMemberInteractionAt === null) {
-            await updateSetting("lastAutoResetId", resetId);
-            config.lastAutoResetId = resetId;
-
-            console.log(
-                `[Maintenance] ${resetSlot} reset skipped: ` +
-                `last member interaction time unavailable.`
-            );
-
-            return;
-        }
-
-        const oneHour = 60 * 60 * 1000;
-        const interactionAge =
-            now.getTime() - lastMemberInteractionAt;
-
-        /*
-         * The decision is made at the scheduled reset time.
-         *
-         * Example:
-         * 17:15 DECLARE
-         * 17:45 UNDECLARE
-         * 18:00 RESET CHECK
-         *
-         * Last interaction = 17:45
-         * Age = 15 minutes
-         * => SKIP 18:00
-         *
-         * The slot is then marked handled and will not become
-         * eligible later at 18:45.
-         */
-        if (interactionAge < oneHour) {
-            await updateSetting("lastAutoResetId", resetId);
-            config.lastAutoResetId = resetId;
-
-            console.log(
-                `[Maintenance] ${resetSlot} reset skipped: ` +
-                `last member interaction was less than 1 hour ago.`
-            );
-
-            return;
-        }
-    }
-
     maintenanceResetInProgress = true;
 
     try {
@@ -234,17 +184,19 @@ async function runDailyMaintenanceIfNeeded() {
         updateGuestBadge();
 
         /*
-         * Mark this exact scheduled slot as completed.
+         * Mark today's 02:00 reset as completed.
+         * This prevents the same reset from running again
+         * during the same day.
          */
         await updateSetting("lastAutoResetId", resetId);
         config.lastAutoResetId = resetId;
 
         console.log(
-            `[Maintenance] Automatic reset completed for ${resetSlot}.`
+            "[Maintenance] Automatic 02:00 reset completed."
         );
     } catch (err) {
         console.error(
-            `[Maintenance] Automatic reset failed for ${resetSlot}:`,
+            "[Maintenance] Automatic 02:00 reset failed:",
             err
         );
     } finally {
@@ -352,10 +304,6 @@ async function endViewingSession() {
 
         if (!response.ok) {
             throw new Error("Failed to end viewing session.");
-        }
-
-        if (window.recordMemberInteraction) {
-            window.recordMemberInteraction();
         }
 
         await loadMembers();
@@ -590,7 +538,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 5000);
 
     // Automatic member/guest reset scheduler
-    // Check every minute for the 02:00, 10:00, and 18:00 reset times.
+    // Check every minute for the daily 02:00 reset.
     timers.setInterval(async () => {
         await runDailyMaintenanceIfNeeded();
     }, 60000);

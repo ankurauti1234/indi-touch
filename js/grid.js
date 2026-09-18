@@ -179,12 +179,6 @@ export async function toggleMember(index) {
                 // Update local state and redraw
                 memberData[index].active = res.active;
 
-                // Record every successful member interaction:
-                // both DECLARE and UNDECLARE.
-                if (window.recordMemberInteraction) {
-                    window.recordMemberInteraction();
-                }
-
                 renderGrid();
 
                 // Update Still Watching timer

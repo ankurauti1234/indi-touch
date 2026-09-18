@@ -393,6 +393,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Initialize Data Layer (from API)
     await initData();
 
+    // Apply Reduce Animations state if persisted in config
+    if (config.reduceAnimations) {
+        document.body.classList.add('reduce-animations');
+    }
+
     await runDailyMaintenanceIfNeeded();
 
     // 3. Initialize Components

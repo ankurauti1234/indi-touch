@@ -166,34 +166,43 @@ class BrowserWindow(QMainWindow):
 
 # ── Background Internet Checker ───────────────────────────────────────────────
 def check_internet_loop():
+    # Multi-target endpoints: Cloudflare, Google, Quad9
+    endpoints = [("1.1.1.1", 53), ("8.8.8.8", 53), ("9.9.9.9", 53)]
+    consecutive_failures = 0
+    failure_threshold = 2  # Require 2 consecutive failed rounds to declare offline
+
     while True:
-        internet_ok = False
-        try:
-            # 8.8.8.8:53 is Google DNS (TCP), very reliable for internet checking
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(3.0)
-            s.connect(("8.8.8.8", 53))
-            s.close()
-            internet_ok = True
-        except Exception:
-            internet_ok = False
+        probe_success = False
+        for host, port in endpoints:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(1.5)
+                s.connect((host, port))
+                s.close()
+                probe_success = True
+                break
+            except Exception:
+                continue
 
         flag_path = SYSTEM_FILES.get("internet_ok", "/run/internet_ok")
-        if internet_ok:
+
+        if probe_success:
+            consecutive_failures = 0
             if not os.path.exists(flag_path):
                 try:
                     open(flag_path, "w").close()
                 except Exception:
                     pass
         else:
-            if os.path.exists(flag_path):
-                try:
-                    os.remove(flag_path)
-                except Exception:
-                    pass
+            consecutive_failures += 1
+            if consecutive_failures >= failure_threshold:
+                if os.path.exists(flag_path):
+                    try:
+                        os.remove(flag_path)
+                    except Exception:
+                        pass
 
-        time.sleep(5)  # Next check in 5 seconds
-
+        time.sleep(5)
 
 # ── Boot sequence ─────────────────────────────────────────────────────────────
 def _boot_reset():
@@ -204,10 +213,9 @@ def _boot_reset():
         print("[BOOT] No HHID — skipping reset")
         return
 
-    import sqlite3, time as _t
-    from api.config import DB_PATH
+    from api.db import get_conn
 
-    with sqlite3.connect(DB_PATH) as conn:
+    with get_conn() as conn:
         conn.execute("UPDATE members SET active = 0 WHERE meter_id = ? AND hhid = ?", (METER_ID, hhid))
         conn.execute("DELETE FROM guests WHERE meter_id = ? AND hhid = ?", (METER_ID, hhid))
         conn.commit()

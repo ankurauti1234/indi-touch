@@ -94,24 +94,11 @@ async function runDailyMaintenanceIfNeeded() {
     ].join("-");
 
     const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
 
-    let resetSlot = null;
-
-    if (
-        currentHour > 14 ||
-        (currentHour === 14 && currentMinute >= 52)
-    ) {
-        resetSlot = "02:00";
-    } else {
+    // The automatic reset is only performed at/after 02:00.
+    if (currentHour < 2) {
         return;
     }
-    // const currentHour = now.getHours();
-
-    // // The automatic reset is only performed at/after 02:00.
-    // if (currentHour < 2) {
-    //     return;
-    // }
 
     const resetId = `${today}_02:00`;
 

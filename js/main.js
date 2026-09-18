@@ -466,121 +466,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateLanguageUI(getCurrentLang());
     }
 
-    // TV Monitoring Logic
-    let activeMemberReminderDismissTimer = null;
-    let activeMemberReminderRepeatTimer = null;
-    let activeMemberReminderCycleStarted = false;
+    let reminderShownAt = 0;
+    let reminderDismissedAt = 0;
 
-    function showActiveMemberReminder() {
+    function reconcileActiveMemberReminder() {
         const popover = document.getElementById('critical-popover');
         if (!popover) return;
 
-        // Don't show if the TV is off or onboarding isn't complete.
         let isTvOn = tvState.on;
-
         if (!config.bleAvailable) {
             isTvOn = true;
         }
 
-        if (!isTvOn || !config.onboardingCompleted) {
-            popover.classList.remove('active');
-
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-            activeMemberReminderCycleStarted = false;
-
-            return;
-        }
-
         const activeCount = memberData.filter(m => m.active).length;
+        const needsReminder = isTvOn && config.onboardingCompleted && activeCount === 0;
+        const now = Date.now();
 
-        // A member is active, so there is nothing to remind about.
-        if (activeCount > 0) {
-            popover.classList.remove('active');
-
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-            activeMemberReminderCycleStarted = false;
-
+        if (!needsReminder) {
+            if (popover.classList.contains('active')) {
+                popover.classList.remove('active');
+            }
+            reminderShownAt = 0;
             return;
         }
 
-        // A valid reminder cycle is now active.
-        activeMemberReminderCycleStarted = true;
-
-        // Show the popup.
-        popover.classList.add('active');
-
-        // Clear any previous timers before starting a new display timer.
-        timers.clearTimeout(activeMemberReminderDismissTimer);
-        timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-        // Automatically hide after 10 seconds.
-        activeMemberReminderDismissTimer = timers.setTimeout(() => {
-            popover.classList.remove('active');
-
-            // Wait 60 seconds before showing it again.
-            activeMemberReminderRepeatTimer = timers.setTimeout(() => {
-                showActiveMemberReminder();
-            }, 60 * 1000);
-        }, 10 * 1000);
+        // Needs reminder
+        if (popover.classList.contains('active')) {
+            // Dismiss after 10 seconds of display
+            if (reminderShownAt > 0 && now - reminderShownAt >= 10 * 1000) {
+                popover.classList.remove('active');
+                reminderShownAt = 0;
+                reminderDismissedAt = now;
+            }
+        } else {
+            // Re-show only after 60-second cooldown
+            if (now - reminderDismissedAt >= 60 * 1000) {
+                popover.classList.add('active');
+                reminderShownAt = now;
+            }
+        }
     }
 
-    // Check the current TV/member state regularly.
-    timers.setInterval(() => {
-        let isTvOn = tvState.on;
-
-        if (!config.bleAvailable) {
-            isTvOn = true;
-        }
-
-        // TV is off or onboarding is not complete.
-        if (!isTvOn || !config.onboardingCompleted) {
-            const popover = document.getElementById('critical-popover');
-
-            if (popover) {
-                popover.classList.remove('active');
-            }
-
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-            activeMemberReminderCycleStarted = false;
-
-            return;
-        }
-
-        const activeCount = memberData.filter(m => m.active).length;
-
-        // A member is active.
-        if (activeCount > 0) {
-            const popover = document.getElementById('critical-popover');
-
-            if (popover) {
-                popover.classList.remove('active');
-            }
-
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-            activeMemberReminderCycleStarted = false;
-
-            return;
-        }
-
-        const popover = document.getElementById('critical-popover');
-
-        // Start the reminder cycle only if one isn't already running.
-        if (
-            popover &&
-            !popover.classList.contains('active') &&
-            !activeMemberReminderCycleStarted
-        ) {
-            showActiveMemberReminder();
-        }
-    }, 5000);
+    // Reconcile popup state every 2 seconds
+    timers.setInterval(reconcileActiveMemberReminder, 2000);
 
     // Automatic member/guest reset scheduler
     // Check every minute for the 02:00, 10:00, and 18:00 reset times.
@@ -590,25 +518,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window.handleCriticalAction = () => {
         const popover = document.getElementById('critical-popover');
-
         if (popover) {
             popover.classList.remove('active');
         }
 
-        timers.clearTimeout(activeMemberReminderDismissTimer);
-        timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-        // Keep the reminder cycle active so the 5-second monitor
-        // does not immediately reopen the popup.
-        activeMemberReminderCycleStarted = true;
-
-        // Show the popup again after the required 60-second interval.
-        activeMemberReminderRepeatTimer = timers.setTimeout(() => {
-            showActiveMemberReminder();
-        }, 60 * 1000);
+        reminderShownAt = 0;
+        reminderDismissedAt = Date.now();
 
         navTo('home');
-
         console.log("Critical action: Navigating home.");
     };
 

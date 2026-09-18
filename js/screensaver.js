@@ -222,9 +222,8 @@ async function applyWallpaper() {
         const d = await r.json();
 
         if (d.hasWallpaper) {
-            // Add cache buster to ensure new uploads show up immediately
-            const cacheBuster = `?t=${Date.now()}`;
-            saver.style.backgroundImage = `url('${d.url}${cacheBuster}')`;
+            // d.url already includes server-side ?t=<mtime>
+            saver.style.backgroundImage = `url('${d.url}')`;
             saver.classList.add('has-wallpaper');
         } else {
             saver.style.backgroundImage = '';

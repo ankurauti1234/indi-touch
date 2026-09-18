@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # api/db.py — SQLite database initialization and helpers
-
+import os
 import sqlite3
 from datetime import datetime
-from .config import DB_PATH, METER_ID, load_hhid, FALLBACK_AVATAR
+from .config import DB_PATH, METER_ID, load_hhid, FALLBACK_AVATAR, AVATAR_DIR
 
 
 def get_conn():
@@ -118,14 +118,26 @@ def load_members_data() -> dict:
         members = []
 
         for row in cur.fetchall():
+            m_code = row[0]
+            off_avatar = row[6] or FALLBACK_AVATAR
+            mtime = 0
+            if off_avatar and off_avatar != FALLBACK_AVATAR:
+                avatar_path = os.path.join(AVATAR_DIR, off_avatar)
+                if os.path.exists(avatar_path):
+                    try:
+                        mtime = int(os.path.getmtime(avatar_path))
+                    except OSError:
+                        mtime = 0
+                        
             members.append({
-                "member_code": row[0],
-                "name": row[1] or row[0],
+                "member_code": m_code,
+                "name": row[1] or m_code,
                 "dob": row[2],
                 "gender": row[3],
                 "created_at": row[4],
                 "avatar_url": row[5] or FALLBACK_AVATAR,
-                "offline_avatar": row[6] or FALLBACK_AVATAR,
+                "offline_avatar": off_avatar,
+                "avatar_mtime": mtime,
                 "active": bool(row[7]),
                 "age": calculate_age(row[2])
             })

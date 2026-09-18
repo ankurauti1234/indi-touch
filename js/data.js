@@ -156,10 +156,11 @@ export function getAvatarUrl(m) {
     
     if (style === 'custom') {
         if (m.offline_avatar && !m.offline_avatar.includes('data:image')) {
-            return `/api/wallpaper/avatar_image?code=${m.member_code}&t=${Date.now()}`;
+            const version = m.avatar_mtime || 0;
+            return `/api/wallpaper/avatar_image?code=${m.member_code}&t=${version}`;
         }
         // Fallback to local if no custom image
-        return getAvatarUrl({...m, avatarStyle: 'local'});
+        return getAvatarUrl({ ...m, avatarStyle: 'local' });
     }
 
     if (style === 'local') {

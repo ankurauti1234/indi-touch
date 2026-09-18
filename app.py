@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# main.py — Single entry point for Inditronics APM on Raspberry Pi
+# app.py — Single entry point for Inditronics APM on Raspberry Pi
 #
-# Starts Flask API server in the background, then launches the PyQt6 browser
+# Starts Flask API server in the background, then launches the PyQt5 browser
 # window pointing at http://127.0.0.1:5000.
 #
-# Run:  python main.py
+# Run:  python app.py
 
 import os
 import sys
@@ -246,11 +246,25 @@ def main():
     internet_thread = threading.Thread(target=check_internet_loop, daemon=True, name="internet_check")
     internet_thread.start()
     
-    time.sleep(1.5)  # wait for Flask to bind before Qt loads the URL
+    # Wait for Flask to bind before Qt loads the URL
+    start_time = time.time()
+    flask_ready = False
+    while time.time() - start_time < 15.0:
+        try:
+            with socket.create_connection(("127.0.0.1", FLASK_PORT), timeout=0.5):
+                flask_ready = True
+                break
+        except OSError:
+            time.sleep(0.05)
+
+    if not flask_ready:
+        print(f"[ERROR] Flask failed to bind on port {FLASK_PORT} within 15 seconds.")
+        sys.exit(1)
+
     print(f"[APP] Flask running at http://127.0.0.1:{FLASK_PORT}")
     print(f"[APP] Installation done: {is_installation_done()}")
 
-    # 5. PyQt6 Qt window
+    # 5. PyQt5 Qt window
     qt_app = QApplication(sys.argv)
     window = BrowserWindow()
     window.show()

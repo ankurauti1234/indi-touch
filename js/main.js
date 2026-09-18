@@ -383,7 +383,7 @@ async function endViewingSession() {
     }
 }
 
-import { tvState, memberData, save as legacySave, initData, config, loadMembers, updateSetting } from './data.js';
+import { tvState, memberData, initData, config, loadMembers, updateSetting } from './data.js';
 import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
 
 document.addEventListener('DOMContentLoaded', async () => {

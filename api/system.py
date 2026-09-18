@@ -29,7 +29,7 @@ def get_ip_address():
     # 1. Try connecting to an external addr (best for multi-homed hosts)
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(0.5)
+        # s.settimeout(0.5)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()

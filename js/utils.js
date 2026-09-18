@@ -40,6 +40,10 @@ class TimerManager {
         this.intervals.clear();
         this.timeouts.clear();
     }
+
+    get activeCount() {
+        return this.intervals.size + this.timeouts.size;
+    }
 }
 
 export const timers = new TimerManager();

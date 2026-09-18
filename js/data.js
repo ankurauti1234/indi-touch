@@ -137,10 +137,6 @@ export async function updateSetting(key, value) {
     }
 }
 
-export async function save(type, data) {
-    // Legacy helper - removed localStorage
-}
-
 export function toggleTv(state) {
     tvState.on = state;
     if (window.updateTvUI) window.updateTvUI(state);

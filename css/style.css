@@ -1670,15 +1670,6 @@ body.osk-open .main-stage {
     font-size: 24px;
 }
 
-.clock-secs {
-    font-size: 0.25em;
-    opacity: 0.5;
-    font-weight: 400;
-    margin-top: -10px;
-    letter-spacing: 2px;
-    -webkit-text-fill-color: #fff;
-}
-
 /* TV Status Tag (Screensaver) */
 .saver-tv-tag {
     display: flex;

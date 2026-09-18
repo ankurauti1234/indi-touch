@@ -55,21 +55,16 @@ export function updateClock() {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const mins = now.getMinutes().toString().padStart(2, '0');
-    const secs = now.getSeconds().toString().padStart(2, '0');
 
     const digits = document.getElementById('clock-time-digits');
-    const secsEl = document.getElementById('clock-time-secs');
     const currentHhmm = `${hours}:${mins}`;
 
     // Only update digits DOM when minute changes (skips 59/60 invalidations)
     if (digits && digits.textContent !== currentHhmm) {
         digits.textContent = currentHhmm;
     }
-    if (secsEl) {
-        secsEl.textContent = secs;
-    }
 
-    // Only reformat date when calendar day changes
+    // Update date only when day changes
     const todayDay = now.getDate();
     if (todayDay !== lastDateDay) {
         cachedDateStr = dateFormatter.format(now);
@@ -82,7 +77,8 @@ export function updateClock() {
 export function startClock() {
     if (!clockInterval) {
         updateClock();
-        clockInterval = setInterval(updateClock, 1000);
+        // Fire every 60 seconds instead of every second
+        clockInterval = setInterval(updateClock, 60000);
     }
 }
 

@@ -217,31 +217,30 @@ function showStillWatchingPopup() {
         return;
     }
 
-    // No need for a pending reminder once the popup is visible
+    // No pending reminder while popup is visible
     timers.clearTimeout(stillWatchingReminderTimer);
 
     popup.classList.add("visible");
 
     timers.clearTimeout(stillWatchingDismissTimer);
 
-    // If user does nothing for 10 seconds,
-    // hide the popup and enter reminder mode.
+    // Keep popup visible for 20 seconds
     stillWatchingDismissTimer = timers.setTimeout(() => {
         popup.classList.remove("visible");
 
-        // Wait 1 minute before showing it again
+        // Wait 5 minutes before showing it again
         timers.clearTimeout(stillWatchingReminderTimer);
 
         stillWatchingReminderTimer = timers.setTimeout(() => {
             const activeCount = memberData.filter(m => m.active).length;
 
-            // Only continue reminding while someone is still active
+            // Continue reminding only while someone is still active
             if (activeCount > 0) {
                 showStillWatchingPopup();
             }
-        }, 60 * 1000);
+        }, 5 * 60 * 1000);
 
-    }, 10 * 1000);
+    }, 20 * 1000);
 }
 
 function restartStillWatchingTimer() {
@@ -250,7 +249,7 @@ function restartStillWatchingTimer() {
 
     stillWatchingTimer = timers.setTimeout(() => {
         showStillWatchingPopup();
-    }, 2 * 60 * 60 * 1000); // 2 hours
+    }, 3 * 60 * 60 * 1000); // 3 hours
 }
 
 function updateStillWatchingState() {
@@ -268,6 +267,16 @@ function updateStillWatchingState() {
         return;
     }
 
+    // Household interaction occurred:
+    // dismiss any visible reminder and cancel its pending timers.
+    timers.clearTimeout(stillWatchingDismissTimer);
+    timers.clearTimeout(stillWatchingReminderTimer);
+
+    document
+        .getElementById("still-watching-popover")
+        ?.classList.remove("visible");
+
+    // Start a fresh 3-hour countdown.
     restartStillWatchingTimer();
 }
 
@@ -366,7 +375,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ?.classList.remove('visible');
 
         // User confirmed they are watching.
-        // Start a fresh 2-hour countdown.
+        // Start a fresh -hour countdown.
         restartStillWatchingTimer();
     });
 

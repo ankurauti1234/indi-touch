@@ -268,78 +268,77 @@ function _updateSidebarWifiIcon() {
     }
 }
 
-// ─── Real-API Poller ──────────────────────────────────────────────────────────
-async function _pollStatus() {
-    try {
-        const r = await fetch(API_STATUS_URL);
-        if (!r.ok) return;
-        const d = await r.json();
+// ─── Unified Device State Handler ─────────────────────────────────────────────
+export function applyDeviceState(d) {
+    if (!d) return;
 
-        // USB: either jack or hdmi counts as connected
-        const usbOk = Boolean(d.usb_jack || d.hdmi_vcc);
-        setUsbState(usbOk);
+    // 1. USB State
+    const usbOk = Boolean(d.usb_jack || d.hdmi_vcc || d.usb);
+    setUsbState(usbOk);
 
-        if (d.wifi !== undefined) {
-            setWifiState(Boolean(d.wifi));
-        }
-
-        if (d.internet !== undefined) {
-            setInternetState(Boolean(d.internet));
-        }
-
-        // TV Status Icon (change only if state differs)
-        const tvIcon = document.getElementById('tv-status-icon');
-        if (tvIcon) {
-            const isCurrentlyOnline = tvIcon.classList.contains('online');
-            if (Boolean(d.tv_on) !== isCurrentlyOnline) {
-                if (d.tv_on) {
-                    tvIcon.classList.add('online');
-                    tvIcon.classList.remove('offline');
-                } else {
-                    tvIcon.classList.add('offline');
-                    tvIcon.classList.remove('online');
-                }
-            }
-        }
-
-        import('./data.js').then(async m => {
-            if (m.tvState.on !== d.tv_on) {
-                console.log(`[TV Status Change] ${m.tvState.on} -> ${d.tv_on}`);
-                m.toggleTv(d.tv_on);
-
-                if (d.tv_on === false) {
-                    try {
-                        console.log("TV Off: Undeclaring members...");
-                        await fetch('/api/members/undeclare', { method: 'POST' });
-                    } catch (e) {
-                        console.error("Undeclare failed", e);
-                    }
-                }
-
-                Promise.all([m.loadMembers(), m.loadGuests()]).then(() => {
-                    console.log("Data reloaded after TV status change.");
-                    if (window.renderGrid) window.renderGrid();
-                    if (window.renderGuestList) window.renderGuestList();
-                });
-
-                if (window.resetIdle) {
-                    const isOff = d.tv_on === false;
-                    console.log(`Triggering resetIdle (priority=${isOff}) due to TV status change`);
-                    window.resetIdle(isOff);
-                }
-
-                const s = document.getElementById('screensaver');
-                if (s && s.classList.contains('active')) {
-                    if (window.renderScreensaverMembers) window.renderScreensaverMembers();
-                }
-            }
-        });
-    } catch {
-        /* network not available yet */
+    // 2. Wi-Fi State
+    if (d.wifi !== undefined) {
+        setWifiState(Boolean(d.wifi));
     }
+
+    // 3. Internet State
+    if (d.internet !== undefined) {
+        setInternetState(Boolean(d.internet));
+    }
+
+    // 4. TV Status Icon
+    const tvIcon = document.getElementById('tv-status-icon');
+    if (tvIcon && d.tv_on !== undefined) {
+        const isCurrentlyOnline = tvIcon.classList.contains('online');
+        if (Boolean(d.tv_on) !== isCurrentlyOnline) {
+            if (d.tv_on) {
+                tvIcon.classList.add('online');
+                tvIcon.classList.remove('offline');
+            } else {
+                tvIcon.classList.add('offline');
+                tvIcon.classList.remove('online');
+            }
+        }
+    }
+
+    // 5. TV State Side Effects (members undeclare, screensaver, etc.)
+    import('./data.js').then(async m => {
+        if (d.tv_on !== undefined && m.tvState.on !== d.tv_on) {
+            console.log(`[TV Status Change] ${m.tvState.on} -> ${d.tv_on}`);
+            m.toggleTv(d.tv_on);
+
+            if (d.tv_on === false) {
+                try {
+                    console.log("TV Off: Undeclaring members...");
+                    await fetch('/api/members/undeclare', { method: 'POST' });
+                } catch (e) {
+                    console.error("Undeclare failed", e);
+                }
+            }
+
+            Promise.all([m.loadMembers(), m.loadGuests()]).then(() => {
+                console.log("Data reloaded after TV status change.");
+                if (window.renderGrid) window.renderGrid();
+                if (window.renderGuestList) window.renderGuestList();
+            });
+
+            if (window.resetIdle) {
+                const isOff = d.tv_on === false;
+                console.log(`Triggering resetIdle (priority=${isOff}) due to TV status change`);
+                window.resetIdle(isOff);
+            }
+
+            const s = document.getElementById('screensaver');
+            if (s && s.classList.contains('active')) {
+                if (window.renderScreensaverMembers) window.renderScreensaverMembers();
+            }
+        }
+    });
 }
 
+// Expose globally for QtWebEngine push
+window.applyDeviceState = applyDeviceState;
+
 export function initConnectionMonitor() {
-    timers.setTimeout(_pollStatus, 1500);
-    timers.setInterval(_pollStatus, POLL_INTERVAL);
+    // Polling removed: Qt now pushes state via window.applyDeviceState(state)
 }

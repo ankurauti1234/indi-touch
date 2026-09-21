@@ -9,6 +9,7 @@
 import os
 import sys
 import time
+import json
 import threading
 import socket
 from waitress import serve
@@ -100,10 +101,8 @@ class BrowserWindow(QMainWindow):
         """
         self.view.loadFinished.connect(self._on_load_finished)
 
-        # ── Connection state polling (every POLL_INTERVAL_MS) ─────────────────
-        self._last_usb = None
-        self._last_wifi = None
-        self._last_internet = None
+        # ── Connection state snapshot polling (every POLL_INTERVAL_MS) ────────
+        self._last_state = None
         self._poll_timer = QTimer(self)
         self._poll_timer.setInterval(POLL_INTERVAL_MS)
         self._poll_timer.timeout.connect(self._poll_connections)
@@ -115,46 +114,56 @@ class BrowserWindow(QMainWindow):
     def _on_load_finished(self, ok: bool):
         if ok:
             self.view.page().runJavaScript(self._protect_js)
-            # Push current connection state immediately after load
-            self._push_usb_state()
-            self._push_wifi_state()
-            self._push_internet_state()
+            # Push initial complete device state snapshot immediately after load
+            initial_state = self._read_device_state()
+            self._push_device_state(initial_state)
+            self._last_state = initial_state
 
-    # ── Connection polling ────────────────────────────────────────────────────
-    def _is_usb_connected(self):
+    # ── Snapshot-driven connection state handling ─────────────────────────────
+    def _read_device_state(self):
         jack = os.path.exists(SYSTEM_FILES["jack_status"])
         hdmi = os.path.exists(SYSTEM_FILES["hdmi_input"])
-        return jack or hdmi
-
-    def _push_usb_state(self):
-        connected = self._is_usb_connected()
-        js = f"if(window.setUsbState) window.setUsbState({'true' if connected else 'false'});"
-        self.view.page().runJavaScript(js)
-        self._last_usb = connected
-
-    def _push_wifi_state(self):
-        connected = os.path.exists(SYSTEM_FILES["wifi_up"])
-        js = f"if(window.setWifiState) window.setWifiState({'true' if connected else 'false'});"
-        self.view.page().runJavaScript(js)
-        self._last_wifi = connected
-
-    def _push_internet_state(self):
-        connected = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
-        js = f"if(window.setInternetState) window.setInternetState({'true' if connected else 'false'});"
-        self.view.page().runJavaScript(js)
-        self._last_internet = connected
-
-    def _poll_connections(self):
-        usb = self._is_usb_connected()
         wifi = os.path.exists(SYSTEM_FILES["wifi_up"])
         internet = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
 
-        if usb != self._last_usb:
-            self._push_usb_state()
-        if wifi != self._last_wifi:
-            self._push_wifi_state()
-        if internet != self._last_internet:
-            self._push_internet_state()
+        tv_on = True
+        if os.path.exists(SYSTEM_FILES.get("bluetooth_available", "")):
+            tv_path = SYSTEM_FILES.get("tv_status", "")
+            if os.path.exists(tv_path):
+                try:
+                    with open(tv_path, "r") as f:
+                        tv_on = (f.read().strip().upper() == "ON")
+                except Exception:
+                    tv_on = False
+            else:
+                tv_on = False
+
+        return {
+            "usb": bool(jack or hdmi),
+            "wifi": bool(wifi),
+            "internet": bool(internet),
+            "tv_on": bool(tv_on)
+        }
+
+    def _push_device_state(self, state):
+        state_json = json.dumps(state)
+        # Supports unified applyDeviceState, with fallbacks to legacy handlers if still registered
+        js = f"""
+        if (window.applyDeviceState) {{
+            window.applyDeviceState({state_json});
+        }} else {{
+            if (window.setUsbState) window.setUsbState({'true' if state['usb'] else 'false'});
+            if (window.setWifiState) window.setWifiState({'true' if state['wifi'] else 'false'});
+            if (window.setInternetState) window.setInternetState({'true' if state['internet'] else 'false'});
+        }}
+        """
+        self.view.page().runJavaScript(js)
+
+    def _poll_connections(self):
+        current_state = self._read_device_state()
+        if current_state != self._last_state:
+            self._push_device_state(current_state)
+            self._last_state = current_state
 
     # ── Key handling ──────────────────────────────────────────────────────────
     def keyPressEvent(self, event):
@@ -286,3 +295,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# app.py optimized for Raspberry Pi kiosk mode with PyQt5 and Flask API server.

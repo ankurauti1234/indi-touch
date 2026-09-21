@@ -2,7 +2,7 @@
 
 import { openSetting } from './settings.js';
 import { timers } from './utils.js';
-import { config } from './data.js';
+import { config, tvState, toggleTv, loadMembers, loadGuests } from './data.js';
 
 const API_STATUS_URL = '/api/system/status';
 const POLL_INTERVAL = 8000;       // 8 s
@@ -302,38 +302,34 @@ export function applyDeviceState(d) {
     }
 
     // 5. TV State Side Effects (members undeclare, screensaver, etc.)
-    import('./data.js').then(async m => {
-        if (d.tv_on !== undefined && m.tvState.on !== d.tv_on) {
-            console.log(`[TV Status Change] ${m.tvState.on} -> ${d.tv_on}`);
-            m.toggleTv(d.tv_on);
+    if (isOnboarding()) return;
 
-            if (d.tv_on === false) {
-                try {
-                    console.log("TV Off: Undeclaring members...");
-                    await fetch('/api/members/undeclare', { method: 'POST' });
-                } catch (e) {
-                    console.error("Undeclare failed", e);
-                }
-            }
+    if (d.tv_on !== undefined && tvState.on !== Boolean(d.tv_on)) {
+        const nextTvOn = Boolean(d.tv_on);
+        console.log(`[TV Status Change] ${tvState.on} -> ${nextTvOn}`);
+        toggleTv(nextTvOn);
 
-            Promise.all([m.loadMembers(), m.loadGuests()]).then(() => {
-                console.log("Data reloaded after TV status change.");
-                if (window.renderGrid) window.renderGrid();
-                if (window.renderGuestList) window.renderGuestList();
+        if (!nextTvOn) {
+            fetch('/api/members/undeclare', { method: 'POST' }).catch(e => {
+                console.error("Undeclare failed", e);
             });
-
-            if (window.resetIdle) {
-                const isOff = d.tv_on === false;
-                console.log(`Triggering resetIdle (priority=${isOff}) due to TV status change`);
-                window.resetIdle(isOff);
-            }
-
-            const s = document.getElementById('screensaver');
-            if (s && s.classList.contains('active')) {
-                if (window.renderScreensaverMembers) window.renderScreensaverMembers();
-            }
         }
-    });
+
+        Promise.all([loadMembers(), loadGuests()]).then(() => {
+            console.log("Data reloaded after TV status change.");
+            if (window.renderGrid) window.renderGrid();
+            if (window.renderGuestList) window.renderGuestList();
+        });
+
+        if (window.resetIdle) {
+            window.resetIdle(!nextTvOn);
+        }
+
+        const s = document.getElementById('screensaver');
+        if (s && s.classList.contains('active')) {
+            if (window.renderScreensaverMembers) window.renderScreensaverMembers();
+        }
+    }
 }
 
 // Expose globally for QtWebEngine push

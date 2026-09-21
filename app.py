@@ -22,19 +22,19 @@ os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 
 # ── PyQt5 imports ─────────────────────────────────────────────────────────────
 try:
-    from PyQt5.QtCore    import QUrl, Qt, QTimer
+    from PyQt5.QtCore import QUrl, Qt, QTimer
     from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
     from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
-    from PyQt5.QtGui     import QKeySequence
+    from PyQt5.QtGui import QKeySequence
 except ImportError:
     print("[ERROR] PyQt5 / PyQt5-WebEngine not found.")
     print("        pip install PyQt5 PyQtWebEngine")
     sys.exit(1)
 
 # ── API imports ───────────────────────────────────────────────────────────────
-from api         import create_app
-from api.config  import SYSTEM_FILES, is_installation_done, is_fresh_boot, save_boot_id
-from api.db      import init_db
+from api import create_app
+from api.config import SYSTEM_FILES, is_installation_done, is_fresh_boot, save_boot_id
+from api.db import init_db
 from api.collector_service import (
     publish_member_event, publish_guest_event, send_event
 )
@@ -51,11 +51,11 @@ def run_flask():
         flask_app,
         host="127.0.0.1",
         port=FLASK_PORT,
-        threads=8,
+        threads=2,   # Optimized: 2 threads suffice for local kiosk client
     )
 
 
-# ── PyQt6 browser window ──────────────────────────────────────────────────────
+# ── PyQt5 browser window ──────────────────────────────────────────────────────
 class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -101,7 +101,7 @@ class BrowserWindow(QMainWindow):
         self.view.loadFinished.connect(self._on_load_finished)
 
         # ── Connection state polling (every POLL_INTERVAL_MS) ─────────────────
-        self._last_usb  = None
+        self._last_usb = None
         self._last_wifi = None
         self._last_internet = None
         self._poll_timer = QTimer(self)
@@ -171,10 +171,11 @@ class BrowserWindow(QMainWindow):
 
 # ── Background Internet Checker ───────────────────────────────────────────────
 def check_internet_loop():
-    # Multi-target endpoints: Cloudflare, Google, Quad9
+    """Multi-target DNS check (1.1.1.1, 8.8.8.8, 9.9.9.9) with backoff and hysteresis."""
     endpoints = [("1.1.1.1", 53), ("8.8.8.8", 53), ("9.9.9.9", 53)]
     consecutive_failures = 0
-    failure_threshold = 2  # Require 2 consecutive failed rounds to declare offline
+    failure_threshold = 3  # Require 3 consecutive failed cycles to declare offline
+    flag_path = SYSTEM_FILES.get("internet_ok", "/run/internet_ok")
 
     while True:
         probe_success = False
@@ -189,8 +190,6 @@ def check_internet_loop():
             except Exception:
                 continue
 
-        flag_path = SYSTEM_FILES.get("internet_ok", "/run/internet_ok")
-
         if probe_success:
             consecutive_failures = 0
             if not os.path.exists(flag_path):
@@ -198,6 +197,8 @@ def check_internet_loop():
                     open(flag_path, "w").close()
                 except Exception:
                     pass
+            # Healthy state: sleep 60 seconds to save CPU
+            time.sleep(60)
         else:
             consecutive_failures += 1
             if consecutive_failures >= failure_threshold:
@@ -206,8 +207,10 @@ def check_internet_loop():
                         os.remove(flag_path)
                     except Exception:
                         pass
+            # Down state: retry faster with backoff capped at 60s
+            retry_delay = min(5 * (2 ** (consecutive_failures - 1)), 60)
+            time.sleep(retry_delay)
 
-        time.sleep(5)
 
 # ── Boot sequence ─────────────────────────────────────────────────────────────
 def _boot_reset():
@@ -225,7 +228,7 @@ def _boot_reset():
         conn.execute("DELETE FROM guests WHERE meter_id = ? AND hhid = ?", (METER_ID, hhid))
         conn.commit()
 
-    data    = load_members_data()
+    data = load_members_data()
     members = [
         {"member_id": m["member_code"], "age": calculate_age(m["dob"]),
          "gender": m["gender"], "active": False}
@@ -239,9 +242,6 @@ def _boot_reset():
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
-    # Binds to all IPs, not just localhost
-    #os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "0.0.0.0:9222"
-
     # 1. Database
     init_db()
 
@@ -251,14 +251,14 @@ def main():
         _boot_reset()
     save_boot_id()
 
-    # 4. Flask in background thread
+    # 3. Flask in background thread
     flask_thread = threading.Thread(target=run_flask, daemon=True, name="flask")
     flask_thread.start()
-    
-    # 4.5 Internet monitor in background thread
+
+    # 4. Internet monitor in background thread
     internet_thread = threading.Thread(target=check_internet_loop, daemon=True, name="internet_check")
     internet_thread.start()
-    
+
     # Wait for Flask to bind before Qt loads the URL
     start_time = time.time()
     flask_ready = False

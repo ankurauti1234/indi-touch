@@ -2,27 +2,38 @@
 # api/db.py — SQLite database initialization and helpers
 import os
 import sqlite3
+import threading
 from datetime import datetime
 from .config import DB_PATH, METER_ID, load_hhid, FALLBACK_AVATAR, AVATAR_DIR
 
+_local = threading.local()
 
-def get_conn():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=10.0)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA synchronous = NORMAL;")
-    conn.execute("PRAGMA busy_timeout = 5000;")
-    conn.execute("PRAGMA cache_size = -2000;")
-    conn.execute("PRAGMA temp_store = MEMORY;")
+
+def get_conn() -> sqlite3.Connection:
+    """Thread-local SQLite connection with optimized PRAGMAs."""
+    conn = getattr(_local, "conn", None)
+    if conn is None:
+        conn = sqlite3.connect(DB_PATH, timeout=10.0)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute("PRAGMA synchronous = NORMAL;")
+        conn.execute("PRAGMA busy_timeout = 10000;")
+        conn.execute("PRAGMA foreign_keys = ON;")
+        conn.execute("PRAGMA cache_size = -2000;")
+        conn.execute("PRAGMA temp_store = MEMORY;")
+        _local.conn = conn
     return conn
 
 
 def init_db():
     # Set WAL mode outside a transaction block
     raw_conn = sqlite3.connect(DB_PATH, timeout=10.0)
-    raw_conn.execute("PRAGMA journal_mode=WAL;")
+    raw_conn.execute("PRAGMA journal_mode = WAL;")
+    raw_conn.execute("PRAGMA busy_timeout = 10000;")
     raw_conn.close()
 
-    with get_conn() as conn:
+    conn = get_conn()
+    with conn:
         cur = conn.cursor()
 
         # Members table
@@ -97,8 +108,6 @@ def init_db():
             )
         """)
 
-        conn.commit()
-
     print("[DB] Database initialized")
 
 
@@ -106,50 +115,49 @@ def init_db():
 
 def load_members_data() -> dict:
     hhid = load_hhid()
+    conn = get_conn()
+    cur = conn.cursor()
 
-    with get_conn() as conn:
-        cur = conn.cursor()
+    cur.execute("""
+        SELECT member_code,
+               name,
+               dob,
+               gender,
+               created_at,
+               avatar_url,
+               offline_avatar,
+               active
+        FROM members
+        WHERE meter_id = ? AND hhid = ?
+        ORDER BY id
+    """, (METER_ID, hhid))
 
-        cur.execute("""
-            SELECT member_code,
-                   name,
-                   dob,
-                   gender,
-                   created_at,
-                   avatar_url,
-                   offline_avatar,
-                   active
-            FROM members
-            WHERE meter_id = ? AND hhid = ?
-            ORDER BY id
-        """, (METER_ID, hhid))
+    members = []
 
-        members = []
+    for row in cur.fetchall():
+        m_code = row[0]
+        off_avatar = row[6] or FALLBACK_AVATAR
+        mtime = 0
+        if off_avatar and off_avatar != FALLBACK_AVATAR:
+            avatar_path = os.path.join(AVATAR_DIR, off_avatar)
+            if os.path.exists(avatar_path):
+                try:
+                    mtime = int(os.path.getmtime(avatar_path))
+                except OSError:
+                    mtime = 0
 
-        for row in cur.fetchall():
-            m_code = row[0]
-            off_avatar = row[6] or FALLBACK_AVATAR
-            mtime = 0
-            if off_avatar and off_avatar != FALLBACK_AVATAR:
-                avatar_path = os.path.join(AVATAR_DIR, off_avatar)
-                if os.path.exists(avatar_path):
-                    try:
-                        mtime = int(os.path.getmtime(avatar_path))
-                    except OSError:
-                        mtime = 0
-
-            members.append({
-                "member_code": m_code,
-                "name": row[1] or m_code,
-                "dob": row[2],
-                "gender": row[3],
-                "created_at": row[4],
-                "avatar_url": row[5] or FALLBACK_AVATAR,
-                "offline_avatar": off_avatar,
-                "avatar_mtime": mtime,
-                "active": bool(row[7]),
-                "age": calculate_age(row[2])
-            })
+        members.append({
+            "member_code": m_code,
+            "name": row[1] or m_code,
+            "dob": row[2],
+            "gender": row[3],
+            "created_at": row[4],
+            "avatar_url": row[5] or FALLBACK_AVATAR,
+            "offline_avatar": off_avatar,
+            "avatar_mtime": mtime,
+            "active": bool(row[7]),
+            "age": calculate_age(row[2])
+        })
 
     return {
         "meter_id": METER_ID,
@@ -163,9 +171,9 @@ def save_members_data(data: dict):
     hhid = data.get("hhid", load_hhid())
     members = data.get("members", [])
 
-    with get_conn() as conn:
+    conn = get_conn()
+    with conn:
         cur = conn.cursor()
-
         cur.execute(
             "DELETE FROM members WHERE meter_id = ? AND hhid = ?",
             (meter_id, hhid)
@@ -199,8 +207,6 @@ def save_members_data(data: dict):
                 int(m.get("active", False)),
             ))
 
-        conn.commit()
-
 
 def toggle_member_in_db(index: int) -> tuple:
     data = load_members_data()
@@ -210,9 +216,7 @@ def toggle_member_in_db(index: int) -> tuple:
         raise IndexError("Member index out of range")
 
     members[index]["active"] = not members[index].get("active", False)
-
     save_members_data(data)
-
     return members[index], members[index]["active"]
 
 
@@ -224,16 +228,14 @@ def rename_member_in_db(index: int, new_name: str) -> dict:
         raise IndexError("Member index out of range")
 
     members[index]["name"] = new_name.strip()
-
     save_members_data(data)
-
     return members[index]
 
 
 def update_member_offline_avatar(member_code: str, filename: str):
     hhid = load_hhid()
-
-    with get_conn() as conn:
+    conn = get_conn()
+    with conn:
         conn.execute("""
             UPDATE members
             SET offline_avatar = ?
@@ -242,13 +244,11 @@ def update_member_offline_avatar(member_code: str, filename: str):
               AND member_code = ?
         """, (filename, METER_ID, hhid, member_code))
 
-        conn.commit()
-
 
 def undeclare_all_members_in_db():
     hhid = load_hhid()
-
-    with get_conn() as conn:
+    conn = get_conn()
+    with conn:
         conn.execute("""
             UPDATE members
             SET active = 0
@@ -260,49 +260,42 @@ def undeclare_all_members_in_db():
             WHERE meter_id = ? AND hhid = ?
         """, (METER_ID, hhid))
 
-        conn.commit()
-
-
-# ── Guests ────────────────────────────────────────────────────────────────────
 
 # ── Guests ────────────────────────────────────────────────────────────────────
 
 def load_guests_data() -> list:
     hhid = load_hhid()
+    conn = get_conn()
+    cur = conn.cursor()
 
-    with get_conn() as conn:
-        cur = conn.cursor()
+    cur.execute("""
+        SELECT
+            id,
+            age,
+            gender,
+            active
+        FROM guests
+        WHERE meter_id = ? AND hhid = ?
+        ORDER BY id
+    """, (METER_ID, hhid))
 
-        cur.execute("""
-            SELECT
-                id,
-                age,
-                gender,
-                active
-            FROM guests
-            WHERE meter_id = ? AND hhid = ?
-            ORDER BY id
-        """, (METER_ID, hhid))
+    guests = []
+    for r in cur.fetchall():
+        guests.append({
+            "id": r[0],
+            "age": r[1],
+            "gender": r[2],
+            "active": bool(r[3]),
+        })
 
-        guests = []
-
-        for r in cur.fetchall():
-            guests.append({
-                "id": r[0],
-                "age": r[1],
-                "gender": r[2],
-                "active": bool(r[3]),
-            })
-
-        return guests
+    return guests
 
 
 def save_guests_data(guest_list: list):
     hhid = load_hhid()
-
-    with get_conn() as conn:
+    conn = get_conn()
+    with conn:
         cur = conn.cursor()
-
         cur.execute("""
             DELETE FROM guests
             WHERE meter_id = ? AND hhid = ?
@@ -326,25 +319,23 @@ def save_guests_data(guest_list: list):
                 int(g.get("active", True)),
             ))
 
-        conn.commit()
-
     print(f"[DB] Saved {len(guest_list)} guests")
 
 
 # ── App Settings ──────────────────────────────────────────────────────────────
 
 def get_setting(key: str, default=None):
-    with get_conn() as conn:
-        row = conn.execute(
-            "SELECT value FROM app_settings WHERE key = ?",
-            (key,)
-        ).fetchone()
-
-        return row[0] if row else default
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT value FROM app_settings WHERE key = ?",
+        (key,)
+    ).fetchone()
+    return row[0] if row else default
 
 
 def set_setting(key: str, value):
-    with get_conn() as conn:
+    conn = get_conn()
+    with conn:
         conn.execute("""
             INSERT INTO app_settings (key, value)
             VALUES (?, ?)
@@ -352,40 +343,35 @@ def set_setting(key: str, value):
             DO UPDATE SET value = excluded.value
         """, (key, str(value)))
 
-        conn.commit()
-
 
 # ── Notifications ─────────────────────────────────────────────────────────────
 
 def get_notifications(unread_only: bool = False) -> list:
-    with get_conn() as conn:
-        cur = conn.cursor()
+    conn = get_conn()
+    cur = conn.cursor()
 
-        query = "SELECT * FROM notifications"
+    query = "SELECT * FROM notifications"
+    if unread_only:
+        query += " WHERE read = 0"
+    query += " ORDER BY id DESC"
 
-        if unread_only:
-            query += " WHERE read = 0"
-
-        query += " ORDER BY id DESC"
-
-        cur.execute(query)
-
-        return [dict(row) for row in cur.fetchall()]
+    cur.execute(query)
+    return [dict(row) for row in cur.fetchall()]
 
 
 def mark_notification_read(notif_id: int):
-    with get_conn() as conn:
+    conn = get_conn()
+    with conn:
         conn.execute("""
             UPDATE notifications
             SET read = 1
             WHERE id = ?
         """, (notif_id,))
 
-        conn.commit()
-
 
 def save_notification(title: str, message: str, n_type: str = "info"):
-    with get_conn() as conn:
+    conn = get_conn()
+    with conn:
         conn.execute("""
             INSERT INTO notifications (
                 title,
@@ -402,8 +388,6 @@ def save_notification(title: str, message: str, n_type: str = "info"):
             datetime.now().isoformat()
         ))
 
-        conn.commit()
-
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
 
@@ -411,12 +395,10 @@ def calculate_age(dob_str: str):
     try:
         dob = datetime.strptime(dob_str, "%Y-%m-%d")
         today = datetime.today()
-
         return (
             today.year
             - dob.year
             - ((today.month, today.day) < (dob.month, dob.day))
         )
-
     except Exception:
         return None

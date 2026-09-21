@@ -33,10 +33,10 @@ export async function loadConfig() {
             config.meter_id = dStatus.meter_id || config.meter_id;
             config.onboardingCompleted = dStatus.installation_done;
         }
-        
+
         const rSettings = await fetch('/api/system/settings');
         const dSettings = await rSettings.json();
-        
+
         config.language = dSettings.language || 'en';
         config.remoteMode = dSettings.remoteMode === true;
         config.screenTimeout = dSettings.screenTimeout || 300000;
@@ -104,7 +104,12 @@ export function updateMemberData(newList) {
     memberData.length = 0;
     memberData.push(...newList);
     if (window.renderGrid) window.renderGrid();
-    if (window.renderScreensaverMembers) window.renderScreensaverMembers();
+
+    // Guard: Only re-render screensaver members if the screensaver is actively displayed
+    const s = document.getElementById('screensaver');
+    if (s && s.classList.contains('active')) {
+        if (window.renderScreensaverMembers) window.renderScreensaverMembers();
+    }
 }
 window.updateMemberData = updateMemberData;
 window.loadMembers = loadMembers;
@@ -140,20 +145,24 @@ export async function updateSetting(key, value) {
 export function toggleTv(state) {
     tvState.on = state;
     if (window.updateTvUI) window.updateTvUI(state);
-    
+
     // Optimistic clear for immediate UI feedback before API confirms
     if (!state) {
         memberData.forEach(m => m.active = false);
         guests.length = 0;
         if (window.renderGrid) window.renderGrid();
         if (window.renderGuestList) window.renderGuestList();
-        if (window.renderScreensaverMembers) window.renderScreensaverMembers();
+
+        const s = document.getElementById('screensaver');
+        if (s && s.classList.contains('active')) {
+            if (window.renderScreensaverMembers) window.renderScreensaverMembers();
+        }
     }
 }
 
 export function getAvatarUrl(m) {
     const style = config.avatarStyle || 'local';
-    
+
     if (style === 'custom') {
         if (m.offline_avatar && !m.offline_avatar.includes('data:image')) {
             const version = m.avatar_mtime || 0;
@@ -167,16 +176,16 @@ export function getAvatarUrl(m) {
         const gender = (m.gender || 'Male').toLowerCase();
         const age = parseInt(m.age) || 30;
         let category = 'middle';
-        
+
         if (age < 13) category = 'kid';
         else if (age < 20) category = 'teen';
         else if (age < 45) category = 'middle';
         else if (age < 65) category = 'aged';
         else category = 'elder';
-        
+
         return `assets/images/avatar/${gender}-${category}.png`;
     }
-    
+
     // Dicebear Fallback
     const seed = m.seed || (m.gender + (m.name || 'User'));
     return `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}&backgroundColor=c0aede,b6e3f4,ffdfbf`;

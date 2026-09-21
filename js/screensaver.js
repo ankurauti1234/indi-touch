@@ -150,7 +150,6 @@ export async function initLocation() {
 }
 
 export function renderScreensaverMembers() {
-    initLocation(); // Ensure weather is updated when screensaver shows
 
     const container = document.getElementById('saver-active-members');
     if (!container) return;

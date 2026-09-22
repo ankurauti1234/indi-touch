@@ -47,14 +47,20 @@ POLL_INTERVAL_MS = 5000   # how often to check /run files in the Qt event loop
 
 # ── Flask runner ──────────────────────────────────────────────────────────────
 def run_flask():
+    import logging
+    # Suppress harmless task queue depth notifications in local kiosk mode
+    logging.getLogger("waitress.queue").setLevel(logging.ERROR)
+
     flask_app = create_app()
     serve(
         flask_app,
         host="127.0.0.1",
         port=FLASK_PORT,
-        threads=2,   # Optimized: 2 threads suffice for local kiosk client
+        threads=4,               # 4 threads handle transient bursts & slow I/O
+        channel_timeout=10,      # Prune idle keep-alive sockets quickly
+        connection_limit=32,     # Cap local connection pool
+        asyncore_use_poll=True   # Efficient socket polling on Linux
     )
-
 
 # ── PyQt5 browser window ──────────────────────────────────────────────────────
 class BrowserWindow(QMainWindow):

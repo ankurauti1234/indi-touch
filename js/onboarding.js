@@ -481,3 +481,10 @@ window.toggleOnboardInfo = async () => {
         }
     }
 };
+
+// Expose functions called by inline HTML event handlers (onclick)
+window.selectNet = selectNet;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.refreshWifi = refreshWifi;
+window.toggleOnboardPass = toggleOnboardPass;

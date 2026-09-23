@@ -462,7 +462,7 @@ function loadMemberSettings() {
                         id="member-input-${index}"
                         value="${m.name}"
                         maxlength="24"
-                        placeholder="Name cannot be blank"
+                        placeholder="Letters and numbers only"
                         style="width:60%;height:40px;font-size:18px"
                         data-original="${m.name}"
                         oninput="onMemberInput(${index}, this)"
@@ -475,7 +475,13 @@ function loadMemberSettings() {
 }
 
 window.onMemberInput = function (index, inputEl) {
-    const trimmed = inputEl.value.trim();
+    // Strip anything that is NOT letters, numbers, or spaces
+    const sanitized = inputEl.value.replace(/[^a-zA-Z0-9 ]/g, '');
+    if (inputEl.value !== sanitized) {
+        inputEl.value = sanitized;
+    }
+
+    const trimmed = sanitized.trim();
 
     // Red warning if cleared
     if (!trimmed) {
@@ -495,19 +501,21 @@ window.onMemberInput = function (index, inputEl) {
 };
 
 window.onMemberBlur = function (index, inputEl) {
-    const trimmed = inputEl.value.trim();
+    // Sanitize and collapse redundant internal spaces
+    const cleaned = inputEl.value.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
     const fallback = inputEl.dataset.original || memberData[index]?.name || 'Member';
 
-    // Disallow blank: restore the previous name
-    if (!trimmed) {
+    // Disallow empty/whitespace
+    if (!cleaned) {
         inputEl.value = fallback;
         inputEl.style.borderColor = '';
         inputEl.style.outline = '';
-        if (window.showToast) window.showToast('Name cannot be empty');
+        if (window.showToast) window.showToast('Name must contain letters or numbers');
         return;
     }
 
-    saveMemberName(index, trimmed, inputEl);
+    inputEl.value = cleaned;
+    saveMemberName(index, cleaned, inputEl);
 };
 
 async function saveMemberName(index, newName, inputEl) {

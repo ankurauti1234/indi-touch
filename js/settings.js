@@ -447,18 +447,26 @@ window.selectBrightness = function(level, el) {
 };
 
 // ── MEMBER SETTINGS ───────────────────────────────────────────────────────────
+let _memberDebounceTimer = null;
+
 function loadMemberSettings() {
     const list = document.getElementById('member-settings-list');
     if (!list) return;
+
     list.innerHTML = memberData.map((m, index) => `
         <div class="list-item" style="cursor:default">
             <div class="icon-box"><span class="material-symbols-rounded">person</span></div>
             <div class="item-content" style="flex:1">
                 <div style="display:flex;align-items:center;justify-content:space-between">
-                    <input type="text" class="input-box"
+                    <input type="text" class="input-box member-name-input"
+                        id="member-input-${index}"
                         value="${m.name}"
+                        maxlength="24"
+                        placeholder="Name cannot be blank"
                         style="width:60%;height:40px;font-size:18px"
-                        oninput="updateMemberName(${index},this.value)">
+                        data-original="${m.name}"
+                        oninput="onMemberInput(${index}, this)"
+                        onblur="onMemberBlur(${index}, this)">
                     <span style="font-size:14px;color:var(--text-sub);opacity:0.8">${m.gender}, ${m.age}</span>
                 </div>
             </div>
@@ -466,22 +474,64 @@ function loadMemberSettings() {
     `).join('');
 }
 
-window.updateMemberName = async function(index, newName) {
-    if (memberData[index]) {
-        memberData[index].name = newName;
-        renderGrid();
-        
-        try {
-            await fetch('/api/members/rename', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ index, name: newName })
-            });
-        } catch (e) {
-            console.error("Member rename failed", e);
-        }
+window.onMemberInput = function (index, inputEl) {
+    const trimmed = inputEl.value.trim();
+
+    // Red warning if cleared
+    if (!trimmed) {
+        inputEl.style.borderColor = '#ff5c5c';
+        inputEl.style.outline = '1px solid #ff5c5c';
+        return;
     }
+
+    inputEl.style.borderColor = '';
+    inputEl.style.outline = '';
+
+    // Wait until user stops typing before saving
+    clearTimeout(_memberDebounceTimer);
+    _memberDebounceTimer = setTimeout(() => {
+        saveMemberName(index, trimmed, inputEl);
+    }, 400);
 };
+
+window.onMemberBlur = function (index, inputEl) {
+    const trimmed = inputEl.value.trim();
+    const fallback = inputEl.dataset.original || memberData[index]?.name || 'Member';
+
+    // Disallow blank: restore the previous name
+    if (!trimmed) {
+        inputEl.value = fallback;
+        inputEl.style.borderColor = '';
+        inputEl.style.outline = '';
+        if (window.showToast) window.showToast('Name cannot be empty');
+        return;
+    }
+
+    saveMemberName(index, trimmed, inputEl);
+};
+
+async function saveMemberName(index, newName, inputEl) {
+    if (!memberData[index] || memberData[index].name === newName) return;
+
+    memberData[index].name = newName;
+    if (inputEl) inputEl.dataset.original = newName;
+    renderGrid();
+
+    try {
+        const res = await fetch('/api/members/rename', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ index, name: newName })
+        });
+        const d = await res.json();
+        if (!d.success && window.showToast) {
+            window.showToast('Failed to save name');
+        }
+    } catch (e) {
+        console.error('Member rename failed', e);
+        if (window.showToast) window.showToast('Network error saving name');
+    }
+}
 
 // ── SYSTEM INFO (real device data) ───────────────────────────────────────────
 export async function loadSystemInfo() {

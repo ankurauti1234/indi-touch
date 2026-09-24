@@ -130,11 +130,17 @@ function renderKeys() {
             btn.innerText = display;
             
             // Interaction
+            btn.onpointerdown = (e) => {
+                e.preventDefault(); // CRITICAL: Prevents keyboard button from blurring the active input!
+            };
+            btn.onmousedown = (e) => {
+                e.preventDefault();
+            };
+
             btn.onclick = (e) => {
-                e.stopPropagation(); // Prevent "click outside" listener from firing
-                e.preventDefault(); 
+                e.stopPropagation();
+                e.preventDefault();
                 handleKey(key);
-                if (activeInput && key !== 'enter') activeInput.focus(); // Skip focus if closing
             };
 
             rowDiv.appendChild(btn);

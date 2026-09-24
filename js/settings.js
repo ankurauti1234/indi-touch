@@ -469,9 +469,7 @@ function loadMemberSettings() {
                         placeholder="Name cannot be empty"
                         style="width:60%;height:40px;font-size:18px"
                         data-index="${index}"
-                        data-original="${m.name}"
-                        onfocus="onMemberFocus(this)"
-                        onkeydown="onMemberKeyDown(event, ${index}, this)"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
                         oninput="onMemberInput(${index}, this)"
                         onblur="onMemberBlur(${index}, this)">
                     <span style="font-size:14px;color:var(--text-sub);opacity:0.8">${m.gender}, ${m.age}</span>
@@ -481,48 +479,17 @@ function loadMemberSettings() {
     `).join('');
 }
 
-window.onMemberFocus = function (inputEl) {
-    setTimeout(() => {
-        const len = inputEl.value.length;
-        try {
-            inputEl.setSelectionRange(len, len);
-        } catch (_) { }
-    }, 10);
-};
-
-window.onMemberKeyDown = function (e, index, inputEl) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        inputEl.blur();
-    }
-};
-
 window.onMemberInput = function (index, inputEl) {
-    const start = inputEl.selectionStart;
     const rawVal = inputEl.value;
-
-    let sanitized = '';
-    let newCursorPos = start;
-
-    for (let i = 0; i < rawVal.length; i++) {
-        const ch = rawVal[i];
-        if (/[a-zA-Z0-9 ]/.test(ch)) {
-            sanitized += ch;
-        } else if (i < start) {
-            newCursorPos = Math.max(0, newCursorPos - 1);
-        }
-    }
+    const sanitized = rawVal.replace(/[^a-zA-Z0-9 ]/g, '');
 
     if (rawVal !== sanitized) {
         inputEl.value = sanitized;
-        try {
-            inputEl.setSelectionRange(newCursorPos, newCursorPos);
-        } catch (_) { }
     }
 
     const trimmed = sanitized.trim();
 
-    // Visual warning when fully cleared
+    // Visual warning when blank, but DO NOT restore anything
     if (!trimmed) {
         inputEl.style.borderColor = '#ff5c5c';
         inputEl.style.outline = '1px solid #ff5c5c';
@@ -535,37 +502,33 @@ window.onMemberInput = function (index, inputEl) {
 
     clearTimeout(_memberDebounceTimer);
     _memberDebounceTimer = setTimeout(() => {
-        saveMemberName(index, trimmed, inputEl, false);
-    }, 500);
+        saveMemberName(index, trimmed);
+    }, 600);
 };
 
 window.onMemberBlur = function (index, inputEl) {
+    clearTimeout(_memberDebounceTimer);
     const cleaned = inputEl.value.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
-    const fallback = inputEl.dataset.original || 'Member';
 
     if (!cleaned) {
-        inputEl.value = fallback;
+        const fallbackName = `Member ${index + 1}`;
+        inputEl.value = fallbackName;
         inputEl.style.borderColor = '';
         inputEl.style.outline = '';
-        if (window.showToast) window.showToast('Name cannot be empty');
+        saveMemberName(index, fallbackName);
+        renderGrid();
         return;
     }
 
     inputEl.value = cleaned;
-    saveMemberName(index, cleaned, inputEl, true);
+    saveMemberName(index, cleaned);
+    renderGrid();
 };
 
-async function saveMemberName(index, newName, inputEl, shouldRerenderGrid) {
-    if (!memberData[index]) return;
-    if (memberData[index].name === newName && !shouldRerenderGrid) return;
+async function saveMemberName(index, newName) {
+    if (!memberData[index] || memberData[index].name === newName) return;
 
     memberData[index].name = newName;
-    if (inputEl) inputEl.dataset.original = newName;
-
-    // Only rerender the main grid on final commit/blur to avoid input desync
-    if (shouldRerenderGrid) {
-        renderGrid();
-    }
 
     try {
         const res = await fetch('/api/members/rename', {

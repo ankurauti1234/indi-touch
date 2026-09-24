@@ -673,26 +673,14 @@
           <h2 class="page-title" data-i18n="add_guest">Add Guest</h2>
         </div>
         <div class="form-area" style="flex: 0">
-          <input
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            id="g-age"
-            class="input-box"
-            placeholder="Guest Age"
-            data-i18n="guest_age"
-            maxlength="3"
-            autocomplete="off"
-            autocorrect="off"
-            spellcheck="false"
-            style="direction:ltr; text-align:left;"
-            oninput="
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="g-age" class="input-box" placeholder="Guest Age"
+            data-i18n="guest_age" maxlength="3" autocomplete="off" autocorrect="off" spellcheck="false"
+            style="direction:ltr; text-align:left;" oninput="
               this.value = this.value.replace(/[^0-9]/g, '');
               if(this.value.length > 3) {
                 this.value = this.value.slice(0,3);
               }
-            "
-          />
+            " />
           <div class="chip-group">
             <div class="chip selected" onclick="selectChip(this, 'gender')" data-i18n="male">
               Male
@@ -735,7 +723,7 @@
       <div class="saver-clock">
         <div id="clock-time">
           <span id="clock-time-digits" class="clock-main-digits">00:00</span>
-          <span id="clock-time-secs" class="clock-secs">00</span>
+          <!-- <span id="clock-time-secs" class="clock-secs">00</span> -->
         </div>
         <div class="saver-info-row">
           <div id="clock-date">...</div>
@@ -777,15 +765,15 @@
       <div class="critical-icon-container">
         <span class="material-symbols-rounded critical-icon">group</span>
       </div>
-  
+
       <h2 class="critical-title" data-i18n="active_m_req">
         Who's watching?
       </h2>
-  
+
       <p class="critical-msg" data-i18n="tv_active_msg">
         Select a household member to get started.
       </p>
-  
+
       <button class="critical-btn" onclick="window.handleCriticalAction()" data-i18n="identify_now">
         Identify Members Now
       </button>
@@ -800,23 +788,23 @@
           live_tv
         </span>
       </div>
-  
+
       <h2 class="conn-title">
         Are you still watching?
       </h2>
-  
+
       <p class="conn-body">
         We haven't detected any interaction for the last 2 hours.
         <br><br>
         If you're still watching TV, select <b>I'm Watching</b>.
         Otherwise, end the current viewing session.
       </p>
-  
+
       <div class="conn-actions">
         <button id="still-watch-end" class="conn-btn-secondary">
           End Session
         </button>
-  
+
         <button id="still-watch-continue" class="conn-btn-primary">
           I'm Watching
         </button>

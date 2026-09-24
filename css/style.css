@@ -1678,12 +1678,9 @@ body.osk-open .main-stage {
     font-weight: 200;
 }
 
-.clock-secs {
-    font-size: 0.25em;
-    opacity: 0.5;
-    font-weight: 400;
-    margin-top: -10px;
-    letter-spacing: 2px;
+.clock-secs,
+#clock-time-secs {
+    display: none !important;
 }
 
 /* TV Status Tag */

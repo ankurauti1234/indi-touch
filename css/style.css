@@ -1648,15 +1648,19 @@ body.osk-open .main-stage {
     pointer-events: auto;
 }
 
+/* ── SCREENSAVER CLOCK SIZING ── */
+
 .saver-clock {
-    margin-bottom: 20px;
+    margin-bottom: 8px;
+    /* Tighter margin so it doesn't push the members down */
 }
 
 #clock-time {
-    font-size: 200px;
+    font-size: 240px;
+    /* Restored back to large */
     font-weight: 700;
-    line-height: 1;
-    letter-spacing: -4px;
+    line-height: 0.85;
+    letter-spacing: -6px;
     margin-bottom: 0px;
     color: #ffffff;
     text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -1669,13 +1673,24 @@ body.osk-open .main-stage {
 }
 
 #clock-time.massive {
-    font-size: 350px;
+    font-size: 340px;
+    /* Full screen clock when idle / TV off */
+    line-height: 0.85;
 }
 
 .clock-main-digits {
     font-size: inherit;
-    line-height: 0.9;
+    line-height: 0.85;
     font-weight: 200;
+}
+
+/* Scaled down just enough when 5+ members are present to prevent overlap */
+.compact-view #clock-time {
+    font-size: 190px;
+}
+
+.compact-view .clock-main-digits {
+    font-size: 190px;
 }
 
 .clock-secs,

@@ -220,7 +220,7 @@ export function renderGuestList() {
                 class="guest-avatar-circle"
                 title="${g.name || 'Guest'} (${g.gender}, ${g.age})"
             >
-                <img src="${url}?v=${Date.now()}" loading="lazy">
+                <img src="${url}" loading="lazy">
 
                 <div
                     class="guest-delete-overlay"

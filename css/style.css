@@ -1621,6 +1621,8 @@ body.osk-open .main-stage {
 
 /* ── SCREENSAVER ─────────────────────────────────────────────────────────── */
 
+/* ── SCREENSAVER ─────────────────────────────────────────────────────────── */
+
 #screensaver {
     position: fixed;
     inset: 0;
@@ -1629,12 +1631,12 @@ body.osk-open .main-stage {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.35s ease;
     color: #fff;
-    padding: 36px 32px;
+    padding: 20px 24px 24px;
     text-align: center;
     border-radius: 42px;
     overflow: hidden;
@@ -1648,19 +1650,24 @@ body.osk-open .main-stage {
     pointer-events: auto;
 }
 
-/* ── SCREENSAVER CLOCK SIZING ── */
+#screensaver {
+    padding: 20px 24px 24px;
+    /* Reduced vertical padding */
+    justify-content: space-between;
+    /* Pins clock to top-center, members to bottom */
+}
 
 .saver-clock {
-    margin-bottom: 8px;
-    /* Tighter margin so it doesn't push the members down */
+    margin-top: 10px;
+    margin-bottom: 0px;
 }
 
 #clock-time {
-    font-size: 240px;
-    /* Restored back to large */
+    font-size: 300px;
+    /* Big & prominent */
     font-weight: 700;
-    line-height: 0.85;
-    letter-spacing: -6px;
+    line-height: 0.8;
+    letter-spacing: -8px;
     margin-bottom: 0px;
     color: #ffffff;
     text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -1673,24 +1680,35 @@ body.osk-open .main-stage {
 }
 
 #clock-time.massive {
-    font-size: 340px;
-    /* Full screen clock when idle / TV off */
-    line-height: 0.85;
+    font-size: 380px;
+    /* Dominates the whole 600px display */
+    line-height: 0.8;
 }
 
 .clock-main-digits {
     font-size: inherit;
-    line-height: 0.85;
+    line-height: 0.8;
     font-weight: 200;
 }
 
-/* Scaled down just enough when 5+ members are present to prevent overlap */
+/* 5+ members view */
 .compact-view #clock-time {
-    font-size: 190px;
+    font-size: 260px;
 }
 
 .compact-view .clock-main-digits {
-    font-size: 190px;
+    font-size: 260px;
+}
+
+.saver-active-area {
+    width: 100%;
+    margin-top: 0;
+    /* Let space-between position it naturally */
+}
+
+.saver-members-title {
+    margin-bottom: 8px;
+    /* Tighter spacing */
 }
 
 .clock-secs,

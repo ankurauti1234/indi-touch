@@ -298,9 +298,6 @@ body {
 /* SIDEBAR */
 .nav-rail {
     width: 88px;
-    height: 600px !important;
-    max-height: 600px !important;
-    flex-shrink: 0 !important;
     background-color: var(--bg-surface);
     display: flex;
     flex-direction: column;
@@ -1622,7 +1619,6 @@ body.osk-open .main-stage {
     color: var(--sev-success);
 }
 
-/* ── SCREENSAVER ─────────────────────────────────────────────────────────── */
 
 /* ── SCREENSAVER ─────────────────────────────────────────────────────────── */
 
@@ -1631,7 +1627,7 @@ body.osk-open .main-stage {
     inset: 0;
     background: #000;
     z-index: 2147483647 !important;
-    /* Maximum 32-bit integer z-index */
+    /* Maximum possible z-index */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1872,13 +1868,6 @@ body.osk-open .main-stage {
     font-size: 22px;
 }
 
-#screensaver.active~#osk-container,
-body:has(#screensaver.active) #osk-container {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
 
 /* M3 NOTIFICATION CARDS */
 .hub-notif-area {
@@ -2581,8 +2570,3 @@ body:has(#screensaver.active) #osk-container {
     pointer-events: none !important;
 }
 
-/* Ensure #app-frame resets height immediately when screensaver is active */
-#screensaver.active~#app-frame,
-body:has(#screensaver.active) #app-frame {
-    height: 600px !important;
-}

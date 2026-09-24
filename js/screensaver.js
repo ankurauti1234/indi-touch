@@ -27,35 +27,10 @@ export function resetIdle(isPriority = false) {
 
     idleTimer = setTimeout(() => {
         if (s) {
-            console.log("Screensaver activating now...");
-
-            // 1. Force blur active inputs and hide virtual keyboard
-            if (document.activeElement && typeof document.activeElement.blur === 'function') {
-                document.activeElement.blur();
-            }
-            document.body.classList.remove('osk-open');
-
-            // Reset scroll positions back to top so icons do not stay shifted down
-            window.scrollTo(0, 0);
-            const appFrame = document.getElementById('app-frame');
-            if (appFrame) appFrame.scrollTop = 0;
-            const mainStage = document.querySelector('.main-stage');
-            if (mainStage) mainStage.scrollTop = 0;
-
-            // Hide OSK container if it exists
-            const osk = document.getElementById('osk-container');
-            if (osk) {
-                osk.classList.remove('visible');
-                osk.style.display = 'none';
-            }
-            if (typeof window.hideOSK === 'function') {
-                window.hideOSK();
-            }
-
-            // 2. Pre-render DOM elements synchronously before fading in
+            // Pre-render DOM elements synchronously before fading in
             renderScreensaverMembers();
 
-            // 3. Reveal smoothly in next frame
+            // Reveal smoothly in next frame
             requestAnimationFrame(() => {
                 s.classList.add('active');
             });

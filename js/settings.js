@@ -481,7 +481,7 @@ function loadMemberSettings() {
 
 window.onMemberInput = function (index, inputEl) {
     const rawVal = inputEl.value;
-    // Allow Unicode letters (\p{L}), numbers (\p{N}), and spaces; strip symbols
+    // Allow Unicode letters, numbers, and spaces
     const sanitized = rawVal.replace(/[^\p{L}\p{N} ]/gu, '');
 
     if (rawVal !== sanitized) {
@@ -490,7 +490,7 @@ window.onMemberInput = function (index, inputEl) {
 
     const trimmed = sanitized.trim();
 
-    // Visual warning when blank, but DO NOT restore anything
+    // Visual warning when blank
     if (!trimmed) {
         inputEl.style.borderColor = '#ff5c5c';
         inputEl.style.outline = '1px solid #ff5c5c';
@@ -501,10 +501,17 @@ window.onMemberInput = function (index, inputEl) {
     inputEl.style.borderColor = '';
     inputEl.style.outline = '';
 
+    // 1. INSTANT UI UPDATE: Update local state and redraw grid immediately
+    if (memberData[index]) {
+        memberData[index].name = trimmed;
+        renderGrid();
+    }
+
+    // 2. DEBOUNCED API CALL: Save to backend without spamming the server
     clearTimeout(_memberDebounceTimer);
     _memberDebounceTimer = setTimeout(() => {
         saveMemberName(index, trimmed);
-    }, 600);
+    }, 500);
 };
 
 window.onMemberBlur = function (index, inputEl) {
@@ -528,9 +535,7 @@ window.onMemberBlur = function (index, inputEl) {
 };
 
 async function saveMemberName(index, newName) {
-    if (!memberData[index] || memberData[index].name === newName) return;
-
-    memberData[index].name = newName;
+    if (!memberData[index]) return;
 
     try {
         const res = await fetch('/api/members/rename', {

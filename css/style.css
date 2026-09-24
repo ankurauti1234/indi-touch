@@ -1248,23 +1248,6 @@ body {
     opacity: 0.7;
 }
 
-
-#screensaver {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-    z-index: 9999;
-    display: none;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    will-change: opacity;
-    padding: 0;
-    overflow: hidden;
-}
-
 @keyframes premiumFadeIn {
     from {
         opacity: 0;
@@ -1636,6 +1619,7 @@ body.osk-open .main-stage {
     color: var(--sev-success);
 }
 
+/* ── SCREENSAVER ─────────────────────────────────────────────────────────── */
 
 #screensaver {
     position: fixed;
@@ -1648,7 +1632,7 @@ body.osk-open .main-stage {
     justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.35s ease;
     color: #fff;
     padding: 36px 32px;
     text-align: center;
@@ -1670,17 +1654,12 @@ body.osk-open .main-stage {
 
 #clock-time {
     font-size: 200px;
-    /* Reduced to fit with padding */
     font-weight: 700;
     line-height: 1;
     letter-spacing: -4px;
     margin-bottom: 0px;
-    background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.85) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 10px 30px rgba(255, 255, 255, 0.1));
-    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    color: #ffffff;
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     display: flex;
@@ -1697,21 +1676,6 @@ body.osk-open .main-stage {
     font-size: inherit;
     line-height: 0.9;
     font-weight: 200;
-    transition: font-size 0.4s ease;
-}
-
-/* Compact view for many members */
-.compact-view .clock-main-digits {
-    font-size: 130px;
-}
-
-.compact-view .saver-member-avatar {
-    width: 80px;
-    height: 80px;
-}
-
-.compact-view .saver-member-name {
-    font-size: 24px;
 }
 
 .clock-secs {
@@ -1722,7 +1686,7 @@ body.osk-open .main-stage {
     letter-spacing: 2px;
 }
 
-/* TV Status Tag (Screensaver) */
+/* TV Status Tag */
 .saver-tv-tag {
     display: flex;
     align-items: center;
@@ -1734,7 +1698,6 @@ body.osk-open .main-stage {
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 1px;
-    transition: all 0.3s ease;
 }
 
 .saver-tv-tag.offline {
@@ -1778,7 +1741,6 @@ body.osk-open .main-stage {
 #saver-weather img {
     width: 44px !important;
     height: 44px !important;
-    filter: drop-shadow(0 0 10px rgba(255, 214, 0, 0.2));
 }
 
 .weather-temp {
@@ -1796,16 +1758,9 @@ body.osk-open .main-stage {
 
 .weather-desc {
     display: none;
-    /* Hide description to keep it in one line */
 }
-
 
 /* ── SCREENSAVER ACTIVE MEMBERS ────────────────────────────────────────── */
-
-#screensaver {
-    padding: 36px 32px;
-    /* Reduced from 60px to give full width to member row */
-}
 
 .saver-active-area {
     width: 100%;
@@ -1830,10 +1785,9 @@ body.osk-open .main-stage {
     max-width: 960px;
     margin: 0 auto;
     flex-wrap: nowrap;
-    /* Keep row clean */
 }
 
-/* ── DEFAULT LARGE SIZING (1 to 4 Members) ── */
+/* 1 to 4 Members */
 .saver-member-item {
     display: flex;
     flex-direction: column;
@@ -1841,7 +1795,6 @@ body.osk-open .main-stage {
     gap: 12px;
     width: 160px;
     flex-shrink: 0;
-    animation: saverItemFade 0.8s cubic-bezier(0.2, 0, 0, 1) backwards;
 }
 
 .saver-member-avatar {
@@ -1869,7 +1822,11 @@ body.osk-open .main-stage {
     letter-spacing: 0.5px;
 }
 
-/* ── 5+ MEMBERS SIZING (Still Big, Fits 1024px Screen) ── */
+/* Compact View (5+ Members) */
+.compact-view .clock-main-digits {
+    font-size: 140px;
+}
+
 .compact-view #saver-active-members {
     gap: 18px;
 }
@@ -1888,19 +1845,6 @@ body.osk-open .main-stage {
 
 .compact-view .saver-member-name {
     font-size: 22px;
-}
-
-
-@keyframes saverItemFade {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* M3 NOTIFICATION CARDS */

@@ -427,10 +427,13 @@ export function initRemote() {
     });
 
     // ── Air Mouse / Mouse Movement ───────────────────────────────────────────
-    document.addEventListener('mousemove', () => {
+    document.addEventListener('mousemove', (e) => {
         if (!isRemoteMode()) return;
-        // Hide focus highlights when mouse is being used (Air Mouse mode)
-        // This avoids having both a mouse pointer AND a focus highlight visible
+        // IGNORE touch-generated mouse events! (Crucial: prevents touch-scroll freeze)
+        if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+        if (e.movementX === 0 && e.movementY === 0) return;
+
+        // Hide focus highlights only on genuine physical mouse movement
         clearFocusEl();
         clearGridFocus();
     });

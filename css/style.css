@@ -289,7 +289,8 @@ body {
     display: flex;
     overflow: hidden;
     position: relative;
-    contain: strict;
+    contain: paint;
+    /* Allows inner containers to calculate full scroll heights */
     transform: translateZ(0);
     backface-visibility: hidden;
 }
@@ -952,8 +953,8 @@ body {
     height: 100%;
     display: none;
     flex-direction: column;
-    animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1);
     overflow: hidden;
+    touch-action: pan-y;
 }
 
 .settings-panel.active {

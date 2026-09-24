@@ -615,8 +615,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     showToast("Indi Meter is ready.", 4000);
 
-    // Disable right-click context menu
-    document.addEventListener('contextmenu', e => e.preventDefault());
+    // Disable right-click context menu without swallowing touch-pan gestures
+    document.addEventListener('contextmenu', (e) => {
+        // Only prevent context menu if it was triggered by a genuine right click or long press
+        e.preventDefault();
+    }, { passive: false });
 
     // 3. User Interaction Tracking
     document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });

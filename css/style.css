@@ -677,8 +677,12 @@ body {
     flex-direction: column;
     gap: 8px;
     overflow-y: auto;
+    overflow-x: hidden;
     height: 100%;
     padding-bottom: 20px;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
 }
 
 .list-item {
@@ -950,13 +954,6 @@ body {
     flex-direction: column;
     animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1);
     overflow: hidden;
-}
-
-.settings-scroll-area {
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 24px;
-    min-height: 0;
 }
 
 .settings-panel.active {
@@ -2513,6 +2510,11 @@ body.osk-open .main-stage {
 
 .settings-scroll-area {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-bottom: 40px;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
 }

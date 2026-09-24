@@ -9,9 +9,14 @@ let currentAvatarStyle = 'local'; // Default
 export function openSetting(id) {
     // FIX: Clear ALL active settings panels before opening a new one to prevent overlap
     document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
-    
+
     const panel = document.getElementById('set-' + id);
-    if (panel) panel.classList.add('active');
+    if (panel) {
+        panel.classList.add('active');
+        // Reset scroll position to avoid stuck touch compositor offsets
+        const scrollArea = panel.querySelector('.settings-scroll-area, .list-group');
+        if (scrollArea) scrollArea.scrollTop = 0;
+    }
     
     // Trigger specific logic when opening panels
     if (id === 'connectivity') loadWifiList();

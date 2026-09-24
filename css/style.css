@@ -2570,3 +2570,23 @@ body.osk-open .main-stage {
     pointer-events: none !important;
 }
 
+/* 1. Prevent the nav rail icons from stretching or shifting down when OSK opens */
+body.osk-open .nav-rail {
+    height: 600px;
+    align-self: flex-start;
+}
+
+/* 2. If OSK is at the body level, force it behind screensaver or hidden when screensaver is active */
+#screensaver.active {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483647 !important;
+}
+
+/* Ensure OSK cannot render above active screensaver anywhere in DOM */
+body:has(#screensaver.active) #osk-container,
+#screensaver.active~#osk-container {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+}

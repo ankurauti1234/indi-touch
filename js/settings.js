@@ -469,6 +469,8 @@ function loadMemberSettings() {
                         placeholder="Letters and numbers only"
                         style="width:60%;height:40px;font-size:18px"
                         data-original="${m.name}"
+                        onfocus="onMemberFocus(this)"
+                        onkeydown="onMemberKeyDown(event, ${index}, this)"
                         oninput="onMemberInput(${index}, this)"
                         onblur="onMemberBlur(${index}, this)">
                     <span style="font-size:14px;color:var(--text-sub);opacity:0.8">${m.gender}, ${m.age}</span>
@@ -478,16 +480,50 @@ function loadMemberSettings() {
     `).join('');
 }
 
+window.onMemberFocus = function (inputEl) {
+    // Put cursor at the very end of the text on focus
+    setTimeout(() => {
+        const len = inputEl.value.length;
+        try {
+            inputEl.setSelectionRange(len, len);
+        } catch (_) { }
+    }, 10);
+};
+
+window.onMemberKeyDown = function (e, index, inputEl) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        inputEl.blur(); // Triggers onMemberBlur and commits name
+    }
+};
+
 window.onMemberInput = function (index, inputEl) {
-    // Strip anything that is NOT letters, numbers, or spaces
-    const sanitized = inputEl.value.replace(/[^a-zA-Z0-9 ]/g, '');
-    if (inputEl.value !== sanitized) {
+    const start = inputEl.selectionStart;
+    const rawVal = inputEl.value;
+
+    // Filter disallowed chars while tracking cursor position
+    let sanitized = '';
+    let newCursorPos = start;
+
+    for (let i = 0; i < rawVal.length; i++) {
+        const ch = rawVal[i];
+        if (/[a-zA-Z0-9 ]/.test(ch)) {
+            sanitized += ch;
+        } else if (i < start) {
+            newCursorPos = Math.max(0, newCursorPos - 1);
+        }
+    }
+
+    if (rawVal !== sanitized) {
         inputEl.value = sanitized;
+        try {
+            inputEl.setSelectionRange(newCursorPos, newCursorPos);
+        } catch (_) { }
     }
 
     const trimmed = sanitized.trim();
 
-    // Red warning if cleared
+    // Red warning if blank
     if (!trimmed) {
         inputEl.style.borderColor = '#ff5c5c';
         inputEl.style.outline = '1px solid #ff5c5c';
@@ -497,7 +533,7 @@ window.onMemberInput = function (index, inputEl) {
     inputEl.style.borderColor = '';
     inputEl.style.outline = '';
 
-    // Wait until user stops typing before saving
+    // Debounce save while typing
     clearTimeout(_memberDebounceTimer);
     _memberDebounceTimer = setTimeout(() => {
         saveMemberName(index, trimmed, inputEl);
@@ -505,11 +541,9 @@ window.onMemberInput = function (index, inputEl) {
 };
 
 window.onMemberBlur = function (index, inputEl) {
-    // Sanitize and collapse redundant internal spaces
     const cleaned = inputEl.value.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
     const fallback = inputEl.dataset.original || memberData[index]?.name || 'Member';
 
-    // Disallow empty/whitespace
     if (!cleaned) {
         inputEl.value = fallback;
         inputEl.style.borderColor = '';

@@ -125,7 +125,7 @@ function getContentItems() {
         return [...panel.querySelectorAll(sel)].filter(isVisible);
     }
 
-    const sel = '.back-btn, .list-item:not(.no-click), .chip, .action-btn, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], textarea';
+    const sel = '.back-btn, .list-item:not(.no-click), .chip, .action-btn, .guest-delete-overlay, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], textarea';
     return [...activeView.querySelectorAll(sel)].filter(isVisible);
 }
 
@@ -296,7 +296,7 @@ function navigate(direction) {
 
 // ─── Activation ───────────────────────────────────────────────────────────────
 function activate() {
-    if (isScreensaverActive()) return; // click event already calls resetIdle
+    if (isScreensaverActive()) return;
 
     // Home grid content zone → toggle focused member
     if (isHomeGrid() && zone === 'content') {
@@ -304,11 +304,21 @@ function activate() {
         return;
     }
 
-    // Everything else → click the focused element
     if (remoteFocusEl) {
         const el = remoteFocusEl;
+
+        // If the focused element is a text input, focus it and move cursor to the end
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            el.focus();
+            const len = el.value.length;
+            try {
+                el.setSelectionRange(len, len);
+            } catch (_) { }
+            return;
+        }
+
         el.click();
-        // After click, context may have changed (new panel, modal, etc.) — refresh
+
         setTimeout(() => {
             if (zone === 'content') {
                 const items = getContentItems();

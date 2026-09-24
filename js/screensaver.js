@@ -166,9 +166,20 @@ export function renderScreensaverMembers() {
         }
     }
 
+    const hasMembers = tvState.on && activeMembers.length > 0;
+
     const watchingArea = container.closest('.saver-active-area');
     if (watchingArea) {
-        watchingArea.style.display = (tvState.on && activeMembers.length > 0) ? 'block' : 'none';
+        watchingArea.style.display = hasMembers ? 'block' : 'none';
+    }
+
+    // Center the clock in screensaver when no members are active
+    if (saver) {
+        if (!hasMembers) {
+            saver.classList.add('center-clock');
+        } else {
+            saver.classList.remove('center-clock');
+        }
     }
 
     if (activeMembers.length === 0 || !tvState.on) {

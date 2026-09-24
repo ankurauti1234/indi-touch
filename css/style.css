@@ -1650,11 +1650,13 @@ body.osk-open .main-stage {
     pointer-events: auto;
 }
 
-#screensaver {
-    padding: 20px 24px 24px;
-    /* Reduced vertical padding */
-    justify-content: space-between;
-    /* Pins clock to top-center, members to bottom */
+#screensaver.center-clock {
+    justify-content: center !important;
+}
+
+#screensaver.center-clock .saver-clock {
+    margin-top: 0 !important;
+    margin-bottom: 24px !important;
 }
 
 .saver-clock {

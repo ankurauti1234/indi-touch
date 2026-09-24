@@ -1249,7 +1249,7 @@ body {
 }
 
 
-#screensaver {
+/* #screensaver {
     position: fixed;
     top: 0;
     left: 0;
@@ -1263,7 +1263,7 @@ body {
     will-change: opacity;
     padding: 0;
     overflow: hidden;
-}
+} */
 
 @keyframes premiumFadeIn {
     from {
@@ -1637,7 +1637,6 @@ body.osk-open .main-stage {
 }
 
 
-
 #screensaver {
     position: fixed;
     inset: 0;
@@ -1796,49 +1795,65 @@ body.osk-open .main-stage {
     /* Hide description to keep it in one line */
 }
 
-.saver-members-title {
+
+/* ── SCREENSAVER ACTIVE MEMBERS ────────────────────────────────────────── */
+
+#screensaver {
+    padding: 36px 32px;
+    /* Reduced from 60px to give full width to member row */
+}
+
+.saver-active-area {
+    width: 100%;
     margin-top: auto;
-    font-size: 14px;
+}
+
+.saver-members-title {
+    font-size: 13px;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    opacity: 0.4;
-    margin-bottom: 24px;
+    letter-spacing: 2.5px;
+    opacity: 0.45;
+    margin-bottom: 16px;
+    text-align: center;
 }
 
 #saver-active-members {
     display: flex;
-    gap: 24px;
     justify-content: center;
-    align-items: flex-start;
-    flex-wrap: nowrap;
-    /* Never wrap to a messy second row */
+    align-items: flex-end;
+    gap: 32px;
+    width: 100%;
     max-width: 960px;
     margin: 0 auto;
+    flex-wrap: nowrap;
+    /* Keep row clean */
 }
 
+/* ── DEFAULT LARGE SIZING (1 to 4 Members) ── */
 .saver-member-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    width: 150px;
-    /* Locked fixed slot per member */
-    flex-shrink: 1;
-    animation: saverItemFade 1.2s cubic-bezier(0.2, 0, 0, 1) backwards;
+    gap: 12px;
+    width: 160px;
+    flex-shrink: 0;
+    animation: saverItemFade 0.8s cubic-bezier(0.2, 0, 0, 1) backwards;
 }
 
 .saver-member-avatar {
-    width: 100px;
-    height: 100px;
+    width: 130px;
+    height: 130px;
     border-radius: 50%;
-    border: 3px solid rgba(255, 255, 255, 0.15);
-    padding: 6px;
-    background: rgba(255, 255, 255, 0.05);
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    object-fit: cover;
     flex-shrink: 0;
 }
 
 .saver-member-name {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 500;
     opacity: 0.95;
     color: #fff;
@@ -1847,29 +1862,30 @@ body.osk-open .main-stage {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* Strict ellipsis cutoff */
+    letter-spacing: 0.5px;
 }
 
-/* ── COMPACT VIEW (4, 5, or more members) ─────────────────────────── */
+/* ── 5+ MEMBERS SIZING (Still Big, Fits 1024px Screen) ── */
 .compact-view #saver-active-members {
-    gap: 16px;
+    gap: 18px;
 }
 
 .compact-view .saver-member-item {
-    width: 120px;
-    gap: 8px;
+    width: 140px;
+    gap: 10px;
 }
 
 .compact-view .saver-member-avatar {
-    width: 72px;
-    height: 72px;
-    padding: 4px;
+    width: 110px;
+    height: 110px;
+    padding: 6px;
+    border-width: 3px;
 }
 
 .compact-view .saver-member-name {
-    font-size: 20px;
-    max-width: 120px;
+    font-size: 22px;
 }
+
 
 @keyframes saverItemFade {
     from {

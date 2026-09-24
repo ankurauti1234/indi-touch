@@ -158,10 +158,10 @@ export function renderScreensaverMembers() {
 
     const activeMembers = tvState.on ? memberData.filter(m => m.active) : [];
     
-    // Dynamic scaling for many members (compact mode when 4 or more active)
+    // Dynamic scaling for many members
     const saver = document.getElementById('screensaver');
     if (saver) {
-        if (activeMembers.length >= 4) {
+        if (activeMembers.length >= 5) {
             saver.classList.add('compact-view');
         } else {
             saver.classList.remove('compact-view');

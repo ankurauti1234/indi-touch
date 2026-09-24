@@ -486,6 +486,7 @@ function loadMemberSettings() {
 
 window.onMemberInput = function (index, inputEl) {
     const rawVal = inputEl.value;
+    // Allow Unicode letters, numbers, and spaces
     const sanitized = rawVal.replace(/[^\p{L}\p{N} ]/gu, '');
 
     if (rawVal !== sanitized) {
@@ -494,6 +495,7 @@ window.onMemberInput = function (index, inputEl) {
 
     const trimmed = sanitized.trim();
 
+    // Visual warning when blank
     if (!trimmed) {
         inputEl.style.borderColor = '#ff5c5c';
         inputEl.style.outline = '1px solid #ff5c5c';
@@ -504,21 +506,22 @@ window.onMemberInput = function (index, inputEl) {
     inputEl.style.borderColor = '';
     inputEl.style.outline = '';
 
-    // Update state object only (do NOT call renderGrid() on every keystroke)
+    // 1. INSTANT UI UPDATE: Update local state and redraw grid immediately
     if (memberData[index]) {
         memberData[index].name = trimmed;
+        renderGrid();
     }
 
-    // Debounce both API save and background grid redraw
+    // 2. DEBOUNCED API CALL: Save to backend without spamming the server
     clearTimeout(_memberDebounceTimer);
     _memberDebounceTimer = setTimeout(() => {
         saveMemberName(index, trimmed);
-        if (typeof renderGrid === 'function') renderGrid();
     }, 500);
 };
 
 window.onMemberBlur = function (index, inputEl) {
     clearTimeout(_memberDebounceTimer);
+    // Allow Unicode letters (\p{L}), numbers (\p{N}), and collapse spaces
     const cleaned = inputEl.value.replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 
     if (!cleaned) {
@@ -526,16 +529,14 @@ window.onMemberBlur = function (index, inputEl) {
         inputEl.value = fallbackName;
         inputEl.style.borderColor = '';
         inputEl.style.outline = '';
-        if (memberData[index]) memberData[index].name = fallbackName;
         saveMemberName(index, fallbackName);
-        if (typeof renderGrid === 'function') renderGrid();
+        renderGrid();
         return;
     }
 
     inputEl.value = cleaned;
-    if (memberData[index]) memberData[index].name = cleaned;
     saveMemberName(index, cleaned);
-    if (typeof renderGrid === 'function') renderGrid();
+    renderGrid();
 };
 
 async function saveMemberName(index, newName) {

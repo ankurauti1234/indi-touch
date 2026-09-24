@@ -5,7 +5,10 @@ let idleTimer;
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
+
+    // Wake from screensaver
     s.classList.remove('active');
+    document.body.classList.remove('screensaver-active');
     clearTimeout(idleTimer);
 
     // Disable screensaver only during ACTIVE onboarding
@@ -29,6 +32,8 @@ export function resetIdle(isPriority = false) {
         if (s) {
             // Pre-render DOM elements synchronously before fading in
             renderScreensaverMembers();
+
+            document.body.classList.add('screensaver-active');
 
             // Reveal smoothly in next frame
             requestAnimationFrame(() => {

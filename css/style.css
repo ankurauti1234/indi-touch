@@ -2519,3 +2519,39 @@ body.osk-open .main-stage {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
 }
+
+/* ── TOUCH & SCROLL STABILITY FIXES ── */
+
+/* 1. Ensure flex heights can shrink and calculate scrollHeight properly */
+.main-stage,
+.view,
+.settings-panel,
+.list-group,
+.settings-scroll-area {
+    min-height: 0 !important;
+}
+
+/* 2. Direct touchscreen hardware to pan vertically and not cancel gestures */
+.settings-scroll-area,
+.list-group {
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+}
+
+.list-item,
+.list-group>*,
+.settings-scroll-area>* {
+    touch-action: pan-y !important;
+}
+
+/* 3. Safety: guarantee inactive overlays never intercept touches */
+#modal-overlay:not(.active),
+.popover-overlay:not(.active),
+.conn-overlay:not(.visible),
+#critical-popover:not(.active),
+#still-watching-popover:not(.visible),
+#screensaver:not(.active) {
+    display: none !important;
+    pointer-events: none !important;
+}

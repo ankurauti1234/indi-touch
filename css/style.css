@@ -1663,8 +1663,7 @@ body.osk-open .main-stage {
 }
 
 #clock-time {
-    font-size: 300px;
-    /* Big & prominent */
+    font-size: 300px !important;
     font-weight: 700;
     line-height: 0.8;
     letter-spacing: -8px;
@@ -1680,24 +1679,14 @@ body.osk-open .main-stage {
 }
 
 #clock-time.massive {
-    font-size: 380px;
-    /* Dominates the whole 600px display */
+    font-size: 380px !important;
     line-height: 0.8;
 }
 
 .clock-main-digits {
-    font-size: inherit;
+    font-size: inherit !important;
     line-height: 0.8;
     font-weight: 200;
-}
-
-/* 5+ members view */
-.compact-view #clock-time {
-    font-size: 260px;
-}
-
-.compact-view .clock-main-digits {
-    font-size: 260px;
 }
 
 .saver-active-area {

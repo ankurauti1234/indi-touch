@@ -1807,31 +1807,38 @@ body.osk-open .main-stage {
 
 #saver-active-members {
     display: flex;
-    gap: 40px;
+    gap: 24px;
     justify-content: center;
-    flex-wrap: wrap;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    /* Never wrap to a messy second row */
+    max-width: 960px;
+    margin: 0 auto;
 }
 
 .saver-member-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
-    max-width: 180px;
+    gap: 10px;
+    width: 150px;
+    /* Locked fixed slot per member */
+    flex-shrink: 1;
     animation: saverItemFade 1.2s cubic-bezier(0.2, 0, 0, 1) backwards;
 }
 
 .saver-member-avatar {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
-    border: 4px solid rgba(255, 255, 255, 0.15);
-    padding: 8px;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    padding: 6px;
     background: rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
 }
 
 .saver-member-name {
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 500;
     opacity: 0.95;
     color: #fff;
@@ -1840,6 +1847,28 @@ body.osk-open .main-stage {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* Strict ellipsis cutoff */
+}
+
+/* ── COMPACT VIEW (4, 5, or more members) ─────────────────────────── */
+.compact-view #saver-active-members {
+    gap: 16px;
+}
+
+.compact-view .saver-member-item {
+    width: 120px;
+    gap: 8px;
+}
+
+.compact-view .saver-member-avatar {
+    width: 72px;
+    height: 72px;
+    padding: 4px;
+}
+
+.compact-view .saver-member-name {
+    font-size: 20px;
+    max-width: 120px;
 }
 
 @keyframes saverItemFade {

@@ -411,11 +411,20 @@ export function initRemote() {
     });
 
     // ── Reset focus after settings panel open/close ─────────────────────────
-    document.addEventListener('click', () => {
+    document.addEventListener('click', (e) => {
         if (!isRemoteMode()) return;
+
+        // Never steal focus if user is actively typing in an input
+        const activeTag = document.activeElement?.tagName;
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+        if (e.target.closest('input, textarea')) return;
+
         // Debounce: check if active panel changed
         setTimeout(() => {
             if (zone === 'content' && !isHomeGrid()) {
+                const curActive = document.activeElement?.tagName;
+                if (curActive === 'INPUT' || curActive === 'TEXTAREA') return;
+
                 const items = getContentItems();
                 // If remoteFocusEl is no longer in DOM, reset
                 if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {

@@ -481,7 +481,8 @@ function loadMemberSettings() {
 
 window.onMemberInput = function (index, inputEl) {
     const rawVal = inputEl.value;
-    const sanitized = rawVal.replace(/[^a-zA-Z0-9 ]/g, '');
+    // Allow Unicode letters (\p{L}), numbers (\p{N}), and spaces; strip symbols
+    const sanitized = rawVal.replace(/[^\p{L}\p{N} ]/gu, '');
 
     if (rawVal !== sanitized) {
         inputEl.value = sanitized;
@@ -508,7 +509,8 @@ window.onMemberInput = function (index, inputEl) {
 
 window.onMemberBlur = function (index, inputEl) {
     clearTimeout(_memberDebounceTimer);
-    const cleaned = inputEl.value.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+    // Allow Unicode letters (\p{L}), numbers (\p{N}), and collapse spaces
+    const cleaned = inputEl.value.replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 
     if (!cleaned) {
         const fallbackName = `Member ${index + 1}`;

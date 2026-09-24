@@ -111,20 +111,22 @@ export function toggleAnimations() {
 export async function selectAvatarStyle(style) {
     currentAvatarStyle = style;
     updateSetting('avatarStyle', style);
-    
+
     // Update UI Selection
     document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
     const selectedOpt = document.getElementById('avat-' + style);
     if (selectedOpt) {
         selectedOpt.classList.add('selected');
     }
-    
+
     // Save to global state used by Grid
-    window.globalAvatarStyle = style; 
-    
+    window.globalAvatarStyle = style;
+
     // Re-render grid to show new avatars
     renderGrid();
-    renderGuestList(); // Update guest avatars as well
+
+    // Re-render guest list immediately
+    renderGuestList();
 }
 
 

@@ -27,11 +27,28 @@ export function resetIdle(isPriority = false) {
 
     idleTimer = setTimeout(() => {
         if (s) {
-            // console.log("Screensaver activating now...");
-            // Pre-render DOM elements synchronously before fading in
+            console.log("Screensaver activating now...");
+
+            // 1. Force blur active inputs and hide virtual keyboard
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+            document.body.classList.remove('osk-open');
+
+            // Hide OSK container if it exists
+            const osk = document.getElementById('osk-container');
+            if (osk) {
+                osk.classList.remove('visible');
+                osk.style.display = 'none';
+            }
+            if (typeof window.hideOSK === 'function') {
+                window.hideOSK();
+            }
+
+            // 2. Pre-render DOM elements synchronously before fading in
             renderScreensaverMembers();
 
-            // Reveal smoothly in next frame
+            // 3. Reveal smoothly in next frame
             requestAnimationFrame(() => {
                 s.classList.add('active');
             });

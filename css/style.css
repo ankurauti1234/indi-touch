@@ -1627,7 +1627,8 @@ body.osk-open .main-stage {
     position: fixed;
     inset: 0;
     background: #000;
-    z-index: 99999999;
+    z-index: 2147483647 !important;
+    /* Maximum 32-bit integer z-index */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1866,6 +1867,14 @@ body.osk-open .main-stage {
 
 .compact-view .saver-member-name {
     font-size: 22px;
+}
+
+#screensaver.active~#osk-container,
+body:has(#screensaver.active) #osk-container {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 /* M3 NOTIFICATION CARDS */

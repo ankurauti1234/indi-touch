@@ -1648,11 +1648,15 @@ body.osk-open .main-stage {
     justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.4s ease;
     color: #fff;
-    padding: 60px;
+    padding: 36px 32px;
     text-align: center;
     border-radius: 42px;
+    overflow: hidden;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: opacity;
 }
 
 #screensaver.active {
@@ -2595,8 +2599,7 @@ body.osk-open .main-stage {
 .popover-overlay:not(.active),
 .conn-overlay:not(.visible),
 #critical-popover:not(.active),
-#still-watching-popover:not(.visible),
-#screensaver:not(.active) {
+#still-watching-popover:not(.visible) {
     display: none !important;
     pointer-events: none !important;
 }

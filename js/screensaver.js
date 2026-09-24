@@ -28,9 +28,14 @@ export function resetIdle(isPriority = false) {
     idleTimer = setTimeout(() => {
         if (s) {
             console.log("Screensaver activating now...");
-            s.classList.add('active');
-            applyWallpaper(); // Fetch latest wallpaper state
+            // Render everything in the DOM first while opacity is still 0
+            applyWallpaper();
             renderScreensaverMembers();
+
+            // Then fade in smoothly without layout shifts
+            requestAnimationFrame(() => {
+                s.classList.add('active');
+            });
         }
     }, timeout);
 }

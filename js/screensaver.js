@@ -5,7 +5,10 @@ let idleTimer;
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
+
+    // 1. Cleanly dismiss screensaver state
     s.classList.remove('active');
+    document.body.classList.remove('screensaver-active'); // <-- ESSENTIAL FIX
     clearTimeout(idleTimer);
 
     // Disable screensaver only during ACTIVE onboarding
@@ -27,8 +30,13 @@ export function resetIdle(isPriority = false) {
 
     idleTimer = setTimeout(() => {
         if (s) {
+            // Remove keyboard mode so the app frame resets from 900px back to 600px
+            document.body.classList.remove('osk-open');
+
             // Pre-render DOM elements synchronously before fading in
             renderScreensaverMembers();
+
+            document.body.classList.add('screensaver-active');
 
             // Reveal smoothly in next frame
             requestAnimationFrame(() => {
@@ -37,7 +45,6 @@ export function resetIdle(isPriority = false) {
         }
     }, timeout);
 }
-
 window.setScreensaverTimeout = (ms) => {
     // This allows immediate update from settings
     clearTimeout(idleTimer);

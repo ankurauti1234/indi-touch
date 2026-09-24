@@ -2534,7 +2534,6 @@ body.osk-open .main-stage {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
 }
-
 /* ── TOUCH & SCROLL STABILITY FIXES ── */
 
 /* 1. Ensure flex heights can shrink and calculate scrollHeight properly */
@@ -2570,24 +2569,30 @@ body.osk-open .main-stage {
     pointer-events: none !important;
 }
 
-/* 1. Prevent the nav rail icons from stretching or shifting down when OSK opens */
+/* 4. Prevent the nav rail icons from stretching or shifting down when OSK opens */
 body.osk-open .nav-rail {
     height: 600px;
     align-self: flex-start;
 }
 
-/* 2. If OSK is at the body level, force it behind screensaver or hidden when screensaver is active */
+/* 5. Screensaver layering */
 #screensaver.active {
     position: fixed !important;
     inset: 0 !important;
     z-index: 2147483647 !important;
 }
 
-/* Ensure OSK cannot render above active screensaver anywhere in DOM */
-body:has(#screensaver.active) #osk-container,
-#screensaver.active~#osk-container {
+/* 6. Hide OSK immediately whenever screensaver is active */
+body.screensaver-active #osk-container {
+    display: none !important;
+    visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
-    z-index: -1 !important;
 }
 
+/* 7. Ensure screensaver viewport stays strictly 600px high even if osk-open is active */
+body.osk-open #screensaver,
+#screensaver {
+    height: 600px !important;
+    max-height: 600px !important;
+}

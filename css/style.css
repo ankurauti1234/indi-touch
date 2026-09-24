@@ -1822,6 +1822,7 @@ body.osk-open .main-stage {
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    max-width: 180px;
     animation: saverItemFade 1.2s cubic-bezier(0.2, 0, 0, 1) backwards;
 }
 
@@ -1835,10 +1836,15 @@ body.osk-open .main-stage {
 }
 
 .saver-member-name {
-    font-size: 54px;
+    font-size: 32px;
     font-weight: 500;
     opacity: 0.95;
     color: #fff;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 @keyframes saverItemFade {

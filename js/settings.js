@@ -466,8 +466,9 @@ function loadMemberSettings() {
                         id="member-input-${index}"
                         value="${m.name}"
                         maxlength="24"
-                        placeholder="Letters and numbers only"
+                        placeholder="Name cannot be empty"
                         style="width:60%;height:40px;font-size:18px"
+                        data-index="${index}"
                         data-original="${m.name}"
                         onfocus="onMemberFocus(this)"
                         onkeydown="onMemberKeyDown(event, ${index}, this)"
@@ -481,7 +482,6 @@ function loadMemberSettings() {
 }
 
 window.onMemberFocus = function (inputEl) {
-    // Put cursor at the very end of the text on focus
     setTimeout(() => {
         const len = inputEl.value.length;
         try {
@@ -493,7 +493,7 @@ window.onMemberFocus = function (inputEl) {
 window.onMemberKeyDown = function (e, index, inputEl) {
     if (e.key === 'Enter') {
         e.preventDefault();
-        inputEl.blur(); // Triggers onMemberBlur and commits name
+        inputEl.blur();
     }
 };
 
@@ -501,7 +501,6 @@ window.onMemberInput = function (index, inputEl) {
     const start = inputEl.selectionStart;
     const rawVal = inputEl.value;
 
-    // Filter disallowed chars while tracking cursor position
     let sanitized = '';
     let newCursorPos = start;
 
@@ -523,45 +522,50 @@ window.onMemberInput = function (index, inputEl) {
 
     const trimmed = sanitized.trim();
 
-    // Red warning if blank
+    // Visual warning when fully cleared
     if (!trimmed) {
         inputEl.style.borderColor = '#ff5c5c';
         inputEl.style.outline = '1px solid #ff5c5c';
+        clearTimeout(_memberDebounceTimer);
         return;
     }
 
     inputEl.style.borderColor = '';
     inputEl.style.outline = '';
 
-    // Debounce save while typing
     clearTimeout(_memberDebounceTimer);
     _memberDebounceTimer = setTimeout(() => {
-        saveMemberName(index, trimmed, inputEl);
-    }, 400);
+        saveMemberName(index, trimmed, inputEl, false);
+    }, 500);
 };
 
 window.onMemberBlur = function (index, inputEl) {
     const cleaned = inputEl.value.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
-    const fallback = inputEl.dataset.original || memberData[index]?.name || 'Member';
+    const fallback = inputEl.dataset.original || 'Member';
 
     if (!cleaned) {
         inputEl.value = fallback;
         inputEl.style.borderColor = '';
         inputEl.style.outline = '';
-        if (window.showToast) window.showToast('Name must contain letters or numbers');
+        if (window.showToast) window.showToast('Name cannot be empty');
         return;
     }
 
     inputEl.value = cleaned;
-    saveMemberName(index, cleaned, inputEl);
+    saveMemberName(index, cleaned, inputEl, true);
 };
 
-async function saveMemberName(index, newName, inputEl) {
-    if (!memberData[index] || memberData[index].name === newName) return;
+async function saveMemberName(index, newName, inputEl, shouldRerenderGrid) {
+    if (!memberData[index]) return;
+    if (memberData[index].name === newName && !shouldRerenderGrid) return;
 
     memberData[index].name = newName;
     if (inputEl) inputEl.dataset.original = newName;
-    renderGrid();
+
+    // Only rerender the main grid on final commit/blur to avoid input desync
+    if (shouldRerenderGrid) {
+        renderGrid();
+    }
 
     try {
         const res = await fetch('/api/members/rename', {

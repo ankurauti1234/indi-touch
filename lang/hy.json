@@ -135,5 +135,6 @@
     "Local IP Address": "Տեղական IP Հասցե",
     "MAC Address": "MAC Հասցե",
     "Software Version": "Ծրագրային Ապահովման Տարբերակ",
-    "Active": "Ակտիվ"
+    "Active": "Ակտիվ",
+    "guest_cycle_info": "Հյուրերն ակտիվ են 24 ժամ (02:00-ից 02:00 ցիկլ):"
 }

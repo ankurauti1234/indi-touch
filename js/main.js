@@ -442,6 +442,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyTranslations();
             updateLanguageUI(lang);
             renderGrid(); // Refresh grid for active status texts if any
+            renderGuestList();     // Refresh guests immediately
             renderNotifications(); // Refresh notifications
         }
     };

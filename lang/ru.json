@@ -135,5 +135,6 @@
     "Local IP Address": "Локальный IP",
     "MAC Address": "MAC-адрес",
     "Software Version": "Версия ПО",
-    "Active": "Активно"
+    "Active": "Активно",
+    "guest_cycle_info": "Гости активны в течение 24 часов (цикл с 02:00 до 02:00)."
 }

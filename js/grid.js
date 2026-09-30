@@ -179,6 +179,11 @@ export async function toggleMember(index) {
                 // Update local state and redraw
                 memberData[index].active = res.active;
 
+                // Record the most recent member declaration
+                if (res.active && window.recordMemberDeclaration) {
+                    window.recordMemberDeclaration();
+                }
+
                 renderGrid();
 
                 // Update Still Watching timer

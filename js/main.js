@@ -76,20 +76,6 @@ function recordMemberInteraction() {
 }
 
 window.recordMemberInteraction = recordMemberInteraction;
-// Current UI-session declaration timestamp.
-// This is intentionally not persisted yet.
-let lastMemberDeclaredAt = null;
-
-function recordMemberDeclaration() {
-    lastMemberDeclaredAt = Date.now();
-
-    console.log(
-        "[Maintenance] Member declaration timestamp updated:",
-        new Date(lastMemberDeclaredAt).toLocaleString()
-    );
-}
-
-window.recordMemberDeclaration = recordMemberDeclaration;
 
 let maintenanceResetInProgress = false;
 
@@ -117,21 +103,6 @@ async function runDailyMaintenanceIfNeeded() {
     const resetId = `${today}_02:00`;
 
     // This day's 02:00 reset has already been handled.
-    let resetSlot = null;
-
-    if (currentHour >= 18) {
-        resetSlot = "18:00";
-    } else if (currentHour >= 10) {
-        resetSlot = "10:00";
-    } else if (currentHour >= 2) {
-        resetSlot = "02:00";
-    } else {
-        return;
-    }
-
-    const resetId = `${today}_${resetSlot}`;
-
-    // This scheduled reset has already been decided/processed.
     if (config.lastAutoResetId === resetId) {
         return;
     }
@@ -145,16 +116,6 @@ async function runDailyMaintenanceIfNeeded() {
     const activeCount = memberData.filter(
         (member) => member.active
     ).length;
-     * First check whether there are any active members.
-     *
-     * This applies to ALL reset slots.
-     *
-     * If nobody is active:
-     * - Do not call /undeclare.
-     * - Do not publish a member event.
-     * - Mark this scheduled slot as handled.
-     */
-    const activeCount = memberData.filter(m => m.active).length;
 
     if (activeCount === 0) {
         await updateSetting("lastAutoResetId", resetId);
@@ -162,7 +123,6 @@ async function runDailyMaintenanceIfNeeded() {
 
         console.log(
             "[Maintenance] 02:00 reset skipped: no active members."
-            `[Maintenance] ${resetSlot} reset skipped: no active members.`
         );
 
         return;
@@ -172,58 +132,6 @@ async function runDailyMaintenanceIfNeeded() {
      * At 02:00, always reset all currently active members.
      * There is no one-hour condition.
      */
-     * 02:00:
-     * Reset all currently active members.
-     *
-     * 10:00 / 18:00:
-     * Reset only if the current declaration session
-     * was already at least one hour old AT THE SCHEDULED TIME.
-     *
-     * If the session is less than one hour old at 10:00/18:00,
-     * that reset slot is skipped completely.
-     *
-     * It must NOT become eligible later.
-     */
-    if (resetSlot !== "02:00") {
-        /*
-         * We only know the declaration time for the current UI session.
-         * If it is unavailable, do not perform the scheduled reset.
-         */
-        if (lastMemberDeclaredAt === null) {
-            await updateSetting("lastAutoResetId", resetId);
-            config.lastAutoResetId = resetId;
-
-            console.log(
-                `[Maintenance] ${resetSlot} reset skipped: declaration time unavailable.`
-            );
-
-            return;
-        }
-
-        const oneHour = 60 * 60 * 1000;
-        const activeDuration = now.getTime() - lastMemberDeclaredAt;
-
-        /*
-         * The decision is made at the scheduled reset time only.
-         *
-         * Example:
-         * Declared at 17:15
-         * 18:00 = 45 minutes
-         * => skip 18:00
-         * => do NOT reset at 18:15
-         */
-        if (activeDuration < oneHour) {
-            await updateSetting("lastAutoResetId", resetId);
-            config.lastAutoResetId = resetId;
-
-            console.log(
-                `[Maintenance] ${resetSlot} reset skipped: declaration session is less than 1 hour old.`
-            );
-
-            return;
-        }
-    }
-
     maintenanceResetInProgress = true;
 
     try {
@@ -239,7 +147,6 @@ async function runDailyMaintenanceIfNeeded() {
             throw new Error(
                 "Failed to automatically undeclare members."
             );
-            throw new Error("Failed to automatically undeclare members.");
         }
 
         // Refresh member state from the backend.
@@ -250,8 +157,6 @@ async function runDailyMaintenanceIfNeeded() {
 
         // Clear the current interaction timestamp.
         lastMemberInteractionAt = null;
-        // Clear the current declaration timestamp.
-        lastMemberDeclaredAt = null;
 
         // Clear guest data locally.
         const { guests: guestsData } = await import("./data.js");
@@ -269,8 +174,6 @@ async function runDailyMaintenanceIfNeeded() {
          * Mark today's 02:00 reset as completed.
          * This prevents the same reset from running again
          * during the same day.
-         * Mark this exact scheduled slot as completed.
-         * This prevents the same slot from triggering again.
          */
         await updateSetting("lastAutoResetId", resetId);
         config.lastAutoResetId = resetId;
@@ -281,11 +184,6 @@ async function runDailyMaintenanceIfNeeded() {
     } catch (err) {
         console.error(
             "[Maintenance] Automatic 02:00 reset failed:",
-            `[Maintenance] Automatic reset completed for ${resetSlot}.`
-        );
-    } catch (err) {
-        console.error(
-            `[Maintenance] Automatic reset failed for ${resetSlot}:`,
             err
         );
     } finally {
@@ -320,7 +218,6 @@ function showStillWatchingPopup() {
     }
 
     // No pending reminder while popup is visible
-    // No need for a pending reminder once the popup is visible
     timers.clearTimeout(stillWatchingReminderTimer);
 
     popup.classList.add("visible");
@@ -332,12 +229,6 @@ function showStillWatchingPopup() {
         popup.classList.remove("visible");
 
         // Wait 5 minutes before showing it again
-    // If user does nothing for 10 seconds,
-    // hide the popup and enter reminder mode.
-    stillWatchingDismissTimer = timers.setTimeout(() => {
-        popup.classList.remove("visible");
-
-        // Wait 1 minute before showing it again
         timers.clearTimeout(stillWatchingReminderTimer);
 
         stillWatchingReminderTimer = timers.setTimeout(() => {
@@ -350,13 +241,6 @@ function showStillWatchingPopup() {
         }, 5 * 60 * 1000);
 
     }, 20 * 1000);
-            // Only continue reminding while someone is still active
-            if (activeCount > 0) {
-                showStillWatchingPopup();
-            }
-        }, 60 * 1000);
-
-    }, 10 * 1000);
 }
 
 function restartStillWatchingTimer() {
@@ -366,7 +250,6 @@ function restartStillWatchingTimer() {
     stillWatchingTimer = timers.setTimeout(() => {
         showStillWatchingPopup();
     }, 3 * 60 * 60 * 1000); // 3 hours
-    }, 2 * 60 * 60 * 1000); // 2 hours
 }
 
 function updateStillWatchingState() {
@@ -404,9 +287,6 @@ async function endViewingSession() {
     timers.clearTimeout(stillWatchingTimer);
     timers.clearTimeout(stillWatchingDismissTimer);
     timers.clearTimeout(stillWatchingReminderTimer);
-
-    // Clear the declaration timestamp for the current UI session.
-    lastMemberDeclaredAt = null;
 
     // Hide the popup immediately.
     document
@@ -496,7 +376,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // User confirmed they are watching.
         // Start a fresh -hour countdown.
-        // Start a fresh 2-hour countdown.
         restartStillWatchingTimer();
     });
 
@@ -656,7 +535,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Automatic member/guest reset scheduler
     // Check every minute for the daily 02:00 reset.
-    // Check every minute for the 02:00, 10:00, and 18:00 reset times.
     timers.setInterval(async () => {
         await runDailyMaintenanceIfNeeded();
     }, 60000);

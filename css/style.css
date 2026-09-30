@@ -1036,19 +1036,44 @@ body {
 }
 
 .input-box {
-    background: var(--bg-card);
+    background: var(--bg-surface-container-low, var(--bg-card));
     border: none;
-    border-bottom: 1px solid var(--text-sub);
-    border-radius: 4px 4px 0 0;
-    padding: 16px;
+    border-bottom: 1px solid var(--outline-variant, var(--text-sub));
+    border-radius: 6px 6px 0 0;
+    padding: 10px 16px;
     color: var(--text-main);
     font-size: 16px;
     outline: none;
+    transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.input-box:focus {
-    border-bottom: 2px solid var(--primary);
-    background: #34353A;
+.input-box::placeholder {
+    color: var(--text-sub);
+    opacity: 0.7;
+}
+
+/* Focused state: uses theme-aware surface container instead of hardcoded #34353A */
+.input-box:focus,
+.input-box:focus-visible,
+.input-box.remoteFocused {
+    background: var(--bg-surface-container-high, var(--bg-card-hover)) !important;
+    border-bottom: 2px solid var(--primary) !important;
+    color: var(--text-main) !important;
+}
+
+/* Light mode specific background and contrast enhancement */
+body.light-mode .input-box {
+    background: #EFEFEF;
+    border-bottom-color: rgba(0, 0, 0, 0.25);
+    color: #0F0F11;
+}
+
+body.light-mode .input-box:focus,
+body.light-mode .input-box:focus-visible,
+body.light-mode .input-box.remoteFocused {
+    background: #E2E2E6 !important;
+    border-bottom-color: var(--primary) !important;
+    color: #0F0F11 !important;
 }
 
 .chip-group {

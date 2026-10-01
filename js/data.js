@@ -9,7 +9,7 @@ export let config = {
     screenTimeout: 300000,
     meter_id: 'HUB-IM0000',
     location: 'auto',
-    remoteMode: false,
+    remoteMode: true,
     onboardingCompleted: false,
     avatarStyle: 'local',
     reduceAnimations: false,
@@ -38,7 +38,7 @@ export async function loadConfig() {
         const dSettings = await rSettings.json();
         
         config.language = dSettings.language || 'en';
-        config.remoteMode = dSettings.remoteMode === true;
+        config.remoteMode = true;
         config.screenTimeout = dSettings.screenTimeout || 300000;
         config.location = dSettings.location || 'Yerevan';
         config.avatarStyle = dSettings.avatarStyle || 'local';

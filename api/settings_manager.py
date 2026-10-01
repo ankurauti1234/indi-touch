@@ -9,7 +9,7 @@ from .config import SETTINGS_FILE
 DEFAULT_SETTINGS = {
     "language": "en",
     "location": "Yerevan",
-    "remoteMode": False,
+    "remoteMode": True,
     "screenTimeout": 300000,
     "avatarStyle": "local",
     "reduceAnimations": False,

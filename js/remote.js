@@ -102,9 +102,9 @@ function getContentItems() {
 
     // 3. Onboarding
     if (isOnboarding()) {
-        const step = document.querySelector('#onboarding-layer .step.active');
+        const step = document.querySelector('#onboarding-layer .onboard-v2-step.active, #onboarding-layer .step.active');
         return step
-            ? [...step.querySelectorAll('button:not([disabled]), .net-item')].filter(isVisible)
+            ? [...step.querySelectorAll('button:not([disabled]), .net-item, .onboard-network-row, input:not([disabled]), select:not([disabled])')].filter(isVisible)
             : [];
     }
 
@@ -121,11 +121,11 @@ function getContentItems() {
 
     if (activeView.id === 'view-settings') {
         const panel = activeView.querySelector('.settings-panel.active') || activeView;
-        const sel = '.back-btn, .list-item:not(.no-click), .avatar-option, .wifi-item, .chip, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], textarea';
+        const sel = '.back-btn, .list-item:not(.no-click), .avatar-option, .wifi-item, .onboard-network-row, .chip, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], input[type="checkbox"], select, textarea';
         return [...panel.querySelectorAll(sel)].filter(isVisible);
     }
 
-    const sel = '.back-btn, .list-item:not(.no-click), .chip, .action-btn, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], textarea';
+    const sel = '.back-btn, .list-item:not(.no-click), .chip, .action-btn, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], input[type="checkbox"], select, textarea';
     return [...activeView.querySelectorAll(sel)].filter(isVisible);
 }
 

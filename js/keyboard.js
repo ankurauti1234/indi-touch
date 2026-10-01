@@ -28,6 +28,13 @@ const keysSymbol = [
     ["ABC", "lang", "space", ".", "enter"]
 ];
 
+const keysNumber = [
+    ["1", "2", "3"],
+    ["4", "5", "6"],
+    ["7", "8", "9"],
+    ["backspace", "0", "enter"]
+];
+
 // const keysNumber = [
 //     ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
 //     ["+", "x", "÷", "=", "/", "_", "<", ">", "[", "]"],
@@ -86,7 +93,9 @@ function renderKeys() {
     container.innerHTML = ''; // Clear
     
     let layout;
-    if (isSymbol) {
+    if (activeInput?.dataset.oskMode === 'number') {
+        layout = keysNumber;
+    } else if (isSymbol) {
         layout = keysSymbol;
     } else {
         if (inputLang === 'hy') layout = keysHY;

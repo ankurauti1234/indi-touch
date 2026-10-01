@@ -11,7 +11,6 @@ export function showModal(title, msg, actions = []) {
     msgEl.innerText = msg;
     actionsEl.innerHTML = '';
 
-    // If no actions provided, add a default 'OK'
     if (actions.length === 0) {
         actions = [{ text: t('ok'), primary: true, callback: closeModal }];
     }
@@ -27,12 +26,23 @@ export function showModal(title, msg, actions = []) {
         actionsEl.appendChild(btn);
     });
 
+    overlay.style.display = 'flex';
+    overlay.style.pointerEvents = 'auto';
+    // Force reflow before adding active class for clean transition
+    void overlay.offsetWidth;
     overlay.classList.add('active');
 }
 
 export function closeModal() {
     const overlay = document.getElementById('modal-overlay');
+    if (!overlay) return;
     overlay.classList.remove('active');
+    overlay.style.pointerEvents = 'none';
+    setTimeout(() => {
+        if (!overlay.classList.contains('active')) {
+            overlay.style.display = 'none';
+        }
+    }, 300);
 }
 
 export function showToast(message, duration = 3000) {
@@ -70,23 +80,33 @@ export function showPasswordPrompt(networkName, initialPassword = '') {
     const overlay = document.getElementById('wifi-password-overlay');
     const desc = document.getElementById('net-password-desc');
     const input = document.getElementById('wifi-pass-input');
-    
+
     if (desc) desc.innerText = `${t('connecting_to')} ${networkName}`;
     if (input) {
         input.value = initialPassword;
         input.type = 'password';
     }
-    
+
     const eyeIcon = document.getElementById('pass-eye-icon');
     if (eyeIcon) eyeIcon.innerText = 'visibility';
 
+    overlay.style.display = 'flex';
+    overlay.style.pointerEvents = 'auto';
+    void overlay.offsetWidth;
     overlay.classList.add('active');
     setTimeout(() => input?.focus(), 150);
 }
 
 export function closePassPopover() {
     const overlay = document.getElementById('wifi-password-overlay');
+    if (!overlay) return;
     overlay.classList.remove('active');
+    overlay.style.pointerEvents = 'none';
+    setTimeout(() => {
+        if (!overlay.classList.contains('active')) {
+            overlay.style.display = 'none';
+        }
+    }, 300);
     pendingNetwork = null;
 }
 

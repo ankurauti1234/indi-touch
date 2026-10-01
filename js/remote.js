@@ -125,7 +125,7 @@ function getContentItems() {
         return [...panel.querySelectorAll(sel)].filter(isVisible);
     }
 
-    const sel = '.back-btn, .list-item:not(.no-click), .chip, .action-btn, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], textarea';
+    const sel = '.back-btn, .list-item:not(.no-click), .chip, .action-btn, .guest-delete-overlay, button:not([disabled]), input[type="text"], input[type="password"], input[type="number"], textarea';
     return [...activeView.querySelectorAll(sel)].filter(isVisible);
 }
 
@@ -296,7 +296,7 @@ function navigate(direction) {
 
 // ─── Activation ───────────────────────────────────────────────────────────────
 function activate() {
-    if (isScreensaverActive()) return; // click event already calls resetIdle
+    if (isScreensaverActive()) return;
 
     // Home grid content zone → toggle focused member
     if (isHomeGrid() && zone === 'content') {
@@ -304,11 +304,21 @@ function activate() {
         return;
     }
 
-    // Everything else → click the focused element
     if (remoteFocusEl) {
         const el = remoteFocusEl;
+
+        // If the focused element is a text input, focus it and move cursor to the end
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            el.focus();
+            const len = el.value.length;
+            try {
+                el.setSelectionRange(len, len);
+            } catch (_) { }
+            return;
+        }
+
         el.click();
-        // After click, context may have changed (new panel, modal, etc.) — refresh
+
         setTimeout(() => {
             if (zone === 'content') {
                 const items = getContentItems();
@@ -401,11 +411,20 @@ export function initRemote() {
     });
 
     // ── Reset focus after settings panel open/close ─────────────────────────
-    document.addEventListener('click', () => {
+    document.addEventListener('click', (e) => {
         if (!isRemoteMode()) return;
+
+        // Never steal focus if user is actively typing in an input
+        const activeTag = document.activeElement?.tagName;
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+        if (e.target.closest('input, textarea')) return;
+
         // Debounce: check if active panel changed
         setTimeout(() => {
             if (zone === 'content' && !isHomeGrid()) {
+                const curActive = document.activeElement?.tagName;
+                if (curActive === 'INPUT' || curActive === 'TEXTAREA') return;
+
                 const items = getContentItems();
                 // If remoteFocusEl is no longer in DOM, reset
                 if (remoteFocusEl && !document.body.contains(remoteFocusEl)) {
@@ -417,10 +436,13 @@ export function initRemote() {
     });
 
     // ── Air Mouse / Mouse Movement ───────────────────────────────────────────
-    document.addEventListener('mousemove', () => {
+    document.addEventListener('mousemove', (e) => {
         if (!isRemoteMode()) return;
-        // Hide focus highlights when mouse is being used (Air Mouse mode)
-        // This avoids having both a mouse pointer AND a focus highlight visible
+        // IGNORE touch-generated mouse events! (Crucial: prevents touch-scroll freeze)
+        if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+        if (e.movementX === 0 && e.movementY === 0) return;
+
+        // Hide focus highlights only on genuine physical mouse movement
         clearFocusEl();
         clearGridFocus();
     });

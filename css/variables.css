@@ -37,6 +37,9 @@
 body.light-mode {
     --bg-app: #FAFAFA;
     --bg-surface: #F4F4F5;
+    --bg-surface-container-low: #FFFFFF;
+    --bg-surface-container: #ECECEE;
+    --bg-surface-container-high: #E4E4E7;
     --bg-card: #FFFFFF;
     --bg-card-hover: #E4E4E7;
 
@@ -48,6 +51,9 @@ body.light-mode {
 
     --secondary-container: #E4E4E7;
     --on-secondary-container: #0F0F11;
+
+    --outline: #74777F;
+    --outline-variant: #C4C7C5;
 
     --error: #B3261E;
     --on-error: #FFFFFF;

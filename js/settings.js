@@ -1,4 +1,5 @@
 import { renderGrid } from './grid.js';
+import { renderGuestList } from './guest.js';
 import { config, save, memberData, updateSetting } from './data.js';
 import { applyRemoteMode, isRemoteMode } from './remote.js';
 import { t } from './i18n.js';
@@ -8,9 +9,14 @@ let currentAvatarStyle = 'local'; // Default
 export function openSetting(id) {
     // FIX: Clear ALL active settings panels before opening a new one to prevent overlap
     document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
-    
+
     const panel = document.getElementById('set-' + id);
-    if (panel) panel.classList.add('active');
+    if (panel) {
+        panel.classList.add('active');
+        // Reset scroll position to avoid stuck touch compositor offsets
+        const scrollArea = panel.querySelector('.settings-scroll-area, .list-group');
+        if (scrollArea) scrollArea.scrollTop = 0;
+    }
     
     // Trigger specific logic when opening panels
     if (id === 'connectivity') loadWifiList();
@@ -110,19 +116,22 @@ export function toggleAnimations() {
 export async function selectAvatarStyle(style) {
     currentAvatarStyle = style;
     updateSetting('avatarStyle', style);
-    
+
     // Update UI Selection
     document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
     const selectedOpt = document.getElementById('avat-' + style);
     if (selectedOpt) {
         selectedOpt.classList.add('selected');
     }
-    
+
     // Save to global state used by Grid
-    window.globalAvatarStyle = style; 
-    
+    window.globalAvatarStyle = style;
+
     // Re-render grid to show new avatars
     renderGrid();
+
+    // Re-render guest list immediately
+    renderGuestList();
 }
 
 
@@ -447,18 +456,27 @@ window.selectBrightness = function(level, el) {
 };
 
 // ── MEMBER SETTINGS ───────────────────────────────────────────────────────────
+let _memberDebounceTimer = null;
+
 function loadMemberSettings() {
     const list = document.getElementById('member-settings-list');
     if (!list) return;
+
     list.innerHTML = memberData.map((m, index) => `
         <div class="list-item" style="cursor:default">
             <div class="icon-box"><span class="material-symbols-rounded">person</span></div>
             <div class="item-content" style="flex:1">
                 <div style="display:flex;align-items:center;justify-content:space-between">
-                    <input type="text" class="input-box"
+                    <input type="text" class="input-box member-name-input"
+                        id="member-input-${index}"
                         value="${m.name}"
+                        maxlength="24"
+                        placeholder="Name cannot be empty"
                         style="width:60%;height:40px;font-size:18px"
-                        oninput="updateMemberName(${index},this.value)">
+                        data-index="${index}"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+                        oninput="onMemberInput(${index}, this)"
+                        onblur="onMemberBlur(${index}, this)">
                     <span style="font-size:14px;color:var(--text-sub);opacity:0.8">${m.gender}, ${m.age}</span>
                 </div>
             </div>
@@ -466,22 +484,78 @@ function loadMemberSettings() {
     `).join('');
 }
 
-window.updateMemberName = async function(index, newName) {
-    if (memberData[index]) {
-        memberData[index].name = newName;
-        renderGrid();
-        
-        try {
-            await fetch('/api/members/rename', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ index, name: newName })
-            });
-        } catch (e) {
-            console.error("Member rename failed", e);
-        }
+window.onMemberInput = function (index, inputEl) {
+    const rawVal = inputEl.value;
+    const sanitized = rawVal.replace(/[^\p{L}\p{N} ]/gu, '');
+
+    if (rawVal !== sanitized) {
+        inputEl.value = sanitized;
     }
+
+    const trimmed = sanitized.trim();
+
+    if (!trimmed) {
+        inputEl.style.borderColor = '#ff5c5c';
+        inputEl.style.outline = '1px solid #ff5c5c';
+        clearTimeout(_memberDebounceTimer);
+        return;
+    }
+
+    inputEl.style.borderColor = '';
+    inputEl.style.outline = '';
+
+    // Update state object only (do NOT call renderGrid() on every keystroke)
+    if (memberData[index]) {
+        memberData[index].name = trimmed;
+    }
+
+    // Debounce both API save and background grid redraw
+    clearTimeout(_memberDebounceTimer);
+    _memberDebounceTimer = setTimeout(() => {
+        saveMemberName(index, trimmed);
+        if (typeof renderGrid === 'function') renderGrid();
+    }, 500);
 };
+
+window.onMemberBlur = function (index, inputEl) {
+    clearTimeout(_memberDebounceTimer);
+    const cleaned = inputEl.value.replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
+
+    if (!cleaned) {
+        const fallbackName = `Member ${index + 1}`;
+        inputEl.value = fallbackName;
+        inputEl.style.borderColor = '';
+        inputEl.style.outline = '';
+        if (memberData[index]) memberData[index].name = fallbackName;
+        saveMemberName(index, fallbackName);
+        if (typeof renderGrid === 'function') renderGrid();
+        return;
+    }
+
+    inputEl.value = cleaned;
+    if (memberData[index]) memberData[index].name = cleaned;
+    saveMemberName(index, cleaned);
+    if (typeof renderGrid === 'function') renderGrid();
+};
+
+async function saveMemberName(index, newName) {
+    if (!memberData[index]) return;
+
+    try {
+        const res = await fetch('/api/members/rename', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ index, name: newName })
+        });
+        const d = await res.json();
+        if (!d.success && window.showToast) {
+            window.showToast('Failed to save name');
+        }
+    } catch (e) {
+        console.error('Member rename failed', e);
+        if (window.showToast) window.showToast('Network error saving name');
+    }
+}
 
 // ── SYSTEM INFO (real device data) ───────────────────────────────────────────
 export async function loadSystemInfo() {

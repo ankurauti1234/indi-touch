@@ -101,16 +101,14 @@ body {
 .conn-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(12px);
+    background: rgba(0, 0, 0, 0.95);
     z-index: 200000000;
-    /* Higher than screensaver */
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.2s ease;
 }
 
 .conn-overlay.visible {
@@ -289,10 +287,12 @@ body {
     height: 600px;
     background-color: var(--bg-app);
     display: flex;
-    /* border-radius: var(--radius-app); */
-    /* box-shadow: 0 0 0 8px #222, 0 20px 50px rgba(0,0,0,0.6); */
     overflow: hidden;
     position: relative;
+    contain: paint;
+    /* Allows inner containers to calculate full scroll heights */
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 /* SIDEBAR */
@@ -425,6 +425,8 @@ body {
     opacity: 0;
     transform: scale(0.5);
     transition: 0.2s;
+    z-index: 10;
+    /* Ensures badge stays above active and hover background pills */
 }
 
 .badge.visible {
@@ -446,19 +448,17 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    display: flex;
+    display: none;
     flex-direction: column;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0, 0, 1);
-    transform: translateY(20px);
     padding: 24px 24px 0 24px;
 }
 
 .view.active {
+    display: flex;
     opacity: 1;
     pointer-events: all;
-    transform: translateY(0);
     z-index: 10;
 }
 
@@ -678,8 +678,12 @@ body {
     flex-direction: column;
     gap: 8px;
     overflow-y: auto;
+    overflow-x: hidden;
     height: 100%;
     padding-bottom: 20px;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
 }
 
 .list-item {
@@ -949,15 +953,8 @@ body {
     height: 100%;
     display: none;
     flex-direction: column;
-    animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1);
     overflow: hidden;
-}
-
-.settings-scroll-area {
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 24px;
-    min-height: 0;
+    touch-action: pan-y;
 }
 
 .settings-panel.active {
@@ -1039,19 +1036,44 @@ body {
 }
 
 .input-box {
-    background: var(--bg-card);
+    background: var(--bg-surface-container-low, var(--bg-card));
     border: none;
-    border-bottom: 1px solid var(--text-sub);
-    border-radius: 4px 4px 0 0;
-    padding: 16px;
+    border-bottom: 1px solid var(--outline-variant, var(--text-sub));
+    border-radius: 6px 6px 0 0;
+    padding: 10px 16px;
     color: var(--text-main);
     font-size: 16px;
     outline: none;
+    transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.input-box:focus {
-    border-bottom: 2px solid var(--primary);
-    background: #34353A;
+.input-box::placeholder {
+    color: var(--text-sub);
+    opacity: 0.7;
+}
+
+/* Focused state: uses theme-aware surface container instead of hardcoded #34353A */
+.input-box:focus,
+.input-box:focus-visible,
+.input-box.remoteFocused {
+    background: var(--bg-surface-container-high, var(--bg-card-hover)) !important;
+    border-bottom: 2px solid var(--primary) !important;
+    color: var(--text-main) !important;
+}
+
+/* Light mode specific background and contrast enhancement */
+body.light-mode .input-box {
+    background: #EFEFEF;
+    border-bottom-color: rgba(0, 0, 0, 0.25);
+    color: #0F0F11;
+}
+
+body.light-mode .input-box:focus,
+body.light-mode .input-box:focus-visible,
+body.light-mode .input-box.remoteFocused {
+    background: #E2E2E6 !important;
+    border-bottom-color: var(--primary) !important;
+    color: #0F0F11 !important;
 }
 
 .chip-group {
@@ -1249,23 +1271,6 @@ body {
 
 .modal-btn:active {
     opacity: 0.7;
-}
-
-
-#screensaver {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-    z-index: 9999;
-    display: none;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    will-change: opacity;
-    padding: 0;
-    overflow: hidden;
 }
 
 @keyframes premiumFadeIn {
@@ -1640,23 +1645,29 @@ body.osk-open .main-stage {
 }
 
 
+/* ── SCREENSAVER ─────────────────────────────────────────────────────────── */
 
 #screensaver {
     position: fixed;
     inset: 0;
     background: #000;
-    z-index: 99999999;
+    z-index: 2147483647 !important;
+    /* Maximum possible z-index */
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.35s ease;
     color: #fff;
-    padding: 60px;
+    padding: 20px 24px 24px;
     text-align: center;
     border-radius: 42px;
+    overflow: hidden;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: opacity;
 }
 
 #screensaver.active {
@@ -1664,23 +1675,28 @@ body.osk-open .main-stage {
     pointer-events: auto;
 }
 
+#screensaver.center-clock {
+    justify-content: center !important;
+}
+
+#screensaver.center-clock .saver-clock {
+    margin-top: 0 !important;
+    margin-bottom: 24px !important;
+}
+
 .saver-clock {
-    margin-bottom: 20px;
+    margin-top: 10px;
+    margin-bottom: 0px;
 }
 
 #clock-time {
-    font-size: 200px;
-    /* Reduced to fit with padding */
+    font-size: 300px !important;
     font-weight: 700;
-    line-height: 1;
-    letter-spacing: -4px;
+    line-height: 0.8;
+    letter-spacing: -8px;
     margin-bottom: 0px;
-    background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.85) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 10px 30px rgba(255, 255, 255, 0.1));
-    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    color: #ffffff;
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     display: flex;
@@ -1690,39 +1706,33 @@ body.osk-open .main-stage {
 }
 
 #clock-time.massive {
-    font-size: 350px;
+    font-size: 380px !important;
+    line-height: 0.8;
 }
 
 .clock-main-digits {
-    font-size: inherit;
-    line-height: 0.9;
+    font-size: inherit !important;
+    line-height: 0.8;
     font-weight: 200;
-    transition: font-size 0.4s ease;
 }
 
-/* Compact view for many members */
-.compact-view .clock-main-digits {
-    font-size: 130px;
+.saver-active-area {
+    width: 100%;
+    margin-top: 0;
+    /* Let space-between position it naturally */
 }
 
-.compact-view .saver-member-avatar {
-    width: 80px;
-    height: 80px;
+.saver-members-title {
+    margin-bottom: 8px;
+    /* Tighter spacing */
 }
 
-.compact-view .saver-member-name {
-    font-size: 24px;
+.clock-secs,
+#clock-time-secs {
+    display: none !important;
 }
 
-.clock-secs {
-    font-size: 0.25em;
-    opacity: 0.5;
-    font-weight: 400;
-    margin-top: -10px;
-    letter-spacing: 2px;
-}
-
-/* TV Status Tag (Screensaver) */
+/* TV Status Tag */
 .saver-tv-tag {
     display: flex;
     align-items: center;
@@ -1734,7 +1744,6 @@ body.osk-open .main-stage {
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 1px;
-    transition: all 0.3s ease;
 }
 
 .saver-tv-tag.offline {
@@ -1778,7 +1787,6 @@ body.osk-open .main-stage {
 #saver-weather img {
     width: 44px !important;
     height: 44px !important;
-    filter: drop-shadow(0 0 10px rgba(255, 214, 0, 0.2));
 }
 
 .weather-temp {
@@ -1796,60 +1804,95 @@ body.osk-open .main-stage {
 
 .weather-desc {
     display: none;
-    /* Hide description to keep it in one line */
+}
+
+/* ── SCREENSAVER ACTIVE MEMBERS ────────────────────────────────────────── */
+
+.saver-active-area {
+    width: 100%;
+    margin-top: auto;
 }
 
 .saver-members-title {
-    margin-top: auto;
-    font-size: 14px;
+    font-size: 13px;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    opacity: 0.4;
-    margin-bottom: 24px;
+    letter-spacing: 2.5px;
+    opacity: 0.45;
+    margin-bottom: 16px;
+    text-align: center;
 }
 
 #saver-active-members {
     display: flex;
-    gap: 40px;
     justify-content: center;
-    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 32px;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    flex-wrap: nowrap;
 }
 
+/* 1 to 4 Members */
 .saver-member-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    animation: saverItemFade 1.2s cubic-bezier(0.2, 0, 0, 1) backwards;
+    width: 160px;
+    flex-shrink: 0;
 }
 
 .saver-member-avatar {
-    width: 120px;
-    height: 120px;
+    width: 130px;
+    height: 130px;
     border-radius: 50%;
-    border: 4px solid rgba(255, 255, 255, 0.15);
+    border: 4px solid rgba(255, 255, 255, 0.2);
     padding: 8px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    object-fit: cover;
+    flex-shrink: 0;
 }
 
 .saver-member-name {
-    font-size: 54px;
+    font-size: 28px;
     font-weight: 500;
     opacity: 0.95;
     color: #fff;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.5px;
 }
 
-@keyframes saverItemFade {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Compact View (5+ Members) */
+.compact-view .clock-main-digits {
+    font-size: 140px;
 }
+
+.compact-view #saver-active-members {
+    gap: 18px;
+}
+
+.compact-view .saver-member-item {
+    width: 140px;
+    gap: 10px;
+}
+
+.compact-view .saver-member-avatar {
+    width: 110px;
+    height: 110px;
+    padding: 6px;
+    border-width: 3px;
+}
+
+.compact-view .saver-member-name {
+    font-size: 22px;
+}
+
 
 /* M3 NOTIFICATION CARDS */
 .hub-notif-area {
@@ -2024,6 +2067,21 @@ body.osk-open .main-stage {
 .guest-delete-overlay span {
     font-size: 32px;
     font-weight: bold;
+}
+
+/* Remote focus indicator for guest delete overlay */
+.guest-delete-overlay.remoteFocused {
+    opacity: 1 !important;
+    background: rgba(239, 83, 80, 0.7) !important;
+    border-radius: 50% !important;
+    outline: 3px solid #fff !important;
+    outline-offset: -3px !important;
+    box-shadow: 0 0 0 4px rgba(239, 83, 80, 0.5) !important;
+}
+
+.guest-avatar-circle:has(.remoteFocused) {
+    transform: scale(1.1);
+    border-color: #ef5350 !important;
 }
 
 /* POPOVERS */
@@ -2493,6 +2551,73 @@ body.osk-open .main-stage {
 
 .settings-scroll-area {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-bottom: 40px;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+}
+/* ── TOUCH & SCROLL STABILITY FIXES ── */
+
+/* 1. Ensure flex heights can shrink and calculate scrollHeight properly */
+.main-stage,
+.view,
+.settings-panel,
+.list-group,
+.settings-scroll-area {
+    min-height: 0 !important;
+}
+
+/* 2. Direct touchscreen hardware to pan vertically and not cancel gestures */
+.settings-scroll-area,
+.list-group {
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+}
+
+.list-item,
+.list-group>*,
+.settings-scroll-area>* {
+    touch-action: pan-y !important;
+}
+
+/* 3. Safety: guarantee inactive overlays never intercept touches */
+#modal-overlay:not(.active),
+.popover-overlay:not(.active),
+.conn-overlay:not(.visible),
+#critical-popover:not(.active),
+#still-watching-popover:not(.visible) {
+    display: none !important;
+    pointer-events: none !important;
+}
+
+/* 4. Prevent the nav rail icons from stretching or shifting down when OSK opens */
+body.osk-open .nav-rail {
+    height: 600px;
+    align-self: flex-start;
+}
+
+/* 5. Screensaver layering */
+#screensaver.active {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483647 !important;
+}
+
+/* 6. Hide OSK immediately whenever screensaver is active */
+body.screensaver-active #osk-container {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* 7. Ensure screensaver viewport stays strictly 600px high even if osk-open is active */
+body.osk-open #screensaver,
+#screensaver {
+    height: 600px !important;
+    max-height: 600px !important;
 }

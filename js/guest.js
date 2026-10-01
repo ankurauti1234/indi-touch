@@ -199,7 +199,7 @@ export function renderGuestList() {
                     info
                 </span>
 
-                Guests are active for 24 hours (2 AM to 2 AM cycle).
+                ${t('guest_cycle_info') || 'Guests are active for 24 hours (2 AM to 2 AM cycle).'}
             </div>
         `;
 

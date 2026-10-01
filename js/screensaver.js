@@ -5,16 +5,19 @@ let idleTimer;
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
+
+    // 1. Cleanly dismiss screensaver state
     s.classList.remove('active');
+    document.body.classList.remove('screensaver-active'); // <-- ESSENTIAL FIX
     clearTimeout(idleTimer);
 
     // Disable screensaver only during ACTIVE onboarding
     if (!config.onboardingCompleted) {
         const onboardingLayer = document.getElementById('onboarding-layer');
-        const isVisible = onboardingLayer && 
-                          !onboardingLayer.classList.contains('hidden') && 
-                          onboardingLayer.style.display !== 'none' &&
-                          onboardingLayer.style.opacity !== '0';
+        const isVisible = onboardingLayer &&
+            !onboardingLayer.classList.contains('hidden') &&
+            onboardingLayer.style.display !== 'none' &&
+            onboardingLayer.style.opacity !== '0';
         if (isVisible) {
             console.log("Screensaver blocked by Onboarding Layer visibility");
             return;
@@ -24,17 +27,24 @@ export function resetIdle(isPriority = false) {
     // Use 5s if priority (e.g. TV Off), otherwise use config or 15s default
     const timeout = isPriority ? 5000 : (config.screenTimeout || 15000);
     console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
-    
+
     idleTimer = setTimeout(() => {
         if (s) {
-            console.log("Screensaver activating now...");
-            s.classList.add('active');
-            applyWallpaper(); // Fetch latest wallpaper state
+            // Remove keyboard mode so the app frame resets from 900px back to 600px
+            document.body.classList.remove('osk-open');
+
+            // Pre-render DOM elements synchronously before fading in
             renderScreensaverMembers();
+
+            document.body.classList.add('screensaver-active');
+
+            // Reveal smoothly in next frame
+            requestAnimationFrame(() => {
+                s.classList.add('active');
+            });
         }
     }, timeout);
 }
-
 window.setScreensaverTimeout = (ms) => {
     // This allows immediate update from settings
     clearTimeout(idleTimer);
@@ -43,14 +53,13 @@ window.setScreensaverTimeout = (ms) => {
 
 export function updateClock() {
     const now = new Date();
-    // 24-hour format with seconds for dynamic feel
     const hours = now.getHours().toString().padStart(2, '0');
-    const mins  = now.getMinutes().toString().padStart(2, '0');
-    const secs  = now.getSeconds().toString().padStart(2, '0');
-    
+    const mins = now.getMinutes().toString().padStart(2, '0');
+    const secs = now.getSeconds().toString().padStart(2, '0');
+
     const digits = document.getElementById('clock-time-digits');
     const secsEl = document.getElementById('clock-time-secs');
-    
+
     if (digits) digits.textContent = `${hours}:${mins}`;
     if (secsEl) secsEl.textContent = secs;
 
@@ -60,7 +69,7 @@ export function updateClock() {
         else clock.classList.remove('massive');
     }
 
-    const dateStr = now.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const dateEl = document.getElementById('clock-date');
     if (dateEl) dateEl.innerText = dateStr;
 }
@@ -71,13 +80,13 @@ const OWM_API_KEY = '0c0a2611ed5caefff0ef2e5cb6f4cdc0';
 async function fetchWeather(city) {
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${OWM_API_KEY}`, {
             signal: controller.signal
         });
         clearTimeout(timeoutId);
-        
+
         const data = await res.json();
         if (data && data.main) {
             return {
@@ -94,22 +103,19 @@ async function fetchWeather(city) {
 
 export async function initLocation() {
     const city = config.location || 'Yerevan';
-    
     const widget = document.getElementById('saver-weather');
     if (!widget) return;
 
-    // Show loading state immediately to prevent "empty" UI
     if (!widget.innerHTML.trim() || widget.innerHTML.includes('material-symbols-rounded')) {
-       widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
+        widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
     }
 
     try {
         const weather = await fetchWeather(city);
         if (weather) {
             const iconUrl = `https://openweathermap.org/img/wn/${weather.icon}@2x.png`;
-            // Capitalize each word of description for premium feel
             const desc = weather.desc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-            
+
             widget.innerHTML = `
                 <img src="${iconUrl}">
                 <span class="weather-temp">${weather.temp}°C</span>
@@ -128,12 +134,11 @@ export async function initLocation() {
 }
 
 export function renderScreensaverMembers() {
-    initLocation(); // Ensure weather is updated when screensaver shows
+    initLocation();
 
     const container = document.getElementById('saver-active-members');
     if (!container) return;
 
-    // TV Status on Saver
     const tvTag = document.getElementById('tv-status-saver');
     const tvText = document.getElementById('tv-status-saver-text');
     const clock = document.getElementById('clock-time');
@@ -141,7 +146,7 @@ export function renderScreensaverMembers() {
     if (tvTag) {
         if (!config.bleAvailable) {
             tvTag.style.display = 'none';
-            if (clock) clock.classList.remove('massive'); // Don't force massive if no BLE
+            if (clock) clock.classList.remove('massive');
         } else {
             tvTag.style.display = 'flex';
             if (tvState.on) {
@@ -157,22 +162,30 @@ export function renderScreensaverMembers() {
     }
 
     const activeMembers = tvState.on ? memberData.filter(m => m.active) : [];
-    
-    // Dynamic scaling for many members
+
     const saver = document.getElementById('screensaver');
     if (saver) {
-        if (activeMembers.length > 5) {
+        if (activeMembers.length >= 5) {
             saver.classList.add('compact-view');
         } else {
             saver.classList.remove('compact-view');
         }
     }
 
-    // Hide/Show "Watching Now" area
+    const hasMembers = tvState.on && activeMembers.length > 0;
+
     const watchingArea = container.closest('.saver-active-area');
     if (watchingArea) {
-        // Only show if TV is ON and there are active members
-        watchingArea.style.display = (tvState.on && activeMembers.length > 0) ? 'block' : 'none';
+        watchingArea.style.display = hasMembers ? 'block' : 'none';
+    }
+
+    // Center the clock in screensaver when no members are active
+    if (saver) {
+        if (!hasMembers) {
+            saver.classList.add('center-clock');
+        } else {
+            saver.classList.remove('center-clock');
+        }
     }
 
     if (activeMembers.length === 0 || !tvState.on) {
@@ -191,7 +204,9 @@ export function renderScreensaverMembers() {
 }
 
 // ── WALLPAPER BACKGROUND ─────────────────────────────────────────────────────
-async function applyWallpaper() {
+let _cachedWallpaperUrl = null;
+
+async function applyWallpaper(forceBust = false) {
     const saver = document.getElementById('screensaver');
     if (!saver) return;
 
@@ -200,11 +215,14 @@ async function applyWallpaper() {
         const d = await r.json();
 
         if (d.hasWallpaper) {
-            // Add cache buster to ensure new uploads show up immediately
-            const cacheBuster = `?t=${Date.now()}`;
-            saver.style.backgroundImage = `url('${d.url}${cacheBuster}')`;
+            const urlToUse = forceBust ? `${d.url}?t=${Date.now()}` : d.url;
+            if (_cachedWallpaperUrl !== urlToUse) {
+                _cachedWallpaperUrl = urlToUse;
+                saver.style.backgroundImage = `url('${urlToUse}')`;
+            }
             saver.classList.add('has-wallpaper');
         } else {
+            _cachedWallpaperUrl = null;
             saver.style.backgroundImage = '';
             saver.classList.remove('has-wallpaper');
         }
@@ -214,8 +232,9 @@ async function applyWallpaper() {
 }
 
 export function refreshWallpaperOnScreensaver() {
-    applyWallpaper();
+    // Only force-bust cache when user explicitly changes wallpaper in settings
+    applyWallpaper(true);
 }
 
-// Apply wallpaper on initial load
+// Pre-load wallpaper once on startup
 applyWallpaper();

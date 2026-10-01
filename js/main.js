@@ -393,6 +393,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyTranslations();
             updateLanguageUI(lang);
             renderGrid(); // Refresh grid for active status texts if any
+            renderGuestList(); // Refresh guest list
             renderNotifications(); // Refresh notifications
         }
     };
@@ -565,8 +566,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     showToast("Indi Meter is ready.", 4000);
 
-    // Disable right-click context menu
-    document.addEventListener('contextmenu', e => e.preventDefault());
+    // Disable right-click context menu without swallowing touch-pan gestures
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    }, { passive: false });
 
     // 3. User Interaction Tracking
     document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });

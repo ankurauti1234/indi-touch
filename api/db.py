@@ -88,6 +88,16 @@ def init_db():
             )
         """)
 
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS onboarding_security (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                failed_attempts INTEGER NOT NULL DEFAULT 0,
+                locked_until REAL NOT NULL DEFAULT 0,
+                resend_after REAL NOT NULL DEFAULT 0
+            )
+        """)
+        cur.execute("INSERT OR IGNORE INTO onboarding_security (id) VALUES (1)")
+
         conn.commit()
 
     print("[DB] Database initialized")

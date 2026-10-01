@@ -112,9 +112,6 @@ def list_networks():
                 # Match against scanned networks
                 if ssid in merged:
                     merged[ssid]["saved"] = True
-                    km = (safe("wifi-security", "key-mgmt") or safe("802-11-wireless-security", "key-mgmt") or "none").lower()
-                    pwd = safe("wifi-security", "psk") if km in ("wpa-psk", "wpa-eap") else ""
-                    merged[ssid]["password"] = pwd if merged[ssid]["password"] is None else merged[ssid]["password"]
 
     # Prioritize 5GHz by signal and saved status
     result = sorted(merged.values(), key=lambda x: (not x["saved"], -x["signal"]))
@@ -127,19 +124,22 @@ def wifi_connect():
     data = request.get_json() or {}
     ssid = data.get("ssid", "").strip()
     pwd  = data.get("password", "").strip()
+    hidden = data.get("hidden") is True
+    saved = data.get("saved") is True
     if not ssid:
         return jsonify({"success": False, "error": "SSID required"}), 400
 
     # Ensure 5GHz is unlocked before connecting
     _set_reg_domain()
-    # Remove old saved connection (ignore errors)
-    _run(["sudo", "nmcli", "connection", "delete", ssid])
 
-    if pwd:
-        cmd = ["sudo", "nmcli", "device", "wifi", "connect", ssid, "password", pwd]
+    if saved and not hidden and not pwd:
+        cmd = ["sudo", "nmcli", "connection", "up", ssid]
     else:
-        # Open network — no password
         cmd = ["sudo", "nmcli", "device", "wifi", "connect", ssid]
+        if pwd:
+            cmd.extend(["password", pwd])
+        if hidden:
+            cmd.extend(["hidden", "yes"])
 
     ok, out = _run(cmd)
     if not ok:

@@ -4,7 +4,7 @@ import { openSetting, closeSetting, toggleTheme, selectAvatarStyle, toggleRemote
 import { selectChip, addGuest, renderGuestList } from './guest.js';
 import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver } from './screensaver.js';
 import { initOSK } from './keyboard.js';
-import { checkOnboardingStatus } from './onboarding.js';
+import { checkOnboardingStatus } from './onboarding-v2.js';
 import { showToast } from './ui.js';
 import { renderNotifications } from './notifications.js';
 import { openSurvey } from './survey.js';

@@ -77,7 +77,7 @@ def _is_installation_done() -> bool:
 
 # Common RPi backlight paths
 BACKLIGHT_PATHS = [
-    "/sys/class/backlight/1-0045",      # User's specific path
+    "/sys/class/backlight/1-0045",       # User's specific path
     "/sys/class/backlight/rpi_backlight",
     "/sys/class/backlight/soc:backlight"
 ]
@@ -254,7 +254,43 @@ def save_app_settings():
 
 # ── WEATHER ─────────────────────────────────────────────────
 _weather_cache = {"data": None, "timestamp": 0, "city": None}
-OWM_API_KEY = os.environ.get("OWM_API_KEY", "0c0a2611ed5caefff0ef2e5cb6f4cdc0")
+_cached_owm_api_key = None
+_owm_key_lock = threading.Lock()
+
+SSM_PARAMETER_NAME = "/apm/weather/api"
+AWS_REGION = "ap-south-1"
+
+
+def get_owm_api_key() -> str:
+    """Retrieve and cache OpenWeatherMap API key from AWS SSM Parameter Store."""
+    global _cached_owm_api_key
+
+    if _cached_owm_api_key:
+        return _cached_owm_api_key
+
+    with _owm_key_lock:
+        if _cached_owm_api_key:
+            return _cached_owm_api_key
+
+        # First priority: Fetch from AWS SSM
+        try:
+            import boto3
+            ssm = boto3.client("ssm", region_name=AWS_REGION)
+            param = ssm.get_parameter(Name=SSM_PARAMETER_NAME, WithDecryption=True)
+            key = param.get("Parameter", {}).get("Value", "").strip()
+            if key:
+                _cached_owm_api_key = key
+                return _cached_owm_api_key
+        except Exception as e:
+            print(f"[Weather] Warning: Failed to fetch API key from AWS SSM ({e})")
+
+        # Fallback to environment variable if SSM fails
+        fallback_key = os.environ.get("OWM_API_KEY", "")
+        if fallback_key:
+            _cached_owm_api_key = fallback_key
+            return _cached_owm_api_key
+
+    return ""
 
 
 # ── GET /api/system/weather ──────────────────────────────────────────────────
@@ -267,7 +303,11 @@ def get_weather():
     if _weather_cache["data"] and _weather_cache["city"] == city and (now - _weather_cache["timestamp"] < 900):
         return jsonify(_weather_cache["data"])
 
-    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&appid={OWM_API_KEY}"
+    api_key = get_owm_api_key()
+    if not api_key:
+        return jsonify({"error": "Weather API key unavailable"}), 503
+
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&appid={api_key}"
     try:
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:

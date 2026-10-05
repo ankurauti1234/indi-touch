@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-# api/system.py — System status, brightness, shutdown, restart
+# api/system.py — System status, brightness, shutdown, restart, weather
 
 import os
+import sys
 import subprocess
 import socket
 import time
@@ -11,6 +12,9 @@ import requests
 from flask import Blueprint, jsonify, request
 
 from .config import SYSTEM_FILES, METER_ID
+
+# Add utils path for AWS IoT credentials helper
+sys.path.insert(0, "/opt/apm/scripts/utils")
 
 system_bp = Blueprint("system", __name__)
 
@@ -252,17 +256,30 @@ def save_app_settings():
     return jsonify({"success": True})
 
 
-# ── WEATHER ─────────────────────────────────────────────────
+# ── WEATHER ───────────────────────────────────────────────────────────────────
+import sys
+import boto3
+
+# Ensure utils path is available
+if "/opt/apm/scripts/utils" not in sys.path:
+    sys.path.insert(0, "/opt/apm/scripts/utils")
+
+from aws_iot_credentials import get_credentials
+
 _weather_cache = {"data": None, "timestamp": 0, "city": None}
 _cached_owm_api_key = None
 _owm_key_lock = threading.Lock()
 
-SSM_PARAMETER_NAME = "/apm/weather/api"
-AWS_REGION = "ap-south-1"
+IOT_CONFIG = {
+    "CERT_DIR": "/opt/apm/certs",
+    "AWS_ENDPOINT": "cetv6dtf9d304.credentials.iot.ap-south-1.amazonaws.com",
+    "AWS_ROLE_ALIAS": "iot-image-code-role",
+    "AWS_REGION": "ap-south-1",
+}
 
 
 def get_owm_api_key() -> str:
-    """Retrieve and cache OpenWeatherMap API key from AWS SSM Parameter Store."""
+    """Retrieve and cache OpenWeatherMap API key from AWS SSM using IoT credentials."""
     global _cached_owm_api_key
 
     if _cached_owm_api_key:
@@ -272,19 +289,26 @@ def get_owm_api_key() -> str:
         if _cached_owm_api_key:
             return _cached_owm_api_key
 
-        # First priority: Fetch from AWS SSM
         try:
-            import boto3
-            ssm = boto3.client("ssm", region_name=AWS_REGION)
-            param = ssm.get_parameter(Name=SSM_PARAMETER_NAME, WithDecryption=True)
-            key = param.get("Parameter", {}).get("Value", "").strip()
+            credentials = get_credentials(IOT_CONFIG)
+            ssm = boto3.client(
+                "ssm",
+                region_name=IOT_CONFIG["AWS_REGION"],
+                aws_access_key_id=credentials["AWS_ACCESS_KEY_ID"],
+                aws_secret_access_key=credentials["AWS_SECRET_ACCESS_KEY"],
+                aws_session_token=credentials["AWS_SESSION_TOKEN"],
+            )
+            response = ssm.get_parameter(
+                Name="/apm/weather/api",
+                WithDecryption=True,
+            )
+            key = response.get("Parameter", {}).get("Value", "").strip()
             if key:
                 _cached_owm_api_key = key
                 return _cached_owm_api_key
         except Exception as e:
-            print(f"[Weather] Warning: Failed to fetch API key from AWS SSM ({e})")
+            print(f"[Weather] Warning: Failed to fetch API key from AWS SSM via IoT credentials: {e}")
 
-        # Fallback to environment variable if SSM fails
         fallback_key = os.environ.get("OWM_API_KEY", "")
         if fallback_key:
             _cached_owm_api_key = fallback_key
@@ -320,4 +344,4 @@ def get_weather():
     except Exception as e:
         if _weather_cache["data"]:
             return jsonify(_weather_cache["data"])
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500 

@@ -317,26 +317,10 @@ def get_owm_api_key() -> str:
     return ""
 
 
-def get_auto_city() -> str:
-    """Resolve location from public IP or return fallback."""
-    try:
-        r = requests.get("http://ip-api.com/json/?fields=city", timeout=3)
-        if r.status_code == 200:
-            city = r.json().get("city")
-            if city:
-                return city
-    except Exception:
-        pass
-    return "Yerevan"
-
-
 # ── GET /api/system/weather ──────────────────────────────────────────────────
 @system_bp.route("/weather", methods=["GET"])
 def get_weather():
-    city = request.args.get("city", "auto").strip()
-    if not city or city.lower() == "auto":
-        city = get_auto_city()
-
+    city = request.args.get("city", "Yerevan")
     now = time.time()
 
     # Return cached data if fresh (15 minutes = 900 seconds)
@@ -360,4 +344,4 @@ def get_weather():
     except Exception as e:
         if _weather_cache["data"]:
             return jsonify(_weather_cache["data"])
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500 

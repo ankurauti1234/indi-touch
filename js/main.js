@@ -411,12 +411,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
     }, { passive: false });
 
-    // User Interaction Tracking (resets screensaver without swallowing clicks)
+    // User Interaction Tracking
+    // If screensaver is active, screensaver's own capture listener handles dismissal.
+    // If screensaver is NOT active, reset idle timer normally.
     const interactionEvents = ['pointerdown', 'touchstart', 'mousedown', 'keydown'];
     interactionEvents.forEach(evt => {
         document.addEventListener(evt, () => {
-            resetIdle();
-            resetHomeTimer();
+            const s = document.getElementById('screensaver');
+            if (!s || !s.classList.contains('active')) {
+                resetIdle();
+                resetHomeTimer();
+            }
         }, { passive: true });
     });
 

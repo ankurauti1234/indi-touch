@@ -9,14 +9,39 @@ let lastDateDay = -1;
 let cachedDateStr = '';
 
 let idleTimer;
+let isDismissing = false;
+
+export function isScreensaverActive() {
+    const s = document.getElementById('screensaver');
+    return s && s.classList.contains('active');
+}
+
+export function dismissScreensaver(e) {
+    const s = document.getElementById('screensaver');
+    if (!s || !s.classList.contains('active')) return;
+
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    }
+
+    isDismissing = true;
+    s.classList.remove('active');
+    document.body.classList.remove('screensaver-active');
+
+    // Shield against phantom clicks landing on buttons underneath for 400ms
+    setTimeout(() => {
+        isDismissing = false;
+    }, 400);
+
+    resetIdle();
+}
 
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
 
-    // 1. Cleanly dismiss screensaver state
-    s.classList.remove('active');
-    document.body.classList.remove('screensaver-active');
     clearTimeout(idleTimer);
 
     // Disable screensaver only during ACTIVE onboarding
@@ -27,29 +52,22 @@ export function resetIdle(isPriority = false) {
             onboardingLayer.style.display !== 'none' &&
             onboardingLayer.style.opacity !== '0';
         if (isVisible) {
-            console.log("Screensaver blocked by Onboarding Layer visibility");
             return;
         }
     }
 
-    // Use 5s if priority (e.g. TV Off), otherwise use config or 15s default
     const timeout = isPriority ? 5000 : (config.screenTimeout || 15000);
-    console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
 
     idleTimer = setTimeout(() => {
-        if (s) {
-            // Remove keyboard mode so the app frame resets from 900px back to 600px
+        if (s && !isDismissing) {
+            // Remove virtual keyboard mode so app frame resets
             document.body.classList.remove('osk-open');
 
-            // Pre-render DOM elements synchronously before fading in
+            // Pre-populate data before showing
             renderScreensaverMembers();
 
             document.body.classList.add('screensaver-active');
-
-            // Reveal smoothly in next frame
-            requestAnimationFrame(() => {
-                s.classList.add('active');
-            });
+            s.classList.add('active');
         }
     }, timeout);
 }
@@ -107,9 +125,7 @@ async function fetchWeather(city) {
         });
         clearTimeout(timeoutId);
 
-        if (!res.ok) {
-            return null;
-        }
+        if (!res.ok) return null;
 
         const data = await res.json();
         if (data && data.main && data.weather && data.weather.length > 0) {
@@ -131,7 +147,6 @@ export async function initLocation() {
 
     const city = config.location || 'auto';
 
-    // Show loading spinner ONLY on first run if completely empty
     if (!widget.innerHTML.trim() || widget.innerHTML.includes('material-symbols-rounded')) {
         widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
     }
@@ -209,7 +224,6 @@ export function renderScreensaverMembers() {
         watchingArea.style.display = hasMembers ? 'block' : 'none';
     }
 
-    // Center the clock in screensaver when no members are active
     if (saver) {
         if (!hasMembers) {
             saver.classList.add('center-clock');
@@ -265,5 +279,35 @@ export function refreshWallpaperOnScreensaver() {
     applyWallpaper(true);
 }
 
-// Pre-load wallpaper once on startup
+// Setup dedicated, non-leaking touch listeners on the screensaver itself
+function setupScreensaverDismissListeners() {
+    const saver = document.getElementById('screensaver');
+    if (!saver) return;
+
+    // Use capture phase so screensaver captures and kills the touch before any underlying element gets it
+    const dismissEvents = ['pointerdown', 'touchstart', 'mousedown'];
+    dismissEvents.forEach(evtName => {
+        saver.addEventListener(evtName, (e) => {
+            if (saver.classList.contains('active')) {
+                dismissScreensaver(e);
+            }
+        }, { capture: true, passive: false });
+    });
+
+    // Also swallow clicks that occur during dismissal
+    document.addEventListener('click', (e) => {
+        if (isDismissing) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        }
+    }, { capture: true, passive: false });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupScreensaverDismissListeners);
+} else {
+    setupScreensaverDismissListeners();
+}
+
 applyWallpaper();

@@ -1539,7 +1539,6 @@ body.osk-open .main-stage {
     inset: 0;
     background: #000;
     z-index: 2147483647 !important;
-    /* Maximum possible z-index */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1548,20 +1547,20 @@ body.osk-open .main-stage {
     visibility: hidden;
     pointer-events: none;
     overflow: hidden;
-    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 1.2s;
     color: #fff;
     padding: 20px 24px 24px;
     text-align: center;
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: opacity;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 #screensaver.active {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0s;
+    transition: opacity 0.3s ease;
 }
 
 #screensaver.center-clock {

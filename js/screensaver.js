@@ -8,7 +8,7 @@ export function resetIdle(isPriority = false) {
 
     // 1. Cleanly dismiss screensaver state
     s.classList.remove('active');
-    document.body.classList.remove('screensaver-active'); // <-- ESSENTIAL FIX
+    document.body.classList.remove('screensaver-active');
     clearTimeout(idleTimer);
 
     // Disable screensaver only during ACTIVE onboarding
@@ -45,8 +45,9 @@ export function resetIdle(isPriority = false) {
         }
     }, timeout);
 }
+
 window.setScreensaverTimeout = (ms) => {
-    // This allows immediate update from settings
+    config.screenTimeout = ms;
     clearTimeout(idleTimer);
     resetIdle();
 };
@@ -76,6 +77,7 @@ export function updateClock() {
 
 // OpenWeatherMap Integration
 const OWM_API_KEY = '0c0a2611ed5caefff0ef2e5cb6f4cdc0';
+let isFetchingWeather = false;
 
 async function fetchWeather(city) {
     try {
@@ -87,8 +89,12 @@ async function fetchWeather(city) {
         });
         clearTimeout(timeoutId);
 
+        if (!res.ok) {
+            return null;
+        }
+
         const data = await res.json();
-        if (data && data.main) {
+        if (data && data.main && data.weather && data.weather.length > 0) {
             return {
                 temp: Math.round(data.main.temp),
                 icon: data.weather[0].icon,
@@ -102,14 +108,17 @@ async function fetchWeather(city) {
 }
 
 export async function initLocation() {
-    const city = config.location || 'Yerevan';
     const widget = document.getElementById('saver-weather');
-    if (!widget) return;
+    if (!widget || isFetchingWeather) return;
 
+    const city = config.location || 'Yerevan';
+
+    // Show loading spinner ONLY on first run if completely empty
     if (!widget.innerHTML.trim() || widget.innerHTML.includes('material-symbols-rounded')) {
         widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
     }
 
+    isFetchingWeather = true;
     try {
         const weather = await fetchWeather(city);
         if (weather) {
@@ -122,14 +131,18 @@ export async function initLocation() {
                 <span class="weather-desc-inline">${desc}</span>
             `;
         } else {
-            throw new Error("Null weather data");
+            // Only show fallback if we don't already have successful weather rendered
+            if (!widget.querySelector('img')) {
+                widget.innerHTML = `
+                    <span class="material-symbols-rounded">wb_cloudy</span>
+                    <span class="weather-temp">--°C</span>
+                `;
+            }
         }
     } catch (e) {
-        console.warn("Weather sync failed, using fallback", e);
-        widget.innerHTML = `
-            <span class="material-symbols-rounded">wb_cloudy</span>
-            <span class="weather-temp">--°C</span>
-        `;
+        console.warn("Weather sync error:", e);
+    } finally {
+        isFetchingWeather = false;
     }
 }
 
@@ -232,7 +245,6 @@ async function applyWallpaper(forceBust = false) {
 }
 
 export function refreshWallpaperOnScreensaver() {
-    // Only force-bust cache when user explicitly changes wallpaper in settings
     applyWallpaper(true);
 }
 

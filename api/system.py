@@ -202,3 +202,118 @@ def save_app_settings():
     data = request.get_json(force=True) or {}
     save_settings(data)
     return jsonify({"success": True})
+
+
+# ── WEATHER ───────────────────────────────────────────────────────────────────
+import sys
+import boto3
+
+# Ensure utils path is available
+if "/opt/apm/scripts/utils" not in sys.path:
+    sys.path.insert(0, "/opt/apm/scripts/utils")
+
+from aws_iot_credentials import get_credentials
+
+_weather_cache = {"data": None, "timestamp": 0, "city": None}
+_cached_owm_api_key = None
+_owm_key_lock = threading.Lock()
+
+IOT_CONFIG = {
+    "CERT_DIR": "/opt/apm/certs",
+    "AWS_ENDPOINT": "cetv6dtf9d304.credentials.iot.ap-south-1.amazonaws.com",
+    "AWS_ROLE_ALIAS": "iot-image-code-role",
+    "AWS_REGION": "ap-south-1",
+}
+
+
+def get_owm_api_key() -> str:
+    """Retrieve and cache OpenWeatherMap API key from AWS SSM using IoT credentials."""
+    global _cached_owm_api_key
+
+    if _cached_owm_api_key:
+        return _cached_owm_api_key
+
+    with _owm_key_lock:
+        if _cached_owm_api_key:
+            return _cached_owm_api_key
+
+        try:
+            credentials = get_credentials(IOT_CONFIG)
+            ssm = boto3.client(
+                "ssm",
+                region_name=IOT_CONFIG["AWS_REGION"],
+                aws_access_key_id=credentials["AWS_ACCESS_KEY_ID"],
+                aws_secret_access_key=credentials["AWS_SECRET_ACCESS_KEY"],
+                aws_session_token=credentials["AWS_SESSION_TOKEN"],
+            )
+            response = ssm.get_parameter(
+                Name="/apm/weather/api",
+                WithDecryption=True,
+            )
+            key = response.get("Parameter", {}).get("Value", "").strip()
+            if key:
+                _cached_owm_api_key = key
+                return _cached_owm_api_key
+        except Exception as e:
+            print(f"[Weather] Warning: Failed to fetch API key from AWS SSM via IoT credentials: {e}")
+
+        fallback_key = os.environ.get("OWM_API_KEY", "")
+        if fallback_key:
+            _cached_owm_api_key = fallback_key
+            return _cached_owm_api_key
+
+    return ""
+
+
+_last_known_city = "Yerevan"
+
+
+def get_auto_city() -> str:
+    """Resolve location from public IP with sticky fallback."""
+    global _last_known_city
+    try:
+        r = requests.get("http://ip-api.com/json/?fields=status,city", timeout=3)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("status") == "success":
+                city = (data.get("city") or "").strip()
+                if city:
+                    _last_known_city = city
+                    return _last_known_city
+    except Exception as e:
+        print(f"[Weather] Auto city lookup error: {e}, using fallback: {_last_known_city}")
+
+    return _last_known_city
+
+
+# ── GET /api/system/weather ──────────────────────────────────────────────────
+@system_bp.route("/weather", methods=["GET"])
+def get_weather():
+    city = request.args.get("city", "auto").strip()
+    if not city or city.lower() == "auto":
+        city = get_auto_city()
+
+    now = time.time()
+
+    # Return cached data if fresh (15 minutes = 900 seconds)
+    if _weather_cache["data"] and _weather_cache["city"] == city and (now - _weather_cache["timestamp"] < 900):
+        return jsonify(_weather_cache["data"])
+
+    api_key = get_owm_api_key()
+    if not api_key:
+        return jsonify({"error": "Weather API key unavailable"}), 503
+
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&appid={api_key}"
+    try:
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            _weather_cache["data"] = data
+            _weather_cache["timestamp"] = now
+            _weather_cache["city"] = city
+            return jsonify(data)
+        return jsonify({"error": "Failed to fetch weather"}), resp.status_code
+    except Exception as e:
+        if _weather_cache["data"]:
+            return jsonify(_weather_cache["data"])
+        return jsonify({"error": str(e)}), 500

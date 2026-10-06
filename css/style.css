@@ -1205,7 +1205,7 @@ body.light-mode .input-box.remoteFocused {
 #critical-popover {
     position: fixed;
     inset: 0;
-    z-index: 200000000;
+    z-index: 2147483648 !important;
 
     display: flex;
     align-items: center;

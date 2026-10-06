@@ -378,9 +378,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 reminderDismissedAt = now;
             }
         } else {
+            // Re-show only after 60-second cooldown
             if (now - reminderDismissedAt >= 60 * 1000) {
                 popover.classList.add('active');
                 reminderShownAt = now;
+
+                // Wake up screensaver so user immediately sees the prompt
+                const s = document.getElementById('screensaver');
+                if (s && s.classList.contains('active')) {
+                    s.classList.remove('active');
+                    document.body.classList.remove('screensaver-active');
+                    resetIdle();
+                }
             }
         }
     }
@@ -398,10 +407,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (popover) {
             popover.classList.remove('active');
         }
+
+        // 1. Immediately wake up and dismiss screensaver if it is active
+        const s = document.getElementById('screensaver');
+        if (s) {
+            s.classList.remove('active');
+            document.body.classList.remove('screensaver-active');
+        }
+        resetIdle();
+
+        // 2. Clear reminder timers & navigate home
         reminderShownAt = 0;
         reminderDismissedAt = Date.now();
         navTo('home');
-        console.log("Critical action: Navigating home.");
+        console.log("Critical action: Dismissed screensaver and navigating home.");
     };
 
     showToast("Indi Meter is ready.", 4000);

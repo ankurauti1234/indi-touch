@@ -2422,8 +2422,8 @@ body.osk-open .nav-rail {
     align-self: flex-start;
 }
 
-/* 5. Screensaver layering */
-#screensaver.active {
+/* 5. Screensaver permanent fullscreen layering */
+#screensaver {
     position: fixed !important;
     inset: 0 !important;
     z-index: 2147483647 !important;
@@ -2437,15 +2437,14 @@ body.screensaver-active #osk-container {
     pointer-events: none !important;
 }
 
-/* 7. Ensure screensaver viewport stays strictly 600px high even if osk-open is active */
-body.osk-open #screensaver,
-#screensaver {
+/* 7. Clamp screensaver viewport to 600px only when OSK is open */
+body.osk-open #screensaver {
     height: 600px !important;
     max-height: 600px !important;
+    bottom: auto !important;
 }
 
-/* Ensure screensaver ALWAYS transitions regardless of reduce-animations setting */
-.reduce-animations #screensaver,
-.reduce-animations #screensaver * {
-    transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
+/* 8. Ensure screensaver ALWAYS transitions smoothly regardless of reduce-animations setting */
+.reduce-animations #screensaver {
+    transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1), transform 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }

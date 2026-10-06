@@ -16,9 +16,6 @@ export function isScreensaverActive() {
     return s && s.classList.contains('active');
 }
 
-let idleTimer;
-let isDismissing = false;
-
 export function dismissScreensaver(e) {
     const s = document.getElementById('screensaver');
     if (!s || !s.classList.contains('active')) return;

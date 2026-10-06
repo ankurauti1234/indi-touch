@@ -27,6 +27,7 @@ export function openSetting(id) {
     if (id === 'system')       loadSystemInfo();
     if (id === 'power')        _initPowerPanel();
     if (id === 'wallpaper')    loadWallpaperSettings();
+    if (id === 'avatars')      initAvatarSettings();
 }
 
 function _initPowerPanel() {
@@ -111,6 +112,18 @@ export function toggleAnimations() {
     }
 
     if (window.showToast) window.showToast(newVal ? 'Animations Reduced' : 'Animations Restored');
+}
+
+export function initAvatarSettings() {
+    const style = (config && config.avatarStyle) || currentAvatarStyle || 'local';
+    currentAvatarStyle = style;
+    window.globalAvatarStyle = style;
+
+    document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+    const selectedOpt = document.getElementById('avat-' + style);
+    if (selectedOpt) {
+        selectedOpt.classList.add('selected');
+    }
 }
 
 export async function selectAvatarStyle(style) {

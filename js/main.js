@@ -1,6 +1,6 @@
 import { navTo } from './navigation.js';
 import { renderGrid, toggleMember } from './grid.js';
-import { openSetting, closeSetting, toggleTheme, selectAvatarStyle, toggleRemoteMode, toggleAnimations } from './settings.js';
+import { openSetting, closeSetting, toggleTheme, selectAvatarStyle, initAvatarSettings, toggleRemoteMode, toggleAnimations } from './settings.js';
 import { selectChip, addGuest, renderGuestList } from './guest.js';
 import { resetIdle, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver } from './screensaver.js';
 import { initOSK } from './keyboard.js';
@@ -340,6 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Initialize Data Layer (from API)
     await initData();
+    initAvatarSettings();
 
     // Apply Reduce Animations state if persisted in config
     if (config.reduceAnimations) {

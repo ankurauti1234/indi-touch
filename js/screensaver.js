@@ -33,7 +33,7 @@ export function dismissScreensaver(e) {
     // Keep pointer shield alive during the 500ms fade-out so no click hits the app below
     setTimeout(() => {
         isDismissing = false;
-    }, 500);
+    }, 600);
 
     resetIdle();
 }

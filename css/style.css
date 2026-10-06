@@ -1548,24 +1548,24 @@ body.osk-open .main-stage {
     color: #fff;
     overflow: hidden;
 
-    /* Hardware promotion for smooth GPU composition */
-    transform: translateZ(0);
+    /* Start state: fully transparent and slightly scaled */
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: scale(1.02) translateZ(0);
     backface-visibility: hidden;
+    will-change: opacity, transform;
 
-    /* Always visible in layout tree, completely transparent & non-interactive */
-    opacity: 0;
-    pointer-events: none;
-
-    /* Smooth 0.5s fade out */
-    transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    /* Smooth exit fade */
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out !important;
 }
 
 #screensaver.active {
-    opacity: 1;
-    pointer-events: auto;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: scale(1) translateZ(0);
 
-    /* Smooth 0.5s fade in */
-    transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    /* Smooth entrance fade */
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out !important;
 }
 
 #screensaver.center-clock {
@@ -2442,4 +2442,10 @@ body.osk-open #screensaver,
 #screensaver {
     height: 600px !important;
     max-height: 600px !important;
+}
+
+/* Ensure screensaver ALWAYS transitions regardless of reduce-animations setting */
+.reduce-animations #screensaver,
+.reduce-animations #screensaver * {
+    transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }

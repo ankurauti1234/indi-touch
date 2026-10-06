@@ -27,16 +27,31 @@ export function openSetting(id) {
     if (id === 'system')       loadSystemInfo();
     if (id === 'power')        _initPowerPanel();
     if (id === 'wallpaper')    loadWallpaperSettings();
+    if (id === 'avatars' || id === 'avatar') _initAvatarPanel();
 }
 
 function _initPowerPanel() {
-    // Highlight the current screen timeout chip
-    const ms  = (config && config.screenTimeout) || 300000;
-    const min = Math.round(ms / 60000);
+    // Highlight current screen timeout chip accurately
+    const currentMs = (config && config.screenTimeout) || 300000;
+    
     document.querySelectorAll('#set-power .chip').forEach(c => {
-        const val = parseInt(c.dataset.min || c.innerText);
-        if (val === min) c.classList.add('selected');
-        else c.classList.remove('selected');
+        const text = c.innerText.trim().toLowerCase();
+        let chipMs = 0;
+        
+        if (text.endsWith('s')) {
+            chipMs = parseFloat(text) * 1000;
+        } else if (text.endsWith('m')) {
+            chipMs = parseFloat(text) * 60 * 1000;
+        } else {
+            chipMs = parseFloat(text) * 60 * 1000;
+        }
+
+        // Match within 500ms tolerance
+        if (Math.abs(chipMs - currentMs) < 500) {
+            c.classList.add('selected');
+        } else {
+            c.classList.remove('selected');
+        }
     });
 }
 
@@ -113,30 +128,40 @@ export function toggleAnimations() {
     if (window.showToast) window.showToast(newVal ? 'Animations Reduced' : 'Animations Restored');
 }
 
-export async function selectAvatarStyle(style) {
-    currentAvatarStyle = style;
-    updateSetting('avatarStyle', style);
+function _initAvatarPanel() {
+    const activeStyle = config.avatarStyle || 'local';
+    document.querySelectorAll('#set-avatars .avatar-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
 
-    // Update UI Selection
-    document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
-    const selectedOpt = document.getElementById('avat-' + style);
-    if (selectedOpt) {
-        selectedOpt.classList.add('selected');
+    const target = document.getElementById(`avat-${activeStyle}`);
+    if (target) {
+        target.classList.add('selected');
+    }
+}
+
+export async function selectAvatarStyle(style) {
+    config.avatarStyle = style;
+    await updateSetting('avatarStyle', style);
+
+    // Update UI selected indicators in settings
+    document.querySelectorAll('#set-avatars .avatar-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    const target = document.getElementById(`avat-${style}`);
+    if (target) {
+        target.classList.add('selected');
     }
 
-    // Save to global state used by Grid
-    window.globalAvatarStyle = style;
-
-    // Re-render grid to show new avatars
     renderGrid();
-
-    // Re-render guest list immediately
     renderGuestList();
+    renderScreensaverMembers();
 }
+window.selectAvatarStyle = selectAvatarStyle;
 
 
 // --- NEW SETTINGS LOGIC ---
-
+selectAvatarStyle
 // ── WIFI (real API) ──────────────────────────────────────────────────────────
 let _currentSsid = null;
 let _currentInternetOk = true;
@@ -428,10 +453,11 @@ window.selectTimeout = function(minutes, el) {
     const parent = el.parentElement;
     if (parent) parent.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
-    const ms = minutes * 60 * 1000;
-    
+    const ms = Math.round(minutes * 60 * 1000);
+
+    config.screenTimeout = ms;
     updateSetting('screenTimeout', ms);
-    
+
     if (window.setScreensaverTimeout) window.setScreensaverTimeout(ms);
 };
 

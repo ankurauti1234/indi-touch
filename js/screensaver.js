@@ -13,48 +13,34 @@ let idleTimer;
 
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
-    if (!s) return;
-
-    // 1. Cleanly dismiss screensaver state
-    s.classList.remove('active');
-    document.body.classList.remove('screensaver-active'); // <-- ESSENTIAL FIX
+    if (s) {
+        s.classList.remove('active');
+    }
+    document.body.classList.remove('screensaver-active');
     clearTimeout(idleTimer);
-    stopClock(); // <-- Stop clock when screensaver is hidden
+    stopClock();
 
     // Disable screensaver only during ACTIVE onboarding
     if (!config.onboardingCompleted) {
         const onboardingLayer = document.getElementById('onboarding-layer');
         const isVisible = onboardingLayer &&
-            !onboardingLayer.classList.contains('hidden') &&
-            onboardingLayer.style.display !== 'none' &&
-            onboardingLayer.style.opacity !== '0';
+                          !onboardingLayer.classList.contains('hidden') &&
+                          onboardingLayer.style.display !== 'none' &&
+                          onboardingLayer.style.opacity !== '0';
         if (isVisible) {
-            console.log("Screensaver blocked by Onboarding Layer visibility");
             return;
         }
     }
 
-    // Use 5s if priority (e.g. TV Off), otherwise use config or 15s default
-    const timeout = isPriority ? 5000 : (config.screenTimeout || 15000);
-    // console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
+    const timeout = isPriority ? 5000 : (Number(config.screenTimeout) || 15000);
 
     idleTimer = setTimeout(() => {
         if (s) {
             s.classList.add('active');
-            startClock(); // <-- Start clock only when screensaver activates
-            applyWallpaper(); // Fetch latest wallpaper state
-            // Remove keyboard mode so the app frame resets from 900px back to 600px
-            document.body.classList.remove('osk-open');
-
-            // Pre-render DOM elements synchronously before fading in
-            renderScreensaverMembers();
-
             document.body.classList.add('screensaver-active');
-
-            // Reveal smoothly in next frame
-            requestAnimationFrame(() => {
-                s.classList.add('active');
-            });
+            startClock();
+            applyWallpaper();
+            renderScreensaverMembers();
             initLocation();
         }
     }, timeout);
@@ -270,6 +256,24 @@ async function applyWallpaper(forceBust = false) {
 export function refreshWallpaperOnScreensaver() {
     // Only force-bust cache when user explicitly changes wallpaper in settings
     applyWallpaper(true);
+}
+
+// Ensure any touch, click, or pointer on screensaver immediately dismisses it
+function bindScreensaverDismiss() {
+    const saver = document.getElementById('screensaver');
+    if (!saver) return;
+
+    const dismiss = () => resetIdle();
+    saver.addEventListener('pointerdown', dismiss, { passive: true });
+    saver.addEventListener('touchstart', dismiss, { passive: true });
+    saver.addEventListener('mousedown', dismiss, { passive: true });
+    saver.addEventListener('click', dismiss, { passive: true });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindScreensaverDismiss);
+} else {
+    bindScreensaverDismiss();
 }
 
 // Pre-load wallpaper once on startup

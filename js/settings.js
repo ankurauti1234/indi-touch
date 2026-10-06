@@ -31,13 +31,14 @@ export function openSetting(id) {
 }
 
 function _initPowerPanel() {
-    // Highlight the current screen timeout chip
-    const ms  = (config && config.screenTimeout) || 300000;
-    const min = Math.round(ms / 60000);
+    const currentMs = Number((config && config.screenTimeout) || 300000);
     document.querySelectorAll('#set-power .chip').forEach(c => {
-        const val = parseInt(c.dataset.min || c.innerText);
-        if (val === min) c.classList.add('selected');
-        else c.classList.remove('selected');
+        const chipMs = Number(c.dataset.ms);
+        if (chipMs === currentMs) {
+            c.classList.add('selected');
+        } else {
+            c.classList.remove('selected');
+        }
     });
 }
 
@@ -441,11 +442,14 @@ window.selectTimeout = function(minutes, el) {
     const parent = el.parentElement;
     if (parent) parent.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
-    const ms = minutes * 60 * 1000;
-    
+
+    const ms = Math.round(minutes * 60 * 1000);
+    if (config) config.screenTimeout = ms;
     updateSetting('screenTimeout', ms);
-    
-    if (window.setScreensaverTimeout) window.setScreensaverTimeout(ms);
+
+    if (window.setScreensaverTimeout) {
+        window.setScreensaverTimeout(ms);
+    }
 };
 
 window.selectBrightness = function(level, el) {

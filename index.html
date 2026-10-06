@@ -613,11 +613,11 @@
               <div class="item-content" style="flex:1">
                 <h4 data-i18n="screen_timeout">Screen Timeout</h4>
                 <div class="chip-group" style="margin-top: 12px">
-                  <div class="chip" onclick="selectTimeout(0.25, this)">15s</div>
-                  <div class="chip" onclick="selectTimeout(0.5, this)">30s</div>
-                  <div class="chip" onclick="selectTimeout(1, this)">1m</div>
-                  <div class="chip" onclick="selectTimeout(2, this)">2m</div>
-                  <div class="chip selected" onclick="selectTimeout(5, this)">5m</div>
+                  <div class="chip" data-ms="15000" onclick="selectTimeout(0.25, this)">15s</div>
+                  <div class="chip" data-ms="30000" onclick="selectTimeout(0.5, this)">30s</div>
+                  <div class="chip" data-ms="60000" onclick="selectTimeout(1, this)">1m</div>
+                  <div class="chip" data-ms="120000" onclick="selectTimeout(2, this)">2m</div>
+                  <div class="chip" data-ms="300000" onclick="selectTimeout(5, this)">5m</div>
                 </div>
               </div>
             </div>

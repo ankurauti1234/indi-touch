@@ -1537,32 +1537,35 @@ body.osk-open .main-stage {
 #screensaver {
     position: fixed;
     inset: 0;
-    background: #000;
+    background: #000000;
     z-index: 2147483647 !important;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    overflow: hidden;
-    color: #fff;
     padding: 20px 24px 24px;
     text-align: center;
+    color: #fff;
+    overflow: hidden;
+
+    /* Hardware promotion for smooth GPU composition */
     transform: translateZ(0);
     backface-visibility: hidden;
-    will-change: opacity;
-    /* On exit: fade opacity smoothly over 0.45s, then hide visibility at the exact moment opacity reaches 0 */
-    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.45s;
+
+    /* Always visible in layout tree, completely transparent & non-interactive */
+    opacity: 0;
+    pointer-events: none;
+
+    /* Smooth 0.5s fade out */
+    transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 #screensaver.active {
     opacity: 1;
-    visibility: visible;
     pointer-events: auto;
-    /* On enter: make visible immediately, then smoothly glide opacity to 1 */
-    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0s;
+
+    /* Smooth 0.5s fade in */
+    transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 #screensaver.center-clock {

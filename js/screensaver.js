@@ -16,6 +16,9 @@ export function isScreensaverActive() {
     return s && s.classList.contains('active');
 }
 
+let idleTimer;
+let isDismissing = false;
+
 export function dismissScreensaver(e) {
     const s = document.getElementById('screensaver');
     if (!s || !s.classList.contains('active')) return;
@@ -30,10 +33,10 @@ export function dismissScreensaver(e) {
     s.classList.remove('active');
     document.body.classList.remove('screensaver-active');
 
-    // Shield against phantom clicks until the 0.45s fade completes
+    // Keep pointer shield alive during the 500ms fade-out so no click hits the app below
     setTimeout(() => {
         isDismissing = false;
-    }, 450);
+    }, 500);
 
     resetIdle();
 }
@@ -44,30 +47,31 @@ export function resetIdle(isPriority = false) {
 
     clearTimeout(idleTimer);
 
-    // Disable screensaver only during ACTIVE onboarding
     if (!config.onboardingCompleted) {
         const onboardingLayer = document.getElementById('onboarding-layer');
         const isVisible = onboardingLayer &&
             !onboardingLayer.classList.contains('hidden') &&
             onboardingLayer.style.display !== 'none' &&
             onboardingLayer.style.opacity !== '0';
-        if (isVisible) {
-            return;
-        }
+        if (isVisible) return;
     }
 
     const timeout = isPriority ? 5000 : (config.screenTimeout || 15000);
 
     idleTimer = setTimeout(() => {
         if (s && !isDismissing) {
-            // Remove virtual keyboard mode so app frame resets
             document.body.classList.remove('osk-open');
 
-            // Pre-populate data before showing
+            // 1. Prepare DOM contents first
             renderScreensaverMembers();
 
-            document.body.classList.add('screensaver-active');
-            s.classList.add('active');
+            // 2. Wait 2 frames to ensure the browser has fully painted the DOM before triggering opacity fade
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    document.body.classList.add('screensaver-active');
+                    s.classList.add('active');
+                });
+            });
         }
     }, timeout);
 }
@@ -284,9 +288,8 @@ function setupScreensaverDismissListeners() {
     const saver = document.getElementById('screensaver');
     if (!saver) return;
 
-    // Use capture phase so screensaver captures and kills the touch before any underlying element gets it
-    const dismissEvents = ['pointerdown', 'touchstart', 'mousedown'];
-    dismissEvents.forEach(evtName => {
+    // Capture touch directly on the screensaver before anything else
+    ['pointerdown', 'touchstart', 'mousedown'].forEach(evtName => {
         saver.addEventListener(evtName, (e) => {
             if (saver.classList.contains('active')) {
                 dismissScreensaver(e);
@@ -294,7 +297,7 @@ function setupScreensaverDismissListeners() {
         }, { capture: true, passive: false });
     });
 
-    // Also swallow clicks that occur during dismissal
+    // Absorb trailing clicks during the 500ms fade-out
     document.addEventListener('click', (e) => {
         if (isDismissing) {
             e.preventDefault();

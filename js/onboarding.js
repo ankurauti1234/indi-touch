@@ -1,5 +1,5 @@
 import { t } from './i18n.js';
-import { config, save } from './data.js';
+import { config } from './data.js';
 
 let currentStep = 1;
 const totalSteps = 7; 
@@ -481,3 +481,10 @@ window.toggleOnboardInfo = async () => {
         }
     }
 };
+
+// Expose functions called by inline HTML event handlers (onclick)
+window.selectNet = selectNet;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.refreshWifi = refreshWifi;
+window.toggleOnboardPass = toggleOnboardPass;

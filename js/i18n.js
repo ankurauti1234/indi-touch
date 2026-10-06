@@ -1,4 +1,4 @@
-import { save, config } from './data.js';
+import { config } from './data.js';
 
 let translations = {};
 let currentLang = config.language || 'en';

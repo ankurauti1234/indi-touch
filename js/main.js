@@ -6,12 +6,11 @@ import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refresh
 import { initOSK } from './keyboard.js';
 import { checkOnboardingStatus } from './onboarding.js';
 import { showToast } from './ui.js';
-import { renderNotifications } from './notifications.js';
-import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
-
+import { tvState, memberData, initData, config, loadMembers, updateSetting } from './data.js';
+import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
 
 // Expose functions globally for HTML inline event handlers
 window.navTo = navTo;
@@ -26,7 +25,7 @@ window.selectChip = selectChip;
 window.addGuest = addGuest;
 window.initLocation = initLocation;
 window.showToast = showToast;
-window.openSurvey = openSurvey;
+
 // Expose for Python/integration layer
 window.setUsbState = setUsbState;
 window.setWifiState = setWifiState;
@@ -43,7 +42,7 @@ export function resetHomeTimer() {
     const isOnboarding = onboardingLayer && !onboardingLayer.classList.contains('hidden') && onboardingLayer.style.display !== 'none';
 
     if (config.onboardingCompleted && !isOnboarding && !document.getElementById('view-home').classList.contains('active')) {
-        timers.clearTimeout(window.homeTimerId); // Track specifically if needed
+        timers.clearTimeout(window.homeTimerId);
         window.homeTimerId = timers.setTimeout(() => {
             console.log("Inactivity timeout: returning to home.");
             navTo('home');
@@ -63,30 +62,24 @@ window.handleSettingsTitleClick = () => {
     }
 };
 
-let lastMemberInteractionAt = null;
+// Current UI-session declaration timestamp.
+let lastMemberDeclaredAt = null;
 
-function recordMemberInteraction() {
-    lastMemberInteractionAt = Date.now();
-
+function recordMemberDeclaration() {
+    lastMemberDeclaredAt = Date.now();
     console.log(
-        `[Maintenance] Member interaction recorded at ${new Date(
-            lastMemberInteractionAt
-        ).toLocaleTimeString()}`
+        "[Maintenance] Member declaration timestamp updated:",
+        new Date(lastMemberDeclaredAt).toLocaleString()
     );
 }
-
-window.recordMemberInteraction = recordMemberInteraction;
+window.recordMemberDeclaration = recordMemberDeclaration;
 
 let maintenanceResetInProgress = false;
 
 async function runDailyMaintenanceIfNeeded() {
-    // Prevent overlapping maintenance executions.
-    if (maintenanceResetInProgress) {
-        return;
-    }
+    if (maintenanceResetInProgress) return;
 
     const now = new Date();
-
     const today = [
         now.getFullYear(),
         String(now.getMonth() + 1).padStart(2, "0"),
@@ -94,98 +87,81 @@ async function runDailyMaintenanceIfNeeded() {
     ].join("-");
 
     const currentHour = now.getHours();
+    let resetSlot = null;
 
-    // The automatic reset is only performed at/after 02:00.
-    if (currentHour < 2) {
+    if (currentHour >= 18) {
+        resetSlot = "18:00";
+    } else if (currentHour >= 10) {
+        resetSlot = "10:00";
+    } else if (currentHour >= 2) {
+        resetSlot = "02:00";
+    } else {
         return;
     }
 
-    const resetId = `${today}_02:00`;
+    const resetId = `${today}_${resetSlot}`;
 
-    // This day's 02:00 reset has already been handled.
     if (config.lastAutoResetId === resetId) {
         return;
     }
 
-    /*
-     * If nobody is currently active:
-     * - Do not call /undeclare.
-     * - Do not publish an event.
-     * - Mark the 02:00 reset as handled.
-     */
-    const activeCount = memberData.filter(
-        (member) => member.active
-    ).length;
+    const activeCount = memberData.filter(m => m.active).length;
 
     if (activeCount === 0) {
         await updateSetting("lastAutoResetId", resetId);
         config.lastAutoResetId = resetId;
-
-        console.log(
-            "[Maintenance] 02:00 reset skipped: no active members."
-        );
-
+        console.log(`[Maintenance] ${resetSlot} reset skipped: no active members.`);
         return;
     }
 
-    /*
-     * At 02:00, always reset all currently active members.
-     * There is no one-hour condition.
-     */
+    if (resetSlot !== "02:00") {
+        if (lastMemberDeclaredAt === null) {
+            await updateSetting("lastAutoResetId", resetId);
+            config.lastAutoResetId = resetId;
+            console.log(`[Maintenance] ${resetSlot} reset skipped: declaration time unavailable.`);
+            return;
+        }
+
+        const oneHour = 60 * 60 * 1000;
+        const activeDuration = now.getTime() - lastMemberDeclaredAt;
+
+        if (activeDuration < oneHour) {
+            await updateSetting("lastAutoResetId", resetId);
+            config.lastAutoResetId = resetId;
+            console.log(`[Maintenance] ${resetSlot} reset skipped: declaration session is less than 1 hour old.`);
+            return;
+        }
+    }
+
     maintenanceResetInProgress = true;
 
     try {
-        /*
-         * Use the normal /undeclare endpoint so the member event
-         * is published through the existing undeclare flow.
-         */
         const response = await fetch("/api/members/undeclare", {
             method: "POST"
         });
 
         if (!response.ok) {
-            throw new Error(
-                "Failed to automatically undeclare members."
-            );
+            throw new Error("Failed to automatically undeclare members.");
         }
 
-        // Refresh member state from the backend.
         await loadMembers();
-
-        // End the current Still Watching session.
         updateStillWatchingState();
 
-        // Clear the current interaction timestamp.
-        lastMemberInteractionAt = null;
+        lastMemberDeclaredAt = null;
 
-        // Clear guest data locally.
         const { guests: guestsData } = await import("./data.js");
         guestsData.length = 0;
 
-        const {
-            renderGuestList,
-            updateGuestBadge
-        } = await import("./guest.js");
-
+        const { renderGuestList, updateGuestBadge } = await import("./guest.js");
         renderGuestList();
         updateGuestBadge();
 
-        /*
-         * Mark today's 02:00 reset as completed.
-         * This prevents the same reset from running again
-         * during the same day.
-         */
         await updateSetting("lastAutoResetId", resetId);
         config.lastAutoResetId = resetId;
 
-        console.log(
-            "[Maintenance] Automatic 02:00 reset completed."
-        );
+        console.log(`[Maintenance] Automatic reset completed for ${resetSlot}.`);
     } catch (err) {
-        console.error(
-            "[Maintenance] Automatic 02:00 reset failed:",
-            err
-        );
+        console.error(`[Maintenance] Automatic reset failed for ${resetSlot}:`, err);
     } finally {
         maintenanceResetInProgress = false;
     }
@@ -202,7 +178,6 @@ export function hideAppLoader() {
 }
 window.hideAppLoader = hideAppLoader;
 
-
 // ---------------- Still Watching ----------------
 let stillWatchingTimer = null;
 let stillWatchingDismissTimer = null;
@@ -210,37 +185,23 @@ let stillWatchingReminderTimer = null;
 
 function showStillWatchingPopup() {
     const popup = document.getElementById("still-watching-popover");
-    if (!popup) return;
+    if (!popup || popup.classList.contains("visible")) return;
 
-    // Don't create another popup while one is already visible
-    if (popup.classList.contains("visible")) {
-        return;
-    }
-
-    // No pending reminder while popup is visible
     timers.clearTimeout(stillWatchingReminderTimer);
-
     popup.classList.add("visible");
-
     timers.clearTimeout(stillWatchingDismissTimer);
 
-    // Keep popup visible for 20 seconds
     stillWatchingDismissTimer = timers.setTimeout(() => {
         popup.classList.remove("visible");
-
-        // Wait 5 minutes before showing it again
         timers.clearTimeout(stillWatchingReminderTimer);
 
         stillWatchingReminderTimer = timers.setTimeout(() => {
             const activeCount = memberData.filter(m => m.active).length;
-
-            // Continue reminding only while someone is still active
             if (activeCount > 0) {
                 showStillWatchingPopup();
             }
-        }, 5 * 60 * 1000);
-
-    }, 20 * 1000);
+        }, 60 * 1000);
+    }, 10 * 1000);
 }
 
 function restartStillWatchingTimer() {
@@ -249,7 +210,7 @@ function restartStillWatchingTimer() {
 
     stillWatchingTimer = timers.setTimeout(() => {
         showStillWatchingPopup();
-    }, 3 * 60 * 60 * 1000); // 3 hours
+    }, 2 * 60 * 60 * 1000); // 2 hours
 }
 
 function updateStillWatchingState() {
@@ -260,38 +221,22 @@ function updateStillWatchingState() {
         timers.clearTimeout(stillWatchingDismissTimer);
         timers.clearTimeout(stillWatchingReminderTimer);
 
-        document
-            .getElementById("still-watching-popover")
-            ?.classList.remove("visible");
-
+        document.getElementById("still-watching-popover")?.classList.remove("visible");
         return;
     }
 
-    // Household interaction occurred:
-    // dismiss any visible reminder and cancel its pending timers.
-    timers.clearTimeout(stillWatchingDismissTimer);
-    timers.clearTimeout(stillWatchingReminderTimer);
-
-    document
-        .getElementById("still-watching-popover")
-        ?.classList.remove("visible");
-
-    // Start a fresh 3-hour countdown.
     restartStillWatchingTimer();
 }
-
 window.updateStillWatchingState = updateStillWatchingState;
 
 async function endViewingSession() {
-    // Stop all Still Watching timers immediately.
     timers.clearTimeout(stillWatchingTimer);
     timers.clearTimeout(stillWatchingDismissTimer);
     timers.clearTimeout(stillWatchingReminderTimer);
 
-    // Hide the popup immediately.
-    document
-        .getElementById("still-watching-popover")
-        ?.classList.remove("visible");
+    lastMemberDeclaredAt = null;
+
+    document.getElementById("still-watching-popover")?.classList.remove("visible");
 
     try {
         const response = await fetch("/api/members/undeclare", {
@@ -303,8 +248,6 @@ async function endViewingSession() {
         }
 
         await loadMembers();
-        // await loadGroups();
-
         renderGrid();
 
         const r = await fetch("/api/guests/update", {
@@ -319,11 +262,7 @@ async function endViewingSession() {
             const { guests: guestsData } = await import("./data.js");
             guestsData.length = 0;
 
-            const {
-                renderGuestList,
-                updateGuestBadge
-            } = await import("./guest.js");
-
+            const { renderGuestList, updateGuestBadge } = await import("./guest.js");
             renderGuestList();
             updateGuestBadge();
         }
@@ -334,15 +273,17 @@ async function endViewingSession() {
     }
 }
 
-import { tvState, memberData, save as legacySave, initData, config, loadMembers, updateSetting } from './data.js';
-import { initI18n, loadLanguage, applyTranslations, getCurrentLang } from './i18n.js';
-
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Initialize Localization
     await initI18n();
 
     // 2. Initialize Data Layer (from API)
     await initData();
+
+    // Apply Reduce Animations state if persisted in config
+    if (config.reduceAnimations) {
+        document.body.classList.add('reduce-animations');
+    }
 
     await runDailyMaintenanceIfNeeded();
 
@@ -352,15 +293,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGrid();
     renderGuestList();
     initLocation();
-    renderNotifications();
 
-    // 4. Finalize - Hide app loader
-    hideAppLoader();
-
-
-    // 3. Start Background Services
+    // 4. Start Background Clock and Services
     timers.setInterval(updateClock, 1000);
     updateClock();
+
+    // 5. Finalize - Hide app loader
+    hideAppLoader();
 
     // ---------------- Still Watching Popup ----------------
     const continueBtn = document.getElementById('still-watch-continue');
@@ -369,13 +308,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     continueBtn?.addEventListener('click', () => {
         timers.clearTimeout(stillWatchingDismissTimer);
         timers.clearTimeout(stillWatchingReminderTimer);
-
-        document
-            .getElementById('still-watching-popover')
-            ?.classList.remove('visible');
-
-        // User confirmed they are watching.
-        // Start a fresh -hour countdown.
+        document.getElementById('still-watching-popover')?.classList.remove('visible');
         restartStillWatchingTimer();
     });
 
@@ -384,28 +317,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     updateStillWatchingState();
-    // ------------------------------------------------------
 
     window.changeAppLanguage = async (lang) => {
         const success = await loadLanguage(lang);
         if (success) {
-            import('./data.js').then(m => m.updateSetting('language', lang));
+            const dataMod = await import('./data.js');
+            dataMod.updateSetting('language', lang);
             applyTranslations();
             updateLanguageUI(lang);
-            renderGrid(); // Refresh grid for active status texts if any
-            renderGuestList(); // Refresh guest list
-            renderNotifications(); // Refresh notifications
+            renderGrid();
         }
     };
 
     function updateLanguageUI(lang) {
-        // Toggle checks
         ['en', 'hy', 'ru'].forEach(l => {
             const check = document.getElementById('lang-check-' + l);
             if (check) check.style.display = (l === lang) ? 'block' : 'none';
         });
 
-        // Update main settings label
         const langText = document.getElementById('current-lang-text');
         if (langText) {
             const names = { en: 'English', hy: 'Հայերեն', ru: 'Русский' };
@@ -413,174 +342,91 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Initialize UI checks
     if (typeof updateLanguageUI === 'function') {
         updateLanguageUI(getCurrentLang());
     }
 
-    // TV Monitoring Logic
-    let activeMemberReminderDismissTimer = null;
-    let activeMemberReminderRepeatTimer = null;
-    let activeMemberReminderCycleStarted = false;
+    // Active Member Reminder State Machine
+    let reminderShownAt = 0;
+    let reminderDismissedAt = 0;
 
-    function showActiveMemberReminder() {
+    function reconcileActiveMemberReminder() {
         const popover = document.getElementById('critical-popover');
         if (!popover) return;
 
-        // Don't show if the TV is off or onboarding isn't complete.
         let isTvOn = tvState.on;
-
         if (!config.bleAvailable) {
             isTvOn = true;
         }
 
-        if (!isTvOn || !config.onboardingCompleted) {
-            popover.classList.remove('active');
-
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-            activeMemberReminderCycleStarted = false;
-
-            return;
-        }
-
         const activeCount = memberData.filter(m => m.active).length;
+        const needsReminder = isTvOn && config.onboardingCompleted && activeCount === 0;
+        const now = Date.now();
 
-        // A member is active, so there is nothing to remind about.
-        if (activeCount > 0) {
-            popover.classList.remove('active');
-
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-            activeMemberReminderCycleStarted = false;
-
+        if (!needsReminder) {
+            if (popover.classList.contains('active')) {
+                popover.classList.remove('active');
+            }
+            reminderShownAt = 0;
             return;
         }
 
-        // A valid reminder cycle is now active.
-        activeMemberReminderCycleStarted = true;
-
-        // Show the popup.
-        popover.classList.add('active');
-
-        // Clear any previous timers before starting a new display timer.
-        timers.clearTimeout(activeMemberReminderDismissTimer);
-        timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-        // Automatically hide after 10 seconds.
-        activeMemberReminderDismissTimer = timers.setTimeout(() => {
-            popover.classList.remove('active');
-
-            // Wait 60 seconds before showing it again.
-            activeMemberReminderRepeatTimer = timers.setTimeout(() => {
-                showActiveMemberReminder();
-            }, 60 * 1000);
-        }, 10 * 1000);
+        if (popover.classList.contains('active')) {
+            if (reminderShownAt > 0 && now - reminderShownAt >= 10 * 1000) {
+                popover.classList.remove('active');
+                reminderShownAt = 0;
+                reminderDismissedAt = now;
+            }
+        } else {
+            if (now - reminderDismissedAt >= 60 * 1000) {
+                popover.classList.add('active');
+                reminderShownAt = now;
+            }
+        }
     }
 
-    // Check the current TV/member state regularly.
-    timers.setInterval(() => {
-        let isTvOn = tvState.on;
+    // Reconcile reminder state regularly
+    timers.setInterval(reconcileActiveMemberReminder, 2000);
 
-        if (!config.bleAvailable) {
-            isTvOn = true;
-        }
-
-        // TV is off or onboarding is not complete.
-        if (!isTvOn || !config.onboardingCompleted) {
-            const popover = document.getElementById('critical-popover');
-
-            if (popover) {
-                popover.classList.remove('active');
-            }
-
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-            activeMemberReminderCycleStarted = false;
-
-            return;
-        }
-
-        const activeCount = memberData.filter(m => m.active).length;
-
-        // A member is active.
-        if (activeCount > 0) {
-            const popover = document.getElementById('critical-popover');
-
-            if (popover) {
-                popover.classList.remove('active');
-            }
-
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-            activeMemberReminderCycleStarted = false;
-
-            return;
-        }
-
-        const popover = document.getElementById('critical-popover');
-
-        // Start the reminder cycle only if one isn't already running.
-        if (
-            popover &&
-            !popover.classList.contains('active') &&
-            !activeMemberReminderCycleStarted
-        ) {
-            showActiveMemberReminder();
-        }
-    }, 5000);
-
-    // Automatic member/guest reset scheduler
-    // Check every minute for the daily 02:00 reset.
+    // Maintenance scheduler checks every minute
     timers.setInterval(async () => {
         await runDailyMaintenanceIfNeeded();
     }, 60000);
 
     window.handleCriticalAction = () => {
         const popover = document.getElementById('critical-popover');
-
         if (popover) {
             popover.classList.remove('active');
         }
-
-        timers.clearTimeout(activeMemberReminderDismissTimer);
-        timers.clearTimeout(activeMemberReminderRepeatTimer);
-
-        // Keep the reminder cycle active so the 5-second monitor
-        // does not immediately reopen the popup.
-        activeMemberReminderCycleStarted = true;
-
-        // Show the popup again after the required 60-second interval.
-        activeMemberReminderRepeatTimer = timers.setTimeout(() => {
-            showActiveMemberReminder();
-        }, 60 * 1000);
-
+        reminderShownAt = 0;
+        reminderDismissedAt = Date.now();
         navTo('home');
-
         console.log("Critical action: Navigating home.");
     };
 
     showToast("Indi Meter is ready.", 4000);
 
-    // Disable right-click context menu without swallowing touch-pan gestures
+    // Disable right-click context menu
     document.addEventListener('contextmenu', (e) => {
         e.preventDefault();
     }, { passive: false });
 
-    // 3. User Interaction Tracking
-    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
-    document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
+    // User Interaction Tracking (resets screensaver without swallowing clicks)
+    const interactionEvents = ['pointerdown', 'touchstart', 'mousedown', 'keydown'];
+    interactionEvents.forEach(evt => {
+        document.addEventListener(evt, () => {
+            resetIdle();
+            resetHomeTimer();
+        }, { passive: true });
+    });
+
     resetIdle();
     resetHomeTimer();
 
-    // 4. Remote Control System
+    // Remote Control System
     initRemote();
 
-    // 5. Connection state monitoring
+    // Connection state monitoring
     initConnectionMonitor();
 
     console.log("System initialized.");

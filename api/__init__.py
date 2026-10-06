@@ -26,23 +26,25 @@ def create_app() -> Flask:
         return response
 
     # ── Blueprints ─────────────────────────────────────────────────────────────
-    from .wifi       import wifi_bp
-    from .members    import members_bp
-    from .guests     import guests_bp
-    from .onboarding import onboarding_bp
-    from .system     import system_bp
+    from .wifi          import wifi_bp
+    from .members       import members_bp
+    from .guests        import guests_bp
+    from .onboarding    import onboarding_bp
+    from .system        import system_bp
     from .notifications import notifications_bp
-    from .wallpaper    import wallpaper_bp
+    from .wallpaper     import wallpaper_bp
 
-    app.register_blueprint(wifi_bp,       url_prefix="/api/wifi")
-    app.register_blueprint(members_bp,    url_prefix="/api/members")
-    app.register_blueprint(guests_bp,     url_prefix="/api/guests")
-    app.register_blueprint(onboarding_bp, url_prefix="/api/onboarding")
-    app.register_blueprint(system_bp,     url_prefix="/api/system")
+    app.register_blueprint(wifi_bp,          url_prefix="/api/wifi")
+    app.register_blueprint(members_bp,       url_prefix="/api/members")
+    app.register_blueprint(guests_bp,        url_prefix="/api/guests")
+    app.register_blueprint(onboarding_bp,    url_prefix="/api/onboarding")
+    app.register_blueprint(system_bp,        url_prefix="/api/system")
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
-    app.register_blueprint(wallpaper_bp,  url_prefix="/api/wallpaper")
+    app.register_blueprint(wallpaper_bp,     url_prefix="/api/wallpaper")
 
     # ── Serve frontend ─────────────────────────────────────────────────────────
+    STATIC_DIRS = {"css", "js", "assets", "fonts", "lang"}
+
     @app.route("/")
     def index():
         return send_from_directory(root, "index.html")
@@ -53,10 +55,19 @@ def create_app() -> Flask:
 
     @app.route("/<path:path>")
     def static_files(path):
-        # Block access to hidden files/directories such as .git, .env, .vscode, etc.
+        # Block dotfiles/hidden paths
         if any(part.startswith(".") for part in path.split("/")):
             abort(404)
 
-        return send_from_directory(root, path)
+        # Allow root index.html
+        if path == "index.html":
+            return send_from_directory(root, "index.html")
+
+        # Allow only specified static directories
+        top = path.split("/", 1)[0]
+        if top in STATIC_DIRS:
+            return send_from_directory(root, path)
+
+        abort(404)
 
     return app

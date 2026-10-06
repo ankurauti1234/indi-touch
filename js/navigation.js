@@ -10,15 +10,11 @@ export function navTo(viewId) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
     let btnId = '';
-    if (viewId === 'home') btnId = 'btn-home';
-    else if (viewId === 'notifications') btnId = 'btn-notif';
-    else if (viewId === 'settings') btnId = 'btn-settings';
-    else if (viewId === 'guest-add') btnId = 'btn-guest';
-
-    if (btnId) {
-        const btn = document.getElementById(btnId);
-        if (btn) btn.classList.add('active');
-    }
+    if(viewId === 'home') btnId = 'btn-home';
+    else if(viewId === 'settings') btnId = 'btn-settings';
+    else if(viewId === 'guest-add') btnId = 'btn-guest';
+    
+    if(btnId) document.getElementById(btnId).classList.add('active');
 
     // 3. Reset Settings if leaving settings view
     if (viewId !== 'settings') {

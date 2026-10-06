@@ -2,12 +2,10 @@ import { navTo } from './navigation.js';
 import { renderGrid, toggleMember } from './grid.js';
 import { openSetting, closeSetting, toggleTheme, selectAvatarStyle, toggleRemoteMode, toggleAnimations } from './settings.js';
 import { selectChip, addGuest, renderGuestList } from './guest.js';
-import { resetIdle, updateClock, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver } from './screensaver.js';
+import { resetIdle, initLocation, renderScreensaverMembers, refreshWallpaperOnScreensaver } from './screensaver.js';
 import { initOSK } from './keyboard.js';
 import { checkOnboardingStatus } from './onboarding.js';
 import { showToast } from './ui.js';
-import { renderNotifications } from './notifications.js';
-import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
@@ -26,7 +24,6 @@ window.selectChip = selectChip;
 window.addGuest = addGuest;
 window.initLocation = initLocation;
 window.showToast = showToast;
-window.openSurvey = openSurvey;
 // Expose for Python/integration layer
 window.setUsbState = setUsbState;
 window.setWifiState = setWifiState;
@@ -344,6 +341,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Initialize Data Layer (from API)
     await initData();
 
+    // Apply Reduce Animations state if persisted in config
+    if (config.reduceAnimations) {
+        document.body.classList.add('reduce-animations');
+    }
+
     await runDailyMaintenanceIfNeeded();
 
     // 3. Initialize Components
@@ -352,7 +354,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGrid();
     renderGuestList();
     initLocation();
-    renderNotifications();
 
     // 4. Finalize - Hide app loader
     hideAppLoader();

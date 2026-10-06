@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-# main.py — Single entry point for Inditronics APM on Raspberry Pi
+# app.py — Single entry point for Inditronics APM on Raspberry Pi
 #
-# Starts Flask API server in the background, then launches the PyQt6 browser
+# Starts Flask API server in the background, then launches the PyQt5 browser
 # window pointing at http://127.0.0.1:5000.
 #
-# Run:  python main.py
+# Run:  python app.py
 
 import os
 import sys
 import time
+import json
 import threading
 import socket
 from waitress import serve
@@ -22,19 +23,19 @@ os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 
 # ── PyQt5 imports ─────────────────────────────────────────────────────────────
 try:
-    from PyQt5.QtCore    import QUrl, Qt, QTimer
+    from PyQt5.QtCore import QUrl, Qt, QTimer
     from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
     from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
-    from PyQt5.QtGui     import QKeySequence
+    from PyQt5.QtGui import QKeySequence
 except ImportError:
     print("[ERROR] PyQt5 / PyQt5-WebEngine not found.")
     print("        pip install PyQt5 PyQtWebEngine")
     sys.exit(1)
 
 # ── API imports ───────────────────────────────────────────────────────────────
-from api         import create_app
-from api.config  import SYSTEM_FILES, is_installation_done, is_fresh_boot, save_boot_id
-from api.db      import init_db
+from api import create_app
+from api.config import SYSTEM_FILES, is_installation_done, is_fresh_boot, save_boot_id
+from api.db import init_db
 from api.collector_service import (
     publish_member_event, publish_guest_event, send_event
 )
@@ -46,16 +47,22 @@ POLL_INTERVAL_MS = 5000   # how often to check /run files in the Qt event loop
 
 # ── Flask runner ──────────────────────────────────────────────────────────────
 def run_flask():
+    import logging
+    # Suppress harmless task queue depth notifications in local kiosk mode
+    logging.getLogger("waitress.queue").setLevel(logging.ERROR)
+
     flask_app = create_app()
     serve(
         flask_app,
         host="127.0.0.1",
         port=FLASK_PORT,
-        threads=8,
+        threads=4,               # 4 threads handle transient bursts & slow I/O
+        channel_timeout=10,      # Prune idle keep-alive sockets quickly
+        connection_limit=32,     # Cap local connection pool
+        asyncore_use_poll=True   # Efficient socket polling on Linux
     )
 
-
-# ── PyQt6 browser window ──────────────────────────────────────────────────────
+# ── PyQt5 browser window ──────────────────────────────────────────────────────
 class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -100,10 +107,8 @@ class BrowserWindow(QMainWindow):
         """
         self.view.loadFinished.connect(self._on_load_finished)
 
-        # ── Connection state polling (every POLL_INTERVAL_MS) ─────────────────
-        self._last_usb  = None
-        self._last_wifi = None
-        self._last_internet = None
+        # ── Connection state snapshot polling (every POLL_INTERVAL_MS) ────────
+        self._last_state = None
         self._poll_timer = QTimer(self)
         self._poll_timer.setInterval(POLL_INTERVAL_MS)
         self._poll_timer.timeout.connect(self._poll_connections)
@@ -115,41 +120,56 @@ class BrowserWindow(QMainWindow):
     def _on_load_finished(self, ok: bool):
         if ok:
             self.view.page().runJavaScript(self._protect_js)
-            # Push current connection state immediately after load
-            self._push_usb_state()
-            self._push_wifi_state()
-            self._push_internet_state()
+            # Push initial complete device state snapshot immediately after load
+            initial_state = self._read_device_state()
+            self._push_device_state(initial_state)
+            self._last_state = initial_state
 
-    # ── Connection polling ────────────────────────────────────────────────────
-    def _push_usb_state(self):
-        connected = os.path.exists(SYSTEM_FILES["jack_status"])
-        js = f"if(window.setUsbState) window.setUsbState({'true' if connected else 'false'});"
-        self.view.page().runJavaScript(js)
-        self._last_usb = connected
-
-    def _push_wifi_state(self):
-        connected = os.path.exists(SYSTEM_FILES["wifi_up"])
-        js = f"if(window.setWifiState) window.setWifiState({'true' if connected else 'false'});"
-        self.view.page().runJavaScript(js)
-        self._last_wifi = connected
-
-    def _push_internet_state(self):
-        connected = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
-        js = f"if(window.setInternetState) window.setInternetState({'true' if connected else 'false'});"
-        self.view.page().runJavaScript(js)
-        self._last_internet = connected
-
-    def _poll_connections(self):
-        usb  = os.path.exists(SYSTEM_FILES["jack_status"])
+    # ── Snapshot-driven connection state handling ─────────────────────────────
+    def _read_device_state(self):
+        jack = os.path.exists(SYSTEM_FILES["jack_status"])
+        hdmi = os.path.exists(SYSTEM_FILES["hdmi_input"])
         wifi = os.path.exists(SYSTEM_FILES["wifi_up"])
         internet = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
 
-        if usb != self._last_usb:
-            self._push_usb_state()
-        if wifi != self._last_wifi:
-            self._push_wifi_state()
-        if internet != self._last_internet:
-            self._push_internet_state()
+        tv_on = True
+        if os.path.exists(SYSTEM_FILES.get("bluetooth_available", "")):
+            tv_path = SYSTEM_FILES.get("tv_status", "")
+            if os.path.exists(tv_path):
+                try:
+                    with open(tv_path, "r") as f:
+                        tv_on = (f.read().strip().upper() == "ON")
+                except Exception:
+                    tv_on = False
+            else:
+                tv_on = False
+
+        return {
+            "usb": bool(jack or hdmi),
+            "wifi": bool(wifi),
+            "internet": bool(internet),
+            "tv_on": bool(tv_on)
+        }
+
+    def _push_device_state(self, state):
+        state_json = json.dumps(state)
+        # Supports unified applyDeviceState, with fallbacks to legacy handlers if still registered
+        js = f"""
+        if (window.applyDeviceState) {{
+            window.applyDeviceState({state_json});
+        }} else {{
+            if (window.setUsbState) window.setUsbState({'true' if state['usb'] else 'false'});
+            if (window.setWifiState) window.setWifiState({'true' if state['wifi'] else 'false'});
+            if (window.setInternetState) window.setInternetState({'true' if state['internet'] else 'false'});
+        }}
+        """
+        self.view.page().runJavaScript(js)
+
+    def _poll_connections(self):
+        current_state = self._read_device_state()
+        if current_state != self._last_state:
+            self._push_device_state(current_state)
+            self._last_state = current_state
 
     # ── Key handling ──────────────────────────────────────────────────────────
     def keyPressEvent(self, event):
@@ -166,33 +186,45 @@ class BrowserWindow(QMainWindow):
 
 # ── Background Internet Checker ───────────────────────────────────────────────
 def check_internet_loop():
-    while True:
-        internet_ok = False
-        try:
-            # 8.8.8.8:53 is Google DNS (TCP), very reliable for internet checking
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(3.0)
-            s.connect(("8.8.8.8", 53))
-            s.close()
-            internet_ok = True
-        except Exception:
-            internet_ok = False
+    """Multi-target DNS check (1.1.1.1, 8.8.8.8, 9.9.9.9) with backoff and hysteresis."""
+    endpoints = [("1.1.1.1", 53), ("8.8.8.8", 53), ("9.9.9.9", 53)]
+    consecutive_failures = 0
+    failure_threshold = 3  # Require 3 consecutive failed cycles to declare offline
+    flag_path = SYSTEM_FILES.get("internet_ok", "/run/internet_ok")
 
-        flag_path = SYSTEM_FILES.get("internet_ok", "/run/internet_ok")
-        if internet_ok:
+    while True:
+        probe_success = False
+        for host, port in endpoints:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(1.5)
+                s.connect((host, port))
+                s.close()
+                probe_success = True
+                break
+            except Exception:
+                continue
+
+        if probe_success:
+            consecutive_failures = 0
             if not os.path.exists(flag_path):
                 try:
                     open(flag_path, "w").close()
                 except Exception:
                     pass
+            # Healthy state: sleep 60 seconds to save CPU
+            time.sleep(60)
         else:
-            if os.path.exists(flag_path):
-                try:
-                    os.remove(flag_path)
-                except Exception:
-                    pass
-
-        time.sleep(5)  # Next check in 5 seconds
+            consecutive_failures += 1
+            if consecutive_failures >= failure_threshold:
+                if os.path.exists(flag_path):
+                    try:
+                        os.remove(flag_path)
+                    except Exception:
+                        pass
+            # Down state: retry faster with backoff capped at 60s
+            retry_delay = min(5 * (2 ** (consecutive_failures - 1)), 60)
+            time.sleep(retry_delay)
 
 
 # ── Boot sequence ─────────────────────────────────────────────────────────────
@@ -204,15 +236,14 @@ def _boot_reset():
         print("[BOOT] No HHID — skipping reset")
         return
 
-    import sqlite3, time as _t
-    from api.config import DB_PATH
+    from api.db import get_conn
 
-    with sqlite3.connect(DB_PATH) as conn:
+    with get_conn() as conn:
         conn.execute("UPDATE members SET active = 0 WHERE meter_id = ? AND hhid = ?", (METER_ID, hhid))
         conn.execute("DELETE FROM guests WHERE meter_id = ? AND hhid = ?", (METER_ID, hhid))
         conn.commit()
 
-    data    = load_members_data()
+    data = load_members_data()
     members = [
         {"member_id": m["member_code"], "age": calculate_age(m["dob"]),
          "gender": m["gender"], "active": False}
@@ -238,19 +269,33 @@ def main():
         _boot_reset()
     save_boot_id()
 
-    # 4. Flask in background thread
+    # 3. Flask in background thread
     flask_thread = threading.Thread(target=run_flask, daemon=True, name="flask")
     flask_thread.start()
-    
-    # 4.5 Internet monitor in background thread
+
+    # 4. Internet monitor in background thread
     internet_thread = threading.Thread(target=check_internet_loop, daemon=True, name="internet_check")
     internet_thread.start()
-    
-    time.sleep(1.5)  # wait for Flask to bind before Qt loads the URL
+
+    # Wait for Flask to bind before Qt loads the URL
+    start_time = time.time()
+    flask_ready = False
+    while time.time() - start_time < 15.0:
+        try:
+            with socket.create_connection(("127.0.0.1", FLASK_PORT), timeout=0.5):
+                flask_ready = True
+                break
+        except OSError:
+            time.sleep(0.05)
+
+    if not flask_ready:
+        print(f"[ERROR] Flask failed to bind on port {FLASK_PORT} within 15 seconds.")
+        sys.exit(1)
+
     print(f"[APP] Flask running at http://127.0.0.1:{FLASK_PORT}")
     print(f"[APP] Installation done: {is_installation_done()}")
 
-    # 5. PyQt6 Qt window
+    # 5. PyQt5 Qt window
     qt_app = QApplication(sys.argv)
     window = BrowserWindow()
     window.show()
@@ -259,3 +304,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# app.py optimized for Raspberry Pi kiosk mode with PyQt5 and Flask API server.

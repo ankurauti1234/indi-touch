@@ -227,9 +227,6 @@
           <span class="material-symbols-rounded">group_add</span>
           <div class="badge" id="guest-badge">0</div>
         </button>
-        <button class="nav-btn" id="btn-notif" onclick="navTo('notifications')">
-          <span class="material-symbols-rounded">notifications</span>
-        </button>
         <button class="nav-btn" id="btn-settings" onclick="navTo('settings')">
           <span class="material-symbols-rounded">settings</span>
         </button>
@@ -245,15 +242,6 @@
             <h3 class="lock-title" data-i18n="tv_is_off">TV is Off</h3>
             <p class="lock-msg" data-i18n="member_decl_disabled">Member declaration is disabled while TV is off.</p>
           </div>
-        </div>
-      </section>
-
-      <section id="view-notifications" class="view">
-        <div class="page-header">
-          <h2 class="page-title" data-i18n="notifications">Notifications</h2>
-        </div>
-        <div class="list-group" id="notif-list">
-          <!-- Notifications will be rendered here -->
         </div>
       </section>
 
@@ -717,25 +705,12 @@
           <div id="guest-list-container" class="guest-avatar-row"></div>
         </div>
       </section>
-
-      <section id="view-survey" class="view">
-        <div class="page-header">
-          <button class="back-btn" onclick="navTo('notifications')">
-            <span class="material-symbols-rounded">arrow_back</span>
-          </button>
-          <h2 class="page-title">Survey</h2>
-        </div>
-        <div class="survey-container" id="survey-content">
-          <!-- Survey content will be injected here -->
-        </div>
-      </section>
     </div>
 
     <div id="screensaver">
       <div class="saver-clock">
         <div id="clock-time">
           <span id="clock-time-digits" class="clock-main-digits">00:00</span>
-          <!-- <span id="clock-time-secs" class="clock-secs">00</span> -->
         </div>
         <div class="saver-info-row">
           <div id="clock-date">...</div>
@@ -825,6 +800,13 @@
   </div>
 
   <script type="module" src="js/main.js"></script>
+  <script type="module">
+    // Import onboarding logic for HTML inline events
+    import { nextStep, selectNet } from "./js/onboarding.js";
+    window.nextStep = nextStep;
+    window.selectNet = selectNet;
+  </script>
+
 </body>
 
 </html>

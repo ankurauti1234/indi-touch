@@ -1,6 +1,6 @@
 /* js/remote.js — Zone-based TV navigation for remote control */
 
-import { config, save } from './data.js';
+import { config } from './data.js';
 import {
     moveFocus as gridMoveFocus,
     toggleFocused as gridToggleFocused,

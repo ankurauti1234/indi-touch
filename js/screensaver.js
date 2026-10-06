@@ -1,5 +1,14 @@
 import { config, memberData, tvState, getAvatarUrl } from './data.js';
 
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+});
+let lastDateDay = -1;
+let cachedDateStr = '';
+let clockInterval = null;
+
 let idleTimer;
 
 export function resetIdle(isPriority = false) {
@@ -10,6 +19,7 @@ export function resetIdle(isPriority = false) {
     s.classList.remove('active');
     document.body.classList.remove('screensaver-active'); // <-- ESSENTIAL FIX
     clearTimeout(idleTimer);
+    stopClock(); // <-- Stop clock when screensaver is hidden
 
     // Disable screensaver only during ACTIVE onboarding
     if (!config.onboardingCompleted) {
@@ -26,10 +36,13 @@ export function resetIdle(isPriority = false) {
 
     // Use 5s if priority (e.g. TV Off), otherwise use config or 15s default
     const timeout = isPriority ? 5000 : (config.screenTimeout || 15000);
-    console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
+    // console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
 
     idleTimer = setTimeout(() => {
         if (s) {
+            s.classList.add('active');
+            startClock(); // <-- Start clock only when screensaver activates
+            applyWallpaper(); // Fetch latest wallpaper state
             // Remove keyboard mode so the app frame resets from 900px back to 600px
             document.body.classList.remove('osk-open');
 
@@ -42,6 +55,7 @@ export function resetIdle(isPriority = false) {
             requestAnimationFrame(() => {
                 s.classList.add('active');
             });
+            initLocation();
         }
     }, timeout);
 }
@@ -55,40 +69,59 @@ export function updateClock() {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const mins = now.getMinutes().toString().padStart(2, '0');
-    const secs = now.getSeconds().toString().padStart(2, '0');
 
     const digits = document.getElementById('clock-time-digits');
-    const secsEl = document.getElementById('clock-time-secs');
+    const currentHhmm = `${hours}:${mins}`;
 
-    if (digits) digits.textContent = `${hours}:${mins}`;
-    if (secsEl) secsEl.textContent = secs;
-
-    const clock = document.getElementById('clock-time');
-    if (clock) {
-        if (!tvState.on) clock.classList.add('massive');
-        else clock.classList.remove('massive');
+    // Only update digits DOM when minute changes (skips 59/60 invalidations)
+    if (digits && digits.textContent !== currentHhmm) {
+        digits.textContent = currentHhmm;
     }
 
-    const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const dateEl = document.getElementById('clock-date');
-    if (dateEl) dateEl.innerText = dateStr;
+    // Update date only when day changes
+    const todayDay = now.getDate();
+    if (todayDay !== lastDateDay) {
+        cachedDateStr = dateFormatter.format(now);
+        lastDateDay = todayDay;
+        const dateEl = document.getElementById('clock-date');
+        if (dateEl) dateEl.textContent = cachedDateStr;
+    }
+}
+
+export function startClock() {
+    if (!clockInterval) {
+        updateClock();
+        // Fire every 60 seconds instead of every second
+        clockInterval = setInterval(updateClock, 60000);
+    }
+}
+
+export function stopClock() {
+    if (clockInterval) {
+        clearInterval(clockInterval);
+        clockInterval = null;
+    }
 }
 
 // OpenWeatherMap Integration
-const OWM_API_KEY = '0c0a2611ed5caefff0ef2e5cb6f4cdc0';
+let isFetchingWeather = false;
 
 async function fetchWeather(city) {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${OWM_API_KEY}`, {
+        const res = await fetch(`/api/system/weather?city=${encodeURIComponent(city)}`, {
             signal: controller.signal
         });
         clearTimeout(timeoutId);
 
+        if (!res.ok) {
+            return null;
+        }
+
         const data = await res.json();
-        if (data && data.main) {
+        if (data && data.main && data.weather && data.weather.length > 0) {
             return {
                 temp: Math.round(data.main.temp),
                 icon: data.weather[0].icon,
@@ -102,14 +135,17 @@ async function fetchWeather(city) {
 }
 
 export async function initLocation() {
-    const city = config.location || 'Yerevan';
     const widget = document.getElementById('saver-weather');
-    if (!widget) return;
+    if (!widget || isFetchingWeather) return;
 
-    if (!widget.innerHTML.trim() || widget.innerHTML.includes('material-symbols-rounded')) {
+    const city = config.location || 'auto';
+
+    // Show loading spinner ONLY on first run if completely empty
+    if (!widget.innerHTML.trim()) {
         widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
     }
 
+    isFetchingWeather = true;
     try {
         const weather = await fetchWeather(city);
         if (weather) {
@@ -122,19 +158,22 @@ export async function initLocation() {
                 <span class="weather-desc-inline">${desc}</span>
             `;
         } else {
-            throw new Error("Null weather data");
+            // Only show fallback if we don't already have successful weather rendered
+            if (!widget.querySelector('img')) {
+                widget.innerHTML = `
+                    <span class="material-symbols-rounded">wb_cloudy</span>
+                    <span class="weather-temp">--°C</span>
+                `;
+            }
         }
     } catch (e) {
-        console.warn("Weather sync failed, using fallback", e);
-        widget.innerHTML = `
-            <span class="material-symbols-rounded">wb_cloudy</span>
-            <span class="weather-temp">--°C</span>
-        `;
+        console.warn("Weather sync error:", e);
+    } finally {
+        isFetchingWeather = false;
     }
 }
 
 export function renderScreensaverMembers() {
-    initLocation();
 
     const container = document.getElementById('saver-active-members');
     if (!container) return;
@@ -215,11 +254,8 @@ async function applyWallpaper(forceBust = false) {
         const d = await r.json();
 
         if (d.hasWallpaper) {
-            const urlToUse = forceBust ? `${d.url}?t=${Date.now()}` : d.url;
-            if (_cachedWallpaperUrl !== urlToUse) {
-                _cachedWallpaperUrl = urlToUse;
-                saver.style.backgroundImage = `url('${urlToUse}')`;
-            }
+            // d.url already includes server-side ?t=<mtime>
+            saver.style.backgroundImage = `url('${d.url}')`;
             saver.classList.add('has-wallpaper');
         } else {
             _cachedWallpaperUrl = null;

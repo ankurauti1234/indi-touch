@@ -546,7 +546,7 @@ window.onMemberBlur = function (index, inputEl) {
     const cleaned = inputEl.value.replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 
     if (!cleaned) {
-        const fallbackName = `Member ${index + 1}`;
+        const fallbackName = `M${index + 1}`;
         inputEl.value = fallbackName;
         inputEl.style.borderColor = '';
         inputEl.style.outline = '';

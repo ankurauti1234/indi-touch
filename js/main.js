@@ -572,9 +572,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
     }, { passive: false });
 
-    // 3. User Interaction Tracking
-    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
-    document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
+    // 3. User Interaction Tracking (handles touches, clicks, and physical keys)
+    const interactionEvents = ['pointerdown', 'touchstart', 'mousedown', 'keydown'];
+    interactionEvents.forEach(evt => {
+        document.addEventListener(evt, () => {
+            resetIdle();
+            if (typeof resetHomeTimer === 'function') resetHomeTimer();
+        }, { passive: true });
+    });
+
+    // Explicit dismiss listener directly on the screensaver overlay
+    const saver = document.getElementById('screensaver');
+    if (saver) {
+        ['pointerdown', 'touchstart', 'click'].forEach(evt => {
+            saver.addEventListener(evt, (e) => {
+                e.stopPropagation();
+                resetIdle();
+                if (typeof resetHomeTimer === 'function') resetHomeTimer();
+            }, { passive: true });
+        });
+    }
+
     resetIdle();
     resetHomeTimer();
 

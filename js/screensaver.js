@@ -60,7 +60,7 @@ export function resetIdle(isPriority = false) {
     }, timeout);
 }
 window.setScreensaverTimeout = (ms) => {
-    // This allows immediate update from settings
+    config.screenTimeout = ms;
     clearTimeout(idleTimer);
     resetIdle();
 };

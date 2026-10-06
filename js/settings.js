@@ -160,8 +160,6 @@ export async function selectAvatarStyle(style) {
 window.selectAvatarStyle = selectAvatarStyle;
 
 
-// --- NEW SETTINGS LOGIC ---
-selectAvatarStyle
 // ── WIFI (real API) ──────────────────────────────────────────────────────────
 let _currentSsid = null;
 let _currentInternetOk = true;

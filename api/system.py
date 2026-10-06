@@ -1,13 +1,26 @@
 #!/usr/bin/env python3
-# api/system.py — System status, brightness, shutdown, restart
+# api/system.py — System status, brightness, shutdown, restart, weather
 
 import os
+import sys
 import subprocess
 import socket
+import time
+import threading
+import requests
 
 from flask import Blueprint, jsonify, request
 
 from .config import SYSTEM_FILES, METER_ID
+
+# Ensure utils path is available for AWS IoT credentials
+if "/opt/apm/scripts/utils" not in sys.path:
+    sys.path.insert(0, "/opt/apm/scripts/utils")
+
+try:
+    from aws_iot_credentials import get_credentials
+except ImportError:
+    get_credentials = None
 
 system_bp = Blueprint("system", __name__)
 
@@ -26,7 +39,6 @@ def get_backlight_path():
 
 def get_ip_address():
     """Finds the local IP address, prioritizing external connectivity but falling back to interface-specific checks."""
-    # 1. Try connecting to an external addr (best for multi-homed hosts)
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(0.5)
@@ -38,14 +50,8 @@ def get_ip_address():
     except Exception:
         pass
 
-    # 2. Fallback: check common interfaces manually using socket/ioctl or simple list
     try:
-        # On Linux, we can use socket.gethostname() and then gethostbyname,
-        # but that often returns 127.0.1.1 on RPi.
-        # Instead, iterate over common interfaces via subprocess if needed,
-        # or just use a dummy connect to a local addr in the subnet.
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # Try a "connect" to any addr in a private range that doesn't actually need to exist
         s.connect(("10.255.255.255", 1))
         ip = s.getsockname()[0]
         s.close()
@@ -71,7 +77,6 @@ def get_mac_address():
 @system_bp.route("/status", methods=["GET"])
 def system_status():
     """Unified status of all /run file indicators + network info."""
-    # Robust WiFi check: check if wlan0 is actually connected via nmcli
     wifi_ok = False
     try:
         r = subprocess.run(["nmcli", "-t", "-g", "GENERAL.STATE", "device", "show", "wlan0"], 
@@ -95,7 +100,6 @@ def system_status():
         else:
             tv_on = False
 
-    # Software Versions from /var/lib/sw_version.json
     sw_versions = {}
     sw_version_path = "/var/lib/sw_version.json"
     if os.path.exists(sw_version_path):
@@ -108,7 +112,7 @@ def system_status():
 
     return jsonify({
         "success": True,
-        "meter_id":        METER_ID,
+        "meter_id":         METER_ID,
         "wifi":            wifi_ok,
         "gsm":             os.path.exists(SYSTEM_FILES["gsm_up"]),
         "usb_jack":        os.path.exists(SYSTEM_FILES["jack_status"]),
@@ -122,7 +126,6 @@ def system_status():
         "internet":        os.path.exists(SYSTEM_FILES["internet_ok"]),
         "sw_versions":     sw_versions,
     })
-
 
 # ── POST /api/system/brightness ───────────────────────────────────────────────
 @system_bp.route("/brightness", methods=["POST"])
@@ -138,15 +141,11 @@ def set_brightness():
         with open(max_b_path) as f:
             max_b = int(f.read().strip())
         
-        # Ensure we don't go too dark
         value = max(int(max_b * 0.1), min(value, max_b))
-        
-        # Use subprocess for better sudo handling
         subprocess.run(["sudo", "tee", f"{path}/brightness"], input=str(value), text=True, capture_output=True)
         return jsonify({"success": True, "brightness": value})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 # ── GET /api/system/brightness ────────────────────────────────────────────────
 @system_bp.route("/brightness", methods=["GET"])
@@ -163,57 +162,39 @@ def get_brightness():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 # ── POST /api/system/reboot ────────────────────────────────────────────────────
 @system_bp.route("/reboot", methods=["POST"])
 def reboot():
     try:
-        # Run in background after 1s delay so we can return the response
         subprocess.Popen("sleep 1 && sudo reboot", shell=True)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 # ── POST /api/system/shutdown ─────────────────────────────────────────────────
 @system_bp.route("/shutdown", methods=["POST"])
 def shutdown():
     try:
-        # Run in background after 1s delay so we can return the response
         subprocess.Popen("sleep 1 && sudo shutdown -h now", shell=True)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 # ── GET /api/system/settings ──────────────────────────────────────────────────
 @system_bp.route("/settings", methods=["GET"])
 def get_settings():
-    """Return app settings from JSON file."""
     from .settings_manager import load_settings
     return jsonify(load_settings())
-
 
 # ── POST /api/system/settings ─────────────────────────────────────────────────
 @system_bp.route("/settings", methods=["POST"])
 def save_app_settings():
-    """Save app settings to JSON file."""
     from .settings_manager import save_settings
     data = request.get_json(force=True) or {}
     save_settings(data)
     return jsonify({"success": True})
 
-
 # ── WEATHER ───────────────────────────────────────────────────────────────────
-import sys
-import boto3
-
-# Ensure utils path is available
-if "/opt/apm/scripts/utils" not in sys.path:
-    sys.path.insert(0, "/opt/apm/scripts/utils")
-
-from aws_iot_credentials import get_credentials
-
 _weather_cache = {"data": None, "timestamp": 0, "city": None}
 _cached_owm_api_key = None
 _owm_key_lock = threading.Lock()
@@ -224,7 +205,6 @@ IOT_CONFIG = {
     "AWS_ROLE_ALIAS": "iot-image-code-role",
     "AWS_REGION": "ap-south-1",
 }
-
 
 def get_owm_api_key() -> str:
     """Retrieve and cache OpenWeatherMap API key from AWS SSM using IoT credentials."""
@@ -238,22 +218,24 @@ def get_owm_api_key() -> str:
             return _cached_owm_api_key
 
         try:
-            credentials = get_credentials(IOT_CONFIG)
-            ssm = boto3.client(
-                "ssm",
-                region_name=IOT_CONFIG["AWS_REGION"],
-                aws_access_key_id=credentials["AWS_ACCESS_KEY_ID"],
-                aws_secret_access_key=credentials["AWS_SECRET_ACCESS_KEY"],
-                aws_session_token=credentials["AWS_SESSION_TOKEN"],
-            )
-            response = ssm.get_parameter(
-                Name="/apm/weather/api",
-                WithDecryption=True,
-            )
-            key = response.get("Parameter", {}).get("Value", "").strip()
-            if key:
-                _cached_owm_api_key = key
-                return _cached_owm_api_key
+            if get_credentials:
+                import boto3
+                credentials = get_credentials(IOT_CONFIG)
+                ssm = boto3.client(
+                    "ssm",
+                    region_name=IOT_CONFIG["AWS_REGION"],
+                    aws_access_key_id=credentials["AWS_ACCESS_KEY_ID"],
+                    aws_secret_access_key=credentials["AWS_SECRET_ACCESS_KEY"],
+                    aws_session_token=credentials["AWS_SESSION_TOKEN"],
+                )
+                response = ssm.get_parameter(
+                    Name="/apm/weather/api",
+                    WithDecryption=True,
+                )
+                key = response.get("Parameter", {}).get("Value", "").strip()
+                if key:
+                    _cached_owm_api_key = key
+                    return _cached_owm_api_key
         except Exception as e:
             print(f"[Weather] Warning: Failed to fetch API key from AWS SSM via IoT credentials: {e}")
 
@@ -264,9 +246,7 @@ def get_owm_api_key() -> str:
 
     return ""
 
-
 _last_known_city = "Yerevan"
-
 
 def get_auto_city() -> str:
     """Resolve location from public IP with sticky fallback."""
@@ -284,7 +264,6 @@ def get_auto_city() -> str:
         print(f"[Weather] Auto city lookup error: {e}, using fallback: {_last_known_city}")
 
     return _last_known_city
-
 
 # ── GET /api/system/weather ──────────────────────────────────────────────────
 @system_bp.route("/weather", methods=["GET"])

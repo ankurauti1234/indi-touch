@@ -317,17 +317,25 @@ def get_owm_api_key() -> str:
     return ""
 
 
+_last_known_city = "Yerevan"
+
+
 def get_auto_city() -> str:
-    """Resolve location from public IP or return fallback."""
+    """Resolve location from public IP with sticky fallback."""
+    global _last_known_city
     try:
-        r = requests.get("http://ip-api.com/json/?fields=city", timeout=3)
+        r = requests.get("http://ip-api.com/json/?fields=status,city", timeout=3)
         if r.status_code == 200:
-            city = r.json().get("city")
-            if city:
-                return city
-    except Exception:
-        pass
-    return "Yerevan"
+            data = r.json()
+            if data.get("status") == "success":
+                city = (data.get("city") or "").strip()
+                if city:
+                    _last_known_city = city
+                    return _last_known_city
+    except Exception as e:
+        print(f"[Weather] Auto city lookup error: {e}, using fallback: {_last_known_city}")
+
+    return _last_known_city
 
 
 # ── GET /api/system/weather ──────────────────────────────────────────────────

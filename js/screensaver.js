@@ -41,6 +41,7 @@ export function resetIdle(isPriority = false) {
             startClock(); // <-- Start clock only when screensaver activates
             applyWallpaper(); // Fetch latest wallpaper state
             renderScreensaverMembers();
+            initLocation();
         }
     }, timeout);
 }
@@ -90,6 +91,8 @@ export function stopClock() {
 }
 
 // OpenWeatherMap Integration
+let isFetchingWeather = false;
+
 async function fetchWeather(city) {
     try {
         const controller = new AbortController();
@@ -99,9 +102,13 @@ async function fetchWeather(city) {
             signal: controller.signal
         });
         clearTimeout(timeoutId);
-        
+
+        if (!res.ok) {
+            return null;
+        }
+
         const data = await res.json();
-        if (data && data.main) {
+        if (data && data.main && data.weather && data.weather.length > 0) {
             return {
                 temp: Math.round(data.main.temp),
                 icon: data.weather[0].icon,
@@ -115,37 +122,41 @@ async function fetchWeather(city) {
 }
 
 export async function initLocation() {
-    const city = config.location || 'Yerevan';
-    
     const widget = document.getElementById('saver-weather');
-    if (!widget) return;
+    if (!widget || isFetchingWeather) return;
 
-    // Show loading state immediately to prevent "empty" UI
-    if (!widget.innerHTML.trim() || widget.innerHTML.includes('material-symbols-rounded')) {
-       widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
+    const city = config.location || 'auto';
+
+    // Show loading spinner ONLY on first run if completely empty
+    if (!widget.innerHTML.trim()) {
+        widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
     }
 
+    isFetchingWeather = true;
     try {
         const weather = await fetchWeather(city);
         if (weather) {
             const iconUrl = `https://openweathermap.org/img/wn/${weather.icon}@2x.png`;
-            // Capitalize each word of description for premium feel
             const desc = weather.desc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-            
+
             widget.innerHTML = `
                 <img src="${iconUrl}">
                 <span class="weather-temp">${weather.temp}°C</span>
                 <span class="weather-desc-inline">${desc}</span>
             `;
         } else {
-            throw new Error("Null weather data");
+            // Only show fallback if we don't already have successful weather rendered
+            if (!widget.querySelector('img')) {
+                widget.innerHTML = `
+                    <span class="material-symbols-rounded">wb_cloudy</span>
+                    <span class="weather-temp">--°C</span>
+                `;
+            }
         }
     } catch (e) {
-        console.warn("Weather sync failed, using fallback", e);
-        widget.innerHTML = `
-            <span class="material-symbols-rounded">wb_cloudy</span>
-            <span class="weather-temp">--°C</span>
-        `;
+        console.warn("Weather sync error:", e);
+    } finally {
+        isFetchingWeather = false;
     }
 }
 

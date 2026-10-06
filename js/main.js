@@ -6,8 +6,6 @@ import { resetIdle, initLocation, renderScreensaverMembers, refreshWallpaperOnSc
 import { initOSK } from './keyboard.js';
 import { checkOnboardingStatus } from './onboarding.js';
 import { showToast } from './ui.js';
-import { renderNotifications } from './notifications.js';
-import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
@@ -26,7 +24,6 @@ window.selectChip = selectChip;
 window.addGuest = addGuest;
 window.initLocation = initLocation;
 window.showToast = showToast;
-window.openSurvey = openSurvey;
 // Expose for Python/integration layer
 window.setUsbState = setUsbState;
 window.setWifiState = setWifiState;
@@ -406,7 +403,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGrid();
     renderGuestList();
     initLocation();
-    renderNotifications();
 
     // 4. Finalize - Hide app loader
     hideAppLoader();
@@ -442,7 +438,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyTranslations();
             updateLanguageUI(lang);
             renderGrid(); // Refresh grid for active status texts if any
-            renderNotifications(); // Refresh notifications
         }
     };
 

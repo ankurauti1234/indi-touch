@@ -1,3 +1,4 @@
+import { renderGuestList } from './guest.js';
 import { renderGrid } from './grid.js';
 import { config, memberData, updateSetting } from './data.js';
 import { applyRemoteMode, isRemoteMode } from './remote.js';

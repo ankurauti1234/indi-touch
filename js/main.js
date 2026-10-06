@@ -382,14 +382,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (now - reminderDismissedAt >= 60 * 1000) {
                 popover.classList.add('active');
                 reminderShownAt = now;
-
-                // Wake up screensaver so user immediately sees the prompt
-                const s = document.getElementById('screensaver');
-                if (s && s.classList.contains('active')) {
-                    s.classList.remove('active');
-                    document.body.classList.remove('screensaver-active');
-                    resetIdle();
-                }
             }
         }
     }
@@ -408,7 +400,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             popover.classList.remove('active');
         }
 
-        // 1. Immediately wake up and dismiss screensaver if it is active
+        // Dismiss the screensaver when the user taps the action button
         const s = document.getElementById('screensaver');
         if (s) {
             s.classList.remove('active');
@@ -416,11 +408,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         resetIdle();
 
-        // 2. Clear reminder timers & navigate home
         reminderShownAt = 0;
         reminderDismissedAt = Date.now();
+
         navTo('home');
-        console.log("Critical action: Dismissed screensaver and navigating home.");
+        console.log("Critical action: Screensaver dismissed, navigating home.");
     };
 
     showToast("Indi Meter is ready.", 4000);

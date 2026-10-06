@@ -30,10 +30,10 @@ export function dismissScreensaver(e) {
     s.classList.remove('active');
     document.body.classList.remove('screensaver-active');
 
-    // Shield against phantom clicks landing on buttons underneath for 400ms
+    // Shield against phantom clicks until the 0.45s fade completes
     setTimeout(() => {
         isDismissing = false;
-    }, 400);
+    }, 450);
 
     resetIdle();
 }

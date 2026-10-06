@@ -1553,14 +1553,16 @@ body.osk-open .main-stage {
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: opacity;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    /* On exit: fade opacity smoothly over 0.45s, then hide visibility at the exact moment opacity reaches 0 */
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.45s;
 }
 
 #screensaver.active {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transition: opacity 0.3s ease;
+    /* On enter: make visible immediately, then smoothly glide opacity to 1 */
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0s;
 }
 
 #screensaver.center-clock {

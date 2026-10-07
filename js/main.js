@@ -87,16 +87,14 @@ async function runDailyMaintenanceIfNeeded() {
     ].join("-");
 
     const currentHour = now.getHours();
-    
-    // Only 02:00 AM slot is retained
+
+    // The automatic reset is only performed at/after 02:00
     if (currentHour < 2) return;
 
     const resetId = `${today}_02:00`;
 
-    // Ensure it executes only once per day
-    if (config.lastAutoResetId === resetId) {
-        return;
-    }
+    // Only run once per calendar day
+    if (config.lastAutoResetId === resetId) return;
 
     const activeCount = memberData.filter(m => m.active).length;
 
@@ -110,18 +108,13 @@ async function runDailyMaintenanceIfNeeded() {
     maintenanceResetInProgress = true;
 
     try {
-        const response = await fetch("/api/members/undeclare", {
-            method: "POST"
-        });
-
+        const response = await fetch("/api/members/undeclare", { method: "POST" });
         if (!response.ok) {
             throw new Error("Failed to automatically undeclare members.");
         }
 
         await loadMembers();
         updateStillWatchingState();
-
-        lastMemberDeclaredAt = null;
 
         const { guests: guestsData } = await import("./data.js");
         guestsData.length = 0;
@@ -165,26 +158,26 @@ function showStillWatchingPopup() {
     popup.classList.add("visible");
     timers.clearTimeout(stillWatchingDismissTimer);
 
-    // Popup remains visible for 20 seconds
+    // Keep popup visible for 20 seconds
     stillWatchingDismissTimer = timers.setTimeout(() => {
         popup.classList.remove("visible");
         timers.clearTimeout(stillWatchingReminderTimer);
 
-        // After popup disappears, wait 5 minutes before showing again
+        // Wait 5 minutes before showing again
         stillWatchingReminderTimer = timers.setTimeout(() => {
             const activeCount = memberData.filter(m => m.active).length;
             if (activeCount > 0) {
                 showStillWatchingPopup();
             }
-        }, 5 * 60 * 1000); // 5 minutes cycle
-    }, 20 * 1000); // 20 seconds visible
+        }, 5 * 60 * 1000); // 5 minutes
+    }, 20 * 1000); // 20 seconds
 }
 
 function restartStillWatchingTimer() {
     timers.clearTimeout(stillWatchingTimer);
     timers.clearTimeout(stillWatchingReminderTimer);
 
-    // Initial reminder popup after 3 hours of no household interaction
+    // 3 hours of inactivity before first prompt
     stillWatchingTimer = timers.setTimeout(() => {
         showStillWatchingPopup();
     }, 3 * 60 * 60 * 1000); // 3 hours
@@ -197,10 +190,13 @@ function updateStillWatchingState() {
         timers.clearTimeout(stillWatchingTimer);
         timers.clearTimeout(stillWatchingDismissTimer);
         timers.clearTimeout(stillWatchingReminderTimer);
-
         document.getElementById("still-watching-popover")?.classList.remove("visible");
         return;
     }
+
+    timers.clearTimeout(stillWatchingDismissTimer);
+    timers.clearTimeout(stillWatchingReminderTimer);
+    document.getElementById("still-watching-popover")?.classList.remove("visible");
 
     restartStillWatchingTimer();
 }
@@ -211,34 +207,24 @@ async function endViewingSession() {
     timers.clearTimeout(stillWatchingDismissTimer);
     timers.clearTimeout(stillWatchingReminderTimer);
 
-    lastMemberDeclaredAt = null;
-
     document.getElementById("still-watching-popover")?.classList.remove("visible");
 
     try {
-        const response = await fetch("/api/members/undeclare", {
-            method: "POST"
-        });
-
-        if (!response.ok) {
-            throw new Error("Failed to end viewing session.");
-        }
+        const response = await fetch("/api/members/undeclare", { method: "POST" });
+        if (!response.ok) throw new Error("Failed to end viewing session.");
 
         await loadMembers();
         renderGrid();
 
         const r = await fetch("/api/guests/update", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ guests: [] })
         });
 
         if (r.ok) {
             const { guests: guestsData } = await import("./data.js");
             guestsData.length = 0;
-
             const { renderGuestList, updateGuestBadge } = await import("./guest.js");
             renderGuestList();
             updateGuestBadge();
@@ -323,11 +309,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateLanguageUI(getCurrentLang());
     }
 
-    // Active Member Reminder State Machine
-    let reminderShownAt = 0;
-    let reminderDismissedAt = 0;
+    // ---------------- Active Member Reminder State Machine ----------------
+    let activeMemberReminderDismissTimer = null;
+    let activeMemberReminderRepeatTimer = null;
+    let activeMemberReminderCycleStarted = false;
 
-    function reconcileActiveMemberReminder() {
+    function showActiveMemberReminder() {
         const popover = document.getElementById('critical-popover');
         if (!popover) return;
 
@@ -336,79 +323,109 @@ document.addEventListener('DOMContentLoaded', async () => {
             isTvOn = true;
         }
 
-        const activeCount = memberData.filter(m => m.active).length;
-        const needsReminder = isTvOn && config.onboardingCompleted && activeCount === 0;
-        const now = Date.now();
-
-        if (!needsReminder) {
-            if (popover.classList.contains('active')) {
-                popover.classList.remove('active');
-            }
-            reminderShownAt = 0;
+        if (!isTvOn || !config.onboardingCompleted) {
+            popover.classList.remove('active');
+            timers.clearTimeout(activeMemberReminderDismissTimer);
+            timers.clearTimeout(activeMemberReminderRepeatTimer);
+            activeMemberReminderCycleStarted = false;
             return;
         }
 
-        if (popover.classList.contains('active')) {
-            if (reminderShownAt > 0 && now - reminderShownAt >= 10 * 1000) {
-                popover.classList.remove('active');
-                reminderShownAt = 0;
-                reminderDismissedAt = now;
-            }
-        } else {
-            // Re-show only after 60-second cooldown
-            if (now - reminderDismissedAt >= 60 * 1000) {
-                popover.classList.add('active');
-                reminderShownAt = now;
-            }
+        const activeCount = memberData.filter(m => m.active).length;
+        if (activeCount > 0) {
+            popover.classList.remove('active');
+            timers.clearTimeout(activeMemberReminderDismissTimer);
+            timers.clearTimeout(activeMemberReminderRepeatTimer);
+            activeMemberReminderCycleStarted = false;
+            return;
         }
+
+        activeMemberReminderCycleStarted = true;
+        popover.classList.add('active');
+
+        timers.clearTimeout(activeMemberReminderDismissTimer);
+        timers.clearTimeout(activeMemberReminderRepeatTimer);
+
+        // Show for 10 seconds
+        activeMemberReminderDismissTimer = timers.setTimeout(() => {
+            popover.classList.remove('active');
+
+            // Wait 60 seconds before showing again
+            activeMemberReminderRepeatTimer = timers.setTimeout(() => {
+                showActiveMemberReminder();
+            }, 60 * 1000);
+        }, 10 * 1000);
     }
 
-    // Reconcile reminder state regularly
-    timers.setInterval(reconcileActiveMemberReminder, 2000);
+    // Monitor TV state and active members every 5 seconds
+    timers.setInterval(() => {
+        let isTvOn = tvState.on;
+        if (!config.bleAvailable) {
+            isTvOn = true;
+        }
+
+        if (!isTvOn || !config.onboardingCompleted) {
+            const popover = document.getElementById('critical-popover');
+            if (popover) popover.classList.remove('active');
+            timers.clearTimeout(activeMemberReminderDismissTimer);
+            timers.clearTimeout(activeMemberReminderRepeatTimer);
+            activeMemberReminderCycleStarted = false;
+            return;
+        }
+
+        const activeCount = memberData.filter(m => m.active).length;
+        if (activeCount > 0) {
+            const popover = document.getElementById('critical-popover');
+            if (popover) popover.classList.remove('active');
+            timers.clearTimeout(activeMemberReminderDismissTimer);
+            timers.clearTimeout(activeMemberReminderRepeatTimer);
+            activeMemberReminderCycleStarted = false;
+            return;
+        }
+
+        const popover = document.getElementById('critical-popover');
+        if (popover && !popover.classList.contains('active') && !activeMemberReminderCycleStarted) {
+            showActiveMemberReminder();
+        }
+    }, 5000);
 
     // Maintenance scheduler checks every minute
     timers.setInterval(async () => {
         await runDailyMaintenanceIfNeeded();
     }, 60000);
 
+    // User taps "Identify Members Now"
     window.handleCriticalAction = () => {
-    // 1. Unfocus any active inputs cleanly
-    if (document.activeElement && typeof document.activeElement.blur === 'function') {
-        document.activeElement.blur();
-    }
+        const popover = document.getElementById('critical-popover');
+        if (popover) popover.classList.remove('active');
 
-    // 2. Hide OSK cleanly without setting destructive inline display styles
-    if (typeof window.hideOSK === 'function') {
-        window.hideOSK();
-    } else {
-        const osk = document.getElementById('osk-container');
-        if (osk) {
-            osk.classList.remove('visible');
+        // 1. Defocus input and close OSK cleanly
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
         }
+        const osk = document.getElementById('osk-container');
+        if (osk) osk.classList.remove('visible');
         document.body.classList.remove('osk-open');
-    }
 
-    // 3. Clear any stuck inline display style if it was set
-    const osk = document.getElementById('osk-container');
-    if (osk && osk.style.display === 'none') {
-        osk.style.display = '';
-    }
+        // 2. Dismiss screensaver if running
+        const s = document.getElementById('screensaver');
+        if (s) {
+            s.classList.remove('active');
+            document.body.classList.remove('screensaver-active');
+        }
+        resetIdle();
 
-    // 4. Dismiss popover & screensaver
-    const popover = document.getElementById('critical-popover');
-    if (popover) popover.classList.remove('active');
+        // 3. Clear timers & start 60s cooldown so popup doesn't instantly reappear
+        timers.clearTimeout(activeMemberReminderDismissTimer);
+        timers.clearTimeout(activeMemberReminderRepeatTimer);
+        activeMemberReminderCycleStarted = true;
+        activeMemberReminderRepeatTimer = timers.setTimeout(() => {
+            showActiveMemberReminder();
+        }, 60 * 1000);
 
-    const s = document.getElementById('screensaver');
-    if (s) {
-        s.classList.remove('active');
-        document.body.classList.remove('screensaver-active');
-    }
-    resetIdle();
-
-    reminderShownAt = 0;
-    reminderDismissedAt = Date.now();
-    navTo('home');
-};
+        navTo('home');
+        console.log("Critical action: Navigating home.");
+    };
 
     showToast("Indi Meter is ready.", 4000);
 

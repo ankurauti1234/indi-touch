@@ -317,6 +317,18 @@ function activate() {
             try {
                 el.setSelectionRange(len, len);
             } catch (_) { }
+
+            // Shift remote focus into the virtual keyboard
+            setTimeout(() => {
+                const osk = document.getElementById('osk-container');
+                if (osk && osk.classList.contains('visible')) {
+                    const firstKey = osk.querySelector('.osk-key');
+                    if (firstKey) {
+                        contentFocusIdx = 0;
+                        setFocusEl(firstKey);
+                    }
+                }
+            }, 100);
             return;
         }
 

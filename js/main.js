@@ -380,6 +380,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             // Re-show only after 60-second cooldown
             if (now - reminderDismissedAt >= 60 * 1000) {
+                // Blur inputs and hide keyboard so the popup has full visibility
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
+                if (window.hideOSK) {
+                    window.hideOSK();
+                } else {
+                    const osk = document.getElementById('osk-container');
+                    if (osk) {
+                        osk.classList.remove('visible');
+                        osk.style.display = 'none';
+                    }
+                    document.body.classList.remove('osk-open');
+                }
+
                 popover.classList.add('active');
                 reminderShownAt = now;
             }
@@ -395,12 +410,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 60000);
 
     window.handleCriticalAction = () => {
+        // 1. Force blur active inputs and hide OSK
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+        }
+        if (window.hideOSK) {
+            window.hideOSK();
+        } else {
+            const osk = document.getElementById('osk-container');
+            if (osk) {
+                osk.classList.remove('visible');
+                osk.style.display = 'none';
+            }
+            document.body.classList.remove('osk-open');
+        }
+
+        // 2. Dismiss critical popover
         const popover = document.getElementById('critical-popover');
         if (popover) {
             popover.classList.remove('active');
         }
 
-        // Dismiss the screensaver when the user taps the action button
+        // 3. Dismiss screensaver if active
         const s = document.getElementById('screensaver');
         if (s) {
             s.classList.remove('active');
@@ -411,8 +442,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         reminderShownAt = 0;
         reminderDismissedAt = Date.now();
 
+        // 4. Navigate home cleanly
         navTo('home');
-        console.log("Critical action: Screensaver dismissed, navigating home.");
+        console.log("Critical action: Dismissed OSK, screensaver, and navigated home.");
     };
 
     showToast("Indi Meter is ready.", 4000);

@@ -87,20 +87,13 @@ async function runDailyMaintenanceIfNeeded() {
     ].join("-");
 
     const currentHour = now.getHours();
-    let resetSlot = null;
+    
+    // Only 02:00 AM slot is retained
+    if (currentHour < 2) return;
 
-    if (currentHour >= 18) {
-        resetSlot = "18:00";
-    } else if (currentHour >= 10) {
-        resetSlot = "10:00";
-    } else if (currentHour >= 2) {
-        resetSlot = "02:00";
-    } else {
-        return;
-    }
+    const resetId = `${today}_02:00`;
 
-    const resetId = `${today}_${resetSlot}`;
-
+    // Ensure it executes only once per day
     if (config.lastAutoResetId === resetId) {
         return;
     }
@@ -110,27 +103,8 @@ async function runDailyMaintenanceIfNeeded() {
     if (activeCount === 0) {
         await updateSetting("lastAutoResetId", resetId);
         config.lastAutoResetId = resetId;
-        console.log(`[Maintenance] ${resetSlot} reset skipped: no active members.`);
+        console.log("[Maintenance] 02:00 reset skipped: no active members.");
         return;
-    }
-
-    if (resetSlot !== "02:00") {
-        if (lastMemberDeclaredAt === null) {
-            await updateSetting("lastAutoResetId", resetId);
-            config.lastAutoResetId = resetId;
-            console.log(`[Maintenance] ${resetSlot} reset skipped: declaration time unavailable.`);
-            return;
-        }
-
-        const oneHour = 60 * 60 * 1000;
-        const activeDuration = now.getTime() - lastMemberDeclaredAt;
-
-        if (activeDuration < oneHour) {
-            await updateSetting("lastAutoResetId", resetId);
-            config.lastAutoResetId = resetId;
-            console.log(`[Maintenance] ${resetSlot} reset skipped: declaration session is less than 1 hour old.`);
-            return;
-        }
     }
 
     maintenanceResetInProgress = true;
@@ -159,9 +133,9 @@ async function runDailyMaintenanceIfNeeded() {
         await updateSetting("lastAutoResetId", resetId);
         config.lastAutoResetId = resetId;
 
-        console.log(`[Maintenance] Automatic reset completed for ${resetSlot}.`);
+        console.log("[Maintenance] Mandatory 02:00 automatic reset completed.");
     } catch (err) {
-        console.error(`[Maintenance] Automatic reset failed for ${resetSlot}:`, err);
+        console.error("[Maintenance] Automatic reset failed for 02:00:", err);
     } finally {
         maintenanceResetInProgress = false;
     }
@@ -191,26 +165,29 @@ function showStillWatchingPopup() {
     popup.classList.add("visible");
     timers.clearTimeout(stillWatchingDismissTimer);
 
+    // Popup remains visible for 20 seconds
     stillWatchingDismissTimer = timers.setTimeout(() => {
         popup.classList.remove("visible");
         timers.clearTimeout(stillWatchingReminderTimer);
 
+        // After popup disappears, wait 5 minutes before showing again
         stillWatchingReminderTimer = timers.setTimeout(() => {
             const activeCount = memberData.filter(m => m.active).length;
             if (activeCount > 0) {
                 showStillWatchingPopup();
             }
-        }, 60 * 1000);
-    }, 10 * 1000);
+        }, 5 * 60 * 1000); // 5 minutes cycle
+    }, 20 * 1000); // 20 seconds visible
 }
 
 function restartStillWatchingTimer() {
     timers.clearTimeout(stillWatchingTimer);
     timers.clearTimeout(stillWatchingReminderTimer);
 
+    // Initial reminder popup after 3 hours of no household interaction
     stillWatchingTimer = timers.setTimeout(() => {
         showStillWatchingPopup();
-    }, 2 * 60 * 60 * 1000); // 2 hours
+    }, 3 * 60 * 60 * 1000); // 3 hours
 }
 
 function updateStillWatchingState() {
@@ -451,6 +428,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 resetIdle();
                 resetHomeTimer();
             }
+
+            // Household interaction: dismiss visible popup and restart the 3-hour timer
+            const stillWatchPopover = document.getElementById('still-watching-popover');
+            if (stillWatchPopover && stillWatchPopover.classList.contains('visible')) {
+                stillWatchPopover.classList.remove('visible');
+            }
+            restartStillWatchingTimer();
         }, { passive: true });
     });
 

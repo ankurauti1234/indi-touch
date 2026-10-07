@@ -380,21 +380,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             // Re-show only after 60-second cooldown
             if (now - reminderDismissedAt >= 60 * 1000) {
-                // Blur inputs and hide keyboard so the popup has full visibility
-                if (document.activeElement && typeof document.activeElement.blur === 'function') {
-                    document.activeElement.blur();
-                }
-                if (window.hideOSK) {
-                    window.hideOSK();
-                } else {
-                    const osk = document.getElementById('osk-container');
-                    if (osk) {
-                        osk.classList.remove('visible');
-                        osk.style.display = 'none';
-                    }
-                    document.body.classList.remove('osk-open');
-                }
-
                 popover.classList.add('active');
                 reminderShownAt = now;
             }
@@ -410,42 +395,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 60000);
 
     window.handleCriticalAction = () => {
-        // 1. Force blur active inputs and hide OSK
-        if (document.activeElement && typeof document.activeElement.blur === 'function') {
-            document.activeElement.blur();
-        }
-        if (window.hideOSK) {
-            window.hideOSK();
-        } else {
-            const osk = document.getElementById('osk-container');
-            if (osk) {
-                osk.classList.remove('visible');
-                osk.style.display = 'none';
-            }
-            document.body.classList.remove('osk-open');
-        }
+    // 1. Unfocus any active inputs cleanly
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+    }
 
-        // 2. Dismiss critical popover
-        const popover = document.getElementById('critical-popover');
-        if (popover) {
-            popover.classList.remove('active');
+    // 2. Hide OSK cleanly without setting destructive inline display styles
+    if (typeof window.hideOSK === 'function') {
+        window.hideOSK();
+    } else {
+        const osk = document.getElementById('osk-container');
+        if (osk) {
+            osk.classList.remove('visible');
         }
+        document.body.classList.remove('osk-open');
+    }
 
-        // 3. Dismiss screensaver if active
-        const s = document.getElementById('screensaver');
-        if (s) {
-            s.classList.remove('active');
-            document.body.classList.remove('screensaver-active');
-        }
-        resetIdle();
+    // 3. Clear any stuck inline display style if it was set
+    const osk = document.getElementById('osk-container');
+    if (osk && osk.style.display === 'none') {
+        osk.style.display = '';
+    }
 
-        reminderShownAt = 0;
-        reminderDismissedAt = Date.now();
+    // 4. Dismiss popover & screensaver
+    const popover = document.getElementById('critical-popover');
+    if (popover) popover.classList.remove('active');
 
-        // 4. Navigate home cleanly
-        navTo('home');
-        console.log("Critical action: Dismissed OSK, screensaver, and navigated home.");
-    };
+    const s = document.getElementById('screensaver');
+    if (s) {
+        s.classList.remove('active');
+        document.body.classList.remove('screensaver-active');
+    }
+    resetIdle();
+
+    reminderShownAt = 0;
+    reminderDismissedAt = Date.now();
+    navTo('home');
+};
 
     showToast("Indi Meter is ready.", 4000);
 

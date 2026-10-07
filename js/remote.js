@@ -8,7 +8,7 @@ import {
     getFocusedGridIndex,
     getGridCols
 } from './grid.js';
-import { resetIdle } from './screensaver.js';
+import { resetIdle, dismissScreensaver } from './screensaver.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 // Two zones: 'nav' (left rail) and 'content' (active view)
@@ -175,8 +175,7 @@ function enterContentZone() {
 function navigate(direction) {
     // Wake screensaver on any navigation key
     if (isScreensaverActive()) {
-        resetIdle();
-        // Restore previous focus context
+        dismissScreensaver();
         setTimeout(() => enterContentZone(), 100);
         return;
     }
@@ -296,7 +295,11 @@ function navigate(direction) {
 
 // ─── Activation ───────────────────────────────────────────────────────────────
 function activate() {
-    if (isScreensaverActive()) return;
+    if (isScreensaverActive()) {
+        dismissScreensaver();
+        setTimeout(() => enterContentZone(), 100);
+        return;
+    }
 
     // Home grid content zone → toggle focused member
     if (isHomeGrid() && zone === 'content') {

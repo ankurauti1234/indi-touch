@@ -180,7 +180,7 @@ function restartStillWatchingTimer() {
     // 3 hours of inactivity before first prompt
     stillWatchingTimer = timers.setTimeout(() => {
         showStillWatchingPopup();
-    }, 3 * 60 * 60 * 1000); // 3 hours
+    }, 15 * 1000); // 3 hours
 }
 
 function updateStillWatchingState() {

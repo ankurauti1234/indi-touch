@@ -206,10 +206,11 @@ body {
 #still-watching-popover {
     position: fixed !important;
     inset: 0 !important;
-    z-index: 2147483648 !important; /* Higher than screensaver (2147483647) */
+    z-index: 2147483648 !important; /* Above screensaver */
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
 }
 
 #still-watching-popover.visible {
@@ -218,32 +219,141 @@ body {
 }
 
 #still-watching-popover .conn-card {
-    width: 560px;
-    max-width: 90%;
-    padding: 40px 44px;
-
-    gap: 24px;
-
+    width: 620px;
+    max-width: 92%;
+    padding: 24px 32px;
+    gap: 14px;
     height: auto;
-    max-height: none;
+    max-height: 480px;
     min-height: 0;
+    border-radius: var(--radius-card);
+    background: var(--bg-card);
+    border: 1px solid var(--outline-variant);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
 
-    justify-content: flex-start;
+#still-watching-popover .conn-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--secondary-container);
+}
+
+#still-watching-popover .conn-icon .material-symbols-rounded {
+    color: var(--primary);
+    font-size: 34px;
+}
+
+#still-watching-popover .conn-title {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.2;
 }
 
 #still-watching-popover .conn-body {
-    max-width: 100%;
+    max-width: 520px;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--text-sub);
+    margin: 0;
+}
+
+#still-watching-popover .conn-body b {
+    color: var(--text-main);
+    font-weight: 600;
 }
 
 #still-watching-popover .conn-actions {
     width: 100%;
     display: flex;
-    gap: 16px;
-    margin-top: 12px;
+    gap: 14px;
+    margin-top: 8px;
 }
 
 #still-watching-popover .conn-actions button {
     flex: 1;
+    height: 48px;
+    border-radius: var(--radius-pill);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    border: none;
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Secondary button: End Session */
+#still-watching-popover .conn-btn-secondary {
+    background: var(--bg-surface-container-high);
+    color: var(--text-main);
+    border: 1px solid var(--outline-variant) !important;
+}
+
+#still-watching-popover .conn-btn-secondary:hover {
+    background: var(--bg-card-hover);
+}
+
+/* Primary button: I'm Watching */
+#still-watching-popover .conn-btn-primary {
+    background: var(--primary);
+    color: var(--on-primary);
+}
+
+#still-watching-popover .conn-btn-primary:hover {
+    filter: brightness(1.08);
+}
+
+/* Remote focus styles on popup buttons */
+#still-watching-popover button.remoteFocused {
+    outline: 3px solid var(--primary) !important;
+    outline-offset: 2px;
+    transform: scale(1.02);
+}
+
+/* Light Mode Overrides */
+body.light-mode #still-watching-popover {
+    background: rgba(15, 15, 17, 0.45);
+}
+
+body.light-mode #still-watching-popover .conn-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+}
+
+body.light-mode #still-watching-popover .conn-icon {
+    background: #EDE9FE; /* Soft purple container for light theme */
+}
+
+body.light-mode #still-watching-popover .conn-icon .material-symbols-rounded {
+    color: #7C3AED;
+}
+
+body.light-mode #still-watching-popover .conn-btn-secondary {
+    background: #F4F4F5;
+    color: #0F0F11;
+    border: 1px solid #E4E4E7 !important;
+}
+
+body.light-mode #still-watching-popover .conn-btn-secondary:hover {
+    background: #E4E4E7;
+}
+
+body.light-mode #still-watching-popover .conn-btn-primary {
+    background: #7C3AED;
+    color: #FFFFFF;
 }
 
 /* WiFi popup buttons */

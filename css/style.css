@@ -1712,7 +1712,7 @@ body.osk-open .main-stage {
 }
 
 #clock-date {
-    font-size: 44px;
+    font-size: 40px;
     font-weight: 400;
     opacity: 0.95;
     letter-spacing: 0.5px;
@@ -1742,7 +1742,7 @@ body.osk-open .main-stage {
 }
 
 .weather-temp {
-    font-size: 44px;
+    font-size: 40px;
     font-weight: 400;
     opacity: 0.95;
 }

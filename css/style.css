@@ -203,6 +203,20 @@ body {
 
 /* ── STILL WATCHING POPUP ───────────────────────────────────────────── */
 
+#still-watching-popover {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483648 !important; /* Higher than screensaver (2147483647) */
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+#still-watching-popover.visible {
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
 #still-watching-popover .conn-card {
     width: 560px;
     max-width: 90%;

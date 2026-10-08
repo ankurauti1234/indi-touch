@@ -180,7 +180,7 @@ function restartStillWatchingTimer() {
     // 3 hours of inactivity before first prompt
     stillWatchingTimer = timers.setTimeout(() => {
         showStillWatchingPopup();
-    }, 3 * 60 * 60 * 1000); // 3 hours
+    }, 15 * 1000); // 3 hours
 }
 
 function updateStillWatchingState() {
@@ -435,23 +435,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, { passive: false });
 
     // User Interaction Tracking
-    // If screensaver is active, screensaver's own capture listener handles dismissal.
-    // If screensaver is NOT active, reset idle timer normally.
     const interactionEvents = ['pointerdown', 'touchstart', 'mousedown', 'keydown'];
     interactionEvents.forEach(evt => {
-        document.addEventListener(evt, () => {
+        document.addEventListener(evt, (e) => {
             const s = document.getElementById('screensaver');
             if (!s || !s.classList.contains('active')) {
                 resetIdle();
                 resetHomeTimer();
             }
 
-            // Household interaction: dismiss visible popup and restart the 3-hour timer
-            const stillWatchPopover = document.getElementById('still-watching-popover');
-            if (stillWatchPopover && stillWatchPopover.classList.contains('visible')) {
-                stillWatchPopover.classList.remove('visible');
+            // If the user tapped inside the still-watching card, let the buttons handle it!
+            if (e.target && e.target.closest && e.target.closest('#still-watching-popover .conn-card')) {
+                return;
             }
-            restartStillWatchingTimer();
+
+            // Only restart Still Watching countdown if members are active
+            const activeCount = memberData.filter(m => m.active).length;
+            if (activeCount > 0) {
+                const stillWatchPopover = document.getElementById('still-watching-popover');
+                if (stillWatchPopover && stillWatchPopover.classList.contains('visible')) {
+                    stillWatchPopover.classList.remove('visible');
+                }
+                restartStillWatchingTimer();
+            }
         }, { passive: true });
     });
 

@@ -1727,6 +1727,16 @@ body.osk-open .main-stage {
     margin: 0 6px;
 }
 
+.saver-divider {
+    font-size: 32px;
+    font-weight: 200;
+    color: #ffffff;
+    opacity: 0.35;
+    line-height: 1;
+    margin: 0 4px;
+    user-select: none;
+}
+
 #saver-weather {
     display: flex;
     align-items: center;

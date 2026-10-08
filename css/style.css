@@ -1728,13 +1728,13 @@ body.osk-open .main-stage {
 }
 
 .saver-divider {
-    width: 2px;
-    height: 28px;
+    width: 3px;
+    height: 38px;
     background: #ffffff;
-    opacity: 0.35;
-    border-radius: 1px;
-    margin: 0 8px;
-    transform: rotate(18deg); /* Slanted angle */
+    opacity: 0.6;
+    border-radius: 2px;
+    margin: 0 10px;
+    flex-shrink: 0;
 }
 
 #saver-weather {

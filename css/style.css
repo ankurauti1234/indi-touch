@@ -246,6 +246,48 @@ body {
     flex: 1;
 }
 
+/* ── Light Mode Support ── */
+body.light-mode #still-watching-popover {
+    background: rgba(15, 15, 17, 0.5);
+}
+
+body.light-mode #still-watching-popover .conn-card {
+    background: var(--bg-card);
+    border: 1px solid var(--outline-variant);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode #still-watching-popover .conn-icon {
+    background: #EDE9FE !important;
+}
+
+body.light-mode #still-watching-popover .conn-icon .material-symbols-rounded {
+    color: var(--primary) !important;
+}
+
+body.light-mode #still-watching-popover .conn-title {
+    color: var(--text-main);
+}
+
+body.light-mode #still-watching-popover .conn-body {
+    color: var(--text-sub);
+}
+
+body.light-mode #still-watching-popover .conn-btn-secondary {
+    background: var(--bg-surface-container-high);
+    color: var(--text-main);
+    border: 1px solid var(--outline-variant);
+}
+
+body.light-mode #still-watching-popover .conn-btn-secondary:hover {
+    background: var(--bg-card-hover);
+}
+
+body.light-mode #still-watching-popover .conn-btn-primary {
+    background: var(--primary);
+    color: var(--on-primary);
+}
+
 /* WiFi popup buttons */
 .conn-actions {
     display: flex;

@@ -439,21 +439,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     interactionEvents.forEach(evt => {
         document.addEventListener(evt, (e) => {
             const s = document.getElementById('screensaver');
+            const stillWatchPopover = document.getElementById('still-watching-popover');
+            const isStillWatchingVisible = stillWatchPopover && stillWatchPopover.classList.contains('visible');
+
+            // If Still Watching popup is active:
+            // 1. DO NOT auto-dismiss on keydown (so remote buttons can interact with it)
+            // 2. DO NOT auto-dismiss on touches inside the card
+            if (isStillWatchingVisible) {
+                if (evt === 'keydown' || (e.target && e.target.closest && e.target.closest('#still-watching-popover .conn-card'))) {
+                    return;
+                }
+            }
+
             if (!s || !s.classList.contains('active')) {
                 resetIdle();
                 resetHomeTimer();
             }
 
-            // If the user tapped inside the still-watching card, let the buttons handle it!
-            if (e.target && e.target.closest && e.target.closest('#still-watching-popover .conn-card')) {
-                return;
-            }
-
             // Only restart Still Watching countdown if members are active
             const activeCount = memberData.filter(m => m.active).length;
             if (activeCount > 0) {
-                const stillWatchPopover = document.getElementById('still-watching-popover');
-                if (stillWatchPopover && stillWatchPopover.classList.contains('visible')) {
+                if (isStillWatchingVisible) {
                     stillWatchPopover.classList.remove('visible');
                 }
                 restartStillWatchingTimer();

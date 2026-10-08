@@ -54,12 +54,15 @@ function isScreensaverActive() {
 }
 
 function getOverlayItems() {
+    // Still Watching popup takes precedence
+    const stillWatch = document.getElementById('still-watching-popover');
+    if (stillWatch?.classList.contains('visible'))
+        return [...stillWatch.querySelectorAll('button')].filter(isVisible);
+
     // Connection warning popups take highest priority
     const wifiWarn = document.getElementById('wifi-warning-overlay');
     if (wifiWarn?.classList.contains('visible'))
         return [...wifiWarn.querySelectorAll('button')].filter(isVisible);
-
-    // USB popup has no buttons — skip (user can't dismiss it by remote)
 
     const critical = document.getElementById('critical-popover');
     if (critical?.classList.contains('active'))
@@ -173,6 +176,9 @@ function enterContentZone() {
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 function navigate(direction) {
+    const stillWatch = document.getElementById('still-watching-popover');
+    const isStillWatchVisible = stillWatch?.classList.contains('visible');
+
     // Wake screensaver on any navigation key
     if (isScreensaverActive()) {
         dismissScreensaver();
@@ -295,7 +301,11 @@ function navigate(direction) {
 
 // ─── Activation ───────────────────────────────────────────────────────────────
 function activate() {
-    if (isScreensaverActive()) {
+    const stillWatch = document.getElementById('still-watching-popover');
+    const isStillWatchVisible = stillWatch?.classList.contains('visible');
+
+    // Wake screensaver on Enter key, UNLESS Still Watching popup is open on top
+    if (isScreensaverActive() && !isStillWatchVisible) {
         dismissScreensaver();
         setTimeout(() => enterContentZone(), 100);
         return;

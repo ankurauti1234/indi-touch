@@ -212,8 +212,13 @@ def set_brightness():
         with open(max_b_path) as f:
             max_b = int(f.read().strip())
 
+        # Clamp brightness between 10% and 100%
         value = max(int(max_b * 0.1), min(value, max_b))
-        subprocess.run(["sudo", "tee", f"{path}/brightness"], input=str(value), text=True, capture_output=True)
+
+        # Write directly via standard Python file I/O (no sudo, no subprocess)
+        with open(f"{path}/brightness", "w") as f:
+            f.write(str(value))
+
         return jsonify({"success": True, "brightness": value})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

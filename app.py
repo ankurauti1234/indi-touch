@@ -15,7 +15,7 @@ import socket
 from waitress import serve
 
 # ── Chromium / Qt environment ─────────────────────────────────────────────────
-os.environ.setdefault("QTWEBENGINE_CHROMIUM_FLAGS", "--no-sandbox")
+# Chromium sandbox enabled (runs under unprivileged user namespaces)
 os.makedirs("/tmp/runtime-root", exist_ok=True)
 os.chmod("/tmp/runtime-root", 0o700)
 os.environ.setdefault("XDG_RUNTIME_DIR", "/tmp/runtime-root")

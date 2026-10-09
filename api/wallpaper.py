@@ -70,7 +70,7 @@ def wallpaper_status():
         ext = os.path.splitext(wp)[1]
         return jsonify({
             "hasWallpaper": True,
-            "url": f"/api/wallpaper/image?t={int(os.path.getmtime(wp))}",
+            "url": f"/api/wallpaper/image?t={os.stat(wp).st_mtime_ns}",
             "sizeKB": size_kb,
             "ext": ext
         })
@@ -205,7 +205,7 @@ def upload_avatar():
 
         return jsonify({
             "success": True, 
-            "url": f"/api/wallpaper/avatar_image?code={member_code}&t={int(os.path.getmtime(dest))}",
+            "url": f"/api/wallpaper/avatar_image?code={member_code}&t={os.stat(dest).st_mtime_ns}",
             "sizeKB": size_kb
         })
 

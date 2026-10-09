@@ -142,7 +142,7 @@ def load_members_data() -> dict:
             avatar_path = os.path.join(AVATAR_DIR, off_avatar)
             if os.path.exists(avatar_path):
                 try:
-                    mtime = int(os.path.getmtime(avatar_path))
+                    mtime = os.stat(avatar_path).st_mtime_ns
                 except OSError:
                     mtime = 0
 

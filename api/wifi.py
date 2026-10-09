@@ -152,6 +152,8 @@ def wifi_connect():
     except Exception:
         pass
 
+    invalidate_wifi_cache()
+
     print(f"[WiFi] Connected to {ssid}")
     return jsonify({"success": True, "ssid": ssid})
 
@@ -160,4 +162,6 @@ def wifi_connect():
 @wifi_bp.route("/disconnect", methods=["POST"])
 def wifi_disconnect():
     ok, _ = _run(["sudo", "nmcli", "device", "disconnect", "wlan0"])
+    if ok:
+        invalidate_wifi_cache()
     return jsonify({"success": ok})

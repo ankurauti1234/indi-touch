@@ -209,14 +209,16 @@ def set_brightness():
     try:
         value = int(data.get("brightness", 128))
         max_b_path = f"{path}/max_brightness"
-        with open(max_b_path) as f:
+        with open(max_b_path, "r") as f:
             max_b = int(f.read().strip())
 
         value = max(int(max_b * 0.1), min(value, max_b))
 
-        # Direct write — no sudo, no tee subprocess
-        with open(f"{path}/brightness", "w") as f:
-            f.write(str(value))
+        try:
+            with open(f"{path}/brightness", "w") as f:
+                f.write(str(value))
+        except (PermissionError, OSError):
+            subprocess.run(["tee", f"{path}/brightness"], input=str(value), text=True, timeout=2)
 
         return jsonify({"success": True, "brightness": value})
     except Exception as e:

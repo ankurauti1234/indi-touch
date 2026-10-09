@@ -241,32 +241,36 @@ def get_brightness():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ── POST /api/system/reboot ────────────────────────────────────────────────────
+# ── POST /api/system/reboot ───────────────────────────────────────────────────
 @system_bp.route("/reboot", methods=["POST"])
 def reboot():
     try:
+        # Use direct argument-list systemd-run without shell or sudo
         subprocess.Popen(["systemd-run", "--on-active=1", "systemctl", "reboot"])
-        return jsonify({"success": True})
-    except Exception:
+        return jsonify({"success": True, "message": "Rebooting..."})
+    except Exception as e:
         try:
-            subprocess.Popen("sleep 1 && sudo reboot", shell=True)
-            return jsonify({"success": True})
-        except Exception as e:
-            return jsonify({"success": False, "error": str(e)}), 500
+            # Fallback using direct argument list (no shell=True)
+            subprocess.Popen(["systemctl", "reboot"])
+            return jsonify({"success": True, "message": "Rebooting via fallback..."})
+        except Exception as e2:
+            return jsonify({"success": False, "error": str(e2)}), 500
 
 
 # ── POST /api/system/shutdown ─────────────────────────────────────────────────
 @system_bp.route("/shutdown", methods=["POST"])
 def shutdown():
     try:
+        # Use direct argument-list systemd-run without shell or sudo
         subprocess.Popen(["systemd-run", "--on-active=1", "systemctl", "poweroff"])
-        return jsonify({"success": True})
-    except Exception:
+        return jsonify({"success": True, "message": "Shutting down..."})
+    except Exception as e:
         try:
-            subprocess.Popen("sleep 1 && sudo shutdown -h now", shell=True)
-            return jsonify({"success": True})
-        except Exception as e:
-            return jsonify({"success": False, "error": str(e)}), 500
+            # Fallback using direct argument list (no shell=True)
+            subprocess.Popen(["systemctl", "poweroff"])
+            return jsonify({"success": True, "message": "Shutting down via fallback..."})
+        except Exception as e2:
+            return jsonify({"success": False, "error": str(e2)}), 500
 
 
 # ── GET /api/system/settings ──────────────────────────────────────────────────

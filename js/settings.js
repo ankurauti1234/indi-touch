@@ -684,7 +684,7 @@ async function loadWallpaperSettings() {
         if (d.hasWallpaper) {
             if (noImg) noImg.style.display = 'none';
             if (hasImg) hasImg.style.display = 'flex';
-            if (thumb) thumb.src = `${d.url}&t=${Date.now()}`;
+            if (thumb) thumb.src = d.url;
             if (sizeInfo) sizeInfo.textContent = `${d.sizeKB} KB • ${d.ext.replace('.', '').toUpperCase()} ${t('Active')}`;
             if (resetBtn) resetBtn.style.display = 'flex';
             if (statusText) statusText.textContent = t('active_bg');

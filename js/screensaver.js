@@ -278,7 +278,7 @@ async function applyWallpaper(forceBust = false) {
         const d = await r.json();
 
         if (d.hasWallpaper) {
-            const urlToUse = forceBust ? `${d.url}?t=${Date.now()}` : d.url;
+            const urlToUse = d.url;
             if (_cachedWallpaperUrl !== urlToUse) {
                 _cachedWallpaperUrl = urlToUse;
                 saver.style.backgroundImage = `url('${urlToUse}')`;

@@ -125,7 +125,7 @@ def wallpaper_upload():
         size_kb = round(os.path.getsize(dest) / 1024, 1)
         print(f"[WALLPAPER] Optimized: {size_kb}KB")
 
-        return jsonify({"success": True, "url": f"/api/wallpaper/image?t={int(os.path.getmtime(dest))}"})
+        return jsonify({"success": True, "url": f"/api/wallpaper/image?t={os.stat(dest).st_mtime_ns}"})
 
     except Exception as e:
         print(f"[WALLPAPER] Upload error: {e}")

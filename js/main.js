@@ -257,11 +257,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGuestList();
     initLocation();
 
-    // 4. Start Background Clock and Services
-    timers.setInterval(updateClock, 1000);
-    updateClock();
-
-    // 5. Finalize - Hide app loader
+    // 4. Finalize - Hide app loader
     hideAppLoader();
 
     // ---------------- Still Watching Popup ----------------

@@ -212,10 +212,9 @@ def set_brightness():
         with open(max_b_path) as f:
             max_b = int(f.read().strip())
 
-        # Clamp brightness between 10% and 100%
         value = max(int(max_b * 0.1), min(value, max_b))
 
-        # Write directly via standard Python file I/O (no sudo, no subprocess)
+        # Direct write — no sudo, no tee subprocess
         with open(f"{path}/brightness", "w") as f:
             f.write(str(value))
 

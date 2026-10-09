@@ -20,8 +20,6 @@ export function dismissScreensaver(e) {
     const s = document.getElementById('screensaver');
     if (!s || !s.classList.contains('active')) return;
 
-    stopClock(); 
-
     if (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -69,7 +67,6 @@ export function resetIdle(isPriority = false) {
                 requestAnimationFrame(() => {
                     document.body.classList.add('screensaver-active');
                     s.classList.add('active');
-                    startClock();
                 });
             });
         }
@@ -81,21 +78,6 @@ window.setScreensaverTimeout = (ms) => {
     clearTimeout(idleTimer);
     resetIdle();
 };
-
-let clockTimer = null;
-
-export function startClock() {
-    if (clockTimer) return;
-    updateClock(); // Run immediately on show
-    clockTimer = setInterval(updateClock, 1000);
-}
-
-export function stopClock() {
-    if (clockTimer) {
-        clearInterval(clockTimer);
-        clockTimer = null;
-    }
-}
 
 export function updateClock() {
     const now = new Date();

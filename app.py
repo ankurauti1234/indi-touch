@@ -56,7 +56,7 @@ def run_flask():
         flask_app,
         host="127.0.0.1",
         port=FLASK_PORT,
-        threads=4,               # 4 threads handle transient bursts & slow I/O
+        threads=2,               # 2 threads handle transient bursts & slow I/O
         channel_timeout=10,      # Prune idle keep-alive sockets quickly
         connection_limit=32,     # Cap local connection pool
         asyncore_use_poll=True   # Efficient socket polling on Linux

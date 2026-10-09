@@ -72,6 +72,13 @@ def get_wifi_connected() -> bool:
     finally:
         _wifi_status_lock.release()
 
+def invalidate_wifi_cache():
+    """Invalidates the 30-second WiFi status cache immediately."""
+    global _wifi_status_cache, _wifi_status_timestamp
+    with _wifi_status_lock:
+        _wifi_status_cache = None
+        _wifi_status_timestamp = 0.0
+
 
 def _is_installation_done() -> bool:
     """Safely check /var/lib/self_installation_done flag without leaking file descriptors."""
@@ -125,13 +132,20 @@ def get_ip_address():
     return "127.0.0.1"
 
 
+_cached_mac_address = None
+
 def get_mac_address():
+    global _cached_mac_address
+    if _cached_mac_address is not None:
+        return _cached_mac_address
+
     try:
         for interface in ["wlan0", "eth0", "enp1s0"]:
             path = f"/sys/class/net/{interface}/address"
             if os.path.exists(path):
                 with open(path, "r") as f:
-                    return f.read().strip().upper()
+                    _cached_mac_address = f.read().strip().upper()
+                    return _cached_mac_address
     except Exception:
         pass
     return "00:00:00:00:00:00"

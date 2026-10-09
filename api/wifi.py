@@ -10,6 +10,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 
 from .config import SYSTEM_FILES
+from api.system import invalidate_wifi_cache
 
 wifi_bp = Blueprint("wifi", __name__)
 

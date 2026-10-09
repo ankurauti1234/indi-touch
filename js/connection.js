@@ -19,9 +19,7 @@ function isOnboarding() {
     if (config.onboardingCompleted === false) return true;
     const layer = document.getElementById('onboarding-layer');
     if (!layer) return false;
-    return !layer.classList.contains('hidden') &&
-        layer.style.display !== 'none' &&
-        layer.style.opacity !== '0';
+    return !layer.classList.contains('hidden') && layer.style.display !== 'none';
 }
 
 // ─── USB Popup ────────────────────────────────────────────────────────────────
@@ -268,6 +266,15 @@ function _updateSidebarWifiIcon() {
     }
 }
 
+// ─── Reconcile Connection Popups (Level-Triggered) ───────────────────────────
+export function reconcileConnectionPopups() {
+    if (isOnboarding()) return;
+    if (_usbConnected) hideUsbPopup(); else injectUsbPopup();
+    if (_wifiConnected) hideWifiPopup(); else injectWifiPopup();
+    if (_internetConnected) hideInternetPopup(); else injectInternetPopup();
+}
+window.reconcileConnectionPopups = reconcileConnectionPopups;
+
 // ─── Unified Device State Handler ─────────────────────────────────────────────
 export function applyDeviceState(d) {
     if (!d) return;
@@ -285,6 +292,9 @@ export function applyDeviceState(d) {
     if (d.internet !== undefined) {
         setInternetState(Boolean(d.internet));
     }
+
+    // Level-triggered popup reconciliation
+    reconcileConnectionPopups();
 
     // 4. TV Status Icon
     const tvIcon = document.getElementById('tv-status-icon');

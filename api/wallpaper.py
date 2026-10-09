@@ -83,7 +83,9 @@ def wallpaper_image():
     wp = _get_current_wallpaper()
     if not wp:
         return jsonify({"error": "No wallpaper set"}), 404
-    return send_from_directory(WALLPAPER_DIR, os.path.basename(wp))
+    resp = send_from_directory(WALLPAPER_DIR, os.path.basename(wp))
+    resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return resp
 
 
 # ── POST /api/wallpaper/upload ────────────────────────────────────────────────
@@ -223,4 +225,6 @@ def get_avatar_image():
     if not matches:
         return jsonify({"error": "No avatar set"}), 404
     
-    return send_from_directory(AVATAR_DIR, os.path.basename(matches[0]))
+    resp = send_from_directory(AVATAR_DIR, os.path.basename(matches[0]))
+    resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return resp

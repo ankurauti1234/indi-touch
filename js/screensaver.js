@@ -197,6 +197,22 @@ export async function initLocation() {
     }
 }
 
+function getMemberBgColor(m) {
+    if (!m) return '#3b5998';
+    const gender = (m.gender || 'Male').toLowerCase();
+    const age = parseInt(m.age) || 30;
+
+    if (gender === 'male') {
+        if (age < 20) return '#2e7d32'; // teen / kid (green)
+        if (age < 45) return '#204070'; // middle (blue)
+        return '#d35400';               // aged / elder (warm terracotta/orange)
+    } else {
+        if (age < 20) return '#00838f'; // teen / kid (teal)
+        if (age < 45) return '#e67e22'; // middle (amber/orange)
+        return '#8e44ad';               // elder (purple)
+    }
+}
+
 export function renderScreensaverMembers() {
     initLocation();
 
@@ -272,7 +288,7 @@ export function renderScreensaverMembers() {
         const visibleMembers = activeMembers.slice(0, 5);
         const remainingCount = activeMembers.length - 5;
         const sixthMember = activeMembers[5];
-        const sixthUrl = getAvatarUrl(sixthMember);
+        const bgColor = getMemberBgColor(sixthMember);
 
         // First 5 members rendered normally
         html = visibleMembers.map(m => {
@@ -284,12 +300,14 @@ export function renderScreensaverMembers() {
             </div>`;
         }).join('');
 
-        // 6th slot: standard saver-member-avatar bubble containing the 6th member image plus the centered badge
+        // 6th slot: uses the exact same saver-member-avatar bubble
+        // Inside is a circle filling the inner content area with the 6th member's color
         html += `
         <div class="saver-member-item">
-            <div class="saver-member-avatar saver-avatar-slot">
-                <img src="${sixthUrl}" class="saver-slot-img" alt="${sixthMember.name}">
-                <div class="saver-badge-overlay">+${remainingCount}</div>
+            <div class="saver-member-avatar">
+                <div class="saver-overflow-inner" style="background-color: ${bgColor};">
+                    +${remainingCount}
+                </div>
             </div>
             <div class="saver-member-name">MORE</div>
         </div>`;

@@ -256,41 +256,14 @@ export function renderScreensaverMembers() {
         return;
     }
 
-    const MAX_VISIBLE = 6;
-    let html = '';
-
-    if (activeMembers.length <= MAX_VISIBLE) {
-        html = activeMembers.map(m => {
-            const url = getAvatarUrl(m);
-            return `
-            <div class="saver-member-item">
-                <img src="${url}" class="saver-member-avatar" alt="${m.name}">
-                <div class="saver-member-name">${m.name}</div>
-            </div>`;
-        }).join('');
-    } else {
-        // Show first 5 members
-        const visibleMembers = activeMembers.slice(0, 5);
-        const remainingCount = activeMembers.length - 5;
-
-        html = visibleMembers.map(m => {
-            const url = getAvatarUrl(m);
-            return `
-            <div class="saver-member-item">
-                <img src="${url}" class="saver-member-avatar" alt="${m.name}">
-                <div class="saver-member-name">${m.name}</div>
-            </div>`;
-        }).join('');
-
-        // 6th slot: dedicated "+N" overflow badge
-        html += `
-        <div class="saver-member-item saver-overflow-item">
-            <div class="saver-member-avatar saver-overflow-badge">+${remainingCount}</div>
-            <div class="saver-member-name">MORE</div>
+    container.innerHTML = activeMembers.map(m => {
+        const url = getAvatarUrl(m);
+        return `
+        <div class="saver-member-item">
+            <img src="${url}" class="saver-member-avatar">
+            <div class="saver-member-name">${m.name}</div>
         </div>`;
-    }
-
-    container.innerHTML = html;
+    }).join('');
 }
 
 // ── WALLPAPER BACKGROUND ─────────────────────────────────────────────────────

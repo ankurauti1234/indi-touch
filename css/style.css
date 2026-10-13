@@ -1637,6 +1637,32 @@ body.osk-open .main-stage {
     margin: 0 !important;
 }
 
+/* Enlarges the existing info bar when center-clock is active */
+#screensaver.center-clock .saver-info-row {
+    margin-top: 32px;
+    padding: 12px 32px;
+    gap: 28px;
+    border-radius: 50px;
+}
+
+#screensaver.center-clock #clock-date,
+#screensaver.center-clock .weather-temp {
+    font-size: 44px;
+}
+
+#screensaver.center-clock .weather-desc-inline {
+    font-size: 38px;
+}
+
+#screensaver.center-clock #saver-weather img {
+    width: 60px !important;
+    height: 60px !important;
+}
+
+#screensaver.center-clock .saver-divider {
+    height: 36px;
+}
+
 /* Hero Clock Section */
 .saver-clock {
     display: flex;
@@ -1663,8 +1689,9 @@ body.osk-open .main-stage {
     justify-content: center;
 }
 
+/* Existing massive rule: sets clock digits to true hero scale */
 #clock-time.massive {
-    font-size: 360px !important;
+    font-size: 380px !important;
     line-height: 0.82;
     letter-spacing: -8px;
 }

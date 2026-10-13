@@ -210,17 +210,14 @@ export function renderScreensaverMembers() {
     if (tvTag) {
         if (!config.bleAvailable) {
             tvTag.style.display = 'none';
-            if (clock) clock.classList.remove('massive');
         } else {
             tvTag.style.display = 'flex';
             if (tvState.on) {
                 tvTag.classList.remove('offline');
                 if (tvText) tvText.innerText = 'TV ON';
-                if (clock) clock.classList.remove('massive');
             } else {
                 tvTag.classList.add('offline');
                 if (tvText) tvText.innerText = 'TV OFF';
-                if (clock) clock.classList.add('massive');
             }
         }
     }
@@ -243,11 +240,14 @@ export function renderScreensaverMembers() {
         watchingArea.style.display = hasMembers ? 'block' : 'none';
     }
 
+    // Centered & massive clock when NO active members; standard when members are present
     if (saver) {
         if (!hasMembers) {
             saver.classList.add('center-clock');
+            if (clock) clock.classList.add('massive');
         } else {
             saver.classList.remove('center-clock');
+            if (clock) clock.classList.remove('massive');
         }
     }
 

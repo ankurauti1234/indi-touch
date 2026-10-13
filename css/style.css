@@ -1834,6 +1834,31 @@ body.osk-open .main-stage {
     letter-spacing: 0.5px;
 }
 
+/* Compact View (6+ Members) - Shrinks member row only */
+.compact-view #saver-active-members {
+    gap: 16px;
+}
+
+.compact-view .saver-member-item {
+    width: 130px;
+    gap: 8px;
+}
+
+.compact-view .saver-member-avatar {
+    width: 110px;
+    height: 110px;
+    padding: 6px;
+    border-width: 3px;
+}
+
+.compact-view .saver-member-name {
+    font-size: 22px;
+}
+
+.compact-view .saver-overflow-inner {
+    font-size: 26px;
+}
+
 /* Overflow Bubble Inner Badge */
 .saver-overflow-inner {
     width: 100%;

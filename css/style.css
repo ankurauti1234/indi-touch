@@ -1694,9 +1694,9 @@ body.osk-open .main-stage {
 #screensaver.center-clock #clock-time,
 #screensaver.center-clock .clock-main-digits,
 #clock-time.massive .clock-main-digits {
-    font-size: 380px !important;
+    font-size: 310px !important;
     line-height: 0.85 !important;
-    letter-spacing: -10px !important;
+    letter-spacing: -6px !important;
 }
 
 .clock-main-digits {

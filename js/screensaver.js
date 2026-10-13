@@ -197,6 +197,41 @@ export async function initLocation() {
     }
 }
 
+/**
+ * Resolves the primary background tint matching local avatar PNG art.
+ */
+function getMemberPaletteColor(m) {
+    if (!m) return { bg: 'rgba(255, 255, 255, 0.12)', border: 'rgba(255, 255, 255, 0.35)' };
+
+    const gender = (m.gender || 'Male').toLowerCase();
+    const age = parseInt(m.age) || 30;
+
+    let category = 'middle';
+    if (age < 13) category = 'kid';
+    else if (age < 20) category = 'teen';
+    else if (age < 45) category = 'middle';
+    else if (age < 65) category = 'aged';
+    else category = 'elder';
+
+    const key = `${gender}-${category}`;
+
+    const paletteMap = {
+        'male-middle':   { bg: 'rgba(42, 82, 152, 0.55)',  border: 'rgba(92, 142, 224, 0.65)' },
+        'male-aged':     { bg: 'rgba(230, 126, 34, 0.55)', border: 'rgba(243, 156, 18, 0.65)' },
+        'male-elder':    { bg: 'rgba(211, 84, 0, 0.55)',   border: 'rgba(230, 126, 34, 0.65)' },
+        'male-kid':      { bg: 'rgba(39, 174, 96, 0.55)',  border: 'rgba(46, 204, 113, 0.65)' },
+        'male-teen':     { bg: 'rgba(22, 160, 133, 0.55)', border: 'rgba(26, 188, 156, 0.65)' },
+
+        'female-middle': { bg: 'rgba(235, 130, 60, 0.55)', border: 'rgba(243, 156, 18, 0.65)' },
+        'female-aged':   { bg: 'rgba(230, 126, 34, 0.55)', border: 'rgba(243, 156, 18, 0.65)' },
+        'female-elder':  { bg: 'rgba(155, 89, 182, 0.55)', border: 'rgba(175, 122, 197, 0.65)' },
+        'female-kid':    { bg: 'rgba(26, 188, 156, 0.55)', border: 'rgba(72, 201, 176, 0.65)' },
+        'female-teen':   { bg: 'rgba(22, 160, 133, 0.55)', border: 'rgba(26, 188, 156, 0.65)' },
+    };
+
+    return paletteMap[key] || { bg: 'rgba(255, 255, 255, 0.14)', border: 'rgba(255, 255, 255, 0.35)' };
+}
+
 export function renderScreensaverMembers() {
     initLocation();
 
@@ -269,9 +304,13 @@ export function renderScreensaverMembers() {
             </div>`;
         }).join('');
     } else {
-        // Show first 5 members
+        // First 5 members rendered normally
         const visibleMembers = activeMembers.slice(0, 5);
         const remainingCount = activeMembers.length - 5;
+        const sixthMember = activeMembers[5];
+
+        // Retrieve demographic color of the 6th member
+        const { bg, border } = getMemberPaletteColor(sixthMember);
 
         html = visibleMembers.map(m => {
             const url = getAvatarUrl(m);
@@ -282,10 +321,12 @@ export function renderScreensaverMembers() {
             </div>`;
         }).join('');
 
-        // 6th slot: dedicated "+N" overflow badge
+        // 6th slot: Overflow circle tinted with the 6th member's palette
         html += `
         <div class="saver-member-item saver-overflow-item">
-            <div class="saver-member-avatar saver-overflow-badge">+${remainingCount}</div>
+            <div class="saver-member-avatar saver-overflow-badge" style="background: ${bg}; border-color: ${border};">
+                +${remainingCount}
+            </div>
             <div class="saver-member-name">MORE</div>
         </div>`;
     }

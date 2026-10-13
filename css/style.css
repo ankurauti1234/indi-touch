@@ -42,8 +42,16 @@ body.remote-mode * {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
     backdrop-filter: none !important;
-    filter: none !important;
     will-change: auto !important;
+}
+
+/* Ensure inactive cards strictly retain their grayscale appearance */
+.reduce-animations .member-card.inactive {
+    filter: grayscale(80%) brightness(0.85) !important;
+}
+
+.reduce-animations .member-card.local-avatar.inactive {
+    filter: grayscale(80%) brightness(0.8) !important;
 }
 
 /* Remote Focus ring — used for full-UI navigation in remote mode */

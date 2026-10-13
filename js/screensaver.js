@@ -197,49 +197,6 @@ export async function initLocation() {
     }
 }
 
-
-// In-memory cache so we only sample each avatar once
-const _avatarColorCache = {};
-
-function applyAvatarBgColor(imgUrl, elementId) {
-    if (_avatarColorCache[imgUrl]) {
-        const el = document.getElementById(elementId);
-        if (el) el.style.backgroundColor = _avatarColorCache[imgUrl];
-        return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = 'Anonymous';
-    img.src = imgUrl;
-
-    img.onload = () => {
-        try {
-            const canvas = document.createElement('canvas');
-            canvas.width = 1;
-            canvas.height = 1;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            
-            // Sample near the top-left outer circle area (22% in from the corner)
-            // where the circular solid background is present without facial features
-            const sampleX = Math.floor(img.naturalWidth * 0.22);
-            const sampleY = Math.floor(img.naturalHeight * 0.22);
-
-            ctx.drawImage(img, sampleX, sampleY, 1, 1, 0, 0, 1, 1);
-            const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
-
-            if (a > 30) {
-                const colorStr = `rgb(${r}, ${g}, ${b})`;
-                _avatarColorCache[imgUrl] = colorStr;
-                const el = document.getElementById(elementId);
-                if (el) el.style.backgroundColor = colorStr;
-            }
-        } catch (_) {
-            // Fallback if canvas read fails
-        }
-    };
-}
-
-// In-memory cache to prevent re-extracting colors for already seen avatars
 function applyAvatarBgColor(imgUrl, elementId) {
     window._avatarColorCache = window._avatarColorCache || {};
 
@@ -369,7 +326,7 @@ export function renderScreensaverMembers() {
         }).join('');
 
         // 6th slot: Exact same saver-member-avatar bubble, containing pure dynamic background + text
-        const cachedColor = (window._avatarColorCache && window._avatarColorCache[sixthUrl]) || 'rgba(255, 255, 255, 0.15)';
+        const cachedColor = _avatarColorCache[sixthUrl] || 'rgba(255, 255, 255, 0.15)';
         html += `
         <div class="saver-member-item">
             <div class="saver-member-avatar">

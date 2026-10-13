@@ -1871,7 +1871,7 @@ body.osk-open .main-stage {
     font-size: 32px;
     font-weight: 700;
     box-sizing: border-box;
-    transition: background-color 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.15); /* clean fallback while loading */
 }
 
 .compact-view .saver-overflow-inner {

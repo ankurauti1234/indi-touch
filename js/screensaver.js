@@ -239,6 +239,48 @@ function applyAvatarBgColor(imgUrl, elementId) {
     };
 }
 
+// In-memory cache to prevent re-extracting colors for already seen avatars
+function applyAvatarBgColor(imgUrl, elementId) {
+    window._avatarColorCache = window._avatarColorCache || {};
+
+    if (window._avatarColorCache[imgUrl]) {
+        const el = document.getElementById(elementId);
+        if (el) el.style.backgroundColor = window._avatarColorCache[imgUrl];
+        return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imgUrl;
+
+    img.onload = () => {
+        try {
+            const canvas = document.createElement('canvas');
+            const w = img.naturalWidth || 120;
+            const h = img.naturalHeight || 120;
+            canvas.width = w;
+            canvas.height = h;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+
+            // Sample top-center background area (15% from top), avoiding face/hair
+            const sampleX = Math.floor(w * 0.5);
+            const sampleY = Math.floor(h * 0.15);
+            const pixel = ctx.getImageData(sampleX, sampleY, 1, 1).data;
+
+            if (pixel[3] > 40) {
+                const colorStr = `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+                window._avatarColorCache[imgUrl] = colorStr;
+                const el = document.getElementById(elementId);
+                if (el) el.style.backgroundColor = colorStr;
+            }
+        } catch (_) {
+            // Fallback silently if canvas read fails
+        }
+    };
+}
+
 export function renderScreensaverMembers() {
     initLocation();
 
@@ -327,7 +369,7 @@ export function renderScreensaverMembers() {
         }).join('');
 
         // 6th slot: Exact same saver-member-avatar bubble, containing pure dynamic background + text
-        const cachedColor = _avatarColorCache[sixthUrl] || 'rgba(255, 255, 255, 0.15)';
+        const cachedColor = (window._avatarColorCache && window._avatarColorCache[sixthUrl]) || 'rgba(255, 255, 255, 0.15)';
         html += `
         <div class="saver-member-item">
             <div class="saver-member-avatar">

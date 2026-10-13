@@ -315,7 +315,7 @@ export function renderScreensaverMembers() {
         const sixthMember = activeMembers[5];
         const sixthUrl = getAvatarUrl(sixthMember);
 
-        // First 5 members
+        // First 5 members rendered normally
         html = visibleMembers.map(m => {
             const url = getAvatarUrl(m);
             return `
@@ -325,15 +325,20 @@ export function renderScreensaverMembers() {
             </div>`;
         }).join('');
 
-        // 6th slot: Render 6th member's image with a tinted overlay showing +N
+        // 6th slot: Exact same saver-member-avatar bubble, containing pure dynamic background + text
+        const cachedColor = _avatarColorCache[sixthUrl] || 'rgba(255, 255, 255, 0.15)';
         html += `
         <div class="saver-member-item">
-            <div class="saver-overflow-wrapper">
-                <img src="${sixthUrl}" class="saver-member-avatar" alt="More">
-                <div class="saver-overflow-scrim">+${remainingCount}</div>
+            <div class="saver-member-avatar">
+                <div id="saver-overflow-inner-pill" class="saver-overflow-inner" style="background-color: ${cachedColor};">
+                    +${remainingCount}
+                </div>
             </div>
             <div class="saver-member-name">MORE</div>
         </div>`;
+
+        // Extract color dynamically from the 6th member's actual image file
+        applyAvatarBgColor(sixthUrl, 'saver-overflow-inner-pill');
     }
 
     container.innerHTML = html;

@@ -1835,14 +1835,6 @@ body.osk-open .main-stage {
 }
 
 /* Compact View (5+ Members) */
-.compact-view #clock-time {
-    font-size: 200px !important;
-}
-
-.compact-view .clock-main-digits {
-    font-size: 200px !important;
-}
-
 .compact-view .saver-info-row {
     margin-top: 14px;
     padding: 6px 18px;

@@ -229,7 +229,7 @@ export function renderScreensaverMembers() {
 
     const saver = document.getElementById('screensaver');
     if (saver) {
-        if (activeMembers.length >= 5) {
+        if (activeMembers.length >= 6) {
             saver.classList.add('compact-view');
         } else {
             saver.classList.remove('compact-view');

@@ -1859,7 +1859,7 @@ body.osk-open .main-stage {
     font-size: 22px;
 }
 
-/* Sits inside .saver-member-avatar, filling the exact content space of the bubble */
+/* Fills the inside content area of the untouched .saver-member-avatar bubble */
 .saver-overflow-inner {
     width: 100%;
     height: 100%;
@@ -1871,6 +1871,7 @@ body.osk-open .main-stage {
     font-size: 32px;
     font-weight: 700;
     box-sizing: border-box;
+    transition: background-color 0.2s ease;
 }
 
 .compact-view .saver-overflow-inner {

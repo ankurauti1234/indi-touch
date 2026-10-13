@@ -197,20 +197,46 @@ export async function initLocation() {
     }
 }
 
-function getMemberBgColor(m) {
-    if (!m) return '#3b5998';
-    const gender = (m.gender || 'Male').toLowerCase();
-    const age = parseInt(m.age) || 30;
 
-    if (gender === 'male') {
-        if (age < 20) return '#2e7d32'; // teen / kid (green)
-        if (age < 45) return '#204070'; // middle (blue)
-        return '#d35400';               // aged / elder (warm terracotta/orange)
-    } else {
-        if (age < 20) return '#00838f'; // teen / kid (teal)
-        if (age < 45) return '#e67e22'; // middle (amber/orange)
-        return '#8e44ad';               // elder (purple)
+// In-memory cache so we only sample each avatar once
+const _avatarColorCache = {};
+
+function applyAvatarBgColor(imgUrl, elementId) {
+    if (_avatarColorCache[imgUrl]) {
+        const el = document.getElementById(elementId);
+        if (el) el.style.backgroundColor = _avatarColorCache[imgUrl];
+        return;
     }
+
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.src = imgUrl;
+
+    img.onload = () => {
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 1;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            // Sample near the top-left outer circle area (22% in from the corner)
+            // where the circular solid background is present without facial features
+            const sampleX = Math.floor(img.naturalWidth * 0.22);
+            const sampleY = Math.floor(img.naturalHeight * 0.22);
+
+            ctx.drawImage(img, sampleX, sampleY, 1, 1, 0, 0, 1, 1);
+            const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+
+            if (a > 30) {
+                const colorStr = `rgb(${r}, ${g}, ${b})`;
+                _avatarColorCache[imgUrl] = colorStr;
+                const el = document.getElementById(elementId);
+                if (el) el.style.backgroundColor = colorStr;
+            }
+        } catch (_) {
+            // Fallback if canvas read fails
+        }
+    };
 }
 
 export function renderScreensaverMembers() {
@@ -288,7 +314,7 @@ export function renderScreensaverMembers() {
         const visibleMembers = activeMembers.slice(0, 5);
         const remainingCount = activeMembers.length - 5;
         const sixthMember = activeMembers[5];
-        const bgColor = getMemberBgColor(sixthMember);
+        const sixthUrl = getAvatarUrl(sixthMember);
 
         // First 5 members rendered normally
         html = visibleMembers.map(m => {
@@ -300,17 +326,20 @@ export function renderScreensaverMembers() {
             </div>`;
         }).join('');
 
-        // 6th slot: uses the exact same saver-member-avatar bubble
-        // Inside is a circle filling the inner content area with the 6th member's color
+        // 6th slot: Exact same saver-member-avatar bubble, containing pure dynamic background + text
+        const cachedColor = _avatarColorCache[sixthUrl] || 'rgba(255, 255, 255, 0.15)';
         html += `
         <div class="saver-member-item">
             <div class="saver-member-avatar">
-                <div class="saver-overflow-inner" style="background-color: ${bgColor};">
+                <div id="saver-overflow-inner-pill" class="saver-overflow-inner" style="background-color: ${cachedColor};">
                     +${remainingCount}
                 </div>
             </div>
             <div class="saver-member-name">MORE</div>
         </div>`;
+
+        // Extract color dynamically from the 6th member's actual image file
+        applyAvatarBgColor(sixthUrl, 'saver-overflow-inner-pill');
     }
 
     container.innerHTML = html;

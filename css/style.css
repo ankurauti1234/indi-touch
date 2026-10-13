@@ -1859,29 +1859,19 @@ body.osk-open .main-stage {
     font-size: 22px;
 }
 
-/* Screensaver Overflow Badge (Idea A) */
-.saver-overflow-badge {
+/* Centers the +N text inside the circle */
+.saver-overflow-bubble {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.12);
-    border: 4px solid rgba(255, 255, 255, 0.35);
     color: #ffffff;
     font-size: 32px;
     font-weight: 700;
-    letter-spacing: 0.5px;
     box-sizing: border-box;
 }
 
-/* Match compact styling when 5+ members are present */
-.compact-view .saver-overflow-badge {
-    border-width: 3px;
-    font-size: 28px;
-}
-
-.saver-overflow-item .saver-member-name {
-    opacity: 0.8;
-    letter-spacing: 1.5px;
+.compact-view .saver-overflow-bubble {
+    font-size: 26px;
 }
 
 @keyframes slideInUp {

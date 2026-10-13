@@ -260,6 +260,7 @@ export function renderScreensaverMembers() {
     let html = '';
 
     if (activeMembers.length <= MAX_VISIBLE) {
+        // 1 to 6 members: render all normally
         html = activeMembers.map(m => {
             const url = getAvatarUrl(m);
             return `
@@ -269,9 +270,9 @@ export function renderScreensaverMembers() {
             </div>`;
         }).join('');
     } else {
-        // Show first 5 members
+        // More than 6: render first 5 normally
         const visibleMembers = activeMembers.slice(0, 5);
-        const remainingCount = activeMembers.length - 5;
+        const remainingCount = activeMembers.length - 5; // e.g., 7 members -> +2
 
         html = visibleMembers.map(m => {
             const url = getAvatarUrl(m);
@@ -282,10 +283,10 @@ export function renderScreensaverMembers() {
             </div>`;
         }).join('');
 
-        // 6th slot: dedicated "+N" overflow badge
+        // 6th slot: uses the exact same 'saver-member-avatar' circle, just with text instead of an image
         html += `
-        <div class="saver-member-item saver-overflow-item">
-            <div class="saver-member-avatar saver-overflow-badge">+${remainingCount}</div>
+        <div class="saver-member-item">
+            <div class="saver-member-avatar saver-overflow-bubble">+${remainingCount}</div>
             <div class="saver-member-name">MORE</div>
         </div>`;
     }

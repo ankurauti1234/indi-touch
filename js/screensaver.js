@@ -326,7 +326,7 @@ export function renderScreensaverMembers() {
         }).join('');
 
         // 6th slot: Exact same saver-member-avatar bubble, containing pure dynamic background + text
-        const cachedColor = _avatarColorCache[sixthUrl] || 'rgba(255, 255, 255, 0.15)';
+        const cachedColor = (window._avatarColorCache && window._avatarColorCache[sixthUrl]) || 'rgba(255, 255, 255, 0.15)';
         html += `
         <div class="saver-member-item">
             <div class="saver-member-avatar">

@@ -159,25 +159,14 @@ export function toggleFocused() {
 }
 
 import { timers } from './utils.js';
-
-// Per-card toggle lock to prevent double-tap bouncing without blocking other cards
-const activeToggles = new Set();
-
+let toggleDebounceTimer = null;
 export async function toggleMember(index) {
     if (!tvState.on) {
         console.warn("Toggle member ignored: TV is OFF");
         return;
     }
-
-    // If this specific card is already processing, ignore duplicate tap
-    if (activeToggles.has(index)) return;
-    activeToggles.add(index);
-
-    // Auto-release the lock after 180ms so rapid intentional tapping works smoothly
-    timers.setTimeout(() => {
-        activeToggles.delete(index);
-    }, 180);
-
+    if (toggleDebounceTimer) return;
+    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500); // 500ms debounce
     if (memberData[index]) {
         try {
             const r = await fetch('/api/members/toggle', {
@@ -209,9 +198,6 @@ export async function toggleMember(index) {
             }
         } catch (e) {
             console.error("Toggle member failed", e);
-        } finally {
-            // Ensure card lock is freed if network completes before timeout
-            activeToggles.delete(index);
         }
     }
 }

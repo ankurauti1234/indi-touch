@@ -1867,11 +1867,12 @@ body.osk-open .main-stage {
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(255, 255, 255, 0.12);
     color: #ffffff;
     font-size: 32px;
     font-weight: 700;
     box-sizing: border-box;
-    transition: background-color 0.2s ease;
+    letter-spacing: 0.5px;
 }
 
 .compact-view .saver-overflow-inner {

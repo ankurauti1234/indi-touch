@@ -560,11 +560,6 @@ body.light-mode #still-watching-popover .conn-btn-primary {
     flex-grow: 1;
 }
 
-.member-card:active {
-    transform: scale(0.985);
-    transition: transform 60ms ease-out;
-}
-
 /* Remove mouse-based active scale */
 
 .member-card:not(.inactive) {

@@ -274,7 +274,7 @@ export function renderScreensaverMembers() {
         const sixthMember = activeMembers[5];
         const sixthUrl = getAvatarUrl(sixthMember);
 
-        // First 5 members
+        // First 5 members rendered normally
         html = visibleMembers.map(m => {
             const url = getAvatarUrl(m);
             return `
@@ -284,12 +284,12 @@ export function renderScreensaverMembers() {
             </div>`;
         }).join('');
 
-        // 6th slot: Render 6th member's image with a tinted overlay showing +N
+        // 6th slot: standard saver-member-avatar bubble containing the 6th member image plus the centered badge
         html += `
         <div class="saver-member-item">
-            <div class="saver-overflow-wrapper">
-                <img src="${sixthUrl}" class="saver-member-avatar" alt="More">
-                <div class="saver-overflow-scrim">+${remainingCount}</div>
+            <div class="saver-member-avatar saver-avatar-slot">
+                <img src="${sixthUrl}" class="saver-slot-img" alt="${sixthMember.name}">
+                <div class="saver-badge-overlay">+${remainingCount}</div>
             </div>
             <div class="saver-member-name">MORE</div>
         </div>`;

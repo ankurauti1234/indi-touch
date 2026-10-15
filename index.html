@@ -168,23 +168,22 @@
           </div>
         </div>
 
-        <!-- Step 6: TV Power Calibration (Compact Touch Screen Layout) -->
+        <!-- Step 6: TV Power Calibration -->
         <div id="step-6" class="step step-calibration">
-          <div class="wiz-header-row" style="margin-bottom: 14px;">
-            <div class="wiz-header-text">
-              <h2 class="wiz-title" style="font-size: 32px; margin-bottom: 4px;">TV Power Calibration</h2>
-              <p class="wiz-desc" style="font-size: 15px;">Calibrate active & standby detection.</p>
-            </div>
-            <!-- Live Telemetry Pill inside Header Row to save vertical space -->
-            <div class="calib-live-badge">
-              <span class="material-symbols-rounded" style="color:var(--primary); font-size:26px;">bolt</span>
-              <span id="calib-live-watt" class="calib-watt-text">-- W</span>
-              <span id="calib-live-state" class="onboard-wifi-badge" style="margin-left: 8px;">CHECKING...</span>
-            </div>
+          <div class="wiz-header" style="margin-bottom: 12px; text-align: center;">
+            <h2 class="wiz-title" style="font-size: 32px; margin-bottom: 4px;">TV Power Calibration</h2>
+            <p class="wiz-desc" style="font-size: 15px;">Calibrate active and standby detection.</p>
           </div>
 
           <div class="calib-body-container">
-            <!-- Compact Dual Checklist -->
+            <!-- Telemetry Pill: Placed Directly Above the Checklist -->
+            <div class="calib-live-badge-centered">
+              <span class="material-symbols-rounded" style="color:var(--primary); font-size:26px;">bolt</span>
+              <span id="calib-live-watt" class="calib-watt-text">-- W</span>
+              <span id="calib-live-state" class="onboard-wifi-badge" style="margin-left: 10px;">CHECKING...</span>
+            </div>
+
+            <!-- Dual Checklist -->
             <div class="chk-group calib-chk-group">
               <div class="chk-item pending calib-chk-item" id="chk-calib-off">
                 <div class="chk-spinner" style="display:none; width:22px; height:22px;"></div>
@@ -220,7 +219,7 @@
               <span id="calib-progress-label" class="calib-progress-text">Measuring: 5s remaining</span>
             </div>
 
-            <!-- Action Button centered directly in viewport -->
+            <!-- Action Button -->
             <div style="display:flex; justify-content:center;">
               <button id="btn-calib-action" class="setup-btn calib-action-btn" onclick="triggerCalibrationStep()" disabled>
                 <span class="material-symbols-rounded" style="font-size: 22px;">play_arrow</span>

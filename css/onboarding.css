@@ -702,13 +702,17 @@
     padding: 36px 60px 100px !important;
 }
 
-.calib-live-badge {
+/* Center telemetry pill directly above checklist */
+.calib-live-badge-centered {
     display: flex;
     align-items: center;
+    justify-content: center;
+    align-self: center;
     background: var(--bg-surface-container);
-    padding: 8px 18px;
+    padding: 8px 24px;
     border-radius: 24px;
     border: 1px solid var(--outline-variant);
+    margin-bottom: 4px;
 }
 
 .calib-watt-text {

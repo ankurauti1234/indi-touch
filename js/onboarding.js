@@ -2,11 +2,19 @@ import { t } from './i18n.js';
 import { config, save } from './data.js';
 
 let currentStep = 1;
-const totalSteps = 7; 
+const totalSteps = 9; 
 
 let selectedSsid = '';
 let isSsidLocked = false;
 let isAlreadyConnected = false;
+
+// BLE Plug & Calibration state
+let selectedPlugMac = '';
+let calibStage = 'INIT'; // 'INIT' -> 'SWITCH_PROMPT' -> 'DONE'
+let firstCapturedType = null; // 'ON' or 'OFF'
+let offBaselineWatt = null;
+let onBaselineWatt = null;
+let liveWattPollInterval = null;
 
 export async function nextStep() {
     if (!validateStep(currentStep)) return;
@@ -14,7 +22,6 @@ export async function nextStep() {
     // Special logic for transitions
     if (currentStep === 2) {
         if (isAlreadyConnected) {
-            // If already connected, skip to hardware check (Step 4)
             animateStep(2, 4);
             currentStep = 4;
             handleStepLogic(currentStep);
@@ -28,13 +35,11 @@ export async function nextStep() {
         isSsidLocked = selected.dataset.locked === 'true';
 
         if (isSsidLocked) {
-            // If locked, Step 3 (Password) will handle the connection logic
             animateStep(2, 3);
             currentStep = 3;
             handleStepLogic(currentStep);
             return;
         } else {
-            // Open network, proceed to Step 4
             animateStep(2, 4);
             currentStep = 4;
             handleStepLogic(currentStep);
@@ -43,9 +48,8 @@ export async function nextStep() {
     }
 
     if (currentStep === 3) {
-        // Handle connection attempt on Step 3
         const connected = await connectOnboardWifi();
-        if (!connected) return; // Stay on password page if connection fails
+        if (!connected) return;
     }
 
     animateStep(currentStep, currentStep + 1);
@@ -71,6 +75,7 @@ export function prevStep() {
 
     animateStep(currentStep, currentStep - 1);
     currentStep--;
+    handleStepLogic(currentStep);
 }
 
 function animateStep(from, to) {
@@ -113,7 +118,6 @@ export async function refreshWifi() {
     list.style.pointerEvents = 'none';
     
     try {
-        // First check current connection
         let currentSsid = '';
         try {
             const cr = await fetch('/api/wifi/current');
@@ -126,8 +130,6 @@ export async function refreshWifi() {
         if (!data.success) throw new Error(data.error);
 
         let nets = data.networks || [];
-        
-        // Sort: Current connected first, then signal strength
         nets.sort((a, b) => {
             if (a.ssid === currentSsid) return -1;
             if (b.ssid === currentSsid) return 1;
@@ -153,12 +155,10 @@ export async function refreshWifi() {
             `;
         }).join('');
 
-        // If connected, auto-select it
         if (currentSsid) {
             const currEl = list.querySelector('.net-item.connected');
             if (currEl) selectNet(currEl);
         }
-        
     } catch (e) {
         list.innerHTML = `<div class="wifi-skeleton">Error: ${e.message}</div>`;
     } finally {
@@ -183,7 +183,6 @@ export function toggleOnboardPass() {
 async function connectOnboardWifi() {
     const pwd = document.getElementById('onboard-wifi-pass').value;
     const btn = document.getElementById('btn-next-3');
-    const log = document.getElementById('onboard-wifi-log'); // We might want to add this to HTML if needed, but for now we'll use button state
 
     if (btn) {
         btn.classList.add('loading');
@@ -199,8 +198,6 @@ async function connectOnboardWifi() {
         const d = await r.json();
         
         if (d.success) {
-            // Connection initiated. On embedded systems, we might need to wait or just proceed to polling
-            // We'll proceed to Step 4 where polling happens
             return true;
         } else {
             if (window.showToast) window.showToast(d.error || "Failed to initiate connection");
@@ -220,38 +217,31 @@ async function connectOnboardWifi() {
 function validateStep(step) {
     if (step === 2) return document.querySelector('#onboard-wifi-list .net-item.selected') !== null;
     if (step === 3) return document.getElementById('onboard-wifi-pass').value.length >= 8 || !isSsidLocked;
-    if (step === 5) return document.getElementById('inp-hhid-digits').value.length === 4;
-    if (step === 6) return document.getElementById('inp-otp').value.length === 4;
+    if (step === 5) return !!selectedPlugMac;
+    if (step === 6) return calibStage === 'DONE';
+    if (step === 7) return document.getElementById('inp-hhid-digits').value.length === 4;
+    if (step === 8) return document.getElementById('inp-otp').value.length === 4;
     return true;
 }
 
 async function handleStepLogic(step) {
-    // Step 2: WiFi Scan (Auto-load)
-    if (step === 2) {
-        refreshWifi();
-    }
+    if (step === 2) refreshWifi();
 
-    // Step 4: Hardware & File Checks
-    if (step === 4) {
-        // Logic for auto-connect moved to Step 3 user action
-        // Run connectivity checks loop
-        startConnectivityPolling();
-    }
+    if (step === 4) startConnectivityPolling();
+    else stopConnectivityPolling();
 
-    if (step !== 4) {
-        stopConnectivityPolling();
-    }
+    if (step === 5) refreshBlePlugs();
 
-    // Step 7: Finalize
-    if (step === 7) {
-        window.finalizeSetup();
-    }
+    if (step === 6) startCalibrationMonitor();
+    else stopCalibrationMonitor();
+
+    if (step === 9) window.finalizeSetup();
 }
 
 let connInterval = null;
 function startConnectivityPolling() {
     if (connInterval) clearInterval(connInterval);
-    runConnectivityChecks(); // First run immediate
+    runConnectivityChecks();
     connInterval = setInterval(runConnectivityChecks, 2000);
 }
 
@@ -266,7 +256,6 @@ async function runConnectivityChecks() {
     try {
         const r = await fetch('/api/onboarding/connectivity');
         const d = await r.json();
-        console.log("[Connectivity Check]", d);
 
         setCheckState('hw-wifi', d.wifi);
         setCheckState('hw-input', d.jack || d.hdmi);
@@ -279,18 +268,14 @@ async function runConnectivityChecks() {
             }
         }
 
-        // wifi required, and either jack OR (hdmi + video)
         const wifiOk = !!d.wifi;
         const inputOk = !!d.jack || (!!d.hdmi && !!d.video);
-
         const allOk = wifiOk && inputOk;
-        console.log("[Connectivity Result]", { wifiOk, inputOk, allOk });
 
         const nextBtn = document.getElementById('btn-next-4');
         if (nextBtn) {
             nextBtn.disabled = !allOk;
         }
-
     } catch(e) {
         console.error("Connectivity check failed", e);
     }
@@ -301,6 +286,203 @@ function setCheckState(id, ok) {
     if (!el) return;
     el.classList.remove('pending', 'done', 'fail');
     el.classList.add(ok ? 'done' : 'pending');
+}
+
+// ── Step 5: BLE Discovery & Selection ─────────────────────────────────────────
+export async function refreshBlePlugs() {
+    const list = document.getElementById('onboard-ble-list');
+    if (!list) return;
+
+    list.innerHTML = '<div class="wifi-skeleton">Searching for Smart Plugs...</div>';
+    list.style.pointerEvents = 'none';
+
+    try {
+        const r = await fetch('/api/onboarding/ble/scan');
+        const d = await r.json();
+        const devices = d.devices || [];
+
+        if (devices.length === 0) {
+            list.innerHTML = '<div class="wifi-skeleton">No Smart Plugs found. Ensure plug is powered ON.</div>';
+            return;
+        }
+
+        list.innerHTML = devices.map(dev => `
+            <div class="net-item ${dev.is_paired ? 'selected' : ''}" onclick="selectPlug(this, '${dev.mac}')">
+                <div class="net-signal">
+                    <span class="material-symbols-rounded">power</span>
+                    <span class="net-name">${dev.name}</span>
+                    <span style="font-size:12px; opacity:0.6; font-family:monospace;">${dev.mac}</span>
+                    ${dev.is_paired ? '<span class="onboard-wifi-badge">Paired</span>' : ''}
+                </div>
+                <span class="material-symbols-rounded">${dev.is_paired ? 'check_circle' : 'radio_button_unchecked'}</span>
+            </div>
+        `).join('');
+
+        if (d.paired_mac) {
+            selectedPlugMac = d.paired_mac;
+            const btn = document.getElementById('btn-next-5');
+            if (btn) btn.disabled = false;
+        }
+    } catch (e) {
+        list.innerHTML = `<div class="wifi-skeleton">Scan error: ${e.message}</div>`;
+    } finally {
+        list.style.pointerEvents = 'all';
+    }
+}
+
+export async function selectPlug(el, mac) {
+    document.querySelectorAll('#onboard-ble-list .net-item').forEach(i => {
+        i.classList.remove('selected');
+        const icon = i.querySelector('.material-symbols-rounded:last-child');
+        if (icon) icon.innerText = 'radio_button_unchecked';
+    });
+
+    el.classList.add('selected');
+    const icon = el.querySelector('.material-symbols-rounded:last-child');
+    if (icon) icon.innerText = 'check_circle';
+
+    selectedPlugMac = mac;
+    const btn = document.getElementById('btn-next-5');
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('loading');
+    }
+
+    try {
+        await fetch('/api/onboarding/ble/pair', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mac })
+        });
+        if (btn) btn.disabled = false;
+    } catch (_) {
+        if (btn) btn.disabled = false;
+    } finally {
+        if (btn) btn.classList.remove('loading');
+    }
+}
+
+// ── Step 6: Power Calibration & 5s Sampling ─────────────────────────────────
+function startCalibrationMonitor() {
+    stopCalibrationMonitor();
+    calibStage = 'INIT';
+    firstCapturedType = null;
+    offBaselineWatt = null;
+    onBaselineWatt = null;
+    
+    const nextBtn = document.getElementById('btn-next-6');
+    if (nextBtn) nextBtn.disabled = true;
+
+    pollLiveWatt();
+    liveWattPollInterval = setInterval(pollLiveWatt, 1000);
+}
+
+function stopCalibrationMonitor() {
+    if (liveWattPollInterval) {
+        clearInterval(liveWattPollInterval);
+        liveWattPollInterval = null;
+    }
+}
+
+async function pollLiveWatt() {
+    try {
+        const r = await fetch('/api/onboarding/ble/live-watt');
+        const d = await r.json();
+
+        const wattEl = document.getElementById('calib-live-watt');
+        const stateEl = document.getElementById('calib-live-state');
+        const promptEl = document.getElementById('calib-prompt-box');
+        const actionBtn = document.getElementById('btn-calib-action');
+        const actionText = document.getElementById('btn-calib-text');
+
+        if (wattEl) wattEl.innerText = `${d.watt.toFixed(1)} W`;
+        if (stateEl) stateEl.innerText = d.connected ? (d.watt >= 10 ? 'LOAD ACTIVE' : 'STANDBY') : 'DISCONNECTED';
+
+        if (!d.connected) {
+            if (promptEl) promptEl.innerText = "Smart Plug not communicating. Please ensure the wall switch is ON.";
+            if (actionBtn) actionBtn.disabled = true;
+            return;
+        }
+
+        // Adaptive initial prompt based on real-world draw
+        if (calibStage === 'INIT') {
+            if (d.watt > 15) {
+                firstCapturedType = 'ON';
+                promptEl.innerText = "Active load detected. Keep the TV ON and tap below to measure baseline.";
+                actionText.innerText = "Capture TV ON Baseline (5s)";
+                actionBtn.disabled = false;
+            } else if (d.watt < 8) {
+                firstCapturedType = 'OFF';
+                promptEl.innerText = "Standby load detected. Keep the TV OFF and tap below to measure baseline.";
+                actionText.innerText = "Capture TV OFF Baseline (5s)";
+                actionBtn.disabled = false;
+            } else {
+                promptEl.innerText = "Uncertain power reading. Please ensure the TV display is turned ON with your remote.";
+                firstCapturedType = 'ON';
+                actionText.innerText = "Capture TV ON Baseline (5s)";
+                actionBtn.disabled = d.watt < 15;
+            }
+        }
+    } catch (_) {}
+}
+
+export async function triggerCalibrationStep() {
+    const actionBtn = document.getElementById('btn-calib-action');
+    const actionText = document.getElementById('btn-calib-text');
+    const promptEl = document.getElementById('calib-prompt-box');
+
+    actionBtn.disabled = true;
+    let samples = [];
+
+    // Capture baseline across a 5-second sampling window
+    for (let sec = 5; sec > 0; sec--) {
+        actionText.innerText = `Measuring... (${sec}s)`;
+        try {
+            const r = await fetch('/api/onboarding/ble/live-watt');
+            const d = await r.json();
+            if (d.connected) samples.push(d.watt);
+        } catch (_) {}
+        await new Promise(res => setTimeout(res, 1000));
+    }
+
+    const avg = samples.length ? (samples.reduce((a, b) => a + b, 0) / samples.length) : 0;
+
+    if (calibStage === 'INIT') {
+        if (firstCapturedType === 'ON') {
+            onBaselineWatt = avg;
+            calibStage = 'SWITCH_PROMPT';
+            promptEl.innerText = `TV ON captured (${avg.toFixed(1)}W). Now turn the TV OFF using the remote.`;
+            actionText.innerText = "Capture TV OFF Baseline (5s)";
+        } else {
+            offBaselineWatt = avg;
+            calibStage = 'SWITCH_PROMPT';
+            promptEl.innerText = `TV OFF captured (${avg.toFixed(1)}W). Now turn the TV ON using the remote.`;
+            actionText.innerText = "Capture TV ON Baseline (5s)";
+        }
+        actionBtn.disabled = false;
+    } else if (calibStage === 'SWITCH_PROMPT') {
+        if (firstCapturedType === 'ON') {
+            offBaselineWatt = avg;
+        } else {
+            onBaselineWatt = avg;
+        }
+
+        calibStage = 'DONE';
+        actionBtn.style.display = 'none';
+        promptEl.innerHTML = `
+            <div style="color:var(--primary); font-weight:600; margin-bottom:8px;">✔ Calibration Complete</div>
+            <div>Standby: <b>${offBaselineWatt.toFixed(1)}W</b> | Active: <b>${onBaselineWatt.toFixed(1)}W</b></div>
+        `;
+
+        await fetch('/api/onboarding/ble/calibrate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ on_baseline: onBaselineWatt, off_baseline: offBaselineWatt })
+        });
+
+        const nextBtn = document.getElementById('btn-next-6');
+        if (nextBtn) nextBtn.disabled = false;
+    }
 }
 
 window.finalizeSetup = async () => {
@@ -314,7 +496,6 @@ window.finalizeSetup = async () => {
     try {
         if(log) log.innerText = `Fetching members for HH${hhid}...`;
         
-        // Call the backend proxy instead of direct cloud access or local DB
         const r = await fetch('/api/onboarding/finalize', { method: 'POST' });
         const d = await r.json();
         
@@ -322,10 +503,7 @@ window.finalizeSetup = async () => {
 
         if (d.success) {
             if(log) log.innerText = `Successfully synced ${d.member_count} members.`;
-            
-            // Reload members from DB to sync UI
             if (window.loadMembers) await window.loadMembers();
-            
             setTimeout(completeSetup, 2000);
         } else {
             if(log) log.innerText = `Cloud request error: ${d.error || 'Timed out'}`;
@@ -347,7 +525,6 @@ export function completeSetup() {
         setTimeout(() => layer.style.display = 'none', 600);
     }
     
-    // Refresh UI
     if (window.loadMembers) {
         window.loadMembers().then(() => {
             if (window.renderGrid) window.renderGrid();
@@ -359,7 +536,6 @@ export async function checkOnboardingStatus() {
     const layer = document.getElementById('onboarding-layer');
     if (!layer) return;
 
-    // Fix HHID wrapper focus
     const hhidWrapper = document.querySelector('.hhid-input-wrapper');
     if (hhidWrapper) {
         hhidWrapper.onclick = () => {
@@ -369,7 +545,6 @@ export async function checkOnboardingStatus() {
     }
 
     try {
-        // Real check: /var/lib/self_installation_done
         const r = await fetch('/api/onboarding/status');
         const d = await r.json();
         
@@ -385,7 +560,6 @@ export async function checkOnboardingStatus() {
     if (config.onboardingCompleted === false) {
         layer.style.display = 'flex';
         layer.classList.remove('hidden');
-        // network auto-load is now handled in handleStepLogic(2)
         return false;
     }
 
@@ -396,7 +570,7 @@ export async function checkOnboardingStatus() {
 
 window.submitHHID = async () => {
     const digits = document.getElementById('inp-hhid-digits').value;
-    const btn = document.getElementById('btn-next-5');
+    const btn = document.getElementById('btn-next-7');
     const meter_id = config.meter_id || 'M123456';
 
     if (btn) btn.classList.add('loading');
@@ -423,7 +597,7 @@ window.submitHHID = async () => {
 window.submitOTP = async () => {
     const otp = document.getElementById('inp-otp').value;
     const digits = document.getElementById('inp-hhid-digits').value;
-    const btn = document.getElementById('btn-next-6');
+    const btn = document.getElementById('btn-next-8');
     const meter_id = config.meter_id || 'M123456';
 
     if (btn) btn.classList.add('loading');
@@ -459,13 +633,11 @@ window.toggleOnboardInfo = async () => {
             
             document.getElementById('onboard-info-id').innerText = d.meter_id || '...';
             
-            // Show IP/WiFi only if connected to internet (as per request)
             const netSec = document.getElementById('onboard-info-net-section');
             if (d.internet) {
                 netSec.style.display = 'block';
                 document.getElementById('onboard-info-ip').innerText = d.ip_address || '...';
                 
-                // Get current SSID
                 try {
                     const wr = await fetch('/api/wifi/current');
                     const wd = await wr.json();

@@ -56,7 +56,6 @@
         <div id="step-1" class="step active welcome-step">
           <div class="welcome-left">
             <div class="welcome-text-content">
-              <!-- <span class="material-symbols-rounded hero-icon-minimal">hub</span> -->
               <span class="material-symbols-rounded hero-icon-minimal">
                 nest_display
               </span>
@@ -147,8 +146,58 @@
           </div>
         </div>
 
-        <!-- Step 5: HHID Entry (4 digits) -->
+        <!-- Step 5: Smart Plug Setup -->
         <div id="step-5" class="step">
+          <div class="wiz-header-row">
+            <div class="wiz-header-text">
+              <h2 class="wiz-title">Smart Plug Setup</h2>
+              <p class="wiz-desc">Select and pair your TV Bluetooth Smart Plug.</p>
+            </div>
+            <button class="refresh-btn-onboard" onclick="refreshBlePlugs()">
+              <span class="material-symbols-rounded">refresh</span>
+            </button>
+          </div>
+          <div class="net-list-wrapper">
+            <div class="net-list" id="onboard-ble-list">
+              <div class="wifi-skeleton">Searching for Smart Plugs...</div>
+            </div>
+          </div>
+          <div class="wiz-footer">
+            <button class="btn-back" onclick="prevStep()">Back</button>
+            <button class="btn-next" id="btn-next-5" onclick="nextStep()" disabled>Pair & Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 6: TV Power Calibration -->
+        <div id="step-6" class="step">
+          <div class="wiz-header">
+            <h2 class="wiz-title">TV Power Calibration</h2>
+            <p class="wiz-desc" id="calib-desc">Measuring standby and active load to calibrate TV detection.</p>
+          </div>
+          <div class="step-content-centered" style="margin-top: 10px;">
+            <div class="chk-item done" style="margin-bottom: 24px; padding: 16px 28px; width: auto;">
+              <span class="material-symbols-rounded" style="color:var(--primary); font-size:32px;">bolt</span>
+              <span id="calib-live-watt" style="font-size:32px; font-weight:700; font-variant-numeric:tabular-nums;">-- W</span>
+              <span id="calib-live-state" class="onboard-wifi-badge" style="font-size:14px;">CHECKING...</span>
+            </div>
+
+            <div id="calib-prompt-box" style="font-size:22px; color:var(--text-main); line-height:1.5; margin-bottom: 32px; max-width:620px;">
+              Waiting for Smart Plug telemetry...
+            </div>
+
+            <button id="btn-calib-action" class="setup-btn" onclick="triggerCalibrationStep()" disabled>
+              <span class="material-symbols-rounded">play_arrow</span>
+              <span id="btn-calib-text">Capture Baseline (5s)</span>
+            </button>
+          </div>
+          <div class="wiz-footer">
+            <button class="btn-back" onclick="prevStep()">Back</button>
+            <button class="btn-next" id="btn-next-6" onclick="nextStep()" disabled>Next</button>
+          </div>
+        </div>
+
+        <!-- Step 7: HHID Entry (4 digits) -->
+        <div id="step-7" class="step">
           <div class="wiz-header">
             <h2 class="wiz-title">Device Association</h2>
             <p class="wiz-desc">Enter the 4-digit Household ID suffix.</p>
@@ -162,12 +211,12 @@
           </div>
           <div class="wiz-footer">
             <button class="btn-back" onclick="prevStep()">Back</button>
-            <button class="btn-next" id="btn-next-5" onclick="submitHHID()">Submit</button>
+            <button class="btn-next" id="btn-next-7" onclick="submitHHID()">Submit</button>
           </div>
         </div>
 
-        <!-- Step 6: OTP Verification -->
-        <div id="step-6" class="step">
+        <!-- Step 8: OTP Verification -->
+        <div id="step-8" class="step">
           <div class="wiz-header">
             <h2 class="wiz-title">Verify OTP</h2>
             <p class="wiz-desc" id="otp-phone-mask">Enter the 4-digit code sent to registered mobile.</p>
@@ -178,12 +227,12 @@
           </div>
           <div class="wiz-footer">
             <button class="btn-back" onclick="prevStep()">Back</button>
-            <button class="btn-next" id="btn-next-6" onclick="submitOTP()">Verify</button>
+            <button class="btn-next" id="btn-next-8" onclick="submitOTP()">Verify</button>
           </div>
         </div>
 
-        <!-- Step 7: Finalizing -->
-        <div id="step-7" class="step">
+        <!-- Step 9: Finalizing -->
+        <div id="step-9" class="step">
           <div class="step-content-centered">
             <div class="install-loader"></div>
             <h2 class="hero-title" style="font-size:32px">Finalizing Setup</h2>
@@ -199,17 +248,26 @@
       </div>
     </div>
   </div>
-  </div>
-  </div>
-  </div>
 
   <script type="module">
-    import { nextStep, prevStep, selectNet, toggleOnboardPass, refreshWifi } from "./js/onboarding.js";
+    import { 
+      nextStep, 
+      prevStep, 
+      selectNet, 
+      toggleOnboardPass, 
+      refreshWifi,
+      refreshBlePlugs,
+      selectPlug,
+      triggerCalibrationStep
+    } from "./js/onboarding.js";
     window.nextStep = nextStep;
     window.prevStep = prevStep;
     window.selectNet = selectNet;
     window.toggleOnboardPass = toggleOnboardPass;
     window.refreshWifi = refreshWifi;
+    window.refreshBlePlugs = refreshBlePlugs;
+    window.selectPlug = selectPlug;
+    window.triggerCalibrationStep = triggerCalibrationStep;
   </script>
 
   <div id="app-frame">

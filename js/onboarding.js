@@ -362,7 +362,7 @@ export async function selectPlug(el, mac) {
     }
 }
 
-// ── Step 6: Power Calibration & 5s Sampling ─────────────────────────────────
+// ── Step 6: Power Calibration (30-Second Adaptive Workflow) ───────────────────
 function startCalibrationMonitor() {
     stopCalibrationMonitor();
     calibStage = 'INIT';
@@ -370,9 +370,8 @@ function startCalibrationMonitor() {
     offBaselineWatt = null;
     onBaselineWatt = null;
 
-    // Reset Checklist UI
-    resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture');
-    resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture');
+    resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
+    resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture (30s test, Max Volume)');
 
     const nextBtn = document.getElementById('btn-next-6');
     if (nextBtn) nextBtn.disabled = true;
@@ -400,11 +399,12 @@ function stopCalibrationMonitor() {
 function resetCalibItem(elemId, iconName, title, sub) {
     const el = document.getElementById(elemId);
     if (!el) return;
-    el.className = 'chk-item pending';
+    el.className = 'chk-item pending calib-item';
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'none';
     const icon = el.querySelector('.chk-icon');
     if (icon) {
+        icon.style.display = 'block';
         icon.innerText = iconName;
         icon.style.color = '';
     }
@@ -421,7 +421,7 @@ function resetCalibItem(elemId, iconName, title, sub) {
 function markCalibItemRunning(elemId) {
     const el = document.getElementById(elemId);
     if (!el) return;
-    el.className = 'chk-item';
+    el.className = 'chk-item calib-item';
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'block';
     const icon = el.querySelector('.chk-icon');
@@ -431,7 +431,7 @@ function markCalibItemRunning(elemId) {
 function markCalibItemDone(elemId, iconName, measuredWatt) {
     const el = document.getElementById(elemId);
     if (!el) return;
-    el.className = 'chk-item done';
+    el.className = 'chk-item done calib-item';
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'none';
     const icon = el.querySelector('.chk-icon');
@@ -474,47 +474,44 @@ async function pollLiveWatt() {
             return;
         }
 
-        // STAGE 1: Determine initial state (ON vs OFF)
+        // ── STAGE 1: Determine initial state (ON vs OFF) ──
         if (calibStage === 'INIT') {
-            if (d.watt > 15.0) {
+            if (d.watt >= 10.0) {
                 firstCapturedType = 'ON';
-                promptEl.innerText = "TV is ON. Tap below to capture the Active baseline.";
-                actionText.innerText = "Capture TV ON Baseline (5s)";
-                actionBtn.disabled = false;
-            } else if (d.watt < 8.0) {
-                firstCapturedType = 'OFF';
-                promptEl.innerText = "TV is OFF/Standby. Tap below to capture the Standby baseline.";
-                actionText.innerText = "Capture TV OFF Baseline (5s)";
-                actionBtn.disabled = false;
+                promptEl.innerHTML = "TV is ON. <b>Set TV volume to MAXIMUM</b>, then tap below to measure baseline.";
+                actionText.innerText = "Capture TV ON Baseline (30s)";
+                // Strictly disable if power drops below 10W
+                actionBtn.disabled = (d.watt < 10.0);
             } else {
-                promptEl.innerText = "Uncertain power reading. Please ensure TV screen is turned ON with remote.";
-                firstCapturedType = 'ON';
-                actionText.innerText = "Capture TV ON Baseline (5s)";
-                actionBtn.disabled = (d.watt < 15.0);
+                firstCapturedType = 'OFF';
+                promptEl.innerText = "TV is in Standby/OFF. Tap below to capture the Standby baseline.";
+                actionText.innerText = "Capture TV OFF Baseline (30s)";
+                // Strictly disable if power rises above 8W
+                actionBtn.disabled = (d.watt >= 8.0);
             }
         } 
-        // STAGE 2: Enforce TV toggle before allowing second baseline capture
+        // ── STAGE 2: Validate transition to opposite state ──
         else if (calibStage === 'SWITCH_PROMPT') {
             if (firstCapturedType === 'ON') {
-                // Must drop down to Standby (< 8W or at least 15W lower than ON baseline)
-                const dropped = (d.watt < 8.0) || (onBaselineWatt !== null && (onBaselineWatt - d.watt) >= 15.0);
-                if (dropped) {
-                    promptEl.innerText = "Standby power drop detected! Tap below to capture Standby baseline.";
-                    actionText.innerText = "Capture TV OFF Baseline (5s)";
+                // Must be OFF (< 8.0W)
+                const isOff = d.watt < 8.0;
+                if (isOff) {
+                    promptEl.innerText = "TV Standby detected! Tap below to start the Standby baseline test.";
+                    actionText.innerText = "Capture TV OFF Baseline (30s)";
                     actionBtn.disabled = false;
                 } else {
-                    promptEl.innerText = `Turn TV OFF using remote to proceed. (Current: ${d.watt.toFixed(1)}W, expecting < 8W)`;
+                    promptEl.innerHTML = `Please <b>turn the TV OFF</b> with the remote to proceed. (Current: ${d.watt.toFixed(1)}W, expecting &lt; 8W)`;
                     actionBtn.disabled = true;
                 }
             } else {
-                // Must rise to Active (> 15W or at least 15W higher than OFF baseline)
-                const rose = (d.watt > 15.0) || (offBaselineWatt !== null && (d.watt - offBaselineWatt) >= 15.0);
-                if (rose) {
-                    promptEl.innerText = "Active load increase detected! Tap below to capture Active baseline.";
-                    actionText.innerText = "Capture TV ON Baseline (5s)";
+                // Must be ON (>= 12.0W)
+                const isOn = d.watt >= 12.0;
+                if (isOn) {
+                    promptEl.innerHTML = "TV Active load detected! <b>Set volume to MAXIMUM</b>, then tap below.";
+                    actionText.innerText = "Capture TV ON Baseline (30s)";
                     actionBtn.disabled = false;
                 } else {
-                    promptEl.innerText = `Turn TV ON using remote to proceed. (Current: ${d.watt.toFixed(1)}W, expecting > 15W)`;
+                    promptEl.innerHTML = `Please <b>turn the TV ON and set volume to MAXIMUM</b>. (Current: ${d.watt.toFixed(1)}W, expecting &gt; 12W)`;
                     actionBtn.disabled = true;
                 }
             }
@@ -540,18 +537,20 @@ export async function triggerCalibrationStep() {
 
     markCalibItemRunning(currentChkId);
 
-    const totalSeconds = 5;
+    const totalSeconds = 30; // 30-second sampling as requested
     const updateIntervalMs = 100;
-    const totalSteps = (totalSeconds * 1000) / updateIntervalMs;
+    const totalStepsCount = (totalSeconds * 1000) / updateIntervalMs;
     let stepCount = 0;
     let samples = [];
 
-    while (stepCount <= totalSteps) {
-        const pct = (stepCount / totalSteps) * 100;
+    // Smooth 30-Second Animated Fill
+    while (stepCount <= totalStepsCount) {
+        const pct = (stepCount / totalStepsCount) * 100;
         if (progBar) progBar.style.width = `${pct}%`;
         const remainingSec = Math.max(0, Math.ceil(totalSeconds - (stepCount * (updateIntervalMs / 1000))));
-        if (progLabel) progLabel.innerText = `Measuring ${targetType} Load: ${remainingSec}s remaining`;
+        if (progLabel) progLabel.innerText = `Measuring ${targetType} Load (${targetType === 'ON' ? 'Max Volume' : 'Standby'}): ${remainingSec}s remaining`;
 
+        // Sample real wattage once per second
         if (stepCount % 10 === 0) {
             try {
                 const r = await fetch('/api/onboarding/ble/live-watt');
@@ -573,15 +572,14 @@ export async function triggerCalibrationStep() {
             onBaselineWatt = avg;
             markCalibItemDone('chk-calib-on', 'tv', avg);
             calibStage = 'SWITCH_PROMPT';
-            promptEl.innerText = `Active Load verified (${avg.toFixed(1)}W). Please turn TV OFF with your remote.`;
+            promptEl.innerHTML = `Active Load verified (${avg.toFixed(1)}W). Now <b>turn the TV OFF</b> with the remote.`;
         } else {
             offBaselineWatt = avg;
             markCalibItemDone('chk-calib-off', 'tv_off', avg);
             calibStage = 'SWITCH_PROMPT';
-            promptEl.innerText = `Standby Load verified (${avg.toFixed(1)}W). Please turn TV ON with your remote.`;
+            promptEl.innerHTML = `Standby Load verified (${avg.toFixed(1)}W). Now <b>turn the TV ON and set volume to MAXIMUM</b>.`;
         }
-        // Button remains disabled until pollLiveWatt() detects the physical state change
-        actionBtn.disabled = true;
+        actionBtn.disabled = true; // Stays disabled until pollLiveWatt senses the physical power flip
     } else if (calibStage === 'SWITCH_PROMPT') {
         if (firstCapturedType === 'ON') {
             offBaselineWatt = avg;
@@ -596,10 +594,10 @@ export async function triggerCalibrationStep() {
 
         promptEl.innerHTML = `
             <div style="color:var(--green-border); font-weight:600; font-size:18px;">
-                ✔ Calibration Complete
+                ✔ Calibration Completed Successfully
             </div>
             <div style="font-size:13px; opacity:0.8; margin-top:2px;">
-                Standby: <b>${offBaselineWatt.toFixed(1)}W</b> &nbsp;|&nbsp; Active: <b>${onBaselineWatt.toFixed(1)}W</b>
+                Standby: <b>${offBaselineWatt.toFixed(1)}W</b> &nbsp;|&nbsp; Active (Max Vol): <b>${onBaselineWatt.toFixed(1)}W</b>
             </div>
         `;
 

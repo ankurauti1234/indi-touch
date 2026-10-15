@@ -169,61 +169,62 @@
         </div>
 
         <!-- Step 6: TV Power Calibration -->
-        <div id="step-6" class="step step-calibration">
-          <div class="wiz-header" style="margin-bottom: 12px; text-align: center;">
-            <h2 class="wiz-title" style="font-size: 32px; margin-bottom: 4px;">TV Power Calibration</h2>
-            <p class="wiz-desc" style="font-size: 15px;">Calibrate active and standby detection.</p>
+        <div id="step-6" class="step">
+          <!-- Standard Left-Aligned Header Matching Steps 2, 3, 4, 5, 7, 8 -->
+          <div class="wiz-header">
+            <h2 class="wiz-title">TV Power Calibration</h2>
+            <p class="wiz-desc">Calibrate active and standby detection.</p>
           </div>
 
-          <div class="calib-body-container">
-            <!-- Telemetry Pill: Placed Directly Above the Checklist -->
-            <div class="calib-live-badge-centered">
-              <span class="material-symbols-rounded" style="color:var(--primary); font-size:26px;">bolt</span>
-              <span id="calib-live-watt" class="calib-watt-text">-- W</span>
+          <div class="calib-container">
+            <!-- Centered Live Telemetry Pill -->
+            <div class="calib-badge">
+              <span class="material-symbols-rounded" style="color:var(--primary); font-size:28px;">bolt</span>
+              <span id="calib-live-watt" class="calib-watt-val">-- W</span>
               <span id="calib-live-state" class="onboard-wifi-badge" style="margin-left: 10px;">CHECKING...</span>
             </div>
 
-            <!-- Dual Checklist -->
-            <div class="chk-group calib-chk-group">
-              <div class="chk-item pending calib-chk-item" id="chk-calib-off">
+            <!-- Two-Stage Checklist -->
+            <div class="chk-group" style="max-height: none; padding: 0; gap: 10px;">
+              <div class="chk-item pending calib-item" id="chk-calib-off">
                 <div class="chk-spinner" style="display:none; width:22px; height:22px;"></div>
-                <span class="material-symbols-rounded chk-icon" style="font-size: 24px;">tv_off</span>
+                <span class="material-symbols-rounded chk-icon" style="font-size:24px;">tv_off</span>
                 <div style="flex:1;">
-                  <div class="calib-chk-title">TV Standby (OFF) Load</div>
-                  <div id="chk-calib-off-sub" class="calib-chk-sub">Awaiting capture</div>
+                  <div style="font-size:16px; font-weight:500;">TV Standby (OFF) Load</div>
+                  <div id="chk-calib-off-sub" style="font-size:12px; opacity:0.6;">Awaiting capture (30s test)</div>
                 </div>
-                <span class="material-symbols-rounded" id="chk-calib-off-status" style="font-size: 24px; opacity:0.4;">radio_button_unchecked</span>
+                <span class="material-symbols-rounded" id="chk-calib-off-status" style="font-size:24px; opacity:0.4;">radio_button_unchecked</span>
               </div>
 
-              <div class="chk-item pending calib-chk-item" id="chk-calib-on">
+              <div class="chk-item pending calib-item" id="chk-calib-on">
                 <div class="chk-spinner" style="display:none; width:22px; height:22px;"></div>
-                <span class="material-symbols-rounded chk-icon" style="font-size: 24px;">tv</span>
+                <span class="material-symbols-rounded chk-icon" style="font-size:24px;">tv</span>
                 <div style="flex:1;">
-                  <div class="calib-chk-title">TV Active (ON) Load</div>
-                  <div id="chk-calib-on-sub" class="calib-chk-sub">Awaiting capture</div>
+                  <div style="font-weight:500; font-size:16px;">TV Active (ON) Load</div>
+                  <div id="chk-calib-on-sub" style="font-size:12px; opacity:0.6;">Awaiting capture (30s test, Max Volume)</div>
                 </div>
-                <span class="material-symbols-rounded" id="chk-calib-on-status" style="font-size: 24px; opacity:0.4;">radio_button_unchecked</span>
+                <span class="material-symbols-rounded" id="chk-calib-on-status" style="font-size:24px; opacity:0.4;">radio_button_unchecked</span>
               </div>
             </div>
 
-            <!-- Dynamic Prompt -->
-            <div id="calib-prompt-box" class="calib-prompt">
+            <!-- Dynamic Prompt & Instructions -->
+            <div id="calib-prompt-box" class="calib-prompt-text">
               Waiting for Smart Plug telemetry...
             </div>
 
-            <!-- Animated 5-Second Progress Bar -->
-            <div id="calib-progress-container" class="calib-progress-wrap" style="display: none;">
-              <div class="calib-progress-track">
-                <div id="calib-progress-bar" class="calib-progress-fill"></div>
+            <!-- Animated 30-Second Progress Bar -->
+            <div id="calib-progress-container" class="calib-progress-box" style="display: none;">
+              <div class="calib-bar-track">
+                <div id="calib-progress-bar" class="calib-bar-fill"></div>
               </div>
-              <span id="calib-progress-label" class="calib-progress-text">Measuring: 5s remaining</span>
+              <span id="calib-progress-label" style="font-size:12px; opacity:0.7;">Measuring: 30s remaining</span>
             </div>
 
             <!-- Action Button -->
             <div style="display:flex; justify-content:center;">
-              <button id="btn-calib-action" class="setup-btn calib-action-btn" onclick="triggerCalibrationStep()" disabled>
-                <span class="material-symbols-rounded" style="font-size: 22px;">play_arrow</span>
-                <span id="btn-calib-text">Capture Baseline (5s)</span>
+              <button id="btn-calib-action" class="setup-btn" onclick="triggerCalibrationStep()" disabled style="padding:14px 44px; font-size:17px;">
+                <span class="material-symbols-rounded" style="font-size:22px;">play_arrow</span>
+                <span id="btn-calib-text">Capture Baseline (30s)</span>
               </button>
             </div>
           </div>

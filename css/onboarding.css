@@ -765,3 +765,34 @@
     background: var(--primary);
     transition: width 0.1s linear;
 }
+
+/* Ensure .setup-btn has a clear disabled state across all steps */
+.setup-btn:disabled {
+    opacity: 0.35 !important;
+    filter: grayscale(1) !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+}
+
+/* Prompt Box Formatting to prevent inline text sticking */
+.calib-prompt-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 52px;
+    gap: 4px;
+}
+
+.calib-prompt-main {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.calib-prompt-detail {
+    font-size: 13px;
+    color: var(--text-sub);
+}

@@ -172,24 +172,67 @@
         <div id="step-6" class="step">
           <div class="wiz-header">
             <h2 class="wiz-title">TV Power Calibration</h2>
-            <p class="wiz-desc" id="calib-desc">Measuring standby and active load to calibrate TV detection.</p>
+            <p class="wiz-desc" id="calib-desc">Measuring standby and active power to calibrate TV detection.</p>
           </div>
-          <div class="step-content-centered" style="margin-top: 10px;">
-            <div class="chk-item done" style="margin-bottom: 24px; padding: 16px 28px; width: auto;">
-              <span class="material-symbols-rounded" style="color:var(--primary); font-size:32px;">bolt</span>
-              <span id="calib-live-watt" style="font-size:32px; font-weight:700; font-variant-numeric:tabular-nums;">-- W</span>
-              <span id="calib-live-state" class="onboard-wifi-badge" style="font-size:14px;">CHECKING...</span>
+
+          <div style="max-width: 680px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+            <!-- Live Telemetry Card -->
+            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-surface-container); border-radius:20px; padding:18px 24px;">
+              <div style="display:flex; align-items:center; gap:16px;">
+                <span class="material-symbols-rounded" style="color:var(--primary); font-size:36px;">bolt</span>
+                <div>
+                  <div style="font-size:13px; opacity:0.6; text-transform:uppercase; letter-spacing:1px;">Live Consumption</div>
+                  <div id="calib-live-watt" style="font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text-main);">-- W</div>
+                </div>
+              </div>
+              <span id="calib-live-state" class="onboard-wifi-badge" style="font-size:14px; padding:6px 16px;">CHECKING...</span>
             </div>
 
-            <div id="calib-prompt-box" style="font-size:22px; color:var(--text-main); line-height:1.5; margin-bottom: 32px; max-width:620px;">
+            <!-- Two-Stage Checklist Matching Step 4 UI -->
+            <div class="chk-group" style="max-height:none; padding:0; gap:12px;">
+              <div class="chk-item pending" id="chk-calib-off">
+                <div class="chk-spinner" style="display:none;"></div>
+                <span class="material-symbols-rounded chk-icon">tv_off</span>
+                <div style="flex:1;">
+                  <div style="font-weight:500;">TV Standby (OFF) Load</div>
+                  <div id="chk-calib-off-sub" style="font-size:13px; opacity:0.6;">Awaiting capture</div>
+                </div>
+                <span class="material-symbols-rounded" id="chk-calib-off-status" style="opacity:0.4;">radio_button_unchecked</span>
+              </div>
+
+              <div class="chk-item pending" id="chk-calib-on">
+                <div class="chk-spinner" style="display:none;"></div>
+                <span class="material-symbols-rounded chk-icon">tv</span>
+                <div style="flex:1;">
+                  <div style="font-weight:500;">TV Active (ON) Load</div>
+                  <div id="chk-calib-on-sub" style="font-size:13px; opacity:0.6;">Awaiting capture</div>
+                </div>
+                <span class="material-symbols-rounded" id="chk-calib-on-status" style="opacity:0.4;">radio_button_unchecked</span>
+              </div>
+            </div>
+
+            <!-- Dynamic Prompt & Instructions -->
+            <div id="calib-prompt-box" style="font-size:18px; color:var(--text-main); line-height:1.4; text-align:center; min-height:48px; display:flex; align-items:center; justify-content:center;">
               Waiting for Smart Plug telemetry...
             </div>
 
-            <button id="btn-calib-action" class="setup-btn" onclick="triggerCalibrationStep()" disabled>
-              <span class="material-symbols-rounded">play_arrow</span>
-              <span id="btn-calib-text">Capture Baseline (5s)</span>
-            </button>
+            <!-- 5-Second Smooth Fill Progress Bar -->
+            <div id="calib-progress-container" style="display:none; flex-direction:column; align-items:center; gap:8px;">
+              <div style="width:100%; height:8px; background:var(--surface-variant); border-radius:4px; overflow:hidden;">
+                <div id="calib-progress-bar" style="width:0%; height:100%; background:var(--primary); transition:width 0.1s linear;"></div>
+              </div>
+              <span id="calib-progress-label" style="font-size:13px; opacity:0.7;">Measuring: 5s remaining</span>
+            </div>
+
+            <!-- Action Button -->
+            <div style="display:flex; justify-content:center; margin-top:8px;">
+              <button id="btn-calib-action" class="setup-btn" onclick="triggerCalibrationStep()" disabled style="padding:16px 48px;">
+                <span class="material-symbols-rounded" id="btn-calib-icon">play_arrow</span>
+                <span id="btn-calib-text">Capture Baseline (5s)</span>
+              </button>
+            </div>
           </div>
+
           <div class="wiz-footer">
             <button class="btn-back" onclick="prevStep()">Back</button>
             <button class="btn-next" id="btn-next-6" onclick="nextStep()" disabled>Next</button>

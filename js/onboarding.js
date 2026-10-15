@@ -369,9 +369,22 @@ function startCalibrationMonitor() {
     firstCapturedType = null;
     offBaselineWatt = null;
     onBaselineWatt = null;
-    
+
+    // Reset Checklist UI
+    resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture');
+    resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture');
+
     const nextBtn = document.getElementById('btn-next-6');
     if (nextBtn) nextBtn.disabled = true;
+
+    const prog = document.getElementById('calib-progress-container');
+    if (prog) prog.style.display = 'none';
+
+    const actionBtn = document.getElementById('btn-calib-action');
+    if (actionBtn) {
+        actionBtn.style.display = 'flex';
+        actionBtn.disabled = true;
+    }
 
     pollLiveWatt();
     liveWattPollInterval = setInterval(pollLiveWatt, 1000);
@@ -382,6 +395,59 @@ function stopCalibrationMonitor() {
         clearInterval(liveWattPollInterval);
         liveWattPollInterval = null;
     }
+}
+
+function resetCalibItem(elemId, iconName, title, sub) {
+    const el = document.getElementById(elemId);
+    if (!el) return;
+    el.className = 'chk-item pending';
+    const spinner = el.querySelector('.chk-spinner');
+    if (spinner) spinner.style.display = 'none';
+    const icon = el.querySelector('.chk-icon');
+    if (icon) {
+        icon.innerText = iconName;
+        icon.style.color = '';
+    }
+    const statusIcon = document.getElementById(`${elemId}-status`);
+    if (statusIcon) {
+        statusIcon.innerText = 'radio_button_unchecked';
+        statusIcon.style.color = '';
+        statusIcon.style.opacity = '0.4';
+    }
+    const subEl = document.getElementById(`${elemId}-sub`);
+    if (subEl) subEl.innerText = sub;
+}
+
+function markCalibItemRunning(elemId) {
+    const el = document.getElementById(elemId);
+    if (!el) return;
+    el.className = 'chk-item';
+    const spinner = el.querySelector('.chk-spinner');
+    if (spinner) spinner.style.display = 'block';
+    const icon = el.querySelector('.chk-icon');
+    if (icon) icon.style.display = 'none';
+}
+
+function markCalibItemDone(elemId, iconName, measuredWatt) {
+    const el = document.getElementById(elemId);
+    if (!el) return;
+    el.className = 'chk-item done';
+    const spinner = el.querySelector('.chk-spinner');
+    if (spinner) spinner.style.display = 'none';
+    const icon = el.querySelector('.chk-icon');
+    if (icon) {
+        icon.style.display = 'block';
+        icon.innerText = iconName;
+        icon.style.color = 'var(--green-border)';
+    }
+    const statusIcon = document.getElementById(`${elemId}-status`);
+    if (statusIcon) {
+        statusIcon.innerText = 'check_circle';
+        statusIcon.style.color = 'var(--green-border)';
+        statusIcon.style.opacity = '1';
+    }
+    const subEl = document.getElementById(`${elemId}-sub`);
+    if (subEl) subEl.innerText = `Captured: ${measuredWatt.toFixed(1)} W`;
 }
 
 async function pollLiveWatt() {
@@ -396,7 +462,11 @@ async function pollLiveWatt() {
         const actionText = document.getElementById('btn-calib-text');
 
         if (wattEl) wattEl.innerText = `${d.watt.toFixed(1)} W`;
-        if (stateEl) stateEl.innerText = d.connected ? (d.watt >= 10 ? 'LOAD ACTIVE' : 'STANDBY') : 'DISCONNECTED';
+        if (stateEl) {
+            stateEl.innerText = d.connected ? (d.watt >= 10.0 ? 'TV IS ON' : 'TV IS OFF / STANDBY') : 'DISCONNECTED';
+            stateEl.style.background = d.connected ? (d.watt >= 10.0 ? 'rgba(100,210,154,0.2)' : 'rgba(255,255,255,0.1)') : 'rgba(255,100,100,0.2)';
+            stateEl.style.color = d.connected ? (d.watt >= 10.0 ? '#64d29a' : '#fff') : '#ff8080';
+        }
 
         if (!d.connected) {
             if (promptEl) promptEl.innerText = "Smart Plug not communicating. Please ensure the wall switch is ON.";
@@ -404,23 +474,23 @@ async function pollLiveWatt() {
             return;
         }
 
-        // Adaptive initial prompt based on real-world draw
+        // Adaptive prompt before test starts
         if (calibStage === 'INIT') {
-            if (d.watt > 15) {
+            if (d.watt > 15.0) {
                 firstCapturedType = 'ON';
-                promptEl.innerText = "Active load detected. Keep the TV ON and tap below to measure baseline.";
+                promptEl.innerText = "TV is ON. Tap below to capture the Active baseline.";
                 actionText.innerText = "Capture TV ON Baseline (5s)";
                 actionBtn.disabled = false;
-            } else if (d.watt < 8) {
+            } else if (d.watt < 8.0) {
                 firstCapturedType = 'OFF';
-                promptEl.innerText = "Standby load detected. Keep the TV OFF and tap below to measure baseline.";
+                promptEl.innerText = "TV is OFF/Standby. Tap below to capture the Standby baseline.";
                 actionText.innerText = "Capture TV OFF Baseline (5s)";
                 actionBtn.disabled = false;
             } else {
-                promptEl.innerText = "Uncertain power reading. Please ensure the TV display is turned ON with your remote.";
+                promptEl.innerText = "Uncertain power reading. Please ensure TV screen is turned ON with remote.";
                 firstCapturedType = 'ON';
                 actionText.innerText = "Capture TV ON Baseline (5s)";
-                actionBtn.disabled = d.watt < 15;
+                actionBtn.disabled = d.watt < 15.0;
             }
         }
     } catch (_) {}
@@ -430,50 +500,88 @@ export async function triggerCalibrationStep() {
     const actionBtn = document.getElementById('btn-calib-action');
     const actionText = document.getElementById('btn-calib-text');
     const promptEl = document.getElementById('calib-prompt-box');
+    const progContainer = document.getElementById('calib-progress-container');
+    const progBar = document.getElementById('calib-progress-bar');
+    const progLabel = document.getElementById('calib-progress-label');
 
     actionBtn.disabled = true;
+
+    // Show Progress Bar
+    if (progContainer) progContainer.style.display = 'flex';
+    if (progBar) progBar.style.width = '0%';
+
+    const targetType = (calibStage === 'INIT') ? firstCapturedType : (firstCapturedType === 'ON' ? 'OFF' : 'ON');
+    const currentChkId = (targetType === 'ON') ? 'chk-calib-on' : 'chk-calib-off';
+
+    markCalibItemRunning(currentChkId);
+
+    const totalSeconds = 5;
+    const updateIntervalMs = 100;
+    const totalSteps = (totalSeconds * 1000) / updateIntervalMs;
+    let stepCount = 0;
     let samples = [];
 
-    // Capture baseline across a 5-second sampling window
-    for (let sec = 5; sec > 0; sec--) {
-        actionText.innerText = `Measuring... (${sec}s)`;
-        try {
-            const r = await fetch('/api/onboarding/ble/live-watt');
-            const d = await r.json();
-            if (d.connected) samples.push(d.watt);
-        } catch (_) {}
-        await new Promise(res => setTimeout(res, 1000));
+    // Smooth 5-Second Animated Fill
+    while (stepCount <= totalSteps) {
+        const pct = (stepCount / totalSteps) * 100;
+        if (progBar) progBar.style.width = `${pct}%`;
+        const remainingSec = Math.max(0, Math.ceil(totalSeconds - (stepCount * (updateIntervalMs / 1000))));
+        if (progLabel) progLabel.innerText = `Measuring ${targetType} Load: ${remainingSec}s remaining`;
+
+        // Sample real watt periodically
+        if (stepCount % 10 === 0) {
+            try {
+                const r = await fetch('/api/onboarding/ble/live-watt');
+                const d = await r.json();
+                if (d.connected) samples.push(d.watt);
+            } catch (_) {}
+        }
+
+        stepCount++;
+        await new Promise(r => setTimeout(r, updateIntervalMs));
     }
+
+    if (progContainer) progContainer.style.display = 'none';
 
     const avg = samples.length ? (samples.reduce((a, b) => a + b, 0) / samples.length) : 0;
 
     if (calibStage === 'INIT') {
         if (firstCapturedType === 'ON') {
             onBaselineWatt = avg;
+            markCalibItemDone('chk-calib-on', 'tv', avg);
             calibStage = 'SWITCH_PROMPT';
-            promptEl.innerText = `TV ON captured (${avg.toFixed(1)}W). Now turn the TV OFF using the remote.`;
+            promptEl.innerText = `Active Load verified (${avg.toFixed(1)}W). Now turn the TV OFF with your remote.`;
             actionText.innerText = "Capture TV OFF Baseline (5s)";
         } else {
             offBaselineWatt = avg;
+            markCalibItemDone('chk-calib-off', 'tv_off', avg);
             calibStage = 'SWITCH_PROMPT';
-            promptEl.innerText = `TV OFF captured (${avg.toFixed(1)}W). Now turn the TV ON using the remote.`;
+            promptEl.innerText = `Standby Load verified (${avg.toFixed(1)}W). Now turn the TV ON with your remote.`;
             actionText.innerText = "Capture TV ON Baseline (5s)";
         }
         actionBtn.disabled = false;
     } else if (calibStage === 'SWITCH_PROMPT') {
         if (firstCapturedType === 'ON') {
             offBaselineWatt = avg;
+            markCalibItemDone('chk-calib-off', 'tv_off', avg);
         } else {
             onBaselineWatt = avg;
+            markCalibItemDone('chk-calib-on', 'tv', avg);
         }
 
         calibStage = 'DONE';
         actionBtn.style.display = 'none';
+
         promptEl.innerHTML = `
-            <div style="color:var(--primary); font-weight:600; margin-bottom:8px;">✔ Calibration Complete</div>
-            <div>Standby: <b>${offBaselineWatt.toFixed(1)}W</b> | Active: <b>${onBaselineWatt.toFixed(1)}W</b></div>
+            <div style="color:var(--green-border); font-weight:600; font-size:20px;">
+                ✔ All Tests Completed Successfully
+            </div>
+            <div style="font-size:14px; opacity:0.8; margin-top:4px;">
+                Standby: <b>${offBaselineWatt.toFixed(1)}W</b> &nbsp;|&nbsp; Active: <b>${onBaselineWatt.toFixed(1)}W</b>
+            </div>
         `;
 
+        // Commit thresholds to backend
         await fetch('/api/onboarding/ble/calibrate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

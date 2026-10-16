@@ -168,42 +168,46 @@
           </div>
         </div>
 
-        <!-- Step 6: TV Power Calibration -->
+        <!-- Step 6: TV Power Calibration (Side-by-Side Card Layout) -->
         <div id="step-6" class="step">
-          <!-- Standard Left-Aligned Header Matching Steps 2, 3, 4, 5, 7, 8 -->
+          <!-- Standard Left Header -->
           <div class="wiz-header">
             <h2 class="wiz-title">TV Power Calibration</h2>
             <p class="wiz-desc">Calibrate active and standby detection.</p>
           </div>
 
           <div class="calib-container">
-            <!-- Centered Live Telemetry Pill -->
-            <div class="calib-badge">
-              <span class="material-symbols-rounded" style="color:var(--primary); font-size:28px;">bolt</span>
-              <span id="calib-live-watt" class="calib-watt-val">-- W</span>
-              <span id="calib-live-state" class="onboard-wifi-badge" style="margin-left: 10px;">CHECKING...</span>
+            <!-- Hero Live Telemetry Badge -->
+            <div class="calib-hero-badge">
+              <span class="material-symbols-rounded calib-hero-icon">bolt</span>
+              <div class="calib-hero-data">
+                <span id="calib-live-watt" class="calib-hero-watt">-- W</span>
+                <span id="calib-live-state" class="onboard-wifi-badge">CHECKING...</span>
+              </div>
             </div>
 
-            <!-- Two-Stage Checklist -->
-            <div class="chk-group" style="max-height: none; padding: 0; gap: 10px;">
-              <div class="chk-item pending calib-item" id="chk-calib-off">
-                <div class="chk-spinner" style="display:none; width:22px; height:22px;"></div>
-                <span class="material-symbols-rounded chk-icon" style="font-size:24px;">tv_off</span>
-                <div style="flex:1;">
-                  <div style="font-size:16px; font-weight:500;">TV Standby (OFF) Load</div>
-                  <div id="chk-calib-off-sub" style="font-size:12px; opacity:0.6;">Awaiting capture (30s test)</div>
+            <!-- Two Cards Side-by-Side -->
+            <div class="calib-cards-row">
+              <!-- Card 1: TV Standby (OFF) -->
+              <div class="calib-card pending" id="chk-calib-off">
+                <div class="calib-card-header">
+                  <span class="material-symbols-rounded calib-card-icon">tv_off</span>
+                  <span class="material-symbols-rounded calib-card-status" id="chk-calib-off-status">radio_button_unchecked</span>
+                  <div class="chk-spinner" style="display:none;"></div>
                 </div>
-                <span class="material-symbols-rounded" id="chk-calib-off-status" style="font-size:24px; opacity:0.4;">radio_button_unchecked</span>
+                <div class="calib-card-title">TV Standby (OFF)</div>
+                <div class="calib-card-sub" id="chk-calib-off-sub">Awaiting capture</div>
               </div>
 
-              <div class="chk-item pending calib-item" id="chk-calib-on">
-                <div class="chk-spinner" style="display:none; width:22px; height:22px;"></div>
-                <span class="material-symbols-rounded chk-icon" style="font-size:24px;">tv</span>
-                <div style="flex:1;">
-                  <div style="font-weight:500; font-size:16px;">TV Active (ON) Load</div>
-                  <div id="chk-calib-on-sub" style="font-size:12px; opacity:0.6;">Awaiting capture (30s test, Max Volume)</div>
+              <!-- Card 2: TV Active (ON) -->
+              <div class="calib-card pending" id="chk-calib-on">
+                <div class="calib-card-header">
+                  <span class="material-symbols-rounded calib-card-icon">tv</span>
+                  <span class="material-symbols-rounded calib-card-status" id="chk-calib-on-status">radio_button_unchecked</span>
+                  <div class="chk-spinner" style="display:none;"></div>
                 </div>
-                <span class="material-symbols-rounded" id="chk-calib-on-status" style="font-size:24px; opacity:0.4;">radio_button_unchecked</span>
+                <div class="calib-card-title">TV Active (ON)</div>
+                <div class="calib-card-sub" id="chk-calib-on-sub">Awaiting capture (Max Vol)</div>
               </div>
             </div>
 
@@ -213,20 +217,20 @@
               <span class="calib-prompt-detail" id="calib-prompt-detail">Ensure smart plug and TV are connected to power.</span>
             </div>
 
-            <!-- Animated 30-Second Progress Bar -->
-            <div id="calib-progress-container" class="calib-progress-box" style="display: none;">
-              <div class="calib-bar-track">
-                <div id="calib-progress-bar" class="calib-bar-fill"></div>
+            <!-- Dedicated 30-Second Progress Bar -->
+            <div id="calib-progress-container" class="calib-progress-wrap" style="display:none;">
+              <div class="calib-progress-track">
+                <div id="calib-progress-bar" class="calib-progress-fill"></div>
               </div>
-              <span id="calib-progress-label" style="font-size:12px; opacity:0.7;">Measuring: 30s remaining</span>
+              <span id="calib-progress-label" class="calib-progress-label">Sampling: 30s remaining</span>
             </div>
 
-            <!-- Action Button inside Step 6 -->
+            <!-- Action Button -->
             <div style="display:flex; justify-content:center; position:relative; z-index:10;">
-              <button id="btn-calib-action" class="setup-btn" onclick="window.triggerCalibrationStep()" style="padding:14px 44px; font-size:17px;">
-              <span class="material-symbols-rounded" style="font-size:22px;">play_arrow</span>
-              <span id="btn-calib-text">Capture Baseline (30s)</span>
-            </button>
+              <button id="btn-calib-action" class="setup-btn calib-action-btn" onclick="window.triggerCalibrationStep()" disabled>
+                <span class="material-symbols-rounded" style="font-size:24px;">play_arrow</span>
+                <span id="btn-calib-text">Capture Baseline (30s)</span>
+              </button>
             </div>
           </div>
 

@@ -414,20 +414,18 @@ export function stopCalibrationMonitor() {
 function resetCalibItem(elemId, iconName, title, sub) {
     const el = document.getElementById(elemId);
     if (!el) return;
-    el.className = 'chk-item pending calib-item';
+    el.className = 'calib-card pending';
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'none';
-    const icon = el.querySelector('.chk-icon');
+    const icon = el.querySelector('.calib-card-icon');
     if (icon) {
         icon.style.display = 'block';
         icon.innerText = iconName;
-        icon.style.color = '';
     }
     const statusIcon = document.getElementById(`${elemId}-status`);
     if (statusIcon) {
+        statusIcon.style.display = 'block';
         statusIcon.innerText = 'radio_button_unchecked';
-        statusIcon.style.color = '';
-        statusIcon.style.opacity = '0.4';
     }
     const subEl = document.getElementById(`${elemId}-sub`);
     if (subEl) subEl.innerText = sub;
@@ -436,30 +434,28 @@ function resetCalibItem(elemId, iconName, title, sub) {
 function markCalibItemRunning(elemId) {
     const el = document.getElementById(elemId);
     if (!el) return;
-    el.className = 'chk-item calib-item';
+    el.className = 'calib-card running';
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'block';
-    const icon = el.querySelector('.chk-icon');
-    if (icon) icon.style.display = 'none';
+    const statusIcon = document.getElementById(`${elemId}-status`);
+    if (statusIcon) statusIcon.style.display = 'none';
 }
 
 function markCalibItemDone(elemId, iconName, measuredWatt) {
     const el = document.getElementById(elemId);
     if (!el) return;
-    el.className = 'chk-item done calib-item';
+    el.className = 'calib-card done';
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'none';
-    const icon = el.querySelector('.chk-icon');
+    const icon = el.querySelector('.calib-card-icon');
     if (icon) {
         icon.style.display = 'block';
         icon.innerText = iconName;
-        icon.style.color = 'var(--green-border)';
     }
     const statusIcon = document.getElementById(`${elemId}-status`);
     if (statusIcon) {
+        statusIcon.style.display = 'block';
         statusIcon.innerText = 'check_circle';
-        statusIcon.style.color = 'var(--green-border)';
-        statusIcon.style.opacity = '1';
     }
     const subEl = document.getElementById(`${elemId}-sub`);
     if (subEl) subEl.innerText = `Captured: ${measuredWatt.toFixed(1)} W`;

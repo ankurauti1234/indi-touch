@@ -696,38 +696,193 @@
     opacity: 0.8;
 }
 
-/* ── Step 6 Calibration Hitbox & Layout Fix ── */
+/* ── Step 6: TV Calibration Side-by-Side Layout ───────────────────────────── */
 
 #step-6 {
-    /* Leave 120px at the bottom so content can never touch or slide under .wiz-footer */
-    padding-bottom: 120px !important;
+    padding-bottom: 110px !important;
 }
 
-#step-6 .calib-container {
-    max-width: 650px;
+.calib-container {
+    max-width: 680px;
     width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 16px;
     position: relative;
     z-index: 10;
 }
 
-#step-6 .chk-item {
-    padding: 12px 20px !important;
-    gap: 14px !important;
+/* Hero Live Telemetry Badge */
+.calib-hero-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: var(--bg-surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: 28px;
+    padding: 10px 24px;
+    align-self: center;
 }
 
-#btn-calib-action {
-    position: relative;
-    z-index: 50 !important;
+.calib-hero-icon {
+    font-size: 36px !important;
+    color: var(--primary);
+}
+
+.calib-hero-data {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.calib-hero-watt {
+    font-size: 34px !important;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-main);
+    letter-spacing: -0.5px;
+}
+
+/* Side-by-Side Cards */
+.calib-cards-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+}
+
+.calib-card {
+    background: var(--bg-surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: 20px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.calib-card.pending {
+    opacity: 0.7;
+}
+
+.calib-card.running {
+    opacity: 1;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.2);
+}
+
+.calib-card.done {
+    opacity: 1;
+    background: var(--bg-surface-container-high);
+    border-color: rgba(100, 210, 154, 0.4);
+    box-shadow: 0 4px 12px rgba(100, 210, 154, 0.1);
+}
+
+.calib-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.calib-card-icon {
+    font-size: 32px !important;
+    color: var(--text-sub);
+}
+
+.calib-card.done .calib-card-icon {
+    color: var(--green-border) !important;
+}
+
+.calib-card-status {
+    font-size: 26px !important;
+    opacity: 0.4;
+}
+
+.calib-card.done .calib-card-status {
+    color: var(--green-border) !important;
+    opacity: 1 !important;
+}
+
+.calib-card-title {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.calib-card-sub {
+    font-size: 13px;
+    color: var(--text-sub);
+}
+
+/* Prompt Box */
+.calib-prompt-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 48px;
+    gap: 4px;
+}
+
+.calib-prompt-main {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.calib-prompt-detail {
+    font-size: 14px;
+    color: var(--text-sub);
+}
+
+/* Progress Bar */
+.calib-progress-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.calib-progress-track {
+    width: 100%;
+    height: 8px;
+    background: var(--surface-variant);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.calib-progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.1s linear;
+}
+
+.calib-progress-label {
+    font-size: 13px;
+    color: var(--text-sub);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Action Button */
+.calib-action-btn {
+    padding: 16px 48px !important;
+    font-size: 18px !important;
+    border-radius: 26px !important;
     cursor: pointer !important;
-    pointer-events: auto !important;
+    position: relative;
+    z-index: 10;
 }
 
-#btn-calib-action:disabled {
+.calib-action-btn:disabled {
     opacity: 0.35 !important;
     filter: grayscale(1) !important;
     cursor: not-allowed !important;
+    box-shadow: none !important;
 }

@@ -546,7 +546,7 @@ async function pollLiveWatt() {
                     updatePrompt("TV Standby Detected", "Tap below to capture the TV Standby baseline.");
                     setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
                 } else {
-                    updatePrompt("Please turn the TV OFF with the remote", `Current load is ${liveWatt.toFixed(1)} W (waiting for < 10.0 W)`);
+                    updatePrompt("Please turn the TV OFF", "Waiting for TV to turn off...");
                     setButtonState(actionBtn, false, "Waiting for TV to turn OFF...");
                 }
             } else {
@@ -557,7 +557,7 @@ async function pollLiveWatt() {
                     updatePrompt("TV Active Load Detected", "Set volume to MAXIMUM, then tap below.");
                     setButtonState(actionBtn, true, "Capture TV ON Baseline (30s)");
                 } else {
-                    updatePrompt("Please turn the TV ON with the remote", `Current load is ${liveWatt.toFixed(1)} W (waiting for > 10.0 W)`);
+                    updatePrompt("Please turn the TV ON", "Waiting for TV to turn on...");
                     setButtonState(actionBtn, false, "Waiting for TV to turn ON...");
                 }
             }
@@ -638,12 +638,12 @@ export async function triggerCalibrationStep() {
             onBaselineWatt = avg;
             markCalibItemDone('chk-calib-on', 'tv', avg);
             calibStage = 'SWITCH_PROMPT';
-            updatePrompt("Active Load Verified", "Now turn the TV OFF with your remote.");
+            updatePrompt("Active Load Verified", "Please turn the TV OFF.");
         } else {
             offBaselineWatt = avg;
             markCalibItemDone('chk-calib-off', 'tv_off', avg);
             calibStage = 'SWITCH_PROMPT';
-            updatePrompt("Standby Load Verified", "Now turn the TV ON and set volume to MAXIMUM.");
+            updatePrompt("Standby Load Verified", "Please turn the TV ON and set volume to MAXIMUM.");
         }
 
         // Re-display button in disabled state until TV state physically flips

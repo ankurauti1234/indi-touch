@@ -851,34 +851,40 @@
     line-height: 1.4;
 }
 
-/* Progress Bar */
+/* Progress Bar (Compact & Slower Visual Sweep) */
 .calib-progress-wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     width: 100%;
+    margin: 6px 0;
 }
 
 .calib-progress-track {
-    width: 100%;
-    height: 8px;
+    width: 340px; /* Constrained width so the visual fill moves slowly */
+    max-width: 80%;
+    height: 7px;
     background: var(--surface-variant);
     border-radius: 4px;
     overflow: hidden;
+    position: relative;
 }
 
 .calib-progress-fill {
     width: 0%;
     height: 100%;
     background: var(--primary);
+    /* Linear transition over update intervals makes the motion fluid */
     transition: width 0.1s linear;
 }
 
 .calib-progress-label {
-    font-size: 14px !important; /* Clearer countdown font */
+    font-size: 14px;
     color: var(--text-sub);
     font-variant-numeric: tabular-nums;
+    letter-spacing: 0.2px;
 }
 
 /* Action Button */

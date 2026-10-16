@@ -433,6 +433,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    pointer-events: none; /* Let clicks pass through empty spaces of footer */
+}
+
+.wiz-footer button {
+    pointer-events: auto; /* Keep the actual Back and Next buttons clickable */
 }
 
 .btn-back {
@@ -795,4 +800,19 @@ button.setup-btn[disabled] {
 .calib-prompt-detail {
     font-size: 13px;
     color: var(--text-sub);
+}
+
+/* Ensure Calibration Action Button is always on top and clickable */
+#btn-calib-action {
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+#btn-calib-action:disabled {
+    opacity: 0.35 !important;
+    filter: grayscale(1) !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
 }

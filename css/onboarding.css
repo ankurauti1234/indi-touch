@@ -696,104 +696,38 @@
     opacity: 0.8;
 }
 
-/* ── TV Calibration (Step 6) ──────────────────────────────────────────────── */
+/* ── Step 6 Calibration Hitbox & Layout Fix ── */
 
-.calib-container {
-    max-width: 680px;
+#step-6 {
+    /* Leave 120px at the bottom so content can never touch or slide under .wiz-footer */
+    padding-bottom: 120px !important;
+}
+
+#step-6 .calib-container {
+    max-width: 650px;
     width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-bottom: 90px; /* Leaves clear space above the footer */
+    gap: 8px;
+    position: relative;
+    z-index: 10;
 }
 
-.calib-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    align-self: center;
-    background: var(--bg-surface-container);
-    padding: 8px 24px;
-    border-radius: 24px;
-    border: 1px solid var(--outline-variant);
-    margin-bottom: 2px;
+#step-6 .chk-item {
+    padding: 12px 20px !important;
+    gap: 14px !important;
 }
 
-.calib-watt-val {
-    font-size: 26px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--text-main);
-    margin-left: 6px;
+#btn-calib-action {
+    position: relative;
+    z-index: 50 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
 }
 
-.calib-item {
-    padding: 16px 20px !important;
-    border-radius: 18px !important;
-    gap: 16px !important;
-}
-
-.calib-prompt-text {
-    font-size: 15px;
-    color: var(--text-main);
-    line-height: 1.4;
-    text-align: center;
-    min-height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.calib-progress-box {
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-}
-
-.calib-bar-track {
-    width: 100%;
-    height: 6px;
-    background: var(--surface-variant);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.calib-bar-fill {
-    width: 0%;
-    height: 100%;
-    background: var(--primary);
-    transition: width 0.1s linear;
-}
-
-/* Clean, tactile disabled state */
-.setup-btn:disabled,
-button.setup-btn[disabled] {
+#btn-calib-action:disabled {
     opacity: 0.35 !important;
     filter: grayscale(1) !important;
     cursor: not-allowed !important;
-    box-shadow: none !important;
-}
-
-/* Prompt Box Formatting to prevent inline text sticking */
-.calib-prompt-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    min-height: 52px;
-    gap: 4px;
-}
-
-.calib-prompt-main {
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--text-main);
-}
-
-.calib-prompt-detail {
-    font-size: 13px;
-    color: var(--text-sub);
 }

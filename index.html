@@ -222,11 +222,11 @@
             </div>
 
             <!-- Action Button inside Step 6 -->
-            <div style="display:flex; justify-content:center;">
-              <button id="btn-calib-action" class="setup-btn" style="padding:14px 44px; font-size:17px;">
-                <span class="material-symbols-rounded" style="font-size:22px;">play_arrow</span>
-                <span id="btn-calib-text">Capture Baseline (30s)</span>
-              </button>
+            <div style="display:flex; justify-content:center; position:relative; z-index:10;">
+              <button id="btn-calib-action" class="setup-btn" onclick="window.triggerCalibrationStep()" style="padding:14px 44px; font-size:17px;">
+              <span class="material-symbols-rounded" style="font-size:22px;">play_arrow</span>
+              <span id="btn-calib-text">Capture Baseline (30s)</span>
+            </button>
             </div>
           </div>
 

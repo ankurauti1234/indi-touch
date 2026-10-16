@@ -387,10 +387,15 @@ export function startCalibrationMonitor() {
     if (prog) prog.style.display = 'none';
 
     const actionBtn = document.getElementById('btn-calib-action');
-    if (actionBtn) {
-        actionBtn.style.display = 'flex';
-        setButtonState(actionBtn, false, 'Checking TV state...');
-    }
+if (actionBtn) {
+    actionBtn.style.display = 'flex';
+    actionBtn.onclick = (e) => {
+        e.preventDefault();
+        if (!actionBtn.disabled && !isCalibRunning) {
+            triggerCalibrationStep();
+        }
+    };
+}
 
     pollLiveWatt();
     liveWattPollInterval = setInterval(pollLiveWatt, 1000);
@@ -472,11 +477,13 @@ function setButtonState(btn, enabled, text) {
     btn.disabled = !enabled;
     if (enabled) {
         btn.removeAttribute('disabled');
-        btn.style.pointerEvents = 'auto';
     } else {
         btn.setAttribute('disabled', 'true');
-        btn.style.pointerEvents = 'none';
     }
+    // Never set pointerEvents = 'none' inline on the element;
+    // let native button disabled handle state so click/touch hitboxes don't corrupt
+    btn.style.pointerEvents = 'auto';
+
     const textSpan = document.getElementById('btn-calib-text');
     if (textSpan && text) textSpan.innerText = text;
 }

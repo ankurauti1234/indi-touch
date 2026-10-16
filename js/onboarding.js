@@ -414,10 +414,10 @@ export function stopCalibrationMonitor() {
 function resetCalibItem(elemId, iconName, title, sub) {
     const el = document.getElementById(elemId);
     if (!el) return;
-    el.className = 'calib-card pending';
+    el.className = 'calib-pill pending';
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'none';
-    const icon = el.querySelector('.calib-card-icon');
+    const icon = el.querySelector('.calib-pill-icon');
     if (icon) {
         icon.style.display = 'block';
         icon.innerText = iconName;
@@ -434,7 +434,7 @@ function resetCalibItem(elemId, iconName, title, sub) {
 function markCalibItemRunning(elemId) {
     const el = document.getElementById(elemId);
     if (!el) return;
-    el.className = 'calib-card running';
+    el.className = 'calib-pill running';
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'block';
     const statusIcon = document.getElementById(`${elemId}-status`);
@@ -444,10 +444,10 @@ function markCalibItemRunning(elemId) {
 function markCalibItemDone(elemId, iconName, measuredWatt) {
     const el = document.getElementById(elemId);
     if (!el) return;
-    el.className = 'calib-card done';
+    el.className = 'calib-pill done';
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'none';
-    const icon = el.querySelector('.calib-card-icon');
+    const icon = el.querySelector('.calib-pill-icon');
     if (icon) {
         icon.style.display = 'block';
         icon.innerText = iconName;

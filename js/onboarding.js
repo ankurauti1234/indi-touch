@@ -462,10 +462,12 @@ function markCalibItemDone(elemId, iconName, measuredWatt) {
 }
 
 function updatePrompt(mainText, detailText = '') {
-    const mainEl = document.getElementById('calib-prompt-main');
-    const detailEl = document.getElementById('calib-prompt-detail');
-    if (mainEl) mainEl.innerText = mainText;
-    if (detailEl) detailEl.innerText = detailText;
+    const promptEl = document.getElementById('calib-prompt-box');
+    if (!promptEl) return;
+    promptEl.innerHTML = `
+        <div class="calib-prompt-main">${mainText}</div>
+        <div class="calib-prompt-detail">${detailText}</div>
+    `;
 }
 
 function setButtonState(btn, enabled, text) {

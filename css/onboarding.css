@@ -696,19 +696,19 @@
     opacity: 0.8;
 }
 
-/* ── Step 6: TV Calibration Compact Layout ─────────────────────────────────── */
+/* ── Step 6: TV Calibration Restored Scale & Larger Prompts ────────────────── */
 
 #step-6 {
     padding-bottom: 110px !important;
 }
 
 .calib-container {
-    max-width: 680px;
+    max-width: 720px;
     width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
     position: relative;
     z-index: 10;
 }
@@ -718,50 +718,49 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 14px;
     background: var(--bg-surface-container);
     border: 1px solid var(--outline-variant);
-    border-radius: 24px;
-    padding: 8px 22px;
+    border-radius: 28px;
+    padding: 10px 26px;
     align-self: center;
-    margin-bottom: 2px;
 }
 
 .calib-hero-icon {
-    font-size: 32px !important;
+    font-size: 38px !important;
     color: var(--primary);
 }
 
 .calib-hero-data {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .calib-hero-watt {
-    font-size: 32px !important;
+    font-size: 36px !important; /* Full hero size restored */
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: var(--text-main);
     letter-spacing: -0.5px;
 }
 
-/* Side-by-Side Horizontal Pills */
+/* Side-by-Side Horizontal Blocks */
 .calib-cards-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 16px;
     width: 100%;
 }
 
 .calib-pill {
     background: var(--bg-surface-container);
     border: 1px solid var(--outline-variant);
-    border-radius: 16px;
-    padding: 12px 16px;
+    border-radius: 20px;
+    padding: 16px 20px; /* Generous touch area */
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -772,18 +771,18 @@
 .calib-pill.running {
     opacity: 1;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.2);
+    box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.25);
 }
 
 .calib-pill.done {
     opacity: 1;
     background: var(--bg-surface-container-high);
     border-color: rgba(100, 210, 154, 0.4);
-    box-shadow: 0 2px 8px rgba(100, 210, 154, 0.1);
+    box-shadow: 0 4px 12px rgba(100, 210, 154, 0.12);
 }
 
 .calib-pill-icon {
-    font-size: 26px !important;
+    font-size: 32px !important; /* Restored icon size */
     color: var(--text-sub);
     flex-shrink: 0;
 }
@@ -798,24 +797,19 @@
 }
 
 .calib-pill-title {
-    font-size: 15px;
+    font-size: 18px !important; /* Restored title scale */
     font-weight: 500;
     color: var(--text-main);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .calib-pill-sub {
-    font-size: 12px;
+    font-size: 14px !important; /* Restored subtitle scale */
     color: var(--text-sub);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    margin-top: 2px;
 }
 
 .calib-pill-status {
-    font-size: 22px !important;
+    font-size: 26px !important; /* Restored radio/check status scale */
     opacity: 0.4;
     flex-shrink: 0;
 }
@@ -826,41 +820,43 @@
 }
 
 .calib-pill-spinner {
-    width: 20px !important;
-    height: 20px !important;
-    border-width: 2px !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-width: 3px !important;
     flex-shrink: 0;
 }
 
-/* Prompt Box */
+/* Enlarged Instruction / Prompt Box */
 .calib-prompt-box {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-height: 40px;
-    gap: 2px;
-    margin: 2px 0;
+    min-height: 58px;
+    gap: 6px;
+    margin: 4px 0;
 }
 
 .calib-prompt-main {
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 19px !important; /* Bigger, clearer headline */
+    font-weight: 600;
     color: var(--text-main);
+    letter-spacing: -0.2px;
 }
 
 .calib-prompt-detail {
-    font-size: 12px;
+    font-size: 16px !important; /* Bigger explanation text */
     color: var(--text-sub);
+    line-height: 1.4;
 }
 
-/* Progress Bar (Tightened height to never cross footer) */
+/* Progress Bar */
 .calib-progress-wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
 }
 
@@ -880,24 +876,24 @@
 }
 
 .calib-progress-label {
-    font-size: 12px;
+    font-size: 14px !important; /* Clearer countdown font */
     color: var(--text-sub);
     font-variant-numeric: tabular-nums;
 }
 
-/* Action Button Container */
+/* Action Button */
 .calib-btn-wrap {
     display: flex;
     justify-content: center;
     position: relative;
     z-index: 10;
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 .calib-action-btn {
-    padding: 13px 40px !important;
-    font-size: 16px !important;
-    border-radius: 24px !important;
+    padding: 16px 48px !important;
+    font-size: 18px !important;
+    border-radius: 26px !important;
     cursor: pointer !important;
     position: relative;
     z-index: 10;

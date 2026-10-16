@@ -168,9 +168,9 @@
           </div>
         </div>
 
-        <!-- Step 6: TV Power Calibration (Streamlined Horizontal Blocks) -->
+        <!-- Step 6: TV Power Calibration (Full Typography Scale) -->
         <div id="step-6" class="step">
-          <!-- Standard Left Header -->
+          <!-- Full-Size Left-Aligned Header -->
           <div class="wiz-header">
             <h2 class="wiz-title">TV Power Calibration</h2>
             <p class="wiz-desc">Calibrate active and standby detection.</p>
@@ -186,7 +186,7 @@
               </div>
             </div>
 
-            <!-- Two Compact Horizontal Cards Side-by-Side -->
+            <!-- Two Side-by-Side Horizontal Blocks (Logo + Title) -->
             <div class="calib-cards-row">
               <!-- Card 1: TV Standby (OFF) -->
               <div class="calib-pill pending" id="chk-calib-off">
@@ -204,31 +204,31 @@
                 <span class="material-symbols-rounded calib-pill-icon">tv</span>
                 <div class="calib-pill-text">
                   <div class="calib-pill-title">TV Active (ON)</div>
-                  <div class="calib-pill-sub" id="chk-calib-on-sub">Awaiting capture</div>
+                  <div class="calib-pill-sub" id="chk-calib-on-sub">Awaiting capture (Max Vol)</div>
                 </div>
                 <span class="material-symbols-rounded calib-pill-status" id="chk-calib-on-status">radio_button_unchecked</span>
                 <div class="chk-spinner calib-pill-spinner" style="display:none;"></div>
               </div>
             </div>
 
-            <!-- Dynamic Prompt -->
+            <!-- Enlarged Dynamic Prompt & Instructions -->
             <div id="calib-prompt-box" class="calib-prompt-box">
               <span class="calib-prompt-main" id="calib-prompt-main">Waiting for Smart Plug telemetry...</span>
               <span class="calib-prompt-detail" id="calib-prompt-detail">Ensure smart plug and TV are connected to power.</span>
             </div>
 
-            <!-- 30-Second Progress Bar (Fixed safe positioning) -->
+            <!-- Dedicated 30-Second Progress Bar -->
             <div id="calib-progress-container" class="calib-progress-wrap" style="display:none;">
               <div class="calib-progress-track">
                 <div id="calib-progress-bar" class="calib-progress-fill"></div>
               </div>
-              <span id="calib-progress-label" class="calib-progress-label">Measuring: 30s remaining</span>
+              <span id="calib-progress-label" class="calib-progress-label">Sampling: 30s remaining</span>
             </div>
 
             <!-- Action Button -->
             <div class="calib-btn-wrap">
               <button id="btn-calib-action" class="setup-btn calib-action-btn" onclick="window.triggerCalibrationStep()" disabled>
-                <span class="material-symbols-rounded" style="font-size:22px;">play_arrow</span>
+                <span class="material-symbols-rounded" style="font-size:24px;">play_arrow</span>
                 <span id="btn-calib-text">Capture Baseline (30s)</span>
               </button>
             </div>

@@ -238,8 +238,12 @@ async function handleStepLogic(step) {
 
     if (step === 5) refreshBlePlugs();
 
-    if (step === 6) startCalibrationMonitor();
-    else stopCalibrationMonitor();
+    // Run the monitor strictly while on Step 6; stop it immediately on all other steps
+    if (step === 6) {
+        startCalibrationMonitor();
+    } else {
+        stopCalibrationMonitor();
+    }
 
     if (step === 9) window.finalizeSetup();
 }
@@ -403,12 +407,17 @@ if (actionBtn) {
 
 export function stopCalibrationMonitor() {
     isCalibRunning = false; // Immediately halts any active sampling loop
+
     if (liveWattPollInterval) {
         clearInterval(liveWattPollInterval);
         liveWattPollInterval = null;
     }
+
     const prog = document.getElementById('calib-progress-container');
     if (prog) prog.style.display = 'none';
+
+    // Terminate the ble_plug_sec.py subprocess on the backend immediately
+    fetch('/api/onboarding/ble/stop-monitor', { method: 'POST' }).catch(() => {});
 }
 
 function resetCalibItem(elemId, iconName, title, sub) {

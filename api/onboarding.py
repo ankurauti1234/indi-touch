@@ -216,8 +216,10 @@ def input_sources():
 
 @onboarding_bp.route("/finalize", methods=["POST"])
 def finalize():
-    """Step 3: Fetch members from cloud, save to DB, mark installation done."""
+    """Step 3/9: Fetch members from cloud, save to DB, mark installation done, and start production monitor."""
+    # Ensure temporary calibration process is halted
     stop_sec_monitor()
+
     hhid = load_hhid()
     if not hhid:
         return jsonify({"success": False, "error": "HHID not set"}), 400
@@ -258,8 +260,17 @@ def finalize():
             save_members_data({"meter_id": mid, "hhid": hhid, "members": members})
             print(f"[ONBOARD] Saved {len(members)} members to DB.")
 
+        # Mark installation complete on disk
         set_installation_done()
         set_current_state("main")
+
+        # Start and enable the production BLE monitor daemon
+        try:
+            subprocess.run(["sudo", "systemctl", "enable", "--now", "ble-plug-monitor.service"], check=False)
+            print("[ONBOARD] ble-plug-monitor.service enabled and started.")
+        except Exception as se:
+            print(f"[ONBOARD] Failed to start ble-plug-monitor.service: {se}")
+
         return jsonify({
             "success": data.get("success", False), 
             "member_count": len(members),
@@ -397,29 +408,68 @@ def ble_calibrate():
     on_baseline = float(data.get("on_baseline", 50.0))
     off_baseline = float(data.get("off_baseline", 2.0))
 
+    # Calculate optimal hysteresis thresholds
     off_threshold = min(off_baseline + 3.0, (on_baseline + off_baseline) / 2.0)
     on_threshold = max(off_threshold + 5.0, (on_baseline + off_baseline) / 2.0)
+
+    quality = "good" if (on_baseline - off_baseline) >= 12.0 else "marginal"
+    calibrated_at = int(time.time())
+
+    # Load currently paired MAC for SQLite table consistency
+    plug_mac = "UNKNOWN"
+    if os.path.exists(METER_CONFIG_FILE):
+        try:
+            with open(METER_CONFIG_FILE, "r") as f:
+                cdata = json.load(f)
+                plug_mac = cdata.get("paired_mac_address", "UNKNOWN")
+        except Exception:
+            pass
 
     cal = {
         "on_threshold_low": round(on_threshold, 1),
         "off_threshold_high": round(off_threshold, 1),
         "ambiguous_seconds": 30,
         "confirm_seconds": 5,
-        "quality": "good" if (on_baseline - off_baseline) >= 15 else "marginal",
-        "calibrated_at": int(time.time()),
+        "quality": quality,
+        "calibrated_at": calibrated_at,
         "on_max_w": on_baseline,
         "off_max_w": off_baseline
     }
 
-    os.makedirs(os.path.dirname(TV_CALIBRATION_FILE), exist_ok=True)
-    with open(TV_CALIBRATION_FILE, "w") as f:
-        json.dump(cal, f, indent=4)
+    # 1. Save to persistent JSON config
+    try:
+        os.makedirs(os.path.dirname(TV_CALIBRATION_FILE), exist_ok=True)
+        with open(TV_CALIBRATION_FILE, "w") as f:
+            json.dump(cal, f, indent=4)
+        print(f"[CALIBRATE] Saved {TV_CALIBRATION_FILE}: ON={cal['on_threshold_low']}W, OFF={cal['off_threshold_high']}W")
+    except Exception as e:
+        print(f"[CALIBRATE] Error saving JSON: {e}")
 
-    # Stop the CLI monitor once calibration is captured
+    # 2. Insert into SQLite calibration table for daemon pickup
+    if os.path.exists(TV_MONITOR_DB):
+        try:
+            with sqlite3.connect(TV_MONITOR_DB) as conn:
+                conn.execute(
+                    """
+                    INSERT INTO calibration (
+                        calibrated_at, plug_id, on_threshold_low, off_threshold_high,
+                        ambiguous_seconds, confirm_seconds, quality, on_max_seen, off_min_seen
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        calibrated_at, plug_mac, cal["on_threshold_low"], cal["off_threshold_high"],
+                        30, 5, quality, on_baseline, off_baseline
+                    )
+                )
+                conn.commit()
+            print(f"[CALIBRATE] Inserted calibration record into {TV_MONITOR_DB}")
+        except Exception as e:
+            print(f"[CALIBRATE] SQLite insert error: {e}")
+
+    # 3. Cleanly terminate the temporary onboarding BLE process
     stop_sec_monitor()
 
     return jsonify({"success": True, "calibration": cal})
-
 
 @onboarding_bp.route("/ble/stop-monitor", methods=["POST"])
 def ble_stop_monitor():

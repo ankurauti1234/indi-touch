@@ -149,11 +149,16 @@ export function toggleTv(state) {
     tvState.on = state;
     if (window.updateTvUI) window.updateTvUI(state);
 
-    // Sync the main-stage overlay directly whenever state updates
     syncTvOverlay(state);
     
     // Optimistic clear for immediate UI feedback before API confirms
     if (!state) {
+        // Immediately close the active member reminder if it is currently visible
+        const popover = document.getElementById('critical-popover');
+        if (popover) {
+            popover.classList.remove('active');
+        }
+
         memberData.forEach(m => m.active = false);
         guests.length = 0;
         if (window.renderGrid) window.renderGrid();

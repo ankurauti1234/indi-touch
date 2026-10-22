@@ -480,18 +480,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 10 * 1000);
     }
 
-    // Check the current TV/member state regularly.
+    // Check the current TV/member state regularly
     timers.setInterval(() => {
-        let isTvOn = tvState.on;
+        const tvOverlay = document.getElementById('tv-off-overlay');
+        const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
 
-        if (!config.bleAvailable) {
-            isTvOn = true;
-        }
-
-        // TV is off or onboarding is not complete.
-        if (!isTvOn || !config.onboardingCompleted) {
+        // TV is off, onboarding incomplete, or TV Off overlay is visible
+        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible) {
             const popover = document.getElementById('critical-popover');
-
             if (popover) {
                 popover.classList.remove('active');
             }
@@ -500,16 +496,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             timers.clearTimeout(activeMemberReminderRepeatTimer);
 
             activeMemberReminderCycleStarted = false;
-
             return;
         }
 
         const activeCount = memberData.filter(m => m.active).length;
 
-        // A member is active.
+        // If someone is active, close popover and stop cycle
         if (activeCount > 0) {
             const popover = document.getElementById('critical-popover');
-
             if (popover) {
                 popover.classList.remove('active');
             }
@@ -518,13 +512,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             timers.clearTimeout(activeMemberReminderRepeatTimer);
 
             activeMemberReminderCycleStarted = false;
-
             return;
         }
 
         const popover = document.getElementById('critical-popover');
-
-        // Start the reminder cycle only if one isn't already running.
         if (
             popover &&
             !popover.classList.contains('active') &&

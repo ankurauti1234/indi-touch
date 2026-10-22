@@ -428,13 +428,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const popover = document.getElementById('critical-popover');
         if (!popover) return;
 
-        // Abort if TV is off or onboarding is incomplete
-        let isTvOn = tvState.on;
-        if (!config.bleAvailable) {
-            isTvOn = true;
-        }
+        const tvOverlay = document.getElementById('tv-off-overlay');
+        const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
 
-        if (!isTvOn || !config.onboardingCompleted) {
+        // Abort if TV is off, onboarding is incomplete, or the TV Off overlay is visible
+        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible) {
             popover.classList.remove('active');
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
@@ -477,40 +475,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Check the current TV/member state regularly.
     timers.setInterval(() => {
-        let isTvOn = tvState.on;
-
-        if (!config.bleAvailable) {
-            isTvOn = true;
-        }
-
+        const tvOverlay = document.getElementById('tv-off-overlay');
+        const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
         const popover = document.getElementById('critical-popover');
         const activeCount = memberData.filter(m => m.active).length;
 
-        // 1. If TV is off, onboarding incomplete, or someone is active: clear everything immediately
-        if (!isTvOn || !config.onboardingCompleted || activeCount > 0) {
+        // 1. If TV is off, onboarding incomplete, overlay is visible, or someone is active: clear everything immediately
+        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible || activeCount > 0) {
             if (popover) {
                 popover.classList.remove('active');
             }
 
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
+            timers.clearTimeout(activeMemberDelayTimer);
+            activeMemberDelayTimer = null;
             activeMemberReminderCycleStarted = false;
             return;
         }
 
         // 2. All members are undeclared while TV is ON:
-        // Do NOT show immediately. Schedule the 60-second delay first.
-        if (
-            popover &&
-            !popover.classList.contains('active') &&
-            !activeMemberReminderCycleStarted
-        ) {
-            activeMemberReminderCycleStarted = true;
-
-            // Wait 60 seconds before showing the reminder
-            activeMemberReminderRepeatTimer = timers.setTimeout(() => {
+        // Do NOT show immediately. Start the 60-second delay first.
+        if (!activeMemberReminderCycleStarted && !activeMemberDelayTimer) {
+            activeMemberDelayTimer = timers.setTimeout(() => {
+                activeMemberDelayTimer = null;
                 showActiveMemberReminder();
-            }, 60 * 1000);
+            }, 60 * 1000); // 60-second grace period before the reminder can fire
         }
     }, 5000);
 

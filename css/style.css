@@ -548,24 +548,21 @@ body {
 
 /* M3 Error color */
 
-/* ── Universal Main-Stage TV Off Overlay ────────────────────────────── */
-
+/* TV Off Grid Overlay */
 .grid-lock-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 15, 18, 0.85);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.85);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 200; /* Must be higher than .view.active (z-index: 10) */
+    z-index: 200; /* Higher than .view.active (z-index: 10) */
     margin: 0;
     border-radius: 0;
-    pointer-events: auto; /* Absorbs touches so views beneath are locked */
+    pointer-events: auto; /* Absorbs touches so cards underneath cannot be tapped */
 }
 
 .lock-content {

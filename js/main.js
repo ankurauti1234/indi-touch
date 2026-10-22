@@ -475,9 +475,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 10 * 1000);
     }
 
-    // Check the current TV/member state regularly
+    // Check the current TV/member state regularly.
     timers.setInterval(() => {
         let isTvOn = tvState.on;
+
         if (!config.bleAvailable) {
             isTvOn = true;
         }
@@ -485,26 +486,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         const popover = document.getElementById('critical-popover');
         const activeCount = memberData.filter(m => m.active).length;
 
-        // 1. If TV is OFF, onboarding incomplete, or someone is active: clear everything
+        // 1. If TV is off, onboarding incomplete, or someone is active: clear everything immediately
         if (!isTvOn || !config.onboardingCompleted || activeCount > 0) {
             if (popover) {
                 popover.classList.remove('active');
             }
+
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
-            timers.clearTimeout(activeMemberDelayTimer);
-            activeMemberDelayTimer = null;
             activeMemberReminderCycleStarted = false;
             return;
         }
 
         // 2. All members are undeclared while TV is ON:
-        // Do NOT show immediately. Start a delay timer (e.g. 60 seconds) first.
-        if (!activeMemberReminderCycleStarted && !activeMemberDelayTimer) {
-            activeMemberDelayTimer = timers.setTimeout(() => {
-                activeMemberDelayTimer = null;
+        // Do NOT show immediately. Schedule the 60-second delay first.
+        if (
+            popover &&
+            !popover.classList.contains('active') &&
+            !activeMemberReminderCycleStarted
+        ) {
+            activeMemberReminderCycleStarted = true;
+
+            // Wait 60 seconds before showing the reminder
+            activeMemberReminderRepeatTimer = timers.setTimeout(() => {
                 showActiveMemberReminder();
-            }, 60 * 1000); // 60 seconds grace period before the reminder can fire
+            }, 60 * 1000);
         }
     }, 5000);
 

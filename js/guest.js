@@ -24,6 +24,16 @@ export function selectChip(el, type) {
 }
 
 export async function addGuest() {
+    // ── TV Status Check ──
+    if (!tvState.on) {
+        console.warn("Add guest ignored: TV is OFF");
+        showModal(
+            'TV is Off',
+            'Adding guests is disabled while the TV is off.'
+        );
+        return;
+    }
+    
     const ageInput = document.getElementById('g-age');
     const age = ageInput.value;
 

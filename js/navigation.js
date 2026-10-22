@@ -1,4 +1,8 @@
+/* js/navigation.js — Navigation handling across views & TV overlay sync */
+
 import { closeSetting } from './settings.js';
+import { syncTvOverlay } from './connection.js';
+import { tvState } from './data.js';
 
 export function navTo(viewId) {
     // 1. Drop active focus/caret locks that freeze touch scrolling
@@ -44,4 +48,7 @@ export function navTo(viewId) {
             scroller.scrollTop = 0;
         }
     }
+
+    // 5. Sync the TV-off overlay to show/hide based on the newly selected view
+    syncTvOverlay(tvState.on);
 }

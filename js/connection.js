@@ -22,6 +22,25 @@ function isOnboarding() {
            layer.style.opacity !== '0';
 }
 
+// ─── TV Off Main-Stage Overlay Helper ─────────────────────────────────────────
+export function syncTvOverlay(tvOn) {
+    const overlay = document.getElementById('tv-off-overlay');
+    if (!overlay) return;
+
+    // Check which view is currently active in main-stage
+    const activeView = document.querySelector('.main-stage .view.active');
+    const viewId = activeView ? activeView.id : '';
+
+    // Only show overlay on Home and Guest Add screens
+    const isRestrictedView = (viewId === 'view-home' || viewId === 'view-guest-add');
+
+    if (!tvOn && isRestrictedView) {
+        overlay.style.display = 'flex';
+    } else {
+        overlay.style.display = 'none';
+    }
+}
+
 // ─── USB Popup ────────────────────────────────────────────────────────────────
 function injectUsbPopup() {
     if (isOnboarding()) return; // Suppress during onboarding
@@ -222,7 +241,7 @@ async function _pollStatus() {
         
         // USB: either jack or hdmi counts as "connected"
         const usbOk = d.usb_jack || d.hdmi_vcc;
-        if (usbOk  !== _usbConnected)  setUsbState(usbOk);
+        if (usbOk !== _usbConnected) setUsbState(usbOk);
         
         // Update sidebar icon
         _updateSidebarWifiIcon();
@@ -242,12 +261,20 @@ async function _pollStatus() {
             }
         }
 
-        // TV Status Icon
+        // TV Status Icon (Sidebar)
         const tvIcon = document.getElementById('tv-status-icon');
         if (tvIcon) {
-            if (d.tv_on) tvIcon.classList.add('online'), tvIcon.classList.remove('offline');
-            else tvIcon.classList.add('offline'), tvIcon.classList.remove('online');
+            if (d.tv_on) {
+                tvIcon.classList.add('online');
+                tvIcon.classList.remove('offline');
+            } else {
+                tvIcon.classList.add('offline');
+                tvIcon.classList.remove('online');
+            }
         }
+
+        // Sync Main-Stage Overlay without obstructing Sidebar
+        syncTvOverlay(d.tv_on);
 
         import('./data.js').then(async m => {
             if (m.tvState.on !== d.tv_on) {

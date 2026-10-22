@@ -339,6 +339,14 @@
     </nav>
 
     <div class="main-stage">
+      <!-- Universal Main-Stage TV Off Overlay (Does NOT cover nav-rail) -->
+      <div id="tv-off-overlay" class="grid-lock-overlay tv-only" style="display: none;">
+        <div class="lock-content">
+          <span class="material-symbols-rounded lock-icon">tv_off</span>
+          <h3 class="lock-title" data-i18n="tv_is_off">TV is Off</h3>
+          <p class="lock-msg" data-i18n="member_decl_disabled">Member and guest declarations are disabled while the TV is off.</p>
+        </div>
+      </div>
       <section id="view-home" class="view active">
         <div id="grid-container"></div>
         <div id="tv-off-overlay" class="grid-lock-overlay tv-only" style="display: none;">

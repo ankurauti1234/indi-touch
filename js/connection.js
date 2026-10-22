@@ -27,11 +27,11 @@ export function syncTvOverlay(tvOn) {
     const overlay = document.getElementById('tv-off-overlay');
     if (!overlay) return;
 
-    // Check which view is currently active in main-stage
+    // Check which view is currently active
     const activeView = document.querySelector('.main-stage .view.active');
     const viewId = activeView ? activeView.id : '';
 
-    // Only show overlay on Home and Guest Add screens
+    // Only restrict Home (member grid) and Guest Add views
     const isRestrictedView = (viewId === 'view-home' || viewId === 'view-guest-add');
 
     if (!tvOn && isRestrictedView) {

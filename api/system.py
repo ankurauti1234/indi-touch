@@ -74,55 +74,60 @@ def system_status():
     # Robust WiFi check: check if wlan0 is actually connected via nmcli
     wifi_ok = False
     try:
-        r = subprocess.run(["nmcli", "-t", "-g", "GENERAL.STATE", "device", "show", "wlan0"], 
-                           capture_output=True, text=True, timeout=2)
+        r = subprocess.run(
+            ["nmcli", "-t", "-g", "GENERAL.STATE", "device", "show", "wlan0"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
         if "connected" in r.stdout.lower():
             wifi_ok = True
-    except:
-        wifi_ok = os.path.exists(SYSTEM_FILES["wifi_up"])
+    except Exception:
+        wifi_ok = os.path.exists(SYSTEM_FILES.get("wifi_up", "/run/wifi_network_up"))
 
-    ble_available = os.path.exists(SYSTEM_FILES["bluetooth_available"])
-    tv_on = True
-    
-    if ble_available:
-        if os.path.exists(SYSTEM_FILES["tv_status"]):
-            try:
-                with open(SYSTEM_FILES["tv_status"], "r") as f:
-                    tv_state = f.read().strip().upper()
-                    tv_on = (tv_state == "ON")
-            except:
-                tv_on = False
-        else:
-            tv_on = False
+    # TV is ON if the presence flag /run/tv-status-on exists
+    tv_flag_file = SYSTEM_FILES.get("tv_status", "/run/tv-status-on")
+    tv_on = os.path.exists(tv_flag_file)
+
+    # Bluetooth availability
+    ble_available = os.path.exists(SYSTEM_FILES.get("bluetooth_available", "/run/bluetooth_available"))
+
+    # Installation state
+    install_done = False
+    install_file = SYSTEM_FILES.get("install_done", "/var/lib/self_installation_done")
+    if os.path.exists(install_file):
+        try:
+            with open(install_file, "r") as f:
+                install_done = (f.read().strip() == "1")
+        except Exception:
+            install_done = False
 
     # Software Versions from /var/lib/sw_version.json
     sw_versions = {}
     sw_version_path = "/var/lib/sw_version.json"
     if os.path.exists(sw_version_path):
         try:
-            import json
             with open(sw_version_path, "r") as f:
                 sw_versions = json.load(f)
-        except:
-            pass
+        except Exception:
+            sw_versions = {}
 
     return jsonify({
         "success": True,
-        "meter_id":        METER_ID,
-        "wifi":            wifi_ok,
-        "gsm":             os.path.exists(SYSTEM_FILES["gsm_up"]),
-        "usb_jack":        os.path.exists(SYSTEM_FILES["jack_status"]),
-        "hdmi_vcc":        os.path.exists(SYSTEM_FILES["hdmi_input"]),
-        "video_detection": os.path.exists(SYSTEM_FILES["video_detection"]),
-        "tv_on":           tv_on,
-        "ble_available":   ble_available,
-        "installation_done": os.path.exists(SYSTEM_FILES["install_done"]) and open(SYSTEM_FILES["install_done"]).read().strip() == "1",
-        "ip_address":      get_ip_address(),
-        "mac_address":     get_mac_address(),
-        "internet":        os.path.exists(SYSTEM_FILES["internet_ok"]),
-        "sw_versions":     sw_versions,
+        "meter_id": METER_ID,
+        "wifi": wifi_ok,
+        "gsm": os.path.exists(SYSTEM_FILES.get("gsm_up", "/run/gsm_network_up")),
+        "usb_jack": os.path.exists(SYSTEM_FILES.get("jack_status", "/run/jack_status")),
+        "hdmi_vcc": os.path.exists(SYSTEM_FILES.get("hdmi_input", "/run/input_source_hdmi")),
+        "video_detection": os.path.exists(SYSTEM_FILES.get("video_detection", "/run/video_object_detection")),
+        "tv_on": tv_on,
+        "ble_available": ble_available,
+        "installation_done": install_done,
+        "ip_address": get_ip_address(),
+        "mac_address": get_mac_address(),
+        "internet": os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok")),
+        "sw_versions": sw_versions,
     })
-
 
 # ── POST /api/system/brightness ───────────────────────────────────────────────
 @system_bp.route("/brightness", methods=["POST"])

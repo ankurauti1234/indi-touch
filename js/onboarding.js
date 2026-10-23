@@ -429,7 +429,7 @@ export function startCalibrationMonitor() {
         };
     }
 
-    updatePrompt("Step 1: Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
+    updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
 
     pollLiveWatt();
     liveWattPollInterval = setInterval(pollLiveWatt, 1000);
@@ -552,10 +552,10 @@ async function pollLiveWatt() {
         // Restore prompt & button once the plug reconnects
         if (actionBtn && actionBtn.disabled) {
             if (calibStage === 'OFF_READY') {
-                updatePrompt("Step 1: Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
+                updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
                 setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
             } else if (calibStage === 'ON_READY') {
-                updatePrompt("Step 2: Measure Active Load", "Turn the TV ON and set volume to HIGH. Then tap below.");
+                updatePrompt("Measure Active Load", "Turn the TV ON and set volume to HIGH. Then tap below.");
                 setButtonState(actionBtn, true, "Capture TV ON Baseline (30s)");
             }
         }
@@ -580,11 +580,11 @@ export async function triggerCalibrationStep() {
             if (calibStage === 'OFF_READY') {
                 markCalibItemActive('chk-calib-off');
                 setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
-                updatePrompt("Step 1: Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
+                updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
             } else {
                 markCalibItemActive('chk-calib-on');
                 setButtonState(actionBtn, true, "Capture TV ON Baseline (30s)");
-                updatePrompt("Step 2: Measure Active Load", "Turn the TV ON and set volume to HIGH. Then tap below.");
+                updatePrompt("Measure Active Load", "Turn the TV ON and set volume to HIGH. Then tap below.");
             }
         }
         pollLiveWatt();
@@ -660,9 +660,9 @@ export async function triggerCalibrationStep() {
         markCalibItemDone('chk-calib-off', 'tv_off', avg);
         
         calibStage = 'ON_READY';
-        markCalibItemActive('chk-calib-on'); // Outline TV ON box with green highlight
+        markCalibItemActive('chk-calib-on');
 
-        updatePrompt("Standby Load Captured", "Now, <strong>turn the TV ON</strong> and set volume to <strong>HIGH</strong>. Tap below when ready.");
+        updatePrompt("Measure Active Load", "Now, <strong>turn the TV ON</strong> and set volume to <strong>HIGH</strong>. Tap below when ready.");
 
         if (actionBtn) {
             actionBtn.style.display = 'flex';
@@ -708,7 +708,6 @@ export async function triggerCalibrationStep() {
         if (nextBtn) nextBtn.disabled = false;
     }
 }
-
 window.finalizeSetup = async () => {
     console.log("[Onboard] Finalizing setup...");
     const log = document.getElementById('install-log');

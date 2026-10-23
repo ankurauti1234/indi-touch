@@ -377,19 +377,15 @@ export async function selectPlug(el, mac) {
 
 // ── Step 6: Power Calibration (Technician Sequential Flow: OFF -> ON) ─────────
 
-// ── Helper: Highlight the active stage box without marking it complete ──
 function markCalibItemActive(elemId) {
     const el = document.getElementById(elemId);
     if (!el) return;
     
-    // Use 'running' or 'active' class to invoke the green border/highlight
     el.className = 'calib-pill running';
     
-    // Ensure the spinner is hidden until actual countdown sampling starts
     const spinner = el.querySelector('.chk-spinner');
     if (spinner) spinner.style.display = 'none';
 
-    // Keep unchecked circle icon so it doesn't look finished prematurely
     const statusIcon = document.getElementById(`${elemId}-status`);
     if (statusIcon) {
         statusIcon.style.display = 'block';
@@ -399,37 +395,39 @@ function markCalibItemActive(elemId) {
 
 export function startCalibrationMonitor() {
     stopCalibrationMonitor();
-    calibStage = 'OFF_READY';
-    offBaselineWatt = null;
-    onBaselineWatt = null;
-    isCalibRunning = false;
+    
+    // Only reset to OFF_READY if not already successfully calibrated
+    if (calibStage !== 'DONE') {
+        calibStage = 'OFF_READY';
+        offBaselineWatt = null;
+        onBaselineWatt = null;
+        isCalibRunning = false;
 
-    // Reset both to pending
-    resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
-    resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture (30s test, High Vol)');
+        resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
+        resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture (30s test, High Vol)');
 
-    // Highlight the TV Standby box immediately for Step 1
-    markCalibItemActive('chk-calib-off');
+        markCalibItemActive('chk-calib-off');
 
-    const nextBtn = document.getElementById('btn-next-6');
-    if (nextBtn) nextBtn.disabled = true;
+        const nextBtn = document.getElementById('btn-next-6');
+        if (nextBtn) nextBtn.disabled = true;
 
-    const prog = document.getElementById('calib-progress-container');
-    if (prog) prog.style.display = 'none';
+        const prog = document.getElementById('calib-progress-container');
+        if (prog) prog.style.display = 'none';
 
-    const actionBtn = document.getElementById('btn-calib-action');
-    if (actionBtn) {
-        actionBtn.style.display = 'flex';
-        setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
-        actionBtn.onclick = (e) => {
-            e.preventDefault();
-            if (!actionBtn.disabled && !isCalibRunning) {
-                triggerCalibrationStep();
-            }
-        };
+        const actionBtn = document.getElementById('btn-calib-action');
+        if (actionBtn) {
+            actionBtn.style.display = 'flex';
+            setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
+            actionBtn.onclick = (e) => {
+                e.preventDefault();
+                if (!actionBtn.disabled && !isCalibRunning) {
+                    triggerCalibrationStep();
+                }
+            };
+        }
+
+        updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
     }
-
-    updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
 
     pollLiveWatt();
     liveWattPollInterval = setInterval(pollLiveWatt, 1000);
@@ -533,13 +531,11 @@ async function pollLiveWatt() {
 
         const liveWatt = (typeof d.watt === 'number') ? d.watt : 0.0;
         
-        // Update live wattage only
         if (wattEl) wattEl.innerText = `${liveWatt.toFixed(1)} W`;
 
-        // Don't modify prompts or buttons while 30s test is sampling or in aborted state
-        if (isCalibRunning || calibStage === 'ABORTED') return;
+        // If calibration is already complete, do not allow polling to disturb UI
+        if (isCalibRunning || calibStage === 'ABORTED' || calibStage === 'DONE') return;
 
-        // Handle physical disconnection gracefully
         if (!d.connected) {
             updatePrompt("Smart Plug not communicating.", "Please ensure the wall outlet switch is ON.");
             if (actionBtn) {
@@ -549,7 +545,6 @@ async function pollLiveWatt() {
             return;
         }
 
-        // Restore prompt & button once the plug reconnects
         if (actionBtn && actionBtn.disabled) {
             if (calibStage === 'OFF_READY') {
                 updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
@@ -571,7 +566,6 @@ export async function triggerCalibrationStep() {
     const progBar = document.getElementById('calib-progress-bar');
     const progLabel = document.getElementById('calib-progress-label');
 
-    // Dismiss abort state on retry
     if (calibStage === 'ABORTED') {
         if (promptBox) promptBox.classList.remove('aborted');
         calibStage = (offBaselineWatt !== null) ? 'ON_READY' : 'OFF_READY';
@@ -615,7 +609,6 @@ export async function triggerCalibrationStep() {
     let stepCount = 0;
     let samples = [];
 
-    // Smooth 30-Second Sampling Loop
     while (stepCount <= totalStepsCount) {
         if (!isCalibRunning) {
             if (progContainer) progContainer.style.display = 'none';
@@ -628,7 +621,6 @@ export async function triggerCalibrationStep() {
         const remainingSec = Math.max(0, Math.ceil(totalSeconds - (stepCount * (updateIntervalMs / 1000))));
         if (progLabel) progLabel.innerText = `Sampling ${targetType} (${remainingSec}s remaining)`;
 
-        // Sample live wattage once per second
         if (stepCount % 10 === 0) {
             try {
                 const r = await fetch('/api/onboarding/ble/live-watt');
@@ -654,7 +646,6 @@ export async function triggerCalibrationStep() {
 
     const avg = samples.length ? (samples.reduce((a, b) => a + b, 0) / samples.length) : 0;
 
-    // Advance flow
     if (calibStage === 'OFF_READY') {
         offBaselineWatt = avg;
         markCalibItemDone('chk-calib-off', 'tv_off', avg);
@@ -672,14 +663,13 @@ export async function triggerCalibrationStep() {
         onBaselineWatt = avg;
         markCalibItemDone('chk-calib-on', 'tv', avg);
 
-        // Sanity validation: TV ON must be higher than TV OFF by at least 3.0W
         if ((onBaselineWatt - offBaselineWatt) < 3.0) {
             calibStage = 'OFF_READY';
             offBaselineWatt = null;
             onBaselineWatt = null;
             resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
             resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture (30s test, High Volume)');
-            markCalibItemActive('chk-calib-off'); // Re-highlight Step 1 on retry
+            markCalibItemActive('chk-calib-off');
             
             updatePrompt("Calibration Invalid", "Insufficient difference between ON and OFF baselines. Please ensure the TV was turned ON and retry.");
             if (actionBtn) {
@@ -692,22 +682,37 @@ export async function triggerCalibrationStep() {
         calibStage = 'DONE';
         if (actionBtn) actionBtn.style.display = 'none';
 
+        // Halt polling interval so late packets don't corrupt the completed state
+        if (liveWattPollInterval) {
+            clearInterval(liveWattPollInterval);
+            liveWattPollInterval = null;
+        }
+
         updatePrompt(
             "✔ Calibration Complete", 
             `Standby: ${offBaselineWatt.toFixed(1)} W  |  Active: ${onBaselineWatt.toFixed(1)} W`
         );
 
-        // Commit baselines to the backend
-        await fetch('/api/onboarding/ble/calibrate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ on_baseline: onBaselineWatt, off_baseline: offBaselineWatt })
-        });
+        // Commit baselines to the backend with error handling
+        try {
+            await fetch('/api/onboarding/ble/calibrate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ on_baseline: onBaselineWatt, off_baseline: offBaselineWatt })
+            });
+        } catch (err) {
+            console.error("Failed to commit calibration thresholds:", err);
+        }
 
+        // Enable Next button to proceed to Step 7
         const nextBtn = document.getElementById('btn-next-6');
-        if (nextBtn) nextBtn.disabled = false;
+        if (nextBtn) {
+            nextBtn.disabled = false;
+            nextBtn.removeAttribute('disabled');
+        }
     }
 }
+
 window.finalizeSetup = async () => {
     console.log("[Onboard] Finalizing setup...");
     const log = document.getElementById('install-log');

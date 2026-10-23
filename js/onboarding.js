@@ -373,6 +373,27 @@ export async function selectPlug(el, mac) {
 }
 
 // ── Step 6: Power Calibration (Technician Sequential Flow: OFF -> ON) ─────────
+
+// ── Helper: Highlight the active stage box without marking it complete ──
+function markCalibItemActive(elemId) {
+    const el = document.getElementById(elemId);
+    if (!el) return;
+    
+    // Use 'running' or 'active' class to invoke the green border/highlight
+    el.className = 'calib-pill running';
+    
+    // Ensure the spinner is hidden until actual countdown sampling starts
+    const spinner = el.querySelector('.chk-spinner');
+    if (spinner) spinner.style.display = 'none';
+
+    // Keep unchecked circle icon so it doesn't look finished prematurely
+    const statusIcon = document.getElementById(`${elemId}-status`);
+    if (statusIcon) {
+        statusIcon.style.display = 'block';
+        statusIcon.innerText = 'radio_button_unchecked';
+    }
+}
+
 export function startCalibrationMonitor() {
     stopCalibrationMonitor();
     calibStage = 'OFF_READY';
@@ -380,8 +401,12 @@ export function startCalibrationMonitor() {
     onBaselineWatt = null;
     isCalibRunning = false;
 
+    // Reset both to pending
     resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
-    resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture (30s test, High Volume)');
+    resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture (30s test, High Vol)');
+
+    // Highlight the TV Standby box immediately for Step 1
+    markCalibItemActive('chk-calib-off');
 
     const nextBtn = document.getElementById('btn-next-6');
     if (nextBtn) nextBtn.disabled = true;
@@ -501,22 +526,17 @@ async function pollLiveWatt() {
         const d = await r.json();
 
         const wattEl = document.getElementById('calib-live-watt');
-        const stateEl = document.getElementById('calib-live-state');
         const actionBtn = document.getElementById('btn-calib-action');
 
         const liveWatt = (typeof d.watt === 'number') ? d.watt : 0.0;
         
+        // Update live wattage only
         if (wattEl) wattEl.innerText = `${liveWatt.toFixed(1)} W`;
 
-        if (stateEl) {
-            stateEl.innerText = d.connected ? 'PLUG CONNECTED' : 'DISCONNECTED';
-            stateEl.style.background = d.connected ? 'rgba(100,210,154,0.2)' : 'rgba(255,100,100,0.2)';
-            stateEl.style.color = d.connected ? '#64d29a' : '#ff8080';
-        }
+        // Don't modify prompts or buttons while 30s test is sampling or in aborted state
+        if (isCalibRunning || calibStage === 'ABORTED') return;
 
-        if (isCalibRunning) return;
-        if (calibStage === 'ABORTED') return;
-
+        // Handle physical disconnection gracefully
         if (!d.connected) {
             updatePrompt("Smart Plug not communicating.", "Please ensure the wall outlet switch is ON.");
             if (actionBtn) {
@@ -526,7 +546,7 @@ async function pollLiveWatt() {
             return;
         }
 
-        // Restore prompt & button if returning from a temporary disconnection
+        // Restore prompt & button once the plug reconnects
         if (actionBtn && actionBtn.disabled) {
             if (calibStage === 'OFF_READY') {
                 updatePrompt("Step 1: Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
@@ -555,9 +575,11 @@ export async function triggerCalibrationStep() {
         if (actionBtn) {
             actionBtn.style.display = 'flex';
             if (calibStage === 'OFF_READY') {
+                markCalibItemActive('chk-calib-off');
                 setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
                 updatePrompt("Step 1: Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
             } else {
+                markCalibItemActive('chk-calib-on');
                 setButtonState(actionBtn, true, "Capture TV ON Baseline (30s)");
                 updatePrompt("Step 2: Measure Active Load", "Turn the TV ON and set volume to HIGH. Then tap below.");
             }
@@ -633,7 +655,9 @@ export async function triggerCalibrationStep() {
     if (calibStage === 'OFF_READY') {
         offBaselineWatt = avg;
         markCalibItemDone('chk-calib-off', 'tv_off', avg);
+        
         calibStage = 'ON_READY';
+        markCalibItemActive('chk-calib-on'); // Outline TV ON box with green highlight
 
         updatePrompt("Standby Load Captured", "Now, <strong>turn the TV ON</strong> and set volume to <strong>HIGH</strong>. Tap below when ready.");
 
@@ -652,6 +676,7 @@ export async function triggerCalibrationStep() {
             onBaselineWatt = null;
             resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
             resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture (30s test, High Volume)');
+            markCalibItemActive('chk-calib-off'); // Re-highlight Step 1 on retry
             
             updatePrompt("Calibration Invalid", "Insufficient difference between ON and OFF baselines. Please ensure the TV was turned ON and retry.");
             if (actionBtn) {

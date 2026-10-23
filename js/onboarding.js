@@ -332,7 +332,6 @@ export async function refreshBlePlugs() {
             </div>
         `).join('');
 
-        // Only enable if the paired device is actually confirmed by the scan
         if (d.paired_mac) {
             selectedPlugMac = d.paired_mac;
             if (btn) btn.disabled = false;
@@ -341,6 +340,38 @@ export async function refreshBlePlugs() {
         list.innerHTML = `<div class="wifi-skeleton">Scan error: ${e.message}</div>`;
     } finally {
         list.style.pointerEvents = 'all';
+    }
+}
+
+export async function selectPlug(el, mac) {
+    document.querySelectorAll('#onboard-ble-list .net-item').forEach(i => {
+        i.classList.remove('selected');
+        const icon = i.querySelector('.material-symbols-rounded:last-child');
+        if (icon) icon.innerText = 'radio_button_unchecked';
+    });
+
+    el.classList.add('selected');
+    const icon = el.querySelector('.material-symbols-rounded:last-child');
+    if (icon) icon.innerText = 'check_circle';
+
+    selectedPlugMac = mac;
+    const btn = document.getElementById('btn-next-5');
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('loading');
+    }
+
+    try {
+        await fetch('/api/onboarding/ble/pair', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mac })
+        });
+        if (btn) btn.disabled = false;
+    } catch (_) {
+        if (btn) btn.disabled = false;
+    } finally {
+        if (btn) btn.classList.remove('loading');
     }
 }
 

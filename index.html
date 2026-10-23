@@ -193,7 +193,7 @@
                 <span class="material-symbols-rounded calib-pill-icon">tv_off</span>
                 <div class="calib-pill-text">
                   <div class="calib-pill-title">TV Standby (OFF)</div>
-                  <div class="calib-pill-sub" id="chk-calib-off-sub">Awaiting capture</div>
+                  <div class="calib-pill-sub" id="chk-calib-off-sub">Awaiting capture (30s test)</div>
                 </div>
                 <span class="material-symbols-rounded calib-pill-status" id="chk-calib-off-status">radio_button_unchecked</span>
                 <div class="chk-spinner calib-pill-spinner" style="display:none;"></div>
@@ -204,7 +204,7 @@
                 <span class="material-symbols-rounded calib-pill-icon">tv</span>
                 <div class="calib-pill-text">
                   <div class="calib-pill-title">TV Active (ON)</div>
-                  <div class="calib-pill-sub" id="chk-calib-on-sub">Awaiting capture (Max Vol)</div>
+                  <div class="calib-pill-sub" id="chk-calib-on-sub">Awaiting capture (30s test, High Vol)</div>
                 </div>
                 <span class="material-symbols-rounded calib-pill-status" id="chk-calib-on-status">radio_button_unchecked</span>
                 <div class="chk-spinner calib-pill-spinner" style="display:none;"></div>
@@ -213,8 +213,8 @@
 
             <!-- Enlarged Dynamic Prompt & Instructions -->
             <div id="calib-prompt-box" class="calib-prompt-box">
-              <span class="calib-prompt-main" id="calib-prompt-main">Waiting for Smart Plug telemetry...</span>
-              <span class="calib-prompt-detail" id="calib-prompt-detail">Ensure smart plug and TV are connected to power.</span>
+              <div class="calib-prompt-main" id="calib-prompt-main">Step 1: Measure Standby Load</div>
+              <div class="calib-prompt-detail" id="calib-prompt-detail">Ensure TV is turned OFF (Standby), then tap below to begin.</div>
             </div>
 
             <!-- Dedicated 30-Second Progress Bar -->
@@ -227,9 +227,9 @@
 
             <!-- Action Button -->
             <div class="calib-btn-wrap">
-              <button id="btn-calib-action" class="setup-btn calib-action-btn" onclick="window.triggerCalibrationStep()" disabled>
+              <button id="btn-calib-action" class="setup-btn calib-action-btn" onclick="window.triggerCalibrationStep()">
                 <span class="material-symbols-rounded" style="font-size:24px;">play_arrow</span>
-                <span id="btn-calib-text">Capture Baseline (30s)</span>
+                <span id="btn-calib-text">Capture TV OFF Baseline (30s)</span>
               </button>
             </div>
           </div>

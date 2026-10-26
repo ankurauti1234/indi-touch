@@ -314,6 +314,13 @@ body {
     align-items: center;
 }
 
+.bottom-rail {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .status-icon-btn {
     width: 48px;
     height: 48px;
@@ -433,6 +440,190 @@ body {
     opacity: 1;
     transform: scale(1);
 }
+
+
+/* ── Household Absence / Away Mode Modal ────────────────────────────────────── */
+
+.absence-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.absence-card {
+    width: 640px;
+    max-width: 90vw;
+    background: var(--bg-surface);
+    border: 1px solid var(--outline-variant);
+    border-radius: 28px;
+    padding: 32px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.absence-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.absence-title-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.absence-title-icon {
+    font-size: 38px;
+    color: var(--primary);
+}
+
+.absence-title {
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.absence-desc {
+    font-size: 14px;
+    color: var(--text-sub);
+    margin: 4px 0 0 0;
+}
+
+.absence-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-sub);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.absence-close-btn:active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Preset Chips */
+.absence-presets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.absence-preset-btn {
+    padding: 12px 0;
+    border-radius: 16px;
+    border: 1px solid var(--outline-variant);
+    background: var(--bg-surface-container);
+    color: var(--text-main);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.absence-preset-btn.active {
+    background: var(--primary);
+    color: var(--on-primary);
+    border-color: var(--primary);
+}
+
+/* Stepper Controls */
+.absence-date-picker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    background: var(--bg-surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: 20px;
+    padding: 16px;
+}
+
+.picker-stepper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.stepper-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text-sub);
+}
+
+.stepper-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.stepper-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid var(--outline-variant);
+    background: var(--bg-surface-container-high);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.stepper-btn:active {
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+}
+
+.stepper-val {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-main);
+    min-width: 44px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Summary Box */
+.absence-summary {
+    background: rgba(208, 188, 255, 0.08);
+    border: 1px dashed rgba(208, 188, 255, 0.3);
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-size: 15px;
+    color: var(--text-main);
+    text-align: center;
+}
+
+.absence-summary strong {
+    color: var(--primary);
+}
+
+/* Actions Row */
+.absence-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 4px;
+}
+
+
+
 
 /* VIEWS */
 .main-stage {

@@ -219,6 +219,7 @@
           <span class="material-symbols-rounded" id="wifi-status-icon">wifi</span>
         </button>
       </div>
+
       <div class="nav-group">
         <button class="nav-btn active" id="btn-home" onclick="navTo('home')">
           <span class="material-symbols-rounded">grid_view</span>
@@ -232,6 +233,13 @@
         </button>
         <button class="nav-btn" id="btn-settings" onclick="navTo('settings')">
           <span class="material-symbols-rounded">settings</span>
+        </button>
+      </div>
+
+      <!-- Bottom Rail: Household Absence / Vacation Mode Trigger -->
+      <div class="bottom-rail">
+        <button class="nav-btn" id="btn-absence" onclick="openAbsenceModal()" title="Away Mode">
+          <span class="material-symbols-rounded">luggage</span>
         </button>
       </div>
     </nav>
@@ -767,6 +775,76 @@
         <div class="modal-actions" id="modal-actions">
           <!-- Dynamic Actions -->
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Household Absence / Away Modal -->
+  <div id="absence-modal" class="absence-modal-overlay" style="display: none;">
+    <div class="absence-card">
+      <div class="absence-header">
+        <div class="absence-title-row">
+          <span class="material-symbols-rounded absence-title-icon">luggage</span>
+          <div>
+            <h2 class="absence-title">Away Mode</h2>
+            <p class="absence-desc">Pause member & TV activity logging while away.</p>
+          </div>
+        </div>
+        <button class="absence-close-btn" onclick="closeAbsenceModal()">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <!-- Quick Preset Buttons -->
+      <div class="absence-presets">
+        <button class="absence-preset-btn" onclick="selectAbsencePreset(1)">1 Day</button>
+        <button class="absence-preset-btn" onclick="selectAbsencePreset(3)">3 Days</button>
+        <button class="absence-preset-btn active" onclick="selectAbsencePreset(7)">1 Week</button>
+        <button class="absence-preset-btn" onclick="selectAbsencePreset(14)">2 Weeks</button>
+      </div>
+
+      <!-- Touch Steppers for Day / Month / Year -->
+      <div class="absence-date-picker">
+        <div class="picker-stepper">
+          <label>DAY</label>
+          <div class="stepper-controls">
+            <button class="stepper-btn" onclick="adjustAbsenceDay(-1)">-</button>
+            <span class="stepper-val" id="absence-val-day">--</span>
+            <button class="stepper-btn" onclick="adjustAbsenceDay(1)">+</button>
+          </div>
+        </div>
+
+        <div class="picker-stepper">
+          <label>MONTH</label>
+          <div class="stepper-controls">
+            <button class="stepper-btn" onclick="adjustAbsenceMonth(-1)">-</button>
+            <span class="stepper-val" id="absence-val-month">---</span>
+            <button class="stepper-btn" onclick="adjustAbsenceMonth(1)">+</button>
+          </div>
+        </div>
+
+        <div class="picker-stepper">
+          <label>YEAR</label>
+          <div class="stepper-controls">
+            <button class="stepper-btn" onclick="adjustAbsenceYear(-1)">-</button>
+            <span class="stepper-val" id="absence-val-year">----</span>
+            <button class="stepper-btn" onclick="adjustAbsenceYear(1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Readout -->
+      <div class="absence-summary" id="absence-summary-text">
+        Returning on <strong>Thursday, 29 Oct 2026</strong>
+      </div>
+
+      <!-- Actions -->
+      <div class="absence-actions">
+        <button class="absence-cancel-btn" onclick="closeAbsenceModal()">Cancel</button>
+        <button class="absence-confirm-btn" id="btn-confirm-absence" onclick="confirmAbsence()">
+          <span class="material-symbols-rounded">check</span>
+          Activate Away Mode
+        </button>
       </div>
     </div>
   </div>

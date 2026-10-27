@@ -778,75 +778,84 @@
       </div>
     </div>
 
-    <!-- Household Absence / Away Modal -->
-    <div id="absence-modal" class="absence-modal-overlay" style="display: none;">
-      <div class="absence-card">
-        <div class="absence-header">
-          <div class="absence-title-row">
-            <span class="material-symbols-rounded absence-title-icon">luggage</span>
-            <div>
-              <h2 class="absence-title">Away Mode</h2>
-              <p class="absence-desc">Pause member & TV activity logging while away.</p>
-            </div>
-          </div>
-          <button class="absence-close-btn" onclick="closeAbsenceModal()">
-            <span class="material-symbols-rounded">close</span>
-          </button>
-        </div>
+    <!-- Full-Screen Absence / Vacation Calendar View -->
+    <section id="view-absence" class="view">
+      <div class="cal-view-card">
 
-        <!-- Quick Preset Buttons -->
-        <div class="absence-presets">
-          <button class="absence-preset-btn" onclick="selectAbsencePreset(1)">1 Day</button>
-          <button class="absence-preset-btn" onclick="selectAbsencePreset(3)">3 Days</button>
-          <button class="absence-preset-btn active" onclick="selectAbsencePreset(7)">1 Week</button>
-          <button class="absence-preset-btn" onclick="selectAbsencePreset(14)">2 Weeks</button>
-        </div>
-
-        <!-- Touch Steppers for Day / Month / Year -->
-        <div class="absence-date-picker">
-          <div class="picker-stepper">
-            <label>DAY</label>
-            <div class="stepper-controls">
-              <button class="stepper-btn" onclick="adjustAbsenceDay(-1)">-</button>
-              <span class="stepper-val" id="absence-val-day">--</span>
-              <button class="stepper-btn" onclick="adjustAbsenceDay(1)">+</button>
-            </div>
+        <!-- LEFT SIDE: Calendar Grid, Month Selector & Navigation -->
+        <div class="cal-left-pane">
+          <div class="cal-nav-bar">
+            <button class="cal-nav-arrow" onclick="calPrevYear()">
+              <span class="material-symbols-rounded">chevron_left</span>
+            </button>
+            <span class="cal-year-display" id="cal-year-label">2026</span>
+            <button class="cal-nav-arrow" onclick="calNextYear()">
+              <span class="material-symbols-rounded">chevron_right</span>
+            </button>
           </div>
 
-          <div class="picker-stepper">
-            <label>MONTH</label>
-            <div class="stepper-controls">
-              <button class="stepper-btn" onclick="adjustAbsenceMonth(-1)">-</button>
-              <span class="stepper-val" id="absence-val-month">---</span>
-              <button class="stepper-btn" onclick="adjustAbsenceMonth(1)">+</button>
-            </div>
+          <!-- Horizontal Month Ribbon -->
+          <div class="cal-months-ribbon" id="cal-months-ribbon">
+            <!-- Rendered dynamically (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec) -->
           </div>
 
-          <div class="picker-stepper">
-            <label>YEAR</label>
-            <div class="stepper-controls">
-              <button class="stepper-btn" onclick="adjustAbsenceYear(-1)">-</button>
-              <span class="stepper-val" id="absence-val-year">----</span>
-              <button class="stepper-btn" onclick="adjustAbsenceYear(1)">+</button>
-            </div>
+          <!-- Day Headers -->
+          <div class="cal-weekdays">
+            <span>SUN</span>
+            <span>MON</span>
+            <span>TUE</span>
+            <span>WED</span>
+            <span>THU</span>
+            <span>FRI</span>
+            <span>SAT</span>
+          </div>
+
+          <!-- 7x6 / 7x5 Days Grid -->
+          <div class="cal-days-grid" id="cal-days-grid">
+            <!-- Rendered dynamically -->
           </div>
         </div>
 
-        <!-- Summary Readout -->
-        <div class="absence-summary" id="absence-summary-text">
-          Returning on <strong>Thursday, 29 Oct 2026</strong>
+        <!-- RIGHT SIDE: Solid Accent Hero Card (Similar to the left red card in the reference) -->
+        <div class="cal-right-pane">
+          <div class="cal-hero-top">
+            <div class="cal-hero-badge">
+              <span class="material-symbols-rounded">flight_takeoff</span>
+              <span>AWAY MODE</span>
+            </div>
+            <button class="cal-hero-close" onclick="navTo('home')">
+              <span class="material-symbols-rounded">close</span>
+            </button>
+          </div>
+
+          <div class="cal-hero-main">
+            <div class="cal-hero-day" id="cal-hero-day">--</div>
+            <div class="cal-hero-weekday" id="cal-hero-weekday">--------</div>
+            <div class="cal-hero-full-date" id="cal-hero-month-year">--- ----</div>
+          </div>
+
+          <div class="cal-hero-details">
+            <div class="cal-detail-title">Planned Absence</div>
+            <div class="cal-detail-item">
+              <span class="material-symbols-rounded">schedule</span>
+              <span id="cal-hero-duration">-- Days Duration</span>
+            </div>
+            <div class="cal-detail-item">
+              <span class="material-symbols-rounded">event_available</span>
+              <span>Logs pause until 11:59 PM</span>
+            </div>
+          </div>
+
+          <div class="cal-hero-actions">
+            <button class="cal-submit-btn" id="btn-activate-absence" onclick="confirmAbsenceCalendar()">
+              <span class="material-symbols-rounded">check</span>
+              <span>Activate Away Mode</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Actions -->
-        <div class="absence-actions">
-          <button class="absence-cancel-btn" onclick="closeAbsenceModal()">Cancel</button>
-          <button class="absence-confirm-btn" id="btn-confirm-absence" onclick="confirmAbsence()">
-            <span class="material-symbols-rounded">check</span>
-            Activate Away Mode
-          </button>
-        </div>
       </div>
-    </div>
+    </section>
   </div>
 
   <!-- Active Members Reminder -->

@@ -1,105 +1,146 @@
-// js/absence.js — Household Absence / Vacation Mode Controller
+// js/absence.js — Full Screen Absence Calendar View Controller
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-let selectedReturnDate = new Date();
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export function initAbsenceManager() {
-    setDaysFromNow(7);
+let viewYear = new Date().getFullYear();
+let viewMonth = new Date().getMonth(); // 0 - 11
+let selectedDate = new Date();
+
+export function initAbsenceCalendar() {
+    // Default selection: 7 days from today
+    const def = new Date();
+    def.setDate(def.getDate() + 7);
+    def.setHours(23, 59, 59, 0);
+    selectedDate = def;
+    viewYear = selectedDate.getFullYear();
+    viewMonth = selectedDate.getMonth();
+
+    renderMonthsRibbon();
+    renderCalendar();
+    updateHeroCard();
 }
 
-function setDaysFromNow(days) {
-    const target = new Date();
-    target.setDate(target.getDate() + days);
-    target.setHours(23, 59, 59, 0);
-    selectedReturnDate = target;
-    renderDatePickers();
+function renderMonthsRibbon() {
+    const container = document.getElementById('cal-months-ribbon');
+    if (!container) return;
+
+    container.innerHTML = MONTH_SHORT.map((m, idx) => `
+        <span class="cal-month-tab ${idx === viewMonth ? 'active' : ''}" 
+              onclick="calSelectMonth(${idx})">
+            ${m}
+        </span>
+    `).join('');
 }
 
-function renderDatePickers() {
-    const dayEl = document.getElementById('absence-val-day');
-    const monthEl = document.getElementById('absence-val-month');
-    const yearEl = document.getElementById('absence-val-year');
-    const summaryEl = document.getElementById('absence-summary-text');
+export function calSelectMonth(monthIndex) {
+    viewMonth = monthIndex;
+    renderMonthsRibbon();
+    renderCalendar();
+}
 
-    if (dayEl) dayEl.innerText = String(selectedReturnDate.getDate()).padStart(2, '0');
-    if (monthEl) monthEl.innerText = MONTH_NAMES[selectedReturnDate.getMonth()];
-    if (yearEl) yearEl.innerText = selectedReturnDate.getFullYear();
-
-    if (summaryEl) {
-        const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
-        summaryEl.innerHTML = `Returning on <strong>${selectedReturnDate.toLocaleDateString('en-US', options)}</strong>`;
+export function calPrevYear() {
+    const now = new Date();
+    if (viewYear > now.getFullYear()) {
+        viewYear--;
+        document.getElementById('cal-year-label').innerText = viewYear;
+        renderCalendar();
     }
 }
 
-export function openAbsenceModal() {
-    const modal = document.getElementById('absence-modal');
-    if (!modal) return;
-    setDaysFromNow(7);
-    updateActivePresetChip(7);
-    modal.style.display = 'flex';
+export function calNextYear() {
+    viewYear++;
+    document.getElementById('cal-year-label').innerText = viewYear;
+    renderCalendar();
 }
 
-export function closeAbsenceModal() {
-    const modal = document.getElementById('absence-modal');
-    if (modal) modal.style.display = 'none';
-}
+export function renderCalendar() {
+    const grid = document.getElementById('cal-days-grid');
+    const yearLabel = document.getElementById('cal-year-label');
+    if (!grid) return;
 
-export function selectAbsencePreset(days) {
-    setDaysFromNow(days);
-    updateActivePresetChip(days);
-}
+    if (yearLabel) yearLabel.innerText = viewYear;
 
-function updateActivePresetChip(days) {
-    document.querySelectorAll('.absence-preset-btn').forEach(btn => btn.classList.remove('active'));
-    const target = document.getElementById(`preset-${days}`);
-    if (target) target.classList.add('active');
-}
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-export function adjustAbsenceDay(delta) {
-    const minDate = new Date();
-    minDate.setDate(minDate.getDate() + 1);
+    const firstDayIndex = new Date(viewYear, viewMonth, 1).getDay();
+    const lastDayOfMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const prevMonthLastDay = new Date(viewYear, viewMonth, 0).getDate();
 
-    const next = new Date(selectedReturnDate);
-    next.setDate(next.getDate() + delta);
+    let cellsHtml = '';
 
-    if (next >= minDate) {
-        selectedReturnDate = next;
-        document.querySelectorAll('.absence-preset-btn').forEach(btn => btn.classList.remove('active'));
-        renderDatePickers();
+    // Prev month padding days
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+        const d = prevMonthLastDay - i;
+        cellsHtml += `<div class="cal-day-cell other-month disabled">${String(d).padStart(2, '0')}</div>`;
     }
-}
 
-export function adjustAbsenceMonth(delta) {
-    const minDate = new Date();
-    const next = new Date(selectedReturnDate);
-    next.setMonth(next.getMonth() + delta);
+    // Current month days
+    for (let day = 1; day <= lastDayOfMonth; day++) {
+        const cellDate = new Date(viewYear, viewMonth, day);
+        cellDate.setHours(0, 0, 0, 0);
 
-    if (next > minDate) {
-        selectedReturnDate = next;
-        document.querySelectorAll('.absence-preset-btn').forEach(btn => btn.classList.remove('active'));
-        renderDatePickers();
+        const isPast = cellDate <= today; // Cannot set absence in the past or today
+        const isToday = cellDate.getTime() === today.getTime();
+        const isSelected = selectedDate &&
+            cellDate.getFullYear() === selectedDate.getFullYear() &&
+            cellDate.getMonth() === selectedDate.getMonth() &&
+            cellDate.getDate() === selectedDate.getDate();
+
+        let classes = ['cal-day-cell'];
+        if (isPast) classes.push('disabled');
+        if (isToday) classes.push('today');
+        if (isSelected) classes.push('selected');
+
+        const onclick = isPast ? '' : `onclick="calSelectDay(${viewYear}, ${viewMonth}, ${day})"`;
+        cellsHtml += `<div class="${classes.join(' ')}" ${onclick}>${String(day).padStart(2, '0')}</div>`;
     }
-}
 
-export function adjustAbsenceYear(delta) {
-    const minDate = new Date();
-    const next = new Date(selectedReturnDate);
-    next.setFullYear(next.getFullYear() + delta);
-
-    if (next >= minDate && next.getFullYear() <= minDate.getFullYear() + 2) {
-        selectedReturnDate = next;
-        document.querySelectorAll('.absence-preset-btn').forEach(btn => btn.classList.remove('active'));
-        renderDatePickers();
+    // Trailing days padding for 7-column balance
+    const totalFilled = firstDayIndex + lastDayOfMonth;
+    const nextDays = (7 - (totalFilled % 7)) % 7;
+    for (let d = 1; d <= nextDays; d++) {
+        cellsHtml += `<div class="cal-day-cell other-month disabled">${String(d).padStart(2, '0')}</div>`;
     }
+
+    grid.innerHTML = cellsHtml;
 }
 
-export async function confirmAbsence() {
-    const btn = document.getElementById('btn-confirm-absence');
+export function calSelectDay(year, month, day) {
+    const picked = new Date(year, month, day, 23, 59, 59, 0);
+    selectedDate = picked;
+    renderCalendar();
+    updateHeroCard();
+}
+
+function updateHeroCard() {
+    const dayEl = document.getElementById('cal-hero-day');
+    const weekdayEl = document.getElementById('cal-hero-weekday');
+    const myEl = document.getElementById('cal-hero-month-year');
+    const durEl = document.getElementById('cal-hero-duration');
+
+    if (!selectedDate || !dayEl) return;
+
+    dayEl.innerText = selectedDate.getDate();
+    weekdayEl.innerText = WEEKDAYS[selectedDate.getDay()];
+    myEl.innerText = `${MONTH_FULL[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
+
+    // Calculate days duration
+    const now = new Date();
+    const diffTime = selectedDate.getTime() - now.getTime();
+    const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    if (durEl) durEl.innerText = `${diffDays} Day${diffDays > 1 ? 's' : ''} Duration`;
+}
+
+export async function confirmAbsenceCalendar() {
+    const btn = document.getElementById('btn-activate-absence');
     if (btn) btn.disabled = true;
 
     const payload = {
         start_time: Math.floor(Date.now() / 1000),
-        end_time: Math.floor(selectedReturnDate.getTime() / 1000)
+        end_time: Math.floor(selectedDate.getTime() / 1000)
     };
 
     try {
@@ -111,10 +152,10 @@ export async function confirmAbsence() {
         const data = await res.json();
 
         if (data.success) {
-            closeAbsenceModal();
             const luggageBtn = document.getElementById('btn-absence');
             if (luggageBtn) luggageBtn.classList.add('active');
             if (window.showToast) window.showToast("Household Away Mode activated.");
+            if (window.navTo) window.navTo('home');
         } else {
             if (window.showToast) window.showToast(data.error || "Failed to set away mode");
         }
@@ -126,11 +167,9 @@ export async function confirmAbsence() {
     }
 }
 
-// Attach explicitly to window for inline HTML onclick handlers
-window.openAbsenceModal = openAbsenceModal;
-window.closeAbsenceModal = closeAbsenceModal;
-window.selectAbsencePreset = selectAbsencePreset;
-window.adjustAbsenceDay = adjustAbsenceDay;
-window.adjustAbsenceMonth = adjustAbsenceMonth;
-window.adjustAbsenceYear = adjustAbsenceYear;
-window.confirmAbsence = confirmAbsence;
+// Global window mappings for markup click handlers
+window.calSelectMonth = calSelectMonth;
+window.calSelectDay = calSelectDay;
+window.calPrevYear = calPrevYear;
+window.calNextYear = calNextYear;
+window.confirmAbsenceCalendar = confirmAbsenceCalendar;

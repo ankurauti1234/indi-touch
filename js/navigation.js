@@ -1,4 +1,5 @@
 import { closeSetting } from './settings.js';
+import { initAbsenceCalendar } from './absence.js';
 
 export function navTo(viewId) {
     // 1. Drop active focus/caret locks that freeze touch scrolling
@@ -14,6 +15,7 @@ export function navTo(viewId) {
     else if (viewId === 'notifications') btnId = 'btn-notif';
     else if (viewId === 'settings') btnId = 'btn-settings';
     else if (viewId === 'guest-add') btnId = 'btn-guest';
+    else if (viewId === 'absence') btnId = 'btn-absence';
 
     if (btnId) {
         const btn = document.getElementById(btnId);
@@ -42,6 +44,11 @@ export function navTo(viewId) {
         const scroller = targetView.querySelector('.list-group, .settings-scroll-area');
         if (scroller) {
             scroller.scrollTop = 0;
+        }
+
+        // Initialize calendar state when opening absence view
+        if (viewId === 'absence' && typeof initAbsenceCalendar === 'function') {
+            initAbsenceCalendar();
         }
     }
 }

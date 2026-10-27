@@ -33,7 +33,10 @@ def create_app() -> Flask:
     from .system     import system_bp
     from .notifications import notifications_bp
     from .wallpaper    import wallpaper_bp
+    from .absence import absence_bp
 
+
+    app.register_blueprint(absence_bp, url_prefix="/api/household")
     app.register_blueprint(wifi_bp,       url_prefix="/api/wifi")
     app.register_blueprint(members_bp,    url_prefix="/api/members")
     app.register_blueprint(guests_bp,     url_prefix="/api/guests")

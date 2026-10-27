@@ -1,4 +1,4 @@
-// js/absence.js — Full Screen Absence Calendar Range View Controller
+// js/absence.js — Absence Calendar & Active Mode Controller
 
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -9,24 +9,106 @@ let viewMonth = new Date().getMonth();
 let rangeStart = null;
 let rangeEnd = null;
 let isPickingEnd = false;
+let isAwayModeActive = false;
+let activeAbsenceRecord = null;
 
 function initAbsenceCalendar() {
+    fetchAbsenceStatus();
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Default: Departing tomorrow, returning in 7 days
-    rangeStart = new Date(today);
-    rangeStart.setDate(today.getDate() + 1);
+    if (!isAwayModeActive) {
+        rangeStart = new Date(today);
+        rangeStart.setDate(today.getDate() + 1);
 
-    rangeEnd = new Date(today);
-    rangeEnd.setDate(today.getDate() + 7);
+        rangeEnd = new Date(today);
+        rangeEnd.setDate(today.getDate() + 7);
+
+        viewYear = rangeStart.getFullYear();
+        viewMonth = rangeStart.getMonth();
+    }
 
     isPickingEnd = false;
-    viewYear = rangeStart.getFullYear();
-    viewMonth = rangeStart.getMonth();
-
     renderCalendar();
     updateHeroRange();
+    applyActiveModeUI();
+}
+
+async function fetchAbsenceStatus() {
+    try {
+        const res = await fetch('/api/household/absence');
+        const data = await res.json();
+        if (data.active && data.absence) {
+            isAwayModeActive = true;
+            activeAbsenceRecord = data.absence;
+
+            rangeStart = new Date(data.absence.start_time * 1000);
+            rangeStart.setHours(0, 0, 0, 0);
+
+            rangeEnd = new Date(data.absence.end_time * 1000);
+            rangeEnd.setHours(0, 0, 0, 0);
+
+            viewYear = rangeStart.getFullYear();
+            viewMonth = rangeStart.getMonth();
+        } else {
+            isAwayModeActive = false;
+            activeAbsenceRecord = null;
+        }
+    } catch (e) {
+        console.warn("Could not fetch absence status:", e);
+    }
+    renderCalendar();
+    updateHeroRange();
+    applyActiveModeUI();
+    updateHomeLockOverlay();
+}
+
+function applyActiveModeUI() {
+    const rightPane = document.getElementById('cal-right-pane');
+    const badgeText = document.getElementById('cal-badge-text');
+    const btn = document.getElementById('btn-activate-absence');
+    const btnIcon = document.getElementById('btn-absence-icon');
+    const btnLabel = document.getElementById('btn-absence-label');
+    const subText = document.getElementById('cal-detail-subtext');
+
+    if (!rightPane || !btn) return;
+
+    if (isAwayModeActive) {
+        rightPane.classList.add('is-active');
+        if (badgeText) badgeText.innerText = 'AWAY MODE ACTIVE';
+        if (btnIcon) btnIcon.innerText = 'close';
+        if (btnLabel) btnLabel.innerText = 'Cancel Away Mode';
+        btn.classList.add('btn-cancel-mode');
+        if (subText) subText.innerText = 'All member interactions paused';
+    } else {
+        rightPane.classList.remove('is-active');
+        if (badgeText) badgeText.innerText = 'AWAY MODE';
+        if (btnIcon) btnIcon.innerText = 'check';
+        if (btnLabel) btnLabel.innerText = 'Activate Away Mode';
+        btn.classList.remove('btn-cancel-mode');
+        if (subText) subText.innerText = 'Logs resume day after return';
+    }
+}
+
+function updateHomeLockOverlay() {
+    const overlay = document.getElementById('away-lock-overlay');
+    const label = document.getElementById('away-lock-range-label');
+    const navBtn = document.getElementById('btn-absence');
+
+    if (!overlay) return;
+
+    if (isAwayModeActive && activeAbsenceRecord) {
+        overlay.style.display = 'flex';
+        if (navBtn) navBtn.classList.add('active');
+
+        const endD = new Date(activeAbsenceRecord.end_time * 1000);
+        const dateStr = `${MONTH_FULL[endD.getMonth()].slice(0, 3)} ${endD.getDate()}, ${endD.getFullYear()}`;
+        if (label) label.innerText = `Absence scheduled until ${dateStr} (11:59 PM)`;
+    } else {
+        overlay.style.display = 'none';
+        if (navBtn) navBtn.classList.remove('active');
+    }
 }
 
 function calPrevMonth() {
@@ -82,13 +164,11 @@ function renderCalendar() {
 
     let cellsHtml = '';
 
-    // Leading padding days from previous month
     for (let i = firstDayIndex - 1; i >= 0; i--) {
         const d = prevMonthLastDay - i;
         cellsHtml += `<div class="cal-day-cell other-month disabled">${String(d).padStart(2, '0')}</div>`;
     }
 
-    // Days in current view month
     for (let day = 1; day <= lastDayOfMonth; day++) {
         const cellDate = new Date(viewYear, viewMonth, day);
         cellDate.setHours(0, 0, 0, 0);
@@ -107,11 +187,11 @@ function renderCalendar() {
         if (isEnd) classes.push('range-end');
         if (inRange) classes.push('in-range');
 
+        // Allow changing dates only if not currently locked or during edit
         const onclick = isPast ? '' : `onclick="calSelectDay(${viewYear}, ${viewMonth}, ${day})"`;
         cellsHtml += `<div class="${classes.join(' ')}" ${onclick}>${String(day).padStart(2, '0')}</div>`;
     }
 
-    // Trailing padding days
     const totalFilled = firstDayIndex + lastDayOfMonth;
     const nextDays = (7 - (totalFilled % 7)) % 7;
     for (let d = 1; d <= nextDays; d++) {
@@ -126,12 +206,10 @@ function calSelectDay(year, month, day) {
     picked.setHours(0, 0, 0, 0);
 
     if (!isPickingEnd || !rangeStart) {
-        // Step 1: Picking Start Date
         rangeStart = picked;
         rangeEnd = null;
         isPickingEnd = true;
     } else {
-        // Step 2: Picking End Date
         if (picked < rangeStart) {
             rangeEnd = rangeStart;
             rangeStart = picked;
@@ -146,16 +224,13 @@ function calSelectDay(year, month, day) {
 }
 
 function updateHeroRange() {
-    // Start elements
     const startDayEl = document.getElementById('cal-start-day');
     const startWeekdayEl = document.getElementById('cal-start-weekday');
     const startMyEl = document.getElementById('cal-start-month-year');
 
-    // End elements
     const endDayEl = document.getElementById('cal-end-day');
     const endWeekdayEl = document.getElementById('cal-end-weekday');
     const endMyEl = document.getElementById('cal-end-month-year');
-
     const durEl = document.getElementById('cal-hero-duration');
 
     if (rangeStart && startDayEl) {
@@ -182,36 +257,38 @@ function updateHeroRange() {
     }
 }
 
-async function confirmAbsenceCalendar() {
+async function handleAbsenceAction() {
+    if (isAwayModeActive) {
+        await cancelAbsenceMode();
+    } else {
+        await activateAbsenceMode();
+    }
+}
+
+async function activateAbsenceMode() {
     if (!rangeStart) return;
 
     const btn = document.getElementById('btn-activate-absence');
     if (btn) btn.disabled = true;
 
-    // Use rangeEnd if selected, otherwise fallback to rangeStart (single day)
     const effectiveEnd = rangeEnd || rangeStart;
-
-    // Start of the departure day, end of the return day (23:59:59)
     const startTimestamp = Math.floor(rangeStart.getTime() / 1000);
     const endTimestamp = Math.floor(new Date(effectiveEnd).setHours(23, 59, 59, 0) / 1000);
-
-    const payload = {
-        start_time: startTimestamp,
-        end_time: endTimestamp
-    };
 
     try {
         const res = await fetch('/api/household/absence', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ start_time: startTimestamp, end_time: endTimestamp })
         });
         const data = await res.json();
 
         if (data.success) {
-            const luggageBtn = document.getElementById('btn-absence');
-            if (luggageBtn) luggageBtn.classList.add('active');
-            if (window.showToast) window.showToast("Household Away Mode activated.");
+            isAwayModeActive = true;
+            activeAbsenceRecord = { start_time: startTimestamp, end_time: endTimestamp };
+            applyActiveModeUI();
+            updateHomeLockOverlay();
+            if (window.showToast) window.showToast("Away Mode activated. Grid locked.");
             if (window.navTo) window.navTo('home');
         } else {
             if (window.showToast) window.showToast(data.error || "Failed to set away mode");
@@ -224,12 +301,39 @@ async function confirmAbsenceCalendar() {
     }
 }
 
-// Bind handlers to window
+async function cancelAbsenceMode() {
+    const btn = document.getElementById('btn-activate-absence');
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/household/absence', {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            isAwayModeActive = false;
+            activeAbsenceRecord = null;
+            applyActiveModeUI();
+            updateHomeLockOverlay();
+            if (window.showToast) window.showToast("Away Mode cancelled. Normal logging restored.");
+            if (window.navTo) window.navTo('home');
+        } else {
+            if (window.showToast) window.showToast(data.error || "Failed to cancel away mode");
+        }
+    } catch (e) {
+        console.error("Failed to cancel absence:", e);
+        if (window.showToast) window.showToast("Error cancelling away mode");
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
 window.calPrevMonth = calPrevMonth;
 window.calNextMonth = calNextMonth;
 window.calPrevYear = calPrevYear;
 window.calNextYear = calNextYear;
 window.calSelectDay = calSelectDay;
-window.confirmAbsenceCalendar = confirmAbsenceCalendar;
+window.handleAbsenceAction = handleAbsenceAction;
 
 export { initAbsenceCalendar, initAbsenceCalendar as initAbsenceManager };

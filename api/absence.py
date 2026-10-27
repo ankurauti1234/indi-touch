@@ -1,35 +1,43 @@
-#!/usr/bin/env python3
-# api/absence.py — Household Absence / Vacation Mode Endpoint
-
+# api/absence.py
 from flask import Blueprint, request, jsonify
 import time
-from .collector_service import send_event
 
-absence_bp = Blueprint("absence", __name__)
+absence_bp = Blueprint('absence_bp', __name__)
 
-@absence_bp.route("/absence", methods=["POST"])
-def set_absence():
-    data = request.get_json() or {}
-    start_time = data.get("start_time", int(time.time()))
-    end_time = data.get("end_time")
+# In-memory absence state (or persisted to local SQLite/JSON storage)
+current_absence = None
 
-    if not end_time:
-        return jsonify({"success": False, "error": "Missing end_time parameter"}), 400
+@absence_bp.route('/api/household/absence', methods=['GET', 'POST', 'DELETE'])
+def household_absence():
+    global current_absence
 
-    # Calculate days away
-    days = max(1, round((end_time - start_time) / 86400))
+    if request.method == 'GET':
+        if current_absence and current_absence.get('end_time', 0) > time.time():
+            return jsonify({'active': True, 'absence': current_absence}), 200
+        return jsonify({'active': False, 'absence': None}), 200
 
-    # Event Type 5 Details
-    event_details = {
-        "status": "START",
-        "start_time": int(start_time),
-        "end_time": int(end_time),
-        "days": days
-    }
+    elif request.method == 'POST':
+        data = request.get_json() or {}
+        start_time = data.get('start_time', int(time.time()))
+        end_time = data.get('end_time')
 
-    try:
-        # Dispatch Event Type 5 to data-collector
-        send_event("5", event_details)
-        return jsonify({"success": True, "details": event_details})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        if not end_time or end_time <= start_time:
+            return jsonify({'success': False, 'error': 'Invalid date range'}), 400
+
+        current_absence = {
+            'start_time': start_time,
+            'end_time': end_time,
+            'activated_at': int(time.time())
+        }
+
+        # D-Bus event dispatch (Event Type 5: ABSENT)
+        # from api.collector_service import send_event
+        # send_event(5, current_absence)
+
+        return jsonify({'success': True, 'absence': current_absence}), 200
+
+    elif request.method == 'DELETE':
+        current_absence = None
+        # D-Bus event dispatch (Clear absent mode if needed)
+        # send_event(5, {'start_time': 0, 'end_time': 0, 'cancelled': True})
+        return jsonify({'success': True, 'message': 'Absence cancelled'}), 200

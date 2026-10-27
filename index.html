@@ -246,11 +246,25 @@
     <div class="main-stage">
       <section id="view-home" class="view active">
         <div id="grid-container"></div>
+
         <div id="tv-off-overlay" class="grid-lock-overlay tv-only" style="display: none;">
           <div class="lock-content">
             <span class="material-symbols-rounded lock-icon">tv_off</span>
             <h3 class="lock-title" data-i18n="tv_is_off">TV is Off</h3>
             <p class="lock-msg" data-i18n="member_decl_disabled">Member declaration is disabled while TV is off.</p>
+          </div>
+        </div>
+
+        <!-- Away Mode Grid Lockdown Overlay (Excludes sidebar) -->
+        <div id="away-lock-overlay" class="grid-lock-overlay" style="display: none;">
+          <div class="lock-content away-lock-card">
+            <span class="material-symbols-outlined lock-icon">event_upcoming</span>
+            <h2 class="lock-title">Household Away Mode Active</h2>
+            <p class="lock-subtitle" id="away-lock-range-label">Absence logged until --</p>
+            <button class="lock-action-btn" onclick="navTo('absence')">
+              <span class="material-symbols-rounded">edit_calendar</span>
+              <span>Manage / Cancel Away Mode</span>
+            </button>
           </div>
         </div>
       </section>
@@ -825,21 +839,21 @@
           </div>
         </div>
 
-        <!-- RIGHT SIDE: Solid Accent Hero Card (Range Mode) -->
-        <div class="cal-right-pane">
+        <!-- RIGHT SIDE: Solid Accent Hero Card -->
+        <div class="cal-right-pane" id="cal-right-pane">
           <div class="cal-hero-top">
-            <div class="cal-hero-badge">
-              <span class="material-symbols-outlined">event_upcoming</span>
-              <span>AWAY MODE</span>
+            <div class="cal-hero-badge" id="cal-hero-badge">
+              <span class="material-symbols-outlined" id="cal-badge-icon">event_upcoming</span>
+              <span id="cal-badge-text">AWAY MODE</span>
             </div>
             <button class="cal-hero-close" onclick="navTo('home')">
               <span class="material-symbols-rounded">close</span>
             </button>
           </div>
 
-          <!-- Hero Date Range Block: Side-by-Side -->
-          <div class="cal-hero-main cal-hero-horizontal">
-            <!-- Departing (Start) -->
+          <!-- Hero Date Range Block -->
+          <div class="cal-hero-main">
+            <!-- Departing -->
             <div class="cal-range-node" id="cal-node-start">
               <span class="cal-range-tag">DEPARTING</span>
               <div class="cal-hero-day" id="cal-start-day">--</div>
@@ -847,12 +861,12 @@
               <div class="cal-hero-full-date" id="cal-start-month-year">--- ----</div>
             </div>
 
-            <!-- Divider Arrow (Horizontal) -->
+            <!-- Divider Arrow -->
             <div class="cal-range-divider">
               <span class="material-symbols-rounded">arrow_forward</span>
             </div>
 
-            <!-- Returning (End) -->
+            <!-- Returning -->
             <div class="cal-range-node" id="cal-node-end">
               <span class="cal-range-tag">RETURNING</span>
               <div class="cal-hero-day" id="cal-end-day">--</div>
@@ -862,21 +876,22 @@
           </div>
 
           <div class="cal-hero-details">
-            <div class="cal-detail-title">Absence Schedule</div>
+            <div class="cal-detail-title" id="cal-detail-title">Absence Schedule</div>
             <div class="cal-detail-item">
               <span class="material-symbols-rounded">date_range</span>
               <span id="cal-hero-duration">-- Days Duration</span>
             </div>
             <div class="cal-detail-item">
-              <span class="material-symbols-rounded">event_available</span>
-              <span>Logs resume day after return</span>
+              <span class="material-symbols-rounded" id="cal-detail-subicon">event_available</span>
+              <span id="cal-detail-subtext">Logs resume day after return</span>
             </div>
           </div>
 
           <div class="cal-hero-actions">
-            <button class="cal-submit-btn" id="btn-activate-absence" onclick="confirmAbsenceCalendar()">
-              <span class="material-symbols-rounded">check</span>
-              <span>Activate Away Mode</span>
+            <!-- Action Button toggles between Activate and Cancel states -->
+            <button class="cal-submit-btn" id="btn-activate-absence" onclick="handleAbsenceAction()">
+              <span class="material-symbols-rounded" id="btn-absence-icon">check</span>
+              <span id="btn-absence-label">Activate Away Mode</span>
             </button>
           </div>
         </div>

@@ -7,7 +7,7 @@ let viewYear = new Date().getFullYear();
 let viewMonth = new Date().getMonth(); // 0 - 11
 let selectedDate = new Date();
 
-export function initAbsenceCalendar() {
+function initAbsenceCalendar() {
     const def = new Date();
     def.setDate(def.getDate() + 7);
     def.setHours(23, 59, 59, 0);
@@ -19,7 +19,7 @@ export function initAbsenceCalendar() {
     updateHeroCard();
 }
 
-export function calPrevMonth() {
+function calPrevMonth() {
     const now = new Date();
     if (viewYear === now.getFullYear() && viewMonth <= now.getMonth()) {
         return; // Don't allow scrolling to past months
@@ -32,7 +32,7 @@ export function calPrevMonth() {
     renderCalendar();
 }
 
-export function calNextMonth() {
+function calNextMonth() {
     viewMonth++;
     if (viewMonth > 11) {
         viewMonth = 0;
@@ -41,7 +41,7 @@ export function calNextMonth() {
     renderCalendar();
 }
 
-export function calPrevYear() {
+function calPrevYear() {
     const now = new Date();
     if (viewYear > now.getFullYear()) {
         viewYear--;
@@ -49,12 +49,12 @@ export function calPrevYear() {
     }
 }
 
-export function calNextYear() {
+function calNextYear() {
     viewYear++;
     renderCalendar();
 }
 
-export function renderCalendar() {
+function renderCalendar() {
     const grid = document.getElementById('cal-days-grid');
     const monthLabel = document.getElementById('cal-month-label');
     const yearLabel = document.getElementById('cal-year-label');
@@ -99,7 +99,7 @@ export function renderCalendar() {
         cellsHtml += `<div class="${classes.join(' ')}" ${onclick}>${String(day).padStart(2, '0')}</div>`;
     }
 
-    // Trailing days padding
+    // Trailing days padding for 7-column balance
     const totalFilled = firstDayIndex + lastDayOfMonth;
     const nextDays = (7 - (totalFilled % 7)) % 7;
     for (let d = 1; d <= nextDays; d++) {
@@ -109,7 +109,7 @@ export function renderCalendar() {
     grid.innerHTML = cellsHtml;
 }
 
-export function calSelectDay(year, month, day) {
+function calSelectDay(year, month, day) {
     const picked = new Date(year, month, day, 23, 59, 59, 0);
     selectedDate = picked;
     renderCalendar();
@@ -134,7 +134,7 @@ function updateHeroCard() {
     if (durEl) durEl.innerText = `${diffDays} Day${diffDays > 1 ? 's' : ''} Duration`;
 }
 
-export async function confirmAbsenceCalendar() {
+async function confirmAbsenceCalendar() {
     const btn = document.getElementById('btn-activate-absence');
     if (btn) btn.disabled = true;
 
@@ -167,7 +167,7 @@ export async function confirmAbsenceCalendar() {
     }
 }
 
-// Bind directly to window
+// Bind handlers to window so HTML onclick attributes can reach them
 window.calPrevMonth = calPrevMonth;
 window.calNextMonth = calNextMonth;
 window.calPrevYear = calPrevYear;
@@ -175,4 +175,5 @@ window.calNextYear = calNextYear;
 window.calSelectDay = calSelectDay;
 window.confirmAbsenceCalendar = confirmAbsenceCalendar;
 
-export { initAbsenceCalendar as initAbsenceManager };
+// Both names are exported cleanly here once
+export { initAbsenceCalendar, initAbsenceCalendar as initAbsenceManager };

@@ -7,7 +7,7 @@ absence_bp = Blueprint('absence_bp', __name__)
 # In-memory absence state (or persisted to local SQLite/JSON storage)
 current_absence = None
 
-@absence_bp.route('/api/household/absence', methods=['GET', 'POST', 'DELETE'])
+@absence_bp.route('/absence', methods=['GET', 'POST', 'DELETE'])
 def household_absence():
     global current_absence
 

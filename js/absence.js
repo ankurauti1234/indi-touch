@@ -175,4 +175,4 @@ window.calNextYear = calNextYear;
 window.calSelectDay = calSelectDay;
 window.confirmAbsenceCalendar = confirmAbsenceCalendar;
 
-export { initAbsenceCalendar, initAbsenceCalendar as initAbsenceManager };
+export { initAbsenceCalendar as initAbsenceManager };

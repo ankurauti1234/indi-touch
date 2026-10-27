@@ -112,6 +112,7 @@ function updateHomeLockOverlay() {
 }
 
 function calPrevMonth() {
+    if (isAwayModeActive) return;
     const now = new Date();
     if (viewYear === now.getFullYear() && viewMonth <= now.getMonth()) {
         return;
@@ -125,6 +126,7 @@ function calPrevMonth() {
 }
 
 function calNextMonth() {
+    if (isAwayModeActive) return;
     viewMonth++;
     if (viewMonth > 11) {
         viewMonth = 0;
@@ -134,6 +136,7 @@ function calNextMonth() {
 }
 
 function calPrevYear() {
+    if (isAwayModeActive) return;
     const now = new Date();
     if (viewYear > now.getFullYear()) {
         viewYear--;
@@ -142,6 +145,7 @@ function calPrevYear() {
 }
 
 function calNextYear() {
+    if (isAwayModeActive) return;
     viewYear++;
     renderCalendar();
 }
@@ -186,9 +190,10 @@ function renderCalendar() {
         if (isStart) classes.push('range-start');
         if (isEnd) classes.push('range-end');
         if (inRange) classes.push('in-range');
+        if (isAwayModeActive) classes.push('calendar-locked');
 
-        // Allow changing dates only if not currently locked or during edit
-        const onclick = isPast ? '' : `onclick="calSelectDay(${viewYear}, ${viewMonth}, ${day})"`;
+        // Block click event if past date or if Away Mode is active
+        const onclick = (isPast || isAwayModeActive) ? '' : `onclick="calSelectDay(${viewYear}, ${viewMonth}, ${day})"`;
         cellsHtml += `<div class="${classes.join(' ')}" ${onclick}>${String(day).padStart(2, '0')}</div>`;
     }
 
@@ -202,6 +207,8 @@ function renderCalendar() {
 }
 
 function calSelectDay(year, month, day) {
+    if (isAwayModeActive) return;
+
     const picked = new Date(year, month, day);
     picked.setHours(0, 0, 0, 0);
 

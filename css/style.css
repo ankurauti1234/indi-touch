@@ -823,18 +823,31 @@ body.hide-nav-rail .main-stage {
     transform: scale(0.97);
 }
 
-/* ── Minimal Home Grid Lockdown Overlay (Matches TV Off) ──────────────── */
+/* ── Ensure Home View Container clips edge-to-edge ────────────────────── */
+#view-home {
+    position: relative;
+    overflow: hidden;
+}
+
+/* ── Minimal Home Grid Lockdown Overlay (Full Grid Span) ─────────────── */
 #away-lock-overlay {
     position: absolute;
-    inset: 0;
-    background: rgba(12, 12, 12, 0.88);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    z-index: 40;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: rgba(12, 12, 12, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 50;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 28px;
+    border-radius: 0 !important;
     animation: fadeInLock 0.2s ease-out;
 }
 
@@ -849,17 +862,18 @@ body.hide-nav-rail .main-stage {
     align-items: center;
     justify-content: center;
     text-align: center;
-    gap: 10px;
+    gap: 12px;
+    padding: 24px;
 }
 
 #away-lock-overlay .lock-icon {
-    font-size: 58px;
+    font-size: 64px;
     color: #e6e1e5;
     opacity: 0.9;
 }
 
 #away-lock-overlay .lock-title {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 600;
     color: #e6e1e5;
     margin: 0;
@@ -867,11 +881,10 @@ body.hide-nav-rail .main-stage {
 }
 
 #away-lock-overlay .lock-subtitle {
-    font-size: 15px;
+    font-size: 16px;
     color: #cac4d0;
     margin: 0;
 }
-
 
 /* VIEWS */
 .main-stage {

@@ -1,5 +1,8 @@
+// js/navigation.js — Navigation & Universal Stage Synchronization
+
 import { closeSetting } from './settings.js';
 import { initAbsenceCalendar } from './absence.js';
+import { syncTvOverlay } from './connection.js';
 
 export function navTo(viewId) {
     if (document.activeElement && document.activeElement !== document.body) {
@@ -51,6 +54,11 @@ export function navTo(viewId) {
         if (viewId === 'absence' && typeof initAbsenceCalendar === 'function') {
             initAbsenceCalendar();
         }
+    }
+
+    // Synchronously enforce the universal overlay state across Home and Guest Add tabs
+    if (typeof syncTvOverlay === 'function') {
+        syncTvOverlay();
     }
 }
 

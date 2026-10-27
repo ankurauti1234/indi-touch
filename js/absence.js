@@ -2,8 +2,6 @@
 
 import { syncTvOverlay } from './connection.js';
 
-
-
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -13,8 +11,36 @@ let viewMonth = new Date().getMonth();
 let rangeStart = null;
 let rangeEnd = null;
 let isPickingEnd = false;
-let isAwayModeActive = false;
+
+// Exported states for connection.js and navigation sync
+export let isAwayModeActive = false;
 let activeAbsenceRecord = null;
+
+export function getAbsenceRecord() {
+    return activeAbsenceRecord;
+}
+
+// Undeclare all active members and guests upon entering Away Mode
+function undeclareAllMembersAndGuests() {
+    // 1. Remove active UI button classes
+    document.querySelectorAll('.member-btn.active, .member-card.active, .guest-card.active').forEach(el => {
+        el.classList.remove('active');
+    });
+
+    // 2. Clear state in memory if loaded
+    if (window.memberData && Array.isArray(window.memberData)) {
+        window.memberData.forEach(m => { m.active = false; });
+    }
+
+    // 3. Clear guest session store if available
+    if (window.activeGuests && typeof window.activeGuests.clear === 'function') {
+        window.activeGuests.clear();
+    }
+
+    // 4. Force UI grid and guest list refresh
+    if (typeof window.renderGrid === 'function') window.renderGrid();
+    if (typeof window.renderGuestList === 'function') window.renderGuestList();
+}
 
 function initAbsenceCalendar() {
     fetchAbsenceStatus();
@@ -65,7 +91,7 @@ async function fetchAbsenceStatus() {
     renderCalendar();
     updateHeroRange();
     applyActiveModeUI();
-    updateHomeLockOverlay();
+    if (typeof syncTvOverlay === 'function') syncTvOverlay();
 }
 
 function applyActiveModeUI() {
@@ -75,6 +101,7 @@ function applyActiveModeUI() {
     const btnIcon = document.getElementById('btn-absence-icon');
     const btnLabel = document.getElementById('btn-absence-label');
     const subText = document.getElementById('cal-detail-subtext');
+    const navBtn = document.getElementById('btn-absence');
 
     if (!rightPane || !btn) return;
 
@@ -85,6 +112,7 @@ function applyActiveModeUI() {
         if (btnLabel) btnLabel.innerText = 'Cancel Away Mode';
         btn.classList.add('btn-cancel-mode');
         if (subText) subText.innerText = 'All member interactions paused';
+        if (navBtn) navBtn.classList.add('active');
     } else {
         rightPane.classList.remove('is-active');
         if (badgeText) badgeText.innerText = 'AWAY MODE';
@@ -92,25 +120,6 @@ function applyActiveModeUI() {
         if (btnLabel) btnLabel.innerText = 'Activate Away Mode';
         btn.classList.remove('btn-cancel-mode');
         if (subText) subText.innerText = 'Logs resume day after return';
-    }
-}
-
-function updateHomeLockOverlay() {
-    const overlay = document.getElementById('away-lock-overlay');
-    const label = document.getElementById('away-lock-range-label');
-    const navBtn = document.getElementById('btn-absence');
-
-    if (!overlay) return;
-
-    if (isAwayModeActive && activeAbsenceRecord) {
-        overlay.style.display = 'flex';
-        if (navBtn) navBtn.classList.add('active');
-
-        const endD = new Date(activeAbsenceRecord.end_time * 1000);
-        const dateStr = `${MONTH_FULL[endD.getMonth()].slice(0, 3)} ${endD.getDate()}, ${endD.getFullYear()}`;
-        if (label) label.innerText = `Absence scheduled until ${dateStr} (11:59 PM)`;
-    } else {
-        overlay.style.display = 'none';
         if (navBtn) navBtn.classList.remove('active');
     }
 }
@@ -304,10 +313,13 @@ async function activateAbsenceMode() {
         if (data.success) {
             isAwayModeActive = true;
             activeAbsenceRecord = { start_time: startTimestamp, end_time: endTimestamp };
+
+            // Undeclare members and guests immediately
+            undeclareAllMembersAndGuests();
+
             applyActiveModeUI();
-            updateHomeLockOverlay();
+            if (typeof syncTvOverlay === 'function') syncTvOverlay();
             if (window.showToast) window.showToast("Household Away Mode activated.");
-            // Kept on the current calendar view so user sees the updated state
         } else {
             if (window.showToast) window.showToast(data.error || "Failed to set away mode");
         }
@@ -340,9 +352,8 @@ async function cancelAbsenceMode() {
             isAwayModeActive = false;
             activeAbsenceRecord = null;
             applyActiveModeUI();
-            updateHomeLockOverlay();
+            if (typeof syncTvOverlay === 'function') syncTvOverlay();
             if (window.showToast) window.showToast("Household Away Mode cancelled.");
-            // Kept on the current calendar view so user sees it reset to normal
         } else {
             if (window.showToast) window.showToast(data.error || "Failed to cancel away mode");
         }

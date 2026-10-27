@@ -281,6 +281,13 @@ async function activateAbsenceMode() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ start_time: startTimestamp, end_time: endTimestamp })
         });
+
+        if (!res.ok) {
+            console.error("Server error:", res.status);
+            if (window.showToast) window.showToast(`Server error (${res.status})`);
+            return;
+        }
+
         const data = await res.json();
 
         if (data.success) {
@@ -288,8 +295,8 @@ async function activateAbsenceMode() {
             activeAbsenceRecord = { start_time: startTimestamp, end_time: endTimestamp };
             applyActiveModeUI();
             updateHomeLockOverlay();
-            if (window.showToast) window.showToast("Away Mode activated. Grid locked.");
-            if (window.navTo) window.navTo('home');
+            if (window.showToast) window.showToast("Household Away Mode activated.");
+            // Kept on the current calendar view so user sees the updated state
         } else {
             if (window.showToast) window.showToast(data.error || "Failed to set away mode");
         }
@@ -309,6 +316,13 @@ async function cancelAbsenceMode() {
         const res = await fetch('/api/household/absence', {
             method: 'DELETE'
         });
+
+        if (!res.ok) {
+            console.error("Server error:", res.status);
+            if (window.showToast) window.showToast(`Server error (${res.status})`);
+            return;
+        }
+
         const data = await res.json();
 
         if (data.success) {
@@ -316,8 +330,8 @@ async function cancelAbsenceMode() {
             activeAbsenceRecord = null;
             applyActiveModeUI();
             updateHomeLockOverlay();
-            if (window.showToast) window.showToast("Away Mode cancelled. Normal logging restored.");
-            if (window.navTo) window.navTo('home');
+            if (window.showToast) window.showToast("Household Away Mode cancelled.");
+            // Kept on the current calendar view so user sees it reset to normal
         } else {
             if (window.showToast) window.showToast(data.error || "Failed to cancel away mode");
         }

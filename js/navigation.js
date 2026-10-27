@@ -52,3 +52,5 @@ export function navTo(viewId) {
         }
     }
 }
+
+window.navTo = navTo;

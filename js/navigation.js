@@ -2,12 +2,18 @@ import { closeSetting } from './settings.js';
 import { initAbsenceCalendar } from './absence.js';
 
 export function navTo(viewId) {
-    // 1. Drop active focus/caret locks that freeze touch scrolling
     if (document.activeElement && document.activeElement !== document.body) {
         document.activeElement.blur();
     }
 
-    // 2. Sidebar Buttons Logic
+    // Toggle fullscreen mode (hide navbar) when entering absence view
+    if (viewId === 'absence') {
+        document.body.classList.add('hide-nav-rail');
+    } else {
+        document.body.classList.remove('hide-nav-rail');
+    }
+
+    // Sidebar Buttons Logic
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
     let btnId = '';
@@ -22,12 +28,10 @@ export function navTo(viewId) {
         if (btn) btn.classList.add('active');
     }
 
-    // 3. Reset Settings if leaving settings view
     if (viewId !== 'settings') {
         closeSetting();
     }
 
-    // 4. Show correct view and reset scroller state
     document.querySelectorAll('.view').forEach(v => {
         v.classList.remove('active');
         v.style.display = 'none';
@@ -36,17 +40,14 @@ export function navTo(viewId) {
     const targetView = document.getElementById('view-' + viewId);
     if (targetView) {
         targetView.style.display = 'flex';
-        // Force reflow
         void targetView.offsetWidth;
         targetView.classList.add('active');
 
-        // Reset scroll position on active view
         const scroller = targetView.querySelector('.list-group, .settings-scroll-area');
         if (scroller) {
             scroller.scrollTop = 0;
         }
 
-        // Initialize calendar state when opening absence view
         if (viewId === 'absence' && typeof initAbsenceCalendar === 'function') {
             initAbsenceCalendar();
         }

@@ -1,6 +1,5 @@
 // js/absence.js — Full Screen Absence Calendar View Controller
 
-const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -9,7 +8,6 @@ let viewMonth = new Date().getMonth(); // 0 - 11
 let selectedDate = new Date();
 
 export function initAbsenceCalendar() {
-    // Default selection: 7 days from today
     const def = new Date();
     def.setDate(def.getDate() + 7);
     def.setHours(23, 59, 59, 0);
@@ -17,26 +15,29 @@ export function initAbsenceCalendar() {
     viewYear = selectedDate.getFullYear();
     viewMonth = selectedDate.getMonth();
 
-    renderMonthsRibbon();
     renderCalendar();
     updateHeroCard();
 }
 
-function renderMonthsRibbon() {
-    const container = document.getElementById('cal-months-ribbon');
-    if (!container) return;
-
-    container.innerHTML = MONTH_SHORT.map((m, idx) => `
-        <span class="cal-month-tab ${idx === viewMonth ? 'active' : ''}" 
-              onclick="calSelectMonth(${idx})">
-            ${m}
-        </span>
-    `).join('');
+export function calPrevMonth() {
+    const now = new Date();
+    if (viewYear === now.getFullYear() && viewMonth <= now.getMonth()) {
+        return; // Don't allow scrolling to past months
+    }
+    viewMonth--;
+    if (viewMonth < 0) {
+        viewMonth = 11;
+        viewYear--;
+    }
+    renderCalendar();
 }
 
-export function calSelectMonth(monthIndex) {
-    viewMonth = monthIndex;
-    renderMonthsRibbon();
+export function calNextMonth() {
+    viewMonth++;
+    if (viewMonth > 11) {
+        viewMonth = 0;
+        viewYear++;
+    }
     renderCalendar();
 }
 
@@ -44,22 +45,22 @@ export function calPrevYear() {
     const now = new Date();
     if (viewYear > now.getFullYear()) {
         viewYear--;
-        document.getElementById('cal-year-label').innerText = viewYear;
         renderCalendar();
     }
 }
 
 export function calNextYear() {
     viewYear++;
-    document.getElementById('cal-year-label').innerText = viewYear;
     renderCalendar();
 }
 
 export function renderCalendar() {
     const grid = document.getElementById('cal-days-grid');
+    const monthLabel = document.getElementById('cal-month-label');
     const yearLabel = document.getElementById('cal-year-label');
     if (!grid) return;
 
+    if (monthLabel) monthLabel.innerText = MONTH_FULL[viewMonth];
     if (yearLabel) yearLabel.innerText = viewYear;
 
     const today = new Date();
@@ -82,7 +83,7 @@ export function renderCalendar() {
         const cellDate = new Date(viewYear, viewMonth, day);
         cellDate.setHours(0, 0, 0, 0);
 
-        const isPast = cellDate <= today; // Cannot set absence in the past or today
+        const isPast = cellDate <= today;
         const isToday = cellDate.getTime() === today.getTime();
         const isSelected = selectedDate &&
             cellDate.getFullYear() === selectedDate.getFullYear() &&
@@ -98,7 +99,7 @@ export function renderCalendar() {
         cellsHtml += `<div class="${classes.join(' ')}" ${onclick}>${String(day).padStart(2, '0')}</div>`;
     }
 
-    // Trailing days padding for 7-column balance
+    // Trailing days padding
     const totalFilled = firstDayIndex + lastDayOfMonth;
     const nextDays = (7 - (totalFilled % 7)) % 7;
     for (let d = 1; d <= nextDays; d++) {
@@ -127,7 +128,6 @@ function updateHeroCard() {
     weekdayEl.innerText = WEEKDAYS[selectedDate.getDay()];
     myEl.innerText = `${MONTH_FULL[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
 
-    // Calculate days duration
     const now = new Date();
     const diffTime = selectedDate.getTime() - now.getTime();
     const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
@@ -167,9 +167,12 @@ export async function confirmAbsenceCalendar() {
     }
 }
 
-// Global window mappings for markup click handlers
-window.calSelectMonth = calSelectMonth;
-window.calSelectDay = calSelectDay;
+// Bind directly to window
+window.calPrevMonth = calPrevMonth;
+window.calNextMonth = calNextMonth;
 window.calPrevYear = calPrevYear;
 window.calNextYear = calNextYear;
+window.calSelectDay = calSelectDay;
 window.confirmAbsenceCalendar = confirmAbsenceCalendar;
+
+export { initAbsenceCalendar, initAbsenceCalendar as initAbsenceManager };

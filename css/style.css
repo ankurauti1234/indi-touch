@@ -442,7 +442,16 @@ body {
 }
 
 
-/* ── Full-Screen Calendar View (Feature: Household Absence) ─────────────── */
+/* ── Fullscreen Absence View & Navbar Hiding ────────────────────────────── */
+
+body.hide-nav-rail .nav-rail {
+    display: none !important;
+}
+
+body.hide-nav-rail .main-stage {
+    width: 100vw !important;
+    max-width: 1024px !important;
+}
 
 #view-absence {
     width: 100%;
@@ -460,48 +469,55 @@ body {
 
 .cal-view-card {
     width: 100%;
-    max-width: 900px;
-    height: 520px;
+    max-width: 960px;
+    height: 540px;
     background: var(--bg-surface);
     border: 1px solid var(--outline-variant);
     border-radius: 36px;
     display: flex;
     overflow: hidden;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
 
-/* ── LEFT PANE: Calendar & Grid (approx 62% width) ── */
+/* ── LEFT PANE: Calendar & Dual Nav (62% width) ── */
 .cal-left-pane {
-    flex: 1.4;
-    padding: 24px 32px;
+    flex: 1.5;
+    padding: 28px 36px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     background: var(--bg-surface);
 }
 
-.cal-nav-bar {
+.cal-top-controls {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--outline-variant);
 }
 
-.cal-year-display {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: 1px;
+.cal-stepper-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cal-stepper-label {
+    font-size: 19px;
+    font-weight: 700;
     color: var(--text-main);
-    min-width: 60px;
+    min-width: 110px;
     text-align: center;
+    letter-spacing: 0.3px;
 }
 
 .cal-nav-arrow {
     background: var(--bg-surface-container);
     border: 1px solid var(--outline-variant);
     color: var(--text-main);
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
@@ -511,33 +527,8 @@ body {
 }
 
 .cal-nav-arrow:active {
-    transform: scale(0.92);
+    transform: scale(0.9);
     background: var(--primary-container);
-}
-
-/* Month ribbon */
-.cal-months-ribbon {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 10px 0;
-    padding: 0 4px;
-}
-
-.cal-month-tab {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-sub);
-    cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 8px;
-    transition: 0.2s;
-}
-
-.cal-month-tab.active {
-    color: var(--text-main);
-    font-weight: 700;
-    border-bottom: 2px solid var(--primary);
 }
 
 /* Weekday column headers */
@@ -545,20 +536,20 @@ body {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     text-align: center;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.8px;
+    letter-spacing: 1px;
     color: var(--text-sub);
     opacity: 0.8;
-    margin-bottom: 6px;
+    margin: 12px 0 6px 0;
 }
 
 /* Days 7-column grid */
 .cal-days-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    grid-auto-rows: 46px;
-    gap: 4px;
+    grid-auto-rows: 48px;
+    gap: 6px;
     text-align: center;
 }
 
@@ -566,17 +557,16 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 500;
     color: var(--text-main);
     border-radius: 50%;
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     margin: 0 auto;
     cursor: pointer;
     transition: all 0.2s;
     user-select: none;
-    position: relative;
 }
 
 .cal-day-cell:active:not(.disabled) {
@@ -585,7 +575,7 @@ body {
 
 .cal-day-cell.other-month {
     color: var(--text-sub);
-    opacity: 0.3;
+    opacity: 0.25;
 }
 
 .cal-day-cell.disabled {
@@ -595,17 +585,17 @@ body {
 }
 
 .cal-day-cell.today {
-    border: 1.5px solid var(--outline);
+    border: 2px solid var(--outline);
 }
 
 .cal-day-cell.selected {
     background: var(--primary) !important;
     color: var(--on-primary) !important;
     font-weight: 700;
-    box-shadow: 0 4px 12px rgba(208, 188, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(208, 188, 255, 0.35);
 }
 
-/* ── RIGHT PANE: Solid Contrast Accent Hero Panel ── */
+/* ── RIGHT PANE: Solid Accent Hero Card ── */
 .cal-right-pane {
     flex: 1;
     background: var(--primary-container);
@@ -615,7 +605,6 @@ body {
     flex-direction: column;
     justify-content: space-between;
     border-radius: 32px;
-    position: relative;
 }
 
 .cal-hero-top {
@@ -652,9 +641,8 @@ body {
     transform: scale(0.9);
 }
 
-/* Numerals styled like the reference design */
 .cal-hero-main {
-    margin: 12px 0;
+    margin: 8px 0;
 }
 
 .cal-hero-day {
@@ -708,7 +696,6 @@ body {
     opacity: 0.85;
 }
 
-/* Confirm Action Button */
 .cal-submit-btn {
     width: 100%;
     padding: 16px 20px;

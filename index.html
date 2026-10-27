@@ -783,21 +783,31 @@
     <section id="view-absence" class="view">
       <div class="cal-view-card">
 
-        <!-- LEFT SIDE: Calendar Grid, Month Selector & Navigation -->
+        <!-- LEFT SIDE: Calendar Grid & Dual Nav Selectors -->
         <div class="cal-left-pane">
-          <div class="cal-nav-bar">
-            <button class="cal-nav-arrow" onclick="calPrevYear()">
-              <span class="material-symbols-rounded">chevron_left</span>
-            </button>
-            <span class="cal-year-display" id="cal-year-label">2026</span>
-            <button class="cal-nav-arrow" onclick="calNextYear()">
-              <span class="material-symbols-rounded">chevron_right</span>
-            </button>
-          </div>
+          <!-- Top Controls: Month (Left) vs Year (Right) -->
+          <div class="cal-top-controls">
+            <!-- Month Stepper -->
+            <div class="cal-stepper-group">
+              <button class="cal-nav-arrow" onclick="calPrevMonth()">
+                <span class="material-symbols-rounded">chevron_left</span>
+              </button>
+              <span class="cal-stepper-label" id="cal-month-label">November</span>
+              <button class="cal-nav-arrow" onclick="calNextMonth()">
+                <span class="material-symbols-rounded">chevron_right</span>
+              </button>
+            </div>
 
-          <!-- Horizontal Month Ribbon -->
-          <div class="cal-months-ribbon" id="cal-months-ribbon">
-            <!-- Rendered dynamically (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec) -->
+            <!-- Year Stepper -->
+            <div class="cal-stepper-group">
+              <button class="cal-nav-arrow" onclick="calPrevYear()">
+                <span class="material-symbols-rounded">chevron_left</span>
+              </button>
+              <span class="cal-stepper-label" id="cal-year-label">2026</span>
+              <button class="cal-nav-arrow" onclick="calNextYear()">
+                <span class="material-symbols-rounded">chevron_right</span>
+              </button>
+            </div>
           </div>
 
           <!-- Day Headers -->
@@ -811,13 +821,13 @@
             <span>SAT</span>
           </div>
 
-          <!-- 7x6 / 7x5 Days Grid -->
+          <!-- 7-Column Days Grid -->
           <div class="cal-days-grid" id="cal-days-grid">
             <!-- Rendered dynamically -->
           </div>
         </div>
 
-        <!-- RIGHT SIDE: Solid Accent Hero Card (Similar to the left red card in the reference) -->
+        <!-- RIGHT SIDE: Solid Accent Hero Card -->
         <div class="cal-right-pane">
           <div class="cal-hero-top">
             <div class="cal-hero-badge">

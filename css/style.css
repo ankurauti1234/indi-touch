@@ -545,14 +545,16 @@ body.hide-nav-rail .main-stage {
 }
 
 /* Days 7-column grid */
+/* ── Days Grid & Clean Circular Cell Styling ───────────────────────────── */
 .cal-days-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     grid-auto-rows: 48px;
-    gap: 6px 0;
+    gap: 6px;
     text-align: center;
 }
 
+/* Default day: Perfectly round circle */
 .cal-day-cell {
     display: flex;
     align-items: center;
@@ -560,14 +562,14 @@ body.hide-nav-rail .main-stage {
     font-size: 16px;
     font-weight: 500;
     color: var(--text-main);
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
+    border-radius: 50% !important;
+    width: 44px !important;
+    height: 44px !important;
     margin: 0 auto;
     cursor: pointer;
-    transition: all 0.15s ease-in-out;
+    transition: transform 0.15s ease, background 0.15s ease;
     user-select: none;
-    position: relative;
+    box-sizing: border-box;
 }
 
 .cal-day-cell:active:not(.disabled) {
@@ -589,40 +591,29 @@ body.hide-nav-rail .main-stage {
     border: 2px solid var(--outline);
 }
 
-/* ── Calendar Range Highlight Modifiers ───────────────────────────────── */
+/* Range Start Date: Solid round primary circle */
 .cal-day-cell.range-start {
     background: var(--primary) !important;
     color: var(--on-primary) !important;
-    font-weight: 700;
-    border-top-left-radius: 50% !important;
-    border-bottom-left-radius: 50% !important;
-    border-top-right-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-    width: 100% !important;
+    font-weight: 700 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
 }
 
+/* Range End Date: Solid round primary circle */
 .cal-day-cell.range-end {
     background: var(--primary) !important;
     color: var(--on-primary) !important;
-    font-weight: 700;
-    border-top-right-radius: 50% !important;
-    border-bottom-right-radius: 50% !important;
-    border-top-left-radius: 0 !important;
-    border-bottom-left-radius: 0 !important;
-    width: 100% !important;
+    font-weight: 700 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
 }
 
+/* In-Between Dates: Soft rounded highlight */
 .cal-day-cell.in-range {
     background: rgba(208, 188, 255, 0.22) !important;
     color: var(--text-main) !important;
-    border-radius: 0 !important;
-    width: 100% !important;
-}
-
-/* When a single day is both start and end */
-.cal-day-cell.range-start.range-end {
     border-radius: 50% !important;
-    width: 44px !important;
 }
 
 /* ── RIGHT PANE: Solid Accent Hero Card ───────────────────────────────── */

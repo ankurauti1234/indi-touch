@@ -1,28 +1,38 @@
-// js/absence.js — Full Screen Absence Calendar View Controller
+// js/absence.js — Full Screen Absence Calendar Range View Controller
 
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 let viewYear = new Date().getFullYear();
-let viewMonth = new Date().getMonth(); // 0 - 11
-let selectedDate = new Date();
+let viewMonth = new Date().getMonth();
+
+let rangeStart = null;
+let rangeEnd = null;
+let isPickingEnd = false;
 
 function initAbsenceCalendar() {
-    const def = new Date();
-    def.setDate(def.getDate() + 7);
-    def.setHours(23, 59, 59, 0);
-    selectedDate = def;
-    viewYear = selectedDate.getFullYear();
-    viewMonth = selectedDate.getMonth();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Default: Departing tomorrow, returning in 7 days
+    rangeStart = new Date(today);
+    rangeStart.setDate(today.getDate() + 1);
+
+    rangeEnd = new Date(today);
+    rangeEnd.setDate(today.getDate() + 7);
+
+    isPickingEnd = false;
+    viewYear = rangeStart.getFullYear();
+    viewMonth = rangeStart.getMonth();
 
     renderCalendar();
-    updateHeroCard();
+    updateHeroRange();
 }
 
 function calPrevMonth() {
     const now = new Date();
     if (viewYear === now.getFullYear() && viewMonth <= now.getMonth()) {
-        return; // Don't allow scrolling to past months
+        return;
     }
     viewMonth--;
     if (viewMonth < 0) {
@@ -72,34 +82,36 @@ function renderCalendar() {
 
     let cellsHtml = '';
 
-    // Prev month padding days
+    // Leading padding days from previous month
     for (let i = firstDayIndex - 1; i >= 0; i--) {
         const d = prevMonthLastDay - i;
         cellsHtml += `<div class="cal-day-cell other-month disabled">${String(d).padStart(2, '0')}</div>`;
     }
 
-    // Current month days
+    // Days in current view month
     for (let day = 1; day <= lastDayOfMonth; day++) {
         const cellDate = new Date(viewYear, viewMonth, day);
         cellDate.setHours(0, 0, 0, 0);
 
-        const isPast = cellDate <= today;
+        const isPast = cellDate < today;
         const isToday = cellDate.getTime() === today.getTime();
-        const isSelected = selectedDate &&
-            cellDate.getFullYear() === selectedDate.getFullYear() &&
-            cellDate.getMonth() === selectedDate.getMonth() &&
-            cellDate.getDate() === selectedDate.getDate();
+
+        const isStart = rangeStart && cellDate.getTime() === rangeStart.getTime();
+        const isEnd = rangeEnd && cellDate.getTime() === rangeEnd.getTime();
+        const inRange = rangeStart && rangeEnd && cellDate > rangeStart && cellDate < rangeEnd;
 
         let classes = ['cal-day-cell'];
         if (isPast) classes.push('disabled');
         if (isToday) classes.push('today');
-        if (isSelected) classes.push('selected');
+        if (isStart) classes.push('range-start');
+        if (isEnd) classes.push('range-end');
+        if (inRange) classes.push('in-range');
 
         const onclick = isPast ? '' : `onclick="calSelectDay(${viewYear}, ${viewMonth}, ${day})"`;
         cellsHtml += `<div class="${classes.join(' ')}" ${onclick}>${String(day).padStart(2, '0')}</div>`;
     }
 
-    // Trailing days padding for 7-column balance
+    // Trailing padding days
     const totalFilled = firstDayIndex + lastDayOfMonth;
     const nextDays = (7 - (totalFilled % 7)) % 7;
     for (let d = 1; d <= nextDays; d++) {
@@ -110,37 +122,82 @@ function renderCalendar() {
 }
 
 function calSelectDay(year, month, day) {
-    const picked = new Date(year, month, day, 23, 59, 59, 0);
-    selectedDate = picked;
+    const picked = new Date(year, month, day);
+    picked.setHours(0, 0, 0, 0);
+
+    if (!isPickingEnd || !rangeStart) {
+        // Step 1: Picking Start Date
+        rangeStart = picked;
+        rangeEnd = null;
+        isPickingEnd = true;
+    } else {
+        // Step 2: Picking End Date
+        if (picked < rangeStart) {
+            rangeEnd = rangeStart;
+            rangeStart = picked;
+        } else {
+            rangeEnd = picked;
+        }
+        isPickingEnd = false;
+    }
+
     renderCalendar();
-    updateHeroCard();
+    updateHeroRange();
 }
 
-function updateHeroCard() {
-    const dayEl = document.getElementById('cal-hero-day');
-    const weekdayEl = document.getElementById('cal-hero-weekday');
-    const myEl = document.getElementById('cal-hero-month-year');
+function updateHeroRange() {
+    // Start elements
+    const startDayEl = document.getElementById('cal-start-day');
+    const startWeekdayEl = document.getElementById('cal-start-weekday');
+    const startMyEl = document.getElementById('cal-start-month-year');
+
+    // End elements
+    const endDayEl = document.getElementById('cal-end-day');
+    const endWeekdayEl = document.getElementById('cal-end-weekday');
+    const endMyEl = document.getElementById('cal-end-month-year');
+
     const durEl = document.getElementById('cal-hero-duration');
 
-    if (!selectedDate || !dayEl) return;
+    if (rangeStart && startDayEl) {
+        startDayEl.innerText = rangeStart.getDate();
+        startWeekdayEl.innerText = WEEKDAYS[rangeStart.getDay()];
+        startMyEl.innerText = `${MONTH_FULL[rangeStart.getMonth()]} ${rangeStart.getFullYear()}`;
+    }
 
-    dayEl.innerText = selectedDate.getDate();
-    weekdayEl.innerText = WEEKDAYS[selectedDate.getDay()];
-    myEl.innerText = `${MONTH_FULL[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
+    if (rangeEnd && endDayEl) {
+        endDayEl.innerText = rangeEnd.getDate();
+        endWeekdayEl.innerText = WEEKDAYS[rangeEnd.getDay()];
+        endMyEl.innerText = `${MONTH_FULL[rangeEnd.getMonth()]} ${rangeEnd.getFullYear()}`;
+    } else if (endDayEl) {
+        endDayEl.innerText = '--';
+        endWeekdayEl.innerText = 'SELECT RETURN';
+        endMyEl.innerText = 'Tap a date on calendar';
+    }
 
-    const now = new Date();
-    const diffTime = selectedDate.getTime() - now.getTime();
-    const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-    if (durEl) durEl.innerText = `${diffDays} Day${diffDays > 1 ? 's' : ''} Duration`;
+    if (rangeStart && rangeEnd && durEl) {
+        const diffDays = Math.round((rangeEnd - rangeStart) / (1000 * 60 * 60 * 24)) + 1;
+        durEl.innerText = `${diffDays} Day${diffDays > 1 ? 's' : ''} Duration`;
+    } else if (durEl) {
+        durEl.innerText = 'Picking range...';
+    }
 }
 
 async function confirmAbsenceCalendar() {
+    if (!rangeStart) return;
+
     const btn = document.getElementById('btn-activate-absence');
     if (btn) btn.disabled = true;
 
+    // Use rangeEnd if selected, otherwise fallback to rangeStart (single day)
+    const effectiveEnd = rangeEnd || rangeStart;
+
+    // Start of the departure day, end of the return day (23:59:59)
+    const startTimestamp = Math.floor(rangeStart.getTime() / 1000);
+    const endTimestamp = Math.floor(new Date(effectiveEnd).setHours(23, 59, 59, 0) / 1000);
+
     const payload = {
-        start_time: Math.floor(Date.now() / 1000),
-        end_time: Math.floor(selectedDate.getTime() / 1000)
+        start_time: startTimestamp,
+        end_time: endTimestamp
     };
 
     try {
@@ -167,7 +224,7 @@ async function confirmAbsenceCalendar() {
     }
 }
 
-// Bind handlers to window so HTML onclick attributes can reach them
+// Bind handlers to window
 window.calPrevMonth = calPrevMonth;
 window.calNextMonth = calNextMonth;
 window.calPrevYear = calPrevYear;
@@ -175,5 +232,4 @@ window.calNextYear = calNextYear;
 window.calSelectDay = calSelectDay;
 window.confirmAbsenceCalendar = confirmAbsenceCalendar;
 
-// Both names are exported cleanly here once
 export { initAbsenceCalendar, initAbsenceCalendar as initAbsenceManager };

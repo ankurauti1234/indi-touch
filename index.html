@@ -236,11 +236,10 @@
         </button>
       </div>
 
-      <!-- Bottom Rail: Household Absence / Vacation Mode Trigger -->
+      <!-- Bottom Rail: Vacation / Away Mode Trigger -->
       <div class="bottom-rail">
-        <!-- Inside .bottom-rail -->
         <button class="nav-btn" id="btn-absence" onclick="navTo('absence')" title="Away Mode">
-          <span class="material-symbols-rounded">luggage</span>
+          <span class="material-symbols-outlined">event_upcoming</span>
         </button>
       </div>
     </nav>
@@ -827,11 +826,11 @@
           </div>
         </div>
 
-        <!-- RIGHT SIDE: Solid Accent Hero Card -->
+        <!-- RIGHT SIDE: Solid Accent Hero Card (Range Mode) -->
         <div class="cal-right-pane">
           <div class="cal-hero-top">
             <div class="cal-hero-badge">
-              <span class="material-symbols-rounded">flight_takeoff</span>
+              <span class="material-symbols-outlined">event_upcoming</span>
               <span>AWAY MODE</span>
             </div>
             <button class="cal-hero-close" onclick="navTo('home')">
@@ -839,21 +838,39 @@
             </button>
           </div>
 
+          <!-- Hero Date Range Block -->
           <div class="cal-hero-main">
-            <div class="cal-hero-day" id="cal-hero-day">--</div>
-            <div class="cal-hero-weekday" id="cal-hero-weekday">--------</div>
-            <div class="cal-hero-full-date" id="cal-hero-month-year">--- ----</div>
+            <!-- Departing (Start) -->
+            <div class="cal-range-node" id="cal-node-start">
+              <span class="cal-range-tag">DEPARTING</span>
+              <div class="cal-hero-day" id="cal-start-day">--</div>
+              <div class="cal-hero-weekday" id="cal-start-weekday">--------</div>
+              <div class="cal-hero-full-date" id="cal-start-month-year">--- ----</div>
+            </div>
+
+            <!-- Divider Arrow -->
+            <div class="cal-range-divider">
+              <span class="material-symbols-rounded">arrow_downward</span>
+            </div>
+
+            <!-- Returning (End) -->
+            <div class="cal-range-node" id="cal-node-end">
+              <span class="cal-range-tag">RETURNING</span>
+              <div class="cal-hero-day" id="cal-end-day">--</div>
+              <div class="cal-hero-weekday" id="cal-end-weekday">--------</div>
+              <div class="cal-hero-full-date" id="cal-end-month-year">--- ----</div>
+            </div>
           </div>
 
           <div class="cal-hero-details">
-            <div class="cal-detail-title">Planned Absence</div>
+            <div class="cal-detail-title">Absence Schedule</div>
             <div class="cal-detail-item">
-              <span class="material-symbols-rounded">schedule</span>
+              <span class="material-symbols-rounded">date_range</span>
               <span id="cal-hero-duration">-- Days Duration</span>
             </div>
             <div class="cal-detail-item">
               <span class="material-symbols-rounded">event_available</span>
-              <span>Logs pause until 11:59 PM</span>
+              <span>Logs resume day after return</span>
             </div>
           </div>
 

@@ -11,7 +11,7 @@ import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
-import { initAbsenceManager } from './absence.js';
+import { initAbsenceCalendar } from './absence.js';
 
 
 // Expose functions globally for HTML inline event handlers
@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGuestList();
     initLocation();
     renderNotifications();
-    initAbsenceManager();
+    initAbsenceCalendar();
 
     // 4. Finalize - Hide app loader
     hideAppLoader();

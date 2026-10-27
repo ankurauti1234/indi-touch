@@ -1,5 +1,9 @@
 // js/absence.js — Absence Calendar & Active Mode Controller
 
+import { syncTvOverlay } from './connection.js';
+
+
+
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 

@@ -244,6 +244,21 @@
     </nav>
 
     <div class="main-stage">
+      <!-- Universal Stage Lock Overlay (TV Off & Away Mode) -->
+      <div id="tv-off-overlay" class="grid-lock-overlay" style="display: none;">
+        <div class="lock-content">
+          <span class="material-symbols-rounded lock-icon" id="tv-overlay-icon">tv_off</span>
+          <h3 class="lock-title" id="tv-overlay-title" data-i18n="tv_is_off">TV is Off</h3>
+          <p class="lock-msg" id="tv-overlay-msg" data-i18n="member_decl_disabled">Member and guest declarations are disabled while the TV is off.</p>
+          
+          <!-- Neutral Manage Button for Away Mode -->
+          <button class="stage-lock-btn" id="btn-overlay-manage-away" onclick="navTo('absence')" style="display: none;">
+            <span class="material-symbols-rounded">edit_calendar</span>
+            <span>Manage Away Mode</span>
+          </button>
+        </div>
+      </div>
+      
       <section id="view-home" class="view active">
         <div id="grid-container"></div>
 

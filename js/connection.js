@@ -3,6 +3,7 @@
 import { openSetting } from './settings.js';
 import { timers } from './utils.js';
 import { config } from './data.js';
+import { isAwayModeActive, getAbsenceRecord } from './absence.js';
 
 const API_STATUS_URL = '/api/system/status';
 const POLL_INTERVAL  = 8000;       // 8 s

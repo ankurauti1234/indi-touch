@@ -2562,13 +2562,6 @@ body.osk-open .nav-rail {
     align-self: flex-start;
 }
 
-/* 5. Screensaver permanent fullscreen layering */
-#screensaver {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 2147483647 !important;
-}
-
 /* 6. Hide OSK immediately whenever screensaver is active */
 body.screensaver-active #osk-container {
     display: none !important;

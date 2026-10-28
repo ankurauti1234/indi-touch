@@ -20,26 +20,39 @@ export function getAbsenceRecord() {
     return activeAbsenceRecord;
 }
 
-// Undeclare all active members and guests upon entering Away Mode
-function undeclareAllMembersAndGuests() {
-    // 1. Remove active UI button classes
+// Function to undeclare all members on backend, reload state, and dismiss popover
+async function undeclareAllMembersAndGuests() {
+    // 1. Instantly dismiss active-member reminder popover if currently visible
+    const popover = document.getElementById('critical-popover');
+    if (popover) {
+        popover.classList.remove('active');
+    }
+
+    // 2. Call backend undeclare endpoint
+    try {
+        console.log("Away Mode: Undeclaring all members & guests...");
+        await fetch('/api/members/undeclare', { method: 'POST' });
+    } catch (e) {
+        console.error("Failed to undeclare members via API:", e);
+    }
+
+    // 3. Immediately clear local UI active classes
     document.querySelectorAll('.member-btn.active, .member-card.active, .guest-card.active').forEach(el => {
         el.classList.remove('active');
     });
 
-    // 2. Clear state in memory if loaded
-    if (window.memberData && Array.isArray(window.memberData)) {
-        window.memberData.forEach(m => { m.active = false; });
+    // 4. Force data reload from backend and refresh UI grids
+    try {
+        const m = await import('./data.js');
+        await Promise.all([
+            typeof m.loadMembers === 'function' ? m.loadMembers() : Promise.resolve(),
+            typeof m.loadGuests === 'function' ? m.loadGuests() : Promise.resolve()
+        ]);
+        if (window.renderGrid) window.renderGrid();
+        if (window.renderGuestList) window.renderGuestList();
+    } catch (e) {
+        console.error("Error reloading member/guest data:", e);
     }
-
-    // 3. Clear guest session store if available
-    if (window.activeGuests && typeof window.activeGuests.clear === 'function') {
-        window.activeGuests.clear();
-    }
-
-    // 4. Force UI grid and guest list refresh
-    if (typeof window.renderGrid === 'function') window.renderGrid();
-    if (typeof window.renderGuestList === 'function') window.renderGuestList();
 }
 
 function initAbsenceCalendar() {
@@ -314,8 +327,8 @@ async function activateAbsenceMode() {
             isAwayModeActive = true;
             activeAbsenceRecord = { start_time: startTimestamp, end_time: endTimestamp };
 
-            // Undeclare members and guests immediately
-            undeclareAllMembersAndGuests();
+            // Undeclare on backend, reload data, and kill reminder popup
+            await undeclareAllMembersAndGuests();
 
             applyActiveModeUI();
             if (typeof syncTvOverlay === 'function') syncTvOverlay();

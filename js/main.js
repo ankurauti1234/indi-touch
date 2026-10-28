@@ -11,7 +11,7 @@ import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
-import { initAbsenceCalendar } from './absence.js';
+import { initAbsenceCalendar, isAwayModeActive } from './absence.js';
 
 
 // Expose functions globally for HTML inline event handlers
@@ -429,18 +429,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         const popover = document.getElementById('critical-popover');
         if (!popover) return;
 
-        // Don't show if the TV is off or onboarding isn't complete.
+        // Stage overlay check (TV Off overlay or Away Mode lock)
+        const tvOverlay = document.getElementById('tv-off-overlay');
+        const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
+
+        // Don't show if the TV is off, onboarding isn't complete, overlay is visible, or Away Mode is active.
         let isTvOn = tvState.on;
 
         if (!config.bleAvailable) {
             isTvOn = true;
         }
 
-        if (!isTvOn || !config.onboardingCompleted) {
+        if (!isTvOn || !config.onboardingCompleted || isOverlayVisible || isAwayModeActive) {
             popover.classList.remove('active');
 
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
+            if (typeof activeMemberDelayTimer !== 'undefined') {
+                timers.clearTimeout(activeMemberDelayTimer);
+                activeMemberDelayTimer = null;
+            }
 
             activeMemberReminderCycleStarted = false;
 
@@ -455,6 +463,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
+            if (typeof activeMemberDelayTimer !== 'undefined') {
+                timers.clearTimeout(activeMemberDelayTimer);
+                activeMemberDelayTimer = null;
+            }
 
             activeMemberReminderCycleStarted = false;
 

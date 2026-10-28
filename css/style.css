@@ -42,6 +42,7 @@ body.remote-mode * {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
     backdrop-filter: none !important;
+    filter: none !important;
     will-change: auto !important;
 }
 

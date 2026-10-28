@@ -57,6 +57,7 @@ def init_db():
         cur.execute("PRAGMA table_info(members)")
         cols = {c[1] for c in cur.fetchall()}
 
+        added_cols = set()
         for col, typedef in [
             ("name", "TEXT"),
             ("avatar_url", "TEXT"),
@@ -65,8 +66,11 @@ def init_db():
             if col not in cols:
                 print(f"[DB] Adding '{col}' column to members")
                 cur.execute(f"ALTER TABLE members ADD COLUMN {col} {typedef}")
+                added_cols.add(col)
 
-        if "name" in cols:
+        # Run backfill ONLY if 'name' was newly added during this run
+        if "name" in added_cols:
+            print("[DB] Backfilling default member names from member_code")
             cur.execute("""
                 UPDATE members
                 SET name = member_code

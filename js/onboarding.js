@@ -396,17 +396,17 @@ function markCalibItemActive(elemId) {
 export function startCalibrationMonitor() {
     stopCalibrationMonitor();
     
-    // Only reset to OFF_READY if not already successfully calibrated
+    // Only reset to ON_READY if not already successfully calibrated
     if (calibStage !== 'DONE') {
-        calibStage = 'OFF_READY';
+        calibStage = 'ON_READY';
         offBaselineWatt = null;
         onBaselineWatt = null;
         isCalibRunning = false;
 
-        resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
         resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture (30s test, High Vol)');
+        resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
 
-        markCalibItemActive('chk-calib-off');
+        markCalibItemActive('chk-calib-on');
 
         const nextBtn = document.getElementById('btn-next-6');
         if (nextBtn) nextBtn.disabled = true;
@@ -417,7 +417,7 @@ export function startCalibrationMonitor() {
         const actionBtn = document.getElementById('btn-calib-action');
         if (actionBtn) {
             actionBtn.style.display = 'flex';
-            setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
+            setButtonState(actionBtn, true, "Capture TV ON Baseline (30s)");
             actionBtn.onclick = (e) => {
                 e.preventDefault();
                 if (!actionBtn.disabled && !isCalibRunning) {
@@ -426,7 +426,7 @@ export function startCalibrationMonitor() {
             };
         }
 
-        updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
+        updatePrompt("Measure Active Load", "Turn the TV ON and set volume to HIGH. Then tap below to begin.");
     }
 
     pollLiveWatt();
@@ -546,12 +546,12 @@ async function pollLiveWatt() {
         }
 
         if (actionBtn && actionBtn.disabled) {
-            if (calibStage === 'OFF_READY') {
-                updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
-                setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
-            } else if (calibStage === 'ON_READY') {
+            if (calibStage === 'ON_READY') {
                 updatePrompt("Measure Active Load", "Turn the TV ON and set volume to HIGH. Then tap below.");
                 setButtonState(actionBtn, true, "Capture TV ON Baseline (30s)");
+            } else if (calibStage === 'OFF_READY') {
+                updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
+                setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
             }
         }
     } catch (err) {
@@ -568,17 +568,17 @@ export async function triggerCalibrationStep() {
 
     if (calibStage === 'ABORTED') {
         if (promptBox) promptBox.classList.remove('aborted');
-        calibStage = (offBaselineWatt !== null) ? 'ON_READY' : 'OFF_READY';
+        calibStage = (onBaselineWatt !== null) ? 'OFF_READY' : 'ON_READY';
         if (actionBtn) {
             actionBtn.style.display = 'flex';
-            if (calibStage === 'OFF_READY') {
-                markCalibItemActive('chk-calib-off');
-                setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
-                updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
-            } else {
+            if (calibStage === 'ON_READY') {
                 markCalibItemActive('chk-calib-on');
                 setButtonState(actionBtn, true, "Capture TV ON Baseline (30s)");
                 updatePrompt("Measure Active Load", "Turn the TV ON and set volume to HIGH. Then tap below.");
+            } else {
+                markCalibItemActive('chk-calib-off');
+                setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
+                updatePrompt("Measure Standby Load", "Ensure TV is turned OFF (Standby), then tap below to begin.");
             }
         }
         pollLiveWatt();
@@ -646,35 +646,36 @@ export async function triggerCalibrationStep() {
 
     const avg = samples.length ? (samples.reduce((a, b) => a + b, 0) / samples.length) : 0;
 
-    if (calibStage === 'OFF_READY') {
-        offBaselineWatt = avg;
-        markCalibItemDone('chk-calib-off', 'tv_off', avg);
-        
-        calibStage = 'ON_READY';
-        markCalibItemActive('chk-calib-on');
-
-        updatePrompt("Measure Active Load", "Now, <strong>turn the TV ON</strong> and set volume to <strong>HIGH</strong>. Tap below when ready.");
-
-        if (actionBtn) {
-            actionBtn.style.display = 'flex';
-            setButtonState(actionBtn, true, "Capture TV ON Baseline (30s)");
-        }
-    } else if (calibStage === 'ON_READY') {
+    if (calibStage === 'ON_READY') {
         onBaselineWatt = avg;
         markCalibItemDone('chk-calib-on', 'tv', avg);
 
+        calibStage = 'OFF_READY';
+        markCalibItemActive('chk-calib-off');
+
+        updatePrompt("Measure Standby Load", "Now, <strong>turn the TV OFF (Standby)</strong>. Tap below when ready.");
+
+        if (actionBtn) {
+            actionBtn.style.display = 'flex';
+            setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
+        }
+    } else if (calibStage === 'OFF_READY') {
+        offBaselineWatt = avg;
+        markCalibItemDone('chk-calib-off', 'tv_off', avg);
+
+        // Sanity check: Active load must be at least 3W higher than Standby load
         if ((onBaselineWatt - offBaselineWatt) < 3.0) {
-            calibStage = 'OFF_READY';
+            calibStage = 'ON_READY';
             offBaselineWatt = null;
             onBaselineWatt = null;
-            resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
             resetCalibItem('chk-calib-on', 'tv', 'TV Active (ON) Load', 'Awaiting capture (30s test, High Volume)');
-            markCalibItemActive('chk-calib-off');
-            
-            updatePrompt("Calibration Invalid", "Insufficient difference between ON and OFF baselines. Please ensure the TV was turned ON and retry.");
+            resetCalibItem('chk-calib-off', 'tv_off', 'TV Standby (OFF) Load', 'Awaiting capture (30s test)');
+            markCalibItemActive('chk-calib-on');
+
+            updatePrompt("Calibration Invalid", "Insufficient difference between ON and OFF baselines. Please ensure the TV was turned OFF and retry.");
             if (actionBtn) {
                 actionBtn.style.display = 'flex';
-                setButtonState(actionBtn, true, "Capture TV OFF Baseline (30s)");
+                setButtonState(actionBtn, true, "Capture TV ON Baseline (30s)");
             }
             return;
         }
@@ -689,11 +690,11 @@ export async function triggerCalibrationStep() {
         }
 
         updatePrompt(
-            "✔ Calibration Complete", 
-            `Standby: ${offBaselineWatt.toFixed(1)} W  |  Active: ${onBaselineWatt.toFixed(1)} W`
+            "✔ Calibration Complete",
+            `Active: ${onBaselineWatt.toFixed(1)} W  |  Standby: ${offBaselineWatt.toFixed(1)} W`
         );
 
-        // Commit baselines to the backend with error handling
+        // Commit baselines to backend
         try {
             await fetch('/api/onboarding/ble/calibrate', {
                 method: 'POST',

@@ -187,18 +187,7 @@
 
             <!-- Two Side-by-Side Horizontal Blocks (Logo + Title) -->
             <div class="calib-cards-row">
-              <!-- Card 1: TV Standby (OFF) -->
-              <div class="calib-pill pending" id="chk-calib-off">
-                <span class="material-symbols-rounded calib-pill-icon">tv_off</span>
-                <div class="calib-pill-text">
-                  <div class="calib-pill-title">TV Standby (OFF)</div>
-                  <div class="calib-pill-sub" id="chk-calib-off-sub">Awaiting capture (30s test)</div>
-                </div>
-                <span class="material-symbols-rounded calib-pill-status" id="chk-calib-off-status">radio_button_unchecked</span>
-                <div class="chk-spinner calib-pill-spinner" style="display:none;"></div>
-              </div>
-
-              <!-- Card 2: TV Active (ON) -->
+              <!-- Card 1: TV Active (ON) -->
               <div class="calib-pill pending" id="chk-calib-on">
                 <span class="material-symbols-rounded calib-pill-icon">tv</span>
                 <div class="calib-pill-text">
@@ -208,12 +197,23 @@
                 <span class="material-symbols-rounded calib-pill-status" id="chk-calib-on-status">radio_button_unchecked</span>
                 <div class="chk-spinner calib-pill-spinner" style="display:none;"></div>
               </div>
+
+              <!-- Card 2: TV Standby (OFF) -->
+              <div class="calib-pill pending" id="chk-calib-off">
+                <span class="material-symbols-rounded calib-pill-icon">tv_off</span>
+                <div class="calib-pill-text">
+                  <div class="calib-pill-title">TV Standby (OFF)</div>
+                  <div class="calib-pill-sub" id="chk-calib-off-sub">Awaiting capture (30s test)</div>
+                </div>
+                <span class="material-symbols-rounded calib-pill-status" id="chk-calib-off-status">radio_button_unchecked</span>
+                <div class="chk-spinner calib-pill-spinner" style="display:none;"></div>
+              </div>
             </div>
 
             <!-- Enlarged Dynamic Prompt & Instructions -->
             <div id="calib-prompt-box" class="calib-prompt-box">
-              <div class="calib-prompt-main" id="calib-prompt-main">Measure Standby Load</div>
-              <div class="calib-prompt-detail" id="calib-prompt-detail">Ensure TV is turned OFF (Standby), then tap below to begin.</div>
+              <div class="calib-prompt-main" id="calib-prompt-main">Measure Active Load</div>
+              <div class="calib-prompt-detail" id="calib-prompt-detail">Turn the TV ON and set volume to HIGH. Then tap below to begin.</div>
             </div>
 
             <!-- Dedicated 30-Second Progress Bar -->
@@ -228,7 +228,7 @@
             <div class="calib-btn-wrap">
               <button id="btn-calib-action" class="setup-btn calib-action-btn" onclick="window.triggerCalibrationStep()">
                 <span class="material-symbols-rounded" style="font-size:24px;">play_arrow</span>
-                <span id="btn-calib-text">Capture TV OFF Baseline (30s)</span>
+                <span id="btn-calib-text">Capture TV ON Baseline (30s)</span>
               </button>
             </div>
           </div>

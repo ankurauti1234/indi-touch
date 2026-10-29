@@ -243,3 +243,5 @@ export function renderGuestList() {
         `;
     }).join('');
 }
+
+window.renderGuestList = renderGuestList;

@@ -54,8 +54,13 @@ def rename_member():
 def undeclare_all():
     try:
         from .db import undeclare_all_members_in_db
+        from .collector_service import publish_guest_event
         undeclare_all_members_in_db()
         publish_member_event()
+        try:
+            publish_guest_event([])
+        except Exception as ge:
+            print("[Members] Error publishing empty guest event on undeclare:", ge)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

@@ -1,12 +1,20 @@
 # api/absence.py
 from flask import Blueprint, request, jsonify
 import time
+from datetime import datetime
 from .collector_service import send_event
 
 absence_bp = Blueprint('absence_bp', __name__)
 
-# In-memory absence state (or persisted to local SQLite/JSON storage)
+# In-memory absence state
 current_absence = None
+
+def to_device_iso(ts):
+    """Converts timestamp to local device ISO 8601 string."""
+    try:
+        return datetime.fromtimestamp(int(ts)).isoformat()
+    except Exception:
+        return datetime.now().isoformat()
 
 @absence_bp.route('/absence', methods=['GET', 'POST', 'DELETE'])
 def household_absence():
@@ -34,24 +42,22 @@ def household_absence():
             'activated_at': activated_at
         }
 
-        # D-Bus event dispatch (Event Type 5: Away Mode Activated)
+        # Event Type 5: Away Mode Activated with device local ISO time
         payload_activate = {
             'action': 'activated',
-            'start_time': current_absence['start_time'],
-            'end_time': current_absence['end_time'],
-            'activated_at': activated_at
+            'start_time': to_device_iso(start_time),
+            'end_time': to_device_iso(end_time),
+            'activated_at': datetime.now().isoformat()
         }
         send_event(5, payload_activate)
 
         return jsonify({'success': True, 'absence': current_absence}), 200
 
     elif request.method == 'DELETE':
-        cancelled_at = int(time.time())
-
-        # D-Bus event dispatch (Event Type 6: Away Mode Cancelled)
+        # Event Type 6: Away Mode Cancelled with device local ISO time
         payload_cancel = {
             'action': 'cancelled',
-            'cancelled_at': cancelled_at
+            'cancelled_at': datetime.now().isoformat()
         }
         send_event(6, payload_cancel)
 

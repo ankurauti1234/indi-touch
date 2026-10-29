@@ -187,6 +187,43 @@ def update_guests():
         }), 500
 
 
+@guests_bp.route("/clear", methods=["POST"])
+def clear_guests():
+    """Clear all guests, save empty list, and emit collector/MQTT event."""
+    try:
+        save_guests_data([])
+
+        payload = {
+            "meter_id": METER_ID,
+            "action": "cleared",
+            "guests": [],
+            "count": 0
+        }
+        print("\n========== GUEST CLEAR EVENT ==========")
+        print(json.dumps(payload, indent=2))
+
+        try:
+            publish_guest_event([])
+            print("Guest clear event published successfully")
+        except Exception as mqtt_error:
+            print("MQTT PUBLISH ERROR:", str(mqtt_error))
+            traceback.print_exc()
+
+        return jsonify({
+            "success": True,
+            "count": 0,
+            "guests": []
+        })
+
+    except Exception as e:
+        print("CLEAR GUESTS ERROR:", str(e))
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 @guests_bp.route("/count", methods=["GET"])
 def guest_count():
     try:
@@ -205,3 +242,5 @@ def guest_count():
             "success": False,
             "error": str(e)
         }), 500
+    
+    

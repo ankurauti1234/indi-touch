@@ -22,18 +22,21 @@ export function getAbsenceRecord() {
 
 // Function to undeclare all members on backend, reload state, and dismiss popover
 async function undeclareAllMembersAndGuests() {
-    // 1. Instantly dismiss active-member reminder popover if currently visible
+    // 1. Instantly dismiss active-member reminder popover if visible
     const popover = document.getElementById('critical-popover');
     if (popover) {
         popover.classList.remove('active');
     }
 
-    // 2. Call backend undeclare endpoint
+    // 2. Call backend undeclare endpoints for members and guests in parallel
     try {
-        console.log("Away Mode: Undeclaring all members & guests...");
-        await fetch('/api/members/undeclare', { method: 'POST' });
+        console.log("Away Mode: Undeclaring all members & clearing guests...");
+        await Promise.all([
+            fetch('/api/members/undeclare', { method: 'POST' }),
+            fetch('/api/guests/clear', { method: 'POST' })
+        ]);
     } catch (e) {
-        console.error("Failed to undeclare members via API:", e);
+        console.error("Failed to undeclare via API:", e);
     }
 
     // 3. Immediately clear local UI active classes
@@ -41,7 +44,7 @@ async function undeclareAllMembersAndGuests() {
         el.classList.remove('active');
     });
 
-    // 4. Force data reload from backend and refresh UI grids
+    // 4. Force data reload from backend and refresh UI grids + badge
     try {
         const m = await import('./data.js');
         await Promise.all([
@@ -50,6 +53,7 @@ async function undeclareAllMembersAndGuests() {
         ]);
         if (window.renderGrid) window.renderGrid();
         if (window.renderGuestList) window.renderGuestList();
+        if (window.updateGuestBadge) window.updateGuestBadge();
     } catch (e) {
         console.error("Error reloading member/guest data:", e);
     }

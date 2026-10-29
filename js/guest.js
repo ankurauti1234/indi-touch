@@ -168,6 +168,7 @@ export function updateGuestBadge() {
         badge.classList.remove('visible');
     }
 }
+window.updateGuestBadge = updateGuestBadge;
 
 export function renderGuestList() {
     const container = document.getElementById('guest-list-container');

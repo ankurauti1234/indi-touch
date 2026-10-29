@@ -89,6 +89,38 @@ def publish_guest_event(guest_list: list = None):
         _log(f"Guest event failed: {e}")
         return False
 
+
+def publish_absence_activated_event(start_time: int, end_time: int, activated_at: int = None):
+    """Emits a Type 5 D-Bus signal when Household Away Mode is activated."""
+    try:
+        now = int(time.time())
+        details = {
+            "action": "activated",
+            "start_time": int(start_time),
+            "end_time": int(end_time),
+            "activated_at": int(activated_at or now)
+        }
+        _log(f"Publishing Event 5 (Absence Activated): {details}")
+        return send_event(5, details)
+    except Exception as e:
+        _log(f"Absence activated event failed: {e}")
+        return False
+
+
+def publish_absence_cancelled_event(cancelled_at: int = None):
+    """Emits a Type 6 D-Bus signal when Household Away Mode is cancelled."""
+    try:
+        now = int(time.time())
+        details = {
+            "action": "cancelled",
+            "cancelled_at": int(cancelled_at or now)
+        }
+        _log(f"Publishing Event 6 (Absence Cancelled): {details}")
+        return send_event(6, details)
+    except Exception as e:
+        _log(f"Absence cancelled event failed: {e}")
+        return False
+
 if __name__ == "__main__":
     # Quick test
     send_event("test", {"status": "ok"})

@@ -210,7 +210,19 @@
 
           <!-- Sub-view 5C: Wi-Fi TV Discovery -->
           <div id="step-5-wifi-view" class="step-5-subview" style="display:none;">
-            <!-- Fixed Top Bar: Manual IP Probe -->
+
+            <!-- Step Header (Restored with proper typography) -->
+            <div class="onboard-step-header">
+              <div class="onboard-header-icon-wrap">
+                <span class="material-symbols-rounded">tv</span>
+              </div>
+              <div>
+                <h2 class="onboard-title">Wi-Fi TV Discovery</h2>
+                <p class="onboard-desc">Select your primary TV from the network list, or probe its IP directly.</p>
+              </div>
+            </div>
+
+            <!-- Manual IP Probe Bar (Positioned directly above the list) -->
             <div class="tv-probe-header">
               <div class="tv-probe-input-wrap">
                 <span class="material-symbols-rounded tv-probe-icon">router</span>
@@ -229,7 +241,7 @@
               </div>
             </div>
 
-            <!-- Status / Discovery Counter Header -->
+            <!-- List Header: Count + Rescan -->
             <div class="tv-list-subheader">
               <span class="tv-list-count" id="tv-scan-count-label">Discovered Devices</span>
               <button type="button" class="btn-refresh-pill" id="btn-refresh-tv-scan" onclick="startTvSubnetScan()">
@@ -244,6 +256,7 @@
                 <div class="wifi-skeleton">Tap Rescan to discover TVs on the local network.</div>
               </div>
             </div>
+
           </div>
 
         </div>

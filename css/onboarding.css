@@ -810,6 +810,55 @@
     border-color: var(--primary);
 }
 
+/* ── Wi-Fi Discovery Layout & Touch Scrolling ────────────────────────────── */
+
+#step-5-wifi-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: calc(100vh - 210px); /* Keeps within kiosk viewport without scrolling the whole page */
+  overflow: hidden;
+}
+
+/* Keep the probe row firmly at the top with clean spacing */
+.manual-probe-row {
+  flex-shrink: 0;
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+/* Scroll area wrapper: critical flex child settings for touch */
+.tv-scroll-container {
+  flex: 1;
+  min-height: 0;           /* Prevents child elements from expanding past container */
+  overflow-y: auto;        /* Enables scrolling */
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;     /* Enables fluid finger drag on touchscreens */
+  padding-right: 4px;      /* Keeps scrollbar away from card edges */
+}
+
+/* Use standard column layout for the list items */
+.tv-scroll-container .net-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Clean slim scrollbar matching the theme */
+.tv-scroll-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.tv-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tv-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border-radius: 10px;
+}
+
+
 /* TV Badges in Network List */
 .tv-brand-badge {
     font-size: 11px;

@@ -535,34 +535,49 @@ function stopTvScanPolling() {
     }
 }
 
-function renderTvScanResults(devices) {
+export function renderTvScanResults(candidates) {
     const list = document.getElementById('onboard-tv-list');
+    const countLabel = document.getElementById('tv-scan-count-label');
     if (!list) return;
 
-    if (!devices || devices.length === 0) {
-        list.innerHTML = '<div class="wifi-skeleton">No devices discovered on subnet.</div>';
-        showTvFallbackModal("No devices discovered on this network.");
+    if (!candidates || candidates.length === 0) {
+        list.innerHTML = '<div class="wifi-skeleton">No devices found. Ensure TV is ON and on the same Wi-Fi.</div>';
+        if (countLabel) countLabel.innerText = "Discovered Devices (0)";
         return;
     }
 
-    list.innerHTML = devices.map(d => {
-        const isTv = d.tier === 'tv' && d.monitorable;
-        const brandBadge = isTv 
-            ? `<span class="tv-brand-badge">${d.tv_type}</span>` 
-            : `<span class="tv-other-badge">${d.vendor || 'LAN Device'}</span>`;
-        
-        const devJson = JSON.stringify(d).replace(/"/g, '&quot;');
+    const tvs = candidates.filter(c => c.tier === 'tv');
+    if (countLabel) countLabel.innerText = `Discovered Devices (${tvs.length} TV${tvs.length === 1 ? '' : 's'})`;
+
+    list.innerHTML = candidates.map(dev => {
+        const isMonitorable = dev.monitorable;
+        const devJson = JSON.stringify(dev).replace(/"/g, '&quot;');
+        const isSelected = selectedTvDevice && (
+            (selectedTvDevice.id && selectedTvDevice.id === dev.id) ||
+            (selectedTvDevice.mac && selectedTvDevice.mac === dev.mac) ||
+            (selectedTvDevice.ip === dev.ip)
+        );
+
         return `
-            <div class="net-item ${isTv ? 'monitorable-tv' : 'other-device'}" 
+            <div class="net-item ${isSelected ? 'selected' : ''} ${isMonitorable ? 'monitorable-tv' : 'non-monitorable'}" 
                  onclick="selectTvDevice(this, ${devJson})">
                 <div class="net-signal">
-                    <span class="material-symbols-rounded" style="color: ${isTv ? 'var(--green-border, #64d29a)' : 'var(--text-sub)'}">
-                        ${isTv ? 'tv' : 'devices'}
-                    </span>
-                    <span class="net-name">${d.model || d.ip}</span>
-                    ${brandBadge}
+                    <span class="material-symbols-rounded">${isMonitorable ? 'tv' : 'devices_other'}</span>
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="net-name">${dev.model || (isMonitorable ? 'Smart TV' : 'Network Device')}</span>
+                            <span class="tv-badge-pill ${isMonitorable ? 'verified' : 'other'}">
+                                ${isMonitorable ? (dev.tv_type || 'TV') : 'Other'}
+                            </span>
+                        </div>
+                        <span style="font-size:12px; color:#94a3b8; font-family:monospace;">
+                            ${dev.ip} ${dev.mac ? `• ${dev.mac}` : ''}
+                        </span>
+                    </div>
                 </div>
-                <span class="net-mac" style="font-size:12px;color:var(--text-sub);">${d.ip}</span>
+                <span class="material-symbols-rounded" style="color: ${isSelected ? '#3b82f6' : '#64748b'};">
+                    ${isSelected ? 'check_circle' : 'radio_button_unchecked'}
+                </span>
             </div>
         `;
     }).join('');

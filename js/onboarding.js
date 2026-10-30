@@ -8,6 +8,11 @@ let selectedSsid = '';
 let isSsidLocked = false;
 let isAlreadyConnected = false;
 
+// ── TV Detection Routing State ──────────────────────────────────────────────
+let detectionMethod = null; // 'ble' | 'wifi' | 'skipped'
+let selectedTvDevice = null;
+let tvScanPollInterval = null;
+
 // ── BLE Smart Plug & Calibration State ──────────────────────────────────────
 let selectedPlugMac = '';
 let calibStage = 'INIT'; // 'INIT' -> 'SWITCH_PROMPT' -> 'DONE'
@@ -53,6 +58,16 @@ export async function nextStep() {
         if (!connected) return;
     }
 
+    // Step 5 routing: Wi-Fi TV and Skipped bypass Step 6 Calibration
+    if (currentStep === 5) {
+        if (detectionMethod === 'wifi' || detectionMethod === 'skipped') {
+            animateStep(5, 7);
+            currentStep = 7;
+            handleStepLogic(currentStep);
+            return;
+        }
+    }
+
     animateStep(currentStep, currentStep + 1);
     currentStep++;
     
@@ -75,6 +90,16 @@ export function prevStep() {
         if (isAlreadyConnected || !isSsidLocked) {
             animateStep(4, 2);
             currentStep = 2;
+            return;
+        }
+    }
+
+    // Step 7 back routing: return to Step 5 if Step 6 was bypassed
+    if (currentStep === 7) {
+        if (detectionMethod === 'wifi' || detectionMethod === 'skipped') {
+            animateStep(7, 5);
+            currentStep = 5;
+            handleStepLogic(currentStep);
             return;
         }
     }
@@ -223,8 +248,16 @@ async function connectOnboardWifi() {
 function validateStep(step) {
     if (step === 2) return document.querySelector('#onboard-wifi-list .net-item.selected') !== null;
     if (step === 3) return document.getElementById('onboard-wifi-pass').value.length >= 8 || !isSsidLocked;
-    if (step === 5) return !!selectedPlugMac;
-    if (step === 6) return calibStage === 'DONE';
+    if (step === 5) {
+        if (detectionMethod === 'ble') return !!selectedPlugMac;
+        if (detectionMethod === 'wifi') return !!selectedTvDevice;
+        if (detectionMethod === 'skipped') return true;
+        return false;
+    }
+    if (step === 6) {
+        if (detectionMethod !== 'ble') return true;
+        return calibStage === 'DONE';
+    }
     if (step === 7) return document.getElementById('inp-hhid-digits').value.length === 4;
     if (step === 8) return document.getElementById('inp-otp').value.length === 4;
     return true;
@@ -236,11 +269,21 @@ async function handleStepLogic(step) {
     if (step === 4) startConnectivityPolling();
     else stopConnectivityPolling();
 
-    if (step === 5) refreshBlePlugs();
+    if (step === 5) {
+        if (!detectionMethod) {
+            resetStep5Subviews();
+        }
+    }
 
-    // Run the monitor strictly while on Step 6; stop it immediately on all other steps
+    // Run calibration monitor strictly on Step 6 during BLE flow
     if (step === 6) {
-        startCalibrationMonitor();
+        if (detectionMethod === 'ble') {
+            startCalibrationMonitor();
+        } else {
+            animateStep(6, 7);
+            currentStep = 7;
+            handleStepLogic(7);
+        }
     } else {
         stopCalibrationMonitor();
     }
@@ -298,12 +341,58 @@ function setCheckState(id, ok) {
     el.classList.add(ok ? 'done' : 'pending');
 }
 
-// ── Step 5: BLE Discovery & Selection ─────────────────────────────────────────
+// ── Step 5: Method Selection, BLE & Wi-Fi Handlers ─────────────────────────
+
+function resetStep5Subviews() {
+    stopTvScanPolling();
+    const selectView = document.getElementById('step-5-select-view');
+    const bleView = document.getElementById('step-5-ble-view');
+    const wifiView = document.getElementById('step-5-wifi-view');
+
+    if (selectView) selectView.style.display = 'block';
+    if (bleView) bleView.style.display = 'none';
+    if (wifiView) wifiView.style.display = 'none';
+
+    detectionMethod = null;
+    selectedTvDevice = null;
+}
+
+export function selectDetectionMethod(method) {
+    detectionMethod = method;
+    const selectView = document.getElementById('step-5-select-view');
+    const bleView = document.getElementById('step-5-ble-view');
+    const wifiView = document.getElementById('step-5-wifi-view');
+
+    if (selectView) selectView.style.display = 'none';
+
+    if (method === 'ble') {
+        if (bleView) bleView.style.display = 'block';
+        if (wifiView) wifiView.style.display = 'none';
+        refreshBlePlugs();
+    } else if (method === 'wifi') {
+        if (wifiView) wifiView.style.display = 'block';
+        if (bleView) bleView.style.display = 'none';
+        startTvSubnetScan();
+    }
+}
+
+export function backToMethodSelection() {
+    resetStep5Subviews();
+}
+
+export function skipDetectionToStep7() {
+    detectionMethod = 'skipped';
+    animateStep(5, 7);
+    currentStep = 7;
+    handleStepLogic(currentStep);
+}
+
+// ── BLE Discovery & Selection ───────────────────────────────────────────────
+
 export async function refreshBlePlugs() {
     const list = document.getElementById('onboard-ble-list');
     if (!list) return;
 
-    // Immediately disable the button while scanning is underway
     const btn = document.getElementById('btn-next-5');
     if (btn) btn.disabled = true;
 
@@ -375,7 +464,202 @@ export async function selectPlug(el, mac) {
     }
 }
 
-// ── Step 6: Power Calibration (Technician Sequential Flow: OFF -> ON) ─────────
+// ── Wi-Fi Subnet Scan Engine ────────────────────────────────────────────────
+
+export async function startTvSubnetScan() {
+    const list = document.getElementById('onboard-tv-list');
+    const refreshBtn = document.getElementById('btn-refresh-tv-scan');
+    if (!list) return;
+
+    list.innerHTML = '<div class="wifi-skeleton">Sweeping local subnet for TVs...</div>';
+    if (refreshBtn) refreshBtn.classList.add('loading');
+
+    try {
+        await fetch('/api/tv/scan', { method: 'POST' });
+        pollTvScanStatus();
+    } catch (e) {
+        list.innerHTML = `<div class="wifi-skeleton">Scan error: ${e.message}</div>`;
+        if (refreshBtn) refreshBtn.classList.remove('loading');
+    }
+}
+
+function pollTvScanStatus() {
+    stopTvScanPolling();
+    tvScanPollInterval = setInterval(async () => {
+        try {
+            const res = await fetch('/api/tv/scan/status');
+            const data = await res.json();
+            if (data.status === 'done') {
+                stopTvScanPolling();
+                const refreshBtn = document.getElementById('btn-refresh-tv-scan');
+                if (refreshBtn) refreshBtn.classList.remove('loading');
+                renderTvScanResults(data.candidates || []);
+            } else if (data.status === 'error') {
+                stopTvScanPolling();
+                const refreshBtn = document.getElementById('btn-refresh-tv-scan');
+                if (refreshBtn) refreshBtn.classList.remove('loading');
+                showTvFallbackModal("Scan failed: " + (data.error || "Unknown network error"));
+            }
+        } catch (e) {
+            console.error("Scan poll error", e);
+        }
+    }, 1500);
+}
+
+function stopTvScanPolling() {
+    if (tvScanPollInterval) {
+        clearInterval(tvScanPollInterval);
+        tvScanPollInterval = null;
+    }
+}
+
+function renderTvScanResults(devices) {
+    const list = document.getElementById('onboard-tv-list');
+    if (!list) return;
+
+    if (!devices || devices.length === 0) {
+        list.innerHTML = '<div class="wifi-skeleton">No devices discovered on subnet.</div>';
+        showTvFallbackModal("No devices discovered on this network.");
+        return;
+    }
+
+    list.innerHTML = devices.map(d => {
+        const isTv = d.tier === 'tv' && d.monitorable;
+        const brandBadge = isTv 
+            ? `<span class="tv-brand-badge">${d.tv_type}</span>` 
+            : `<span class="tv-other-badge">${d.vendor || 'LAN Device'}</span>`;
+        
+        const devJson = JSON.stringify(d).replace(/"/g, '&quot;');
+        return `
+            <div class="net-item ${isTv ? 'monitorable-tv' : 'other-device'}" 
+                 onclick="selectTvDevice(this, ${devJson})">
+                <div class="net-signal">
+                    <span class="material-symbols-rounded" style="color: ${isTv ? 'var(--green-border, #64d29a)' : 'var(--text-sub)'}">
+                        ${isTv ? 'tv' : 'devices'}
+                    </span>
+                    <span class="net-name">${d.model || d.ip}</span>
+                    ${brandBadge}
+                </div>
+                <span class="net-mac" style="font-size:12px;color:var(--text-sub);">${d.ip}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+export function selectTvDevice(el, device) {
+    document.querySelectorAll('#onboard-tv-list .net-item').forEach(i => i.classList.remove('selected'));
+    el.classList.add('selected');
+
+    selectedTvDevice = device;
+    const nextBtn = document.getElementById('btn-next-5-wifi');
+    if (nextBtn) {
+        nextBtn.disabled = !device.monitorable;
+    }
+}
+
+export async function probeManualTvIp() {
+    const inp = document.getElementById('inp-manual-tv-ip');
+    const ip = inp ? inp.value.trim() : '';
+    if (!ip) return;
+
+    const list = document.getElementById('onboard-tv-list');
+    list.innerHTML = `<div class="wifi-skeleton">Probing ${ip}...</div>`;
+
+    try {
+        const r = await fetch('/api/tv/probe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip })
+        });
+        const d = await r.json();
+
+        if (d.success && d.monitorable) {
+            selectedTvDevice = { id: d.id, ip: d.ip, tv_type: d.tv_type, mac: d.mac, model: `${d.tv_type} TV`, monitorable: true };
+            const devJson = JSON.stringify(selectedTvDevice).replace(/"/g, '&quot;');
+            list.innerHTML = `
+                <div class="net-item selected monitorable-tv" onclick="selectTvDevice(this, ${devJson})">
+                    <div class="net-signal">
+                        <span class="material-symbols-rounded" style="color:var(--green-border, #64d29a)">tv</span>
+                        <span class="net-name">${d.tv_type.toUpperCase()} TV (${d.ip})</span>
+                        <span class="tv-brand-badge">${d.tv_type}</span>
+                    </div>
+                    <span class="material-symbols-rounded" style="color:var(--green-border, #64d29a)">check_circle</span>
+                </div>
+            `;
+            const nextBtn = document.getElementById('btn-next-5-wifi');
+            if (nextBtn) nextBtn.disabled = false;
+        } else {
+            showTvFallbackModal(d.message || "Device reachable but no monitorable TV port was found.");
+        }
+    } catch (e) {
+        showTvFallbackModal("Probe error: " + e.message);
+    }
+}
+
+export async function confirmTvSelectionAndProceed() {
+    if (!selectedTvDevice) return;
+
+    const btn = document.getElementById('btn-next-5-wifi');
+    if (btn) {
+        btn.classList.add('loading');
+        btn.disabled = true;
+    }
+
+    try {
+        const r = await fetch('/api/tv/label', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: selectedTvDevice.id, label: 'TV1' })
+        });
+        const d = await r.json();
+
+        if (d.success) {
+            animateStep(5, 7);
+            currentStep = 7;
+            handleStepLogic(currentStep);
+        } else {
+            showTvFallbackModal(d.error || "Failed to label device.");
+        }
+    } catch (e) {
+        showTvFallbackModal("Error provisioning TV: " + e.message);
+    } finally {
+        if (btn) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+    }
+}
+
+// ── Fallback Modal Actions ──────────────────────────────────────────────────
+
+export function showTvFallbackModal(msg) {
+    const el = document.getElementById('tv-fallback-modal');
+    const msgEl = document.getElementById('tv-fallback-msg');
+    if (msgEl && msg) msgEl.innerText = msg;
+    if (el) el.style.display = 'flex';
+}
+
+export function hideTvFallbackModal() {
+    const el = document.getElementById('tv-fallback-modal');
+    if (el) el.style.display = 'none';
+}
+
+export function retryTvScanFromModal() {
+    hideTvFallbackModal();
+    startTvSubnetScan();
+}
+
+export function switchToBleFromModal() {
+    hideTvFallbackModal();
+    selectDetectionMethod('ble');
+}
+
+export function skipFromModal() {
+    hideTvFallbackModal();
+    skipDetectionToStep7();
+}
+
+// ── Step 6: Power Calibration (Sequential Flow: ON -> OFF) ──────────────────
 
 function markCalibItemActive(elemId) {
     const el = document.getElementById(elemId);
@@ -396,7 +680,6 @@ function markCalibItemActive(elemId) {
 export function startCalibrationMonitor() {
     stopCalibrationMonitor();
     
-    // Only reset to ON_READY if not already successfully calibrated
     if (calibStage !== 'DONE') {
         calibStage = 'ON_READY';
         offBaselineWatt = null;
@@ -533,7 +816,6 @@ async function pollLiveWatt() {
         
         if (wattEl) wattEl.innerText = `${liveWatt.toFixed(1)} W`;
 
-        // If calibration is already complete, do not allow polling to disturb UI
         if (isCalibRunning || calibStage === 'ABORTED' || calibStage === 'DONE') return;
 
         if (!d.connected) {
@@ -663,7 +945,6 @@ export async function triggerCalibrationStep() {
         offBaselineWatt = avg;
         markCalibItemDone('chk-calib-off', 'tv_off', avg);
 
-        // Sanity check: Active load must be at least 3W higher than Standby load
         if ((onBaselineWatt - offBaselineWatt) < 3.0) {
             calibStage = 'ON_READY';
             offBaselineWatt = null;
@@ -683,7 +964,6 @@ export async function triggerCalibrationStep() {
         calibStage = 'DONE';
         if (actionBtn) actionBtn.style.display = 'none';
 
-        // Halt polling interval so late packets don't corrupt the completed state
         if (liveWattPollInterval) {
             clearInterval(liveWattPollInterval);
             liveWattPollInterval = null;
@@ -694,7 +974,6 @@ export async function triggerCalibrationStep() {
             `Active: ${onBaselineWatt.toFixed(1)} W  |  Standby: ${offBaselineWatt.toFixed(1)} W`
         );
 
-        // Commit baselines to backend
         try {
             await fetch('/api/onboarding/ble/calibrate', {
                 method: 'POST',
@@ -705,7 +984,6 @@ export async function triggerCalibrationStep() {
             console.error("Failed to commit calibration thresholds:", err);
         }
 
-        // Enable Next button to proceed to Step 7
         const nextBtn = document.getElementById('btn-next-6');
         if (nextBtn) {
             nextBtn.disabled = false;
@@ -892,3 +1170,17 @@ window.toggleOnboardPass = toggleOnboardPass;
 window.refreshBlePlugs = refreshBlePlugs;
 window.selectPlug = selectPlug;
 window.triggerCalibrationStep = triggerCalibrationStep;
+
+// Expose Step 5 & TV Detection handlers
+window.selectDetectionMethod = selectDetectionMethod;
+window.backToMethodSelection = backToMethodSelection;
+window.skipDetectionToStep7 = skipDetectionToStep7;
+window.startTvSubnetScan = startTvSubnetScan;
+window.probeManualTvIp = probeManualTvIp;
+window.confirmTvSelectionAndProceed = confirmTvSelectionAndProceed;
+window.selectTvDevice = selectTvDevice;
+window.showTvFallbackModal = showTvFallbackModal;
+window.hideTvFallbackModal = hideTvFallbackModal;
+window.retryTvScanFromModal = retryTvScanFromModal;
+window.switchToBleFromModal = switchToBleFromModal;
+window.skipFromModal = skipFromModal;

@@ -209,54 +209,42 @@
           </div>
 
           <!-- Sub-view 5C: Wi-Fi TV Discovery -->
-          <div id="step-5-wifi-view" class="step-5-subview" style="display:none;">
-
-            <!-- Step Header (Restored with proper typography) -->
-            <div class="onboard-step-header">
-              <div class="onboard-header-icon-wrap">
-                <span class="material-symbols-rounded">tv</span>
+          <div id="step-5-wifi-view" class="step-subview" style="display:none;">
+            <div class="wiz-header-row">
+              <div class="wiz-header-text">
+                <h2 class="wiz-title">Wi-Fi TV Discovery</h2>
+                <p class="wiz-desc">Select your TV from the network list or probe its IP.</p>
               </div>
-              <div>
-                <h2 class="onboard-title">Wi-Fi TV Discovery</h2>
-                <p class="onboard-desc">Select your primary TV from the network list, or probe its IP directly.</p>
-              </div>
-            </div>
-
-            <!-- Manual IP Probe Bar (Positioned directly above the list) -->
-            <div class="tv-probe-header">
-              <div class="tv-probe-input-wrap">
-                <span class="material-symbols-rounded tv-probe-icon">router</span>
-                <input 
-                  type="text" 
-                  id="tv-manual-ip-input" 
-                  class="tv-probe-input" 
-                  placeholder="Enter TV IP (e.g. 192.168.0.76)" 
-                  inputmode="decimal"
-                  autocomplete="off"
-                />
-                <button type="button" class="btn-probe-action" id="btn-probe-ip" onclick="probeManualTvIp()">
-                  <span class="material-symbols-rounded">search</span>
-                  <span>Probe IP</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- List Header: Count + Rescan -->
-            <div class="tv-list-subheader">
-              <span class="tv-list-count" id="tv-scan-count-label">Discovered Devices</span>
-              <button type="button" class="btn-refresh-pill" id="btn-refresh-tv-scan" onclick="startTvSubnetScan()">
+              <button class="refresh-btn-onboard" id="btn-refresh-tv-scan" onclick="startTvSubnetScan()">
                 <span class="material-symbols-rounded">refresh</span>
-                <span>Rescan</span>
               </button>
             </div>
 
-            <!-- Scrollable Device List -->
-            <div class="tv-scrollable-list-wrap">
-              <div id="onboard-tv-list" class="net-list tv-custom-scroll">
-                <div class="wifi-skeleton">Tap Rescan to discover TVs on the local network.</div>
+            <!-- Manual IP Probe: Cleanly placed above list -->
+            <div class="manual-probe-row">
+              <input 
+                type="text" 
+                id="tv-manual-ip-input" 
+                placeholder="Enter TV IP (e.g. 192.168.0.76)" 
+                inputmode="decimal"
+                autocomplete="off"
+              />
+              <button type="button" class="btn-probe-manual" id="btn-probe-ip" onclick="probeManualTvIp()">
+                Probe IP
+              </button>
+            </div>
+
+            <!-- Scrollable Device List Container -->
+            <div class="net-list-wrapper">
+              <div class="net-list" id="onboard-tv-list">
+                <div class="wifi-skeleton">Discovering TVs on the network...</div>
               </div>
             </div>
 
+            <div class="wiz-footer">
+              <button class="btn-back" onclick="backToMethodSelection()">Back</button>
+              <button class="btn-next" id="btn-next-5-wifi" onclick="confirmTvSelectionAndProceed()" disabled>Proceed</button>
+            </div>
           </div>
 
         </div>

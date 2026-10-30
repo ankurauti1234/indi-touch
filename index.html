@@ -146,26 +146,98 @@
           </div>
         </div>
 
-        <!-- Step 5: Smart Plug Setup -->
+        <!-- Step 5: TV Detection Method & Discovery -->
         <div id="step-5" class="step">
-          <div class="wiz-header-row">
-            <div class="wiz-header-text">
-              <h2 class="wiz-title">Smart Plug Setup</h2>
-              <p class="wiz-desc">Select and pair your TV Bluetooth Smart Plug.</p>
+
+          <!-- View 5A: Selection Screen -->
+          <div id="step-5-select-view" class="step-subview active">
+            <div class="wiz-header">
+              <h2 class="wiz-title">TV Detection Method</h2>
+              <p class="wiz-desc">Select how this meter will track TV power states.</p>
             </div>
-            <button class="refresh-btn-onboard" onclick="refreshBlePlugs()">
-              <span class="material-symbols-rounded">refresh</span>
-            </button>
-          </div>
-          <div class="net-list-wrapper">
-            <div class="net-list" id="onboard-ble-list">
-              <div class="wifi-skeleton">Searching for Smart Plugs...</div>
+
+            <div class="method-cards-grid">
+              <div class="method-card" id="card-method-ble" onclick="selectDetectionMethod('ble')">
+                <div class="method-card-icon">
+                  <span class="material-symbols-rounded">bluetooth</span>
+                </div>
+                <div class="method-card-content">
+                  <div class="method-card-title">Bluetooth Smart Plug</div>
+                  <div class="method-card-desc">Measures physical active and standby wattage load via BLE plug.</div>
+                </div>
+                <span class="material-symbols-rounded method-card-arrow">chevron_right</span>
+              </div>
+
+              <div class="method-card" id="card-method-wifi" onclick="selectDetectionMethod('wifi')">
+                <div class="method-card-icon">
+                  <span class="material-symbols-rounded">tv</span>
+                </div>
+                <div class="method-card-content">
+                  <div class="method-card-title">Wi-Fi Network TV</div>
+                  <div class="method-card-desc">Monitors TV lifecycle (STARTED/STANDBY) over local network ports.</div>
+                </div>
+                <span class="material-symbols-rounded method-card-arrow">chevron_right</span>
+              </div>
+            </div>
+
+            <div class="wiz-footer">
+              <button class="btn-back" onclick="prevStep()">Back</button>
+              <button class="btn-next btn-secondary-skip" onclick="skipDetectionToStep7()">Skip Detection</button>
             </div>
           </div>
-          <div class="wiz-footer">
-            <button class="btn-back" onclick="prevStep()">Back</button>
-            <button class="btn-next" id="btn-next-5" onclick="nextStep()" disabled>Pair & Continue</button>
+
+          <!-- View 5B: BLE Smart Plug Flow -->
+          <div id="step-5-ble-view" class="step-subview" style="display:none;">
+            <div class="wiz-header-row">
+              <div class="wiz-header-text">
+                <h2 class="wiz-title">Smart Plug Setup</h2>
+                <p class="wiz-desc">Select and pair your TV Bluetooth Smart Plug.</p>
+              </div>
+              <button class="refresh-btn-onboard" onclick="refreshBlePlugs()">
+                <span class="material-symbols-rounded">refresh</span>
+              </button>
+            </div>
+            <div class="net-list-wrapper">
+              <div class="net-list" id="onboard-ble-list">
+                <div class="wifi-skeleton">Searching for Smart Plugs...</div>
+              </div>
+            </div>
+            <div class="wiz-footer">
+              <button class="btn-back" onclick="backToMethodSelection()">Back</button>
+              <button class="btn-next" id="btn-next-5" onclick="nextStep()" disabled>Pair & Continue</button>
+            </div>
           </div>
+
+          <!-- View 5C: Wi-Fi Network TV Flow -->
+          <div id="step-5-wifi-view" class="step-subview" style="display:none;">
+            <div class="wiz-header-row">
+              <div class="wiz-header-text">
+                <h2 class="wiz-title">Wi-Fi TV Discovery</h2>
+                <p class="wiz-desc">Select your TV on the local subnet.</p>
+              </div>
+              <button class="refresh-btn-onboard" id="btn-refresh-tv-scan" onclick="startTvSubnetScan()">
+                <span class="material-symbols-rounded">refresh</span>
+              </button>
+            </div>
+
+            <div class="net-list-wrapper">
+              <div class="net-list" id="onboard-tv-list">
+                <div class="wifi-skeleton">Scanning subnet for smart TVs...</div>
+              </div>
+            </div>
+
+            <!-- Manual IP Probe Drawer / Input -->
+            <div class="manual-probe-row">
+              <input type="text" id="inp-manual-tv-ip" placeholder="Manual IP (e.g. 192.168.1.50)" />
+              <button class="btn-probe-manual" onclick="probeManualTvIp()">Probe</button>
+            </div>
+
+            <div class="wiz-footer">
+              <button class="btn-back" onclick="backToMethodSelection()">Back</button>
+              <button class="btn-next" id="btn-next-5-wifi" onclick="confirmTvSelectionAndProceed()" disabled>Proceed</button>
+            </div>
+          </div>
+
         </div>
 
         <!-- Step 6: TV Power Calibration (Full Typography Scale) -->
@@ -928,6 +1000,28 @@
   
         <button id="still-watch-continue" class="conn-btn-primary">
           I'm Watching
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fallback / Retry Modal for Wi-Fi TV Detection -->
+  <div id="tv-fallback-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="material-symbols-rounded modal-icon-warn">warning</span>
+        <h3 class="modal-title">TV Not Verified</h3>
+      </div>
+      <p class="modal-body" id="tv-fallback-msg">No monitorable TV ports responded on this network. Ensure the TV is ON and connected to the same Wi-Fi.</p>
+      <div class="modal-actions-col">
+        <button class="btn-modal-action" onclick="retryTvScanFromModal()">
+          <span class="material-symbols-rounded">refresh</span> Retry Wi-Fi Scan
+        </button>
+        <button class="btn-modal-action" onclick="switchToBleFromModal()">
+          <span class="material-symbols-rounded">bluetooth</span> Switch to Bluetooth Smart Plug
+        </button>
+        <button class="btn-modal-action btn-modal-skip" onclick="skipFromModal()">
+          <span class="material-symbols-rounded">skip_next</span> Skip Detection to Step 7
         </button>
       </div>
     </div>

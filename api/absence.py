@@ -63,3 +63,4 @@ def household_absence():
 
         current_absence = None
         return jsonify({'success': True, 'message': 'Absence cancelled'}), 200
+    

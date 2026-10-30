@@ -22,6 +22,11 @@ let onBaselineWatt = null;
 let liveWattPollInterval = null;
 let isCalibRunning = false; // Abort flag for the 30s sampling loop
 
+// ── Wi-Fi TV Verification State ─────────────────────────────────────────────
+let wifiVerifyPollInterval = null;
+let wifiStage = 'WAITING_OFF'; // 'WAITING_OFF' -> 'WAITING_ON' -> 'PROVING_ON' -> 'DONE'
+let provingTicks = 0;
+
 export async function nextStep() {
     if (!validateStep(currentStep)) return;
 
@@ -700,6 +705,133 @@ function markCalibItemActive(elemId) {
     }
 }
 
+
+// ── Step 6B: Wi-Fi Network TV Verification Flow ─────────────────────────────
+
+export function startWifiVerificationMonitor() {
+    stopWifiVerificationMonitor();
+    wifiStage = 'WAITING_OFF';
+    provingTicks = 0;
+
+    resetWifiPill('chk-wifi-off', 'Awaiting Standby (Turn TV OFF)');
+    resetWifiPill('chk-wifi-on', 'Awaiting Active (Turn TV ON)');
+    markWifiPillActive('chk-wifi-off');
+
+    updateWifiPrompt("Turn the TV OFF (Standby)", "Use the TV remote to turn the TV off. We need to verify that network ports close.");
+
+    const nextBtn = document.getElementById('btn-next-6');
+    if (nextBtn) nextBtn.disabled = true;
+
+    wifiVerifyPollInterval = setInterval(pollWifiVerification, 1500);
+}
+
+export function stopWifiVerificationMonitor() {
+    if (wifiVerifyPollInterval) {
+        clearInterval(wifiVerifyPollInterval);
+        wifiVerifyPollInterval = null;
+    }
+}
+
+async function pollWifiVerification() {
+    if (!selectedTvDevice) return;
+    try {
+        const r = await fetch(`/api/tv/verify-poll?id=${selectedTvDevice.id}`);
+        const d = await r.json();
+        if (!d.success) return;
+
+        // Stage 1: Waiting for TV to turn OFF / Standby
+        if (wifiStage === 'WAITING_OFF') {
+            if (d.state === 'STANDBY' || d.state === 'OFF') {
+                markWifiPillDone('chk-wifi-off', `Verified (${d.state})`);
+                wifiStage = 'WAITING_ON';
+                markWifiPillActive('chk-wifi-on');
+                updateWifiPrompt("Now Turn the TV ON", "Press the power button on your TV remote. We will verify the network port opens.");
+            }
+        }
+        // Stage 2: Waiting for TV to turn back ON
+        else if (wifiStage === 'WAITING_ON') {
+            if (d.state === 'ON') {
+                wifiStage = 'PROVING_ON';
+                provingTicks = 0;
+                const prog = document.getElementById('wifi-progress-container');
+                if (prog) prog.style.display = 'flex';
+            }
+        }
+        // Stage 3: Proving sustained ON connection (matching the 20s engine buffer)
+        else if (wifiStage === 'PROVING_ON') {
+            if (d.state === 'ON') {
+                provingTicks++;
+                const requiredTicks = 6; // ~9-10 seconds verification window in UI
+                const pct = Math.min(100, Math.round((provingTicks / requiredTicks) * 100));
+                
+                const progBar = document.getElementById('wifi-progress-bar');
+                const progLabel = document.getElementById('wifi-progress-label');
+                if (progBar) progBar.style.width = `${pct}%`;
+                if (progLabel) progLabel.innerText = `Confirming stable signal (${pct}%)...`;
+
+                if (provingTicks >= requiredTicks) {
+                    wifiStage = 'DONE';
+                    stopWifiVerificationMonitor();
+                    markWifiPillDone('chk-wifi-on', "Verified (Port Responding)");
+                    updateWifiPrompt("✔ Verification Complete", "TV lifecycle detected accurately. You can now continue.");
+
+                    const prog = document.getElementById('wifi-progress-container');
+                    if (prog) prog.style.display = 'none';
+
+                    const nextBtn = document.getElementById('btn-next-6');
+                    if (nextBtn) nextBtn.disabled = false;
+                }
+            } else {
+                provingTicks = 0;
+                wifiStage = 'WAITING_ON';
+                const prog = document.getElementById('wifi-progress-container');
+                if (prog) prog.style.display = 'none';
+                updateWifiPrompt("Signal Interrupted", "Ensure TV remains powered on with volume set.");
+            }
+        }
+    } catch (e) {
+        console.error("WiFi verify poll failed:", e);
+    }
+}
+
+function updateWifiPrompt(main, detail) {
+    const box = document.getElementById('wifi-prompt-box');
+    if (box) {
+        box.innerHTML = `
+            <div class="calib-prompt-main">${main}</div>
+            <div class="calib-prompt-detail">${detail}</div>
+        `;
+    }
+}
+
+function resetWifiPill(id, sub) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'calib-pill pending';
+    const subEl = document.getElementById(`${id}-sub`);
+    if (subEl) subEl.innerText = sub;
+    const st = document.getElementById(`${id}-status`);
+    if (st) st.innerText = 'radio_button_unchecked';
+}
+
+function markWifiPillActive(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'calib-pill running';
+}
+
+function markWifiPillDone(id, sub) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'calib-pill done';
+    const subEl = document.getElementById(`${id}-sub`);
+    if (subEl) subEl.innerText = sub;
+    const st = document.getElementById(`${id}-status`);
+    if (st) st.innerText = 'check_circle';
+}
+
+
+
 export function startCalibrationMonitor() {
     stopCalibrationMonitor();
     
@@ -1207,3 +1339,5 @@ window.hideTvFallbackModal = hideTvFallbackModal;
 window.retryTvScanFromModal = retryTvScanFromModal;
 window.switchToBleFromModal = switchToBleFromModal;
 window.skipFromModal = skipFromModal;
+window.startWifiVerificationMonitor = startWifiVerificationMonitor;
+window.stopWifiVerificationMonitor = stopWifiVerificationMonitor;

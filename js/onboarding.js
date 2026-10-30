@@ -277,15 +277,32 @@ async function handleStepLogic(step) {
 
     // Run calibration monitor strictly on Step 6 during BLE flow
     if (step === 6) {
+        const bleContainer = document.getElementById('calib-ble-container');
+        const wifiContainer = document.getElementById('calib-wifi-container');
+        const title = document.getElementById('step-6-title');
+        const desc = document.getElementById('step-6-desc');
+
         if (detectionMethod === 'ble') {
+            if (bleContainer) bleContainer.style.display = 'flex';
+            if (wifiContainer) wifiContainer.style.display = 'none';
+            if (title) title.innerText = "TV Power Calibration";
+            if (desc) desc.innerText = "Measure baseline electrical loads using the Bluetooth plug.";
             startCalibrationMonitor();
+        } else if (detectionMethod === 'wifi') {
+            if (bleContainer) bleContainer.style.display = 'none';
+            if (wifiContainer) wifiContainer.style.display = 'flex';
+            if (title) title.innerText = "Wi-Fi TV Verification";
+            if (desc) desc.innerText = "Verify that the TV's power states are detected over the network.";
+            startWifiVerificationMonitor();
         } else {
+            // Skipped detection routes straight to Step 7
             animateStep(6, 7);
             currentStep = 7;
             handleStepLogic(7);
         }
     } else {
         stopCalibrationMonitor();
+        stopWifiVerificationMonitor();
     }
 
     if (step === 9) window.finalizeSetup();
@@ -609,13 +626,19 @@ export async function confirmTvSelectionAndProceed() {
         const r = await fetch('/api/tv/label', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: selectedTvDevice.id, label: 'TV1' })
+            body: JSON.stringify({ 
+                id: selectedTvDevice.id, 
+                mac: selectedTvDevice.mac, 
+                ip: selectedTvDevice.ip, 
+                label: 'TV1' 
+            })
         });
         const d = await r.json();
 
         if (d.success) {
-            animateStep(5, 7);
-            currentStep = 7;
+            // Advance to Step 6 (Wi-Fi Verification)
+            animateStep(5, 6);
+            currentStep = 6;
             handleStepLogic(currentStep);
         } else {
             showTvFallbackModal(d.error || "Failed to label device.");

@@ -240,74 +240,106 @@
 
         </div>
 
-        <!-- Step 6: TV Power Calibration (Full Typography Scale) -->
+        <!-- Step 6: TV Power & Network Verification -->
         <div id="step-6" class="step">
-          <!-- Full-Size Left-Aligned Header -->
           <div class="wiz-header">
-            <h2 class="wiz-title">TV Power Calibration</h2>
-            <p class="wiz-desc">Calibrate active and standby detection.</p>
+            <h2 class="wiz-title" id="step-6-title">TV Power Calibration</h2>
+            <p class="wiz-desc" id="step-6-desc">Measure baseline electrical loads or verify network states.</p>
           </div>
 
-          <div class="calib-container">
-            <!-- Hero Live Telemetry Badge -->
+          <!-- 6A: BLE Plug Calibration Container -->
+          <div id="calib-ble-container" class="calib-container">
             <div class="calib-hero-badge">
               <span class="material-symbols-rounded calib-hero-icon">bolt</span>
               <div class="calib-hero-data">
-                <span id="calib-live-watt" class="calib-hero-watt">-- W</span>
+                <span class="calib-hero-watt" id="calib-live-watt">0.0 W</span>
               </div>
             </div>
 
-            <!-- Two Side-by-Side Horizontal Blocks (Logo + Title) -->
             <div class="calib-cards-row">
-              <!-- Card 1: TV Active (ON) -->
               <div class="calib-pill pending" id="chk-calib-on">
                 <span class="material-symbols-rounded calib-pill-icon">tv</span>
                 <div class="calib-pill-text">
-                  <div class="calib-pill-title">TV Active (ON)</div>
-                  <div class="calib-pill-sub" id="chk-calib-on-sub">Awaiting capture (30s test, High Vol)</div>
+                  <div class="calib-pill-title">TV Active (ON) Load</div>
+                  <div class="calib-pill-sub" id="chk-calib-on-sub">Awaiting capture</div>
                 </div>
                 <span class="material-symbols-rounded calib-pill-status" id="chk-calib-on-status">radio_button_unchecked</span>
-                <div class="chk-spinner calib-pill-spinner" style="display:none;"></div>
+                <div class="chk-spinner" style="display:none;"></div>
               </div>
 
-              <!-- Card 2: TV Standby (OFF) -->
               <div class="calib-pill pending" id="chk-calib-off">
                 <span class="material-symbols-rounded calib-pill-icon">tv_off</span>
                 <div class="calib-pill-text">
-                  <div class="calib-pill-title">TV Standby (OFF)</div>
-                  <div class="calib-pill-sub" id="chk-calib-off-sub">Awaiting capture (30s test)</div>
+                  <div class="calib-pill-title">TV Standby (OFF) Load</div>
+                  <div class="calib-pill-sub" id="chk-calib-off-sub">Awaiting capture</div>
                 </div>
                 <span class="material-symbols-rounded calib-pill-status" id="chk-calib-off-status">radio_button_unchecked</span>
-                <div class="chk-spinner calib-pill-spinner" style="display:none;"></div>
+                <div class="chk-spinner" style="display:none;"></div>
               </div>
             </div>
 
-            <!-- Enlarged Dynamic Prompt & Instructions -->
-            <div id="calib-prompt-box" class="calib-prompt-box">
-              <div class="calib-prompt-main" id="calib-prompt-main">Measure Active Load</div>
-              <div class="calib-prompt-detail" id="calib-prompt-detail">Turn the TV ON and set volume to HIGH. Then tap below to begin.</div>
+            <div class="calib-prompt-box" id="calib-prompt-box">
+              <div class="calib-prompt-main">Turn TV ON</div>
+              <div class="calib-prompt-detail">Ensure TV is ON before capturing baseline.</div>
             </div>
 
-            <!-- Dedicated 30-Second Progress Bar -->
-            <div id="calib-progress-container" class="calib-progress-wrap" style="display:none;">
+            <div class="calib-progress-wrap" id="calib-progress-container" style="display:none;">
               <div class="calib-progress-track">
-                <div id="calib-progress-bar" class="calib-progress-fill"></div>
+                <div class="calib-progress-fill" id="calib-progress-bar"></div>
               </div>
-              <span id="calib-progress-label" class="calib-progress-label">Sampling: 30s remaining</span>
+              <div class="calib-progress-label" id="calib-progress-label">Sampling...</div>
             </div>
 
-            <!-- Action Button -->
             <div class="calib-btn-wrap">
-              <button id="btn-calib-action" class="setup-btn calib-action-btn" onclick="window.triggerCalibrationStep()">
-                <span class="material-symbols-rounded" style="font-size:24px;">play_arrow</span>
-                <span id="btn-calib-text">Capture TV ON Baseline (30s)</span>
+              <button class="btn-next calib-action-btn" id="btn-calib-action">
+                <span id="btn-calib-text">Capture TV ON Baseline</span>
               </button>
             </div>
           </div>
 
+          <!-- 6B: Wi-Fi Network TV Verification Container -->
+          <div id="calib-wifi-container" class="calib-container" style="display:none;">
+            <div class="calib-cards-row">
+              <!-- Pill 1: Standby / Port Closed Test -->
+              <div class="calib-pill pending" id="chk-wifi-off">
+                <span class="material-symbols-rounded calib-pill-icon">power_settings_new</span>
+                <div class="calib-pill-text">
+                  <div class="calib-pill-title">Standby Verification</div>
+                  <div class="calib-pill-sub" id="chk-wifi-off-sub">Awaiting TV power off</div>
+                </div>
+                <span class="material-symbols-rounded calib-pill-status" id="chk-wifi-off-status">radio_button_unchecked</span>
+                <div class="chk-spinner" style="display:none;"></div>
+              </div>
+
+              <!-- Pill 2: Active / Port Open & Proved Test -->
+              <div class="calib-pill pending" id="chk-wifi-on">
+                <span class="material-symbols-rounded calib-pill-icon">live_tv</span>
+                <div class="calib-pill-text">
+                  <div class="calib-pill-title">Active Verification</div>
+                  <div class="calib-pill-sub" id="chk-wifi-on-sub">Awaiting TV power on</div>
+                </div>
+                <span class="material-symbols-rounded calib-pill-status" id="chk-wifi-on-status">radio_button_unchecked</span>
+                <div class="chk-spinner" style="display:none;"></div>
+              </div>
+            </div>
+
+            <div class="calib-prompt-box" id="wifi-prompt-box">
+              <div class="calib-prompt-main">Turn TV OFF (Standby)</div>
+              <div class="calib-prompt-detail">Use your TV remote to switch it into Standby mode.</div>
+            </div>
+
+            <div class="calib-progress-wrap" id="wifi-progress-container" style="display:none;">
+              <div class="calib-progress-track">
+                <div class="calib-progress-fill" id="wifi-progress-bar"></div>
+              </div>
+              <div class="calib-progress-label" id="wifi-progress-label">Verifying...</div>
+            </div>
+          </div>
+
+          <!-- Step 6 Footer -->
           <div class="wiz-footer">
             <button class="btn-back" onclick="prevStep()">Back</button>
-            <button class="btn-next" id="btn-next-6" onclick="nextStep()" disabled>Next</button>
+            <button class="btn-next" id="btn-next-6" onclick="nextStep()" disabled>Continue to Step 7</button>
           </div>
         </div>
 

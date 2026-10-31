@@ -772,22 +772,19 @@
 
 /* ── View 5C: Subview Layout & Bounded Scrolling ─────────────────────────── */
 
+/* Do NOT set position: relative here so .wiz-footer uses the exact same parent as Step 2 & 5B */
 #step-5-wifi-view {
-    position: relative;
-    display: flex;
-    flex-direction: column;
     height: 100%;
     width: 100%;
-    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Header stays pinned up top */
 #step-5-wifi-view .wiz-header-row {
     flex-shrink: 0;
-    margin-bottom: 4px;
 }
 
-/* Manual IP Probe: Fixed directly above the list */
+/* Manual IP Probe: Fixed height, no extra bottom push */
 #step-5-wifi-view .manual-probe-row {
     display: flex;
     align-items: center;
@@ -835,16 +832,14 @@
     color: var(--on-primary, #1c1b1f);
 }
 
-/* Device List Wrapper: Hard-bounded so items scroll cleanly ABOVE the footer */
+/* Match the exact margin-bottom from line 267 of onboarding.css so footer is untouched */
 #step-5-wifi-view .net-list-wrapper {
     flex: 1;
     min-height: 0;
-    max-height: calc(100vh - 350px); /* Bounded to reserve space for headers + probe row + 60px footer */
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
-    margin-bottom: 90px !important; /* Matches Step 2's footer breathing room */
-    padding-bottom: 12px;
+    margin-bottom: 140px !important; /* Clears both the buttons and the 60px bottom offset */
 }
 
 #step-5-wifi-view .net-list {

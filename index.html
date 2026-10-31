@@ -246,6 +246,91 @@
               <button class="btn-next" id="btn-next-5-wifi" onclick="confirmTvSelectionAndProceed()" disabled>Proceed</button>
             </div>
           </div>
+          <!-- ── View 5D: TV Calibration Subview ───────────────────────────────────── -->
+          <div id="step-5d-calib-view" class="subview" style="display: none;">
+            <!-- Header -->
+            <div class="wiz-header-row">
+              <div class="wiz-badge">Step 5 &bull; Verification</div>
+              <h1 class="wiz-title">Calibrate TV Tracking</h1>
+              <p class="wiz-subtitle">Verify remote-control power detection for <strong id="calib-tv-label">TV1</strong> (<span id="calib-tv-ip">192.168.0.x</span>)</p>
+            </div>
+
+            <!-- Calibration Container -->
+            <div class="calib-wrapper">
+              <!-- Baseline Checking Phase (Buffer Phase) -->
+              <div id="calib-phase-baseline" class="calib-card baseline-card">
+                <div class="calib-pulse-ring">
+                  <span class="material-symbols-rounded calib-main-icon rotating">sync</span>
+                </div>
+                <div class="calib-card-info">
+                  <h3 class="calib-step-title">Fingerprinting TV Power State...</h3>
+                  <p class="calib-step-desc">Connecting to network port to detect current power baseline.</p>
+                </div>
+                <div class="calib-badge status-detecting">Analyzing</div>
+              </div>
+
+              <!-- Active Two-Phase Stepper Container -->
+              <div id="calib-stepper-box" style="display: none;">
+                <!-- Step 1 Card -->
+                <div id="calib-step-1-card" class="calib-card active">
+                  <div class="calib-icon-box">
+                    <span id="calib-step-1-icon" class="material-symbols-rounded">power_settings_new</span>
+                  </div>
+                  <div class="calib-card-info">
+                    <div class="calib-step-count">Action 1 of 2</div>
+                    <h3 id="calib-step-1-title" class="calib-step-title">Turn TV OFF</h3>
+                    <p id="calib-step-1-desc" class="calib-step-desc">Press the Power button on your TV remote to turn the screen off.</p>
+                  </div>
+                  <div id="calib-step-1-badge" class="calib-badge status-waiting">Waiting...</div>
+                </div>
+
+                <!-- Connecting Progress Line -->
+                <div class="calib-connector-line">
+                  <div id="calib-connector-fill" class="calib-connector-fill"></div>
+                </div>
+
+                <!-- Step 2 Card -->
+                <div id="calib-step-2-card" class="calib-card disabled">
+                  <div class="calib-icon-box">
+                    <span id="calib-step-2-icon" class="material-symbols-rounded">tv</span>
+                  </div>
+                  <div class="calib-card-info">
+                    <div class="calib-step-count">Action 2 of 2</div>
+                    <h3 id="calib-step-2-title" class="calib-step-title">Turn TV ON</h3>
+                    <p id="calib-step-2-desc" class="calib-step-desc">Turn the screen back ON to complete bidirectional validation.</p>
+                  </div>
+                  <div id="calib-step-2-badge" class="calib-badge status-pending">Pending</div>
+                </div>
+              </div>
+
+              <!-- Helper Timeout Box (Displays after 35s if user is stuck) -->
+              <div id="calib-help-box" class="calib-help-box" style="display: none;">
+                <span class="material-symbols-rounded">info</span>
+                <span>Taking longer than expected? Ensure you are using the primary TV remote (not the Set-Top Box or Fire TV remote).</span>
+              </div>
+
+              <!-- Success Confirmation Summary Card -->
+              <div id="calib-success-box" class="calib-success-card" style="display: none;">
+                <span class="material-symbols-rounded icon-success">check_circle</span>
+                <div class="success-text-col">
+                  <h3>Calibration Successful</h3>
+                  <p>Both ON and STANDBY transitions were captured. Telemetry pipeline is locked.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer Navigation -->
+            <div class="wiz-footer">
+              <button type="button" class="btn-wiz btn-wiz-back" onclick="cancelCalibrationAndBack()">
+                <span class="material-symbols-rounded">arrow_back</span>
+                <span>Back</span>
+              </button>
+              <button type="button" id="btn-calib-proceed" class="btn-wiz btn-wiz-next" disabled onclick="completeCalibrationAndProceed()">
+                <span>Proceed</span>
+                <span class="material-symbols-rounded">arrow_forward</span>
+              </button>
+            </div>
+          </div>
 
         </div>
 

@@ -770,32 +770,54 @@
     color: var(--text-sub) !important;
 }
 
-/* Manual IP Probe Drawer */
-.manual-probe-row {
+/* ── View 5C: Subview Layout & Bounded Scrolling ─────────────────────────── */
+
+#step-5-wifi-view {
+    position: relative;
     display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Header stays pinned up top */
+#step-5-wifi-view .wiz-header-row {
+    flex-shrink: 0;
+    margin-bottom: 4px;
+}
+
+/* Manual IP Probe: Fixed directly above the list */
+#step-5-wifi-view .manual-probe-row {
+    display: flex;
+    align-items: center;
     gap: 10px;
-    margin-top: 14px;
+    margin: 8px 0 12px 0;
+    flex-shrink: 0;
     width: 100%;
 }
 
-.manual-probe-row input {
+#step-5-wifi-view .manual-probe-row input {
     flex: 1;
+    height: 44px;
     background: var(--bg-surface-container);
     border: 1px solid var(--outline-variant);
     border-radius: 14px;
-    padding: 10px 16px;
+    padding: 0 16px;
     color: var(--text-main);
-    font-size: 14px;
+    font-size: 15px;
+    font-family: inherit;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s ease;
 }
 
-.manual-probe-row input:focus {
+#step-5-wifi-view .manual-probe-row input:focus {
     border-color: var(--primary);
 }
 
-.btn-probe-manual {
-    padding: 10px 20px;
+#step-5-wifi-view .btn-probe-manual {
+    height: 44px;
+    padding: 0 18px;
     background: var(--bg-surface-container-high);
     border: 1px solid var(--outline-variant);
     border-radius: 14px;
@@ -803,83 +825,32 @@
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-probe-manual:active {
-    border-color: var(--primary);
-}
-
-/* ── View 5C: Wi-Fi Discovery Probe & Layout Alignment ─────────────────────── */
-
-#step-5-wifi-view {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-/* Manual Probe Row (Fixed directly above the list) */
-#step-5-wifi-view .manual-probe-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 8px 0 12px 0;
-  flex-shrink: 0;
-}
-
-#step-5-wifi-view .manual-probe-row input {
-  flex: 1;
-  height: 44px;
-  background: var(--bg-surface-container);
-  border: 1px solid var(--outline-variant);
-  border-radius: 14px;
-  padding: 0 16px;
-  color: var(--text-main);
-  font-size: 15px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-#step-5-wifi-view .manual-probe-row input:focus {
-  border-color: var(--primary);
-}
-
-#step-5-wifi-view .btn-probe-manual {
-  height: 44px;
-  padding: 0 18px;
-  background: var(--bg-surface-container-high);
-  border: 1px solid var(--outline-variant);
-  border-radius: 14px;
-  color: var(--text-main);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
+    white-space: nowrap;
+    transition: all 0.2s ease;
 }
 
 #step-5-wifi-view .btn-probe-manual:active {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: var(--on-primary, #1c1b1f);
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--on-primary, #1c1b1f);
 }
 
-/* Scrollable List Container (Buffers space for absolute .wiz-footer) */
+/* Device List Wrapper: Hard-bounded so items scroll cleanly ABOVE the footer */
 #step-5-wifi-view .net-list-wrapper {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  margin-bottom: 120px;
-  padding-bottom: 10px;
+    flex: 1;
+    min-height: 0;
+    max-height: calc(100vh - 350px); /* Bounded to reserve space for headers + probe row + 60px footer */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    margin-bottom: 90px !important; /* Matches Step 2's footer breathing room */
+    padding-bottom: 12px;
 }
 
 #step-5-wifi-view .net-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 /* TV Badges in Network List */

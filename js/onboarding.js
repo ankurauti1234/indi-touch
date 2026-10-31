@@ -354,17 +354,48 @@ export function prevStep() {
     }
 
     if (currentStep === 7) {
-        if (detectionMethod === 'wifi' || detectionMethod === 'skipped') {
-            // Reset any loading or disabled state on the calibration button
+        if (detectionMethod === 'wifi') {
+            // 1. Reset all views inside Step 5
+            const selectView = document.getElementById('step-5-select-view');
+            const bleView = document.getElementById('step-5-ble-view');
+            const wifiView = document.getElementById('step-5-wifi-view');
+            const calibView = document.getElementById('step-5d-calib-view');
+
+            if (selectView) selectView.style.display = 'none';
+            if (bleView) bleView.style.display = 'none';
+            if (calibView) calibView.style.display = 'none';
+            if (wifiView) wifiView.style.display = 'flex'; // Explicitly restore View 5C
+
+            // 2. Clear any lingering selection & disable Proceed
+            selectedTvDevice = null;
+            document.querySelectorAll('#onboard-tv-list .net-item').forEach(i => {
+                i.classList.remove('selected');
+                const icon = i.querySelector('.tv-check-icon');
+                if (icon) icon.innerText = 'radio_button_unchecked';
+            });
+
+            const nextBtn = document.getElementById('btn-next-5-wifi');
+            if (nextBtn) {
+                nextBtn.classList.remove('loading');
+                nextBtn.disabled = true;
+                nextBtn.setAttribute('disabled', 'true');
+            }
+
             const calibBtn = document.getElementById('btn-calib-proceed');
             if (calibBtn) {
                 calibBtn.classList.remove('loading');
             }
-            const wifiNextBtn = document.getElementById('btn-next-5-wifi');
-            if (wifiNextBtn) {
-                wifiNextBtn.classList.remove('loading');
-            }
 
+            // 3. Animate transition from Step 7 back to Step 5
+            animateStep(7, 5);
+            currentStep = 5;
+
+            // 4. Trigger subnet scan or refresh current discovery list
+            startTvSubnetScan();
+            return;
+        }
+
+        if (detectionMethod === 'skipped') {
             animateStep(7, 5);
             currentStep = 5;
             handleStepLogic(currentStep);
@@ -532,14 +563,32 @@ function validateStep(step) {
 }
 
 async function handleStepLogic(step) {
-    if (step === 2) refreshWifi();
+    if (step === 2) {
+        refreshWifi();
+    }
 
-    if (step === 4) startConnectivityPolling();
-    else stopConnectivityPolling();
+    if (step === 4) {
+        startConnectivityPolling();
+    } else {
+        stopConnectivityPolling();
+    }
 
     if (step === 5) {
         if (!detectionMethod) {
             resetStep5Subviews();
+        } else if (detectionMethod === 'wifi') {
+            // Ensure View 5C is visible and refresh the discovery list cleanly
+            const wifiView = document.getElementById('step-5-wifi-view');
+            const calibView = document.getElementById('step-5d-calib-view');
+            const selectView = document.getElementById('step-5-select-view');
+            const bleView = document.getElementById('step-5-ble-view');
+
+            if (selectView) selectView.style.display = 'none';
+            if (bleView) bleView.style.display = 'none';
+            if (calibView) calibView.style.display = 'none';
+            if (wifiView) wifiView.style.display = 'flex';
+
+            startTvSubnetScan();
         }
     }
 
@@ -554,15 +603,22 @@ async function handleStepLogic(step) {
             if (desc) desc.innerText = "Measure baseline electrical loads using the Bluetooth plug.";
             startCalibrationMonitor();
         } else {
+            // Wi-Fi and Skipped flows bypass BLE calibration completely
+            stopCalibrationMonitor();
             animateStep(6, 7);
             currentStep = 7;
-            handleStepLogic(7);
+            await handleStepLogic(7);
+            return;
         }
     } else {
         stopCalibrationMonitor();
     }
 
-    if (step === 9) window.finalizeSetup();
+    if (step === 9) {
+        if (typeof window.finalizeSetup === 'function') {
+            window.finalizeSetup();
+        }
+    }
 }
 
 let connInterval = null;

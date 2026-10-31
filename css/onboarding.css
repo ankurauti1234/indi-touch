@@ -783,7 +783,7 @@
     flex-shrink: 0;
 }
 
-/* Manual IP Probe: Compact touch row */
+/* Manual IP Probe: Compact touch row directly above list */
 #step-5-wifi-view .manual-probe-row {
     display: flex;
     align-items: center;
@@ -835,31 +835,31 @@
 #step-5-wifi-view .net-list-wrapper {
     flex: 1 1 auto;
     min-height: 0;
-    max-height: calc(100vh - 360px); /* Physically caps the list height */
+    max-height: calc(100vh - 410px) !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
-    margin-bottom: 110px !important; /* Preserves clear window for .wiz-footer at bottom: 60px */
+    margin-bottom: 125px !important;
     padding-bottom: 8px;
 }
 
 #step-5-wifi-view .net-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
-/* Compact TV List Item: Single-Line Parallel Row */
+/* Compact TV List Item: Single-Line Parallel Row with Boosted Font */
 .tv-compact-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 42px !important;
-    min-height: 42px !important;
-    padding: 0 14px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 0 16px !important;
     background: var(--bg-surface-container);
     border: 1px solid var(--outline-variant);
-    border-radius: 12px;
+    border-radius: 14px;
     cursor: pointer;
     transition: all 0.15s ease;
 }
@@ -880,31 +880,31 @@
 .tv-item-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     min-width: 0;
     flex: 1;
 }
 
 .tv-item-icon {
-    font-size: 20px !important;
+    font-size: 22px !important;
     color: var(--text-sub);
     flex-shrink: 0;
 }
 
 .tv-compact-item .net-name {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 600;
     color: var(--text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 180px;
+    max-width: 220px;
 }
 
 .tv-brand-badge {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
-    padding: 2px 6px;
+    padding: 3px 8px;
     border-radius: 6px;
     text-transform: uppercase;
     background: rgba(100, 210, 154, 0.15);
@@ -919,23 +919,22 @@
     border-color: transparent;
 }
 
-/* Parallel IP style */
 .tv-ip-inline {
     font-family: monospace;
-    font-size: 12px;
+    font-size: 13.5px;
     color: var(--text-sub);
-    background: rgba(255, 255, 255, 0.04);
-    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 3px 8px;
     border-radius: 6px;
     margin-left: 4px;
     flex-shrink: 0;
 }
 
 .tv-check-icon {
-    font-size: 20px !important;
+    font-size: 22px !important;
     color: var(--text-sub);
     flex-shrink: 0;
-    margin-left: 10px;
+    margin-left: 12px;
 }
 
 .tv-compact-item.selected .tv-check-icon {

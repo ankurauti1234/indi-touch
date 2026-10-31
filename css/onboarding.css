@@ -864,14 +864,49 @@
   color: var(--on-primary, #1c1b1f);
 }
 
-/* Ensure the shared list wrapper takes remaining height and scrolls natively */
+/* Ensure the list scrolls cleanly without overlapping the absolute footer */
 #step-5-wifi-view .net-list-wrapper {
   flex: 1;
   min-height: 0;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
-  margin-bottom: 8px;
+  margin-bottom: 120px; /* Reserves clear breathing room above .wiz-footer */
+  padding-bottom: 10px;
+}
+
+#step-5-wifi-view .manual-probe-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 12px 0;
+  flex-shrink: 0;
+}
+
+#step-5-wifi-view .manual-probe-row input {
+  flex: 1;
+  height: 44px;
+  background: var(--bg-surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: 14px;
+  padding: 0 16px;
+  color: var(--text-main);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+}
+
+#step-5-wifi-view .btn-probe-manual {
+  height: 44px;
+  padding: 0 18px;
+  background: var(--bg-surface-container-high);
+  border: 1px solid var(--outline-variant);
+  border-radius: 14px;
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 #step-5-wifi-view .net-list {

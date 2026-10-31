@@ -249,20 +249,17 @@
 
           <!-- Sub-view 5D: Wi-Fi TV Verification & Calibration -->
           <div id="step-5d-calib-view" class="step-subview" style="display: none;">
-            <div class="wiz-header-row">
+            <!-- Consolidated Header: Instruction updates directly here -->
+            <div class="wiz-header-row calib-header-compact">
               <div class="wiz-header-text">
-                <h2 class="wiz-title">Wi-Fi TV Verification</h2>
-                <p class="wiz-desc">Verify power state detection for <strong id="calib-tv-label">TV1</strong> (<span id="calib-tv-ip">192.168.0.x</span>).</p>
+                <h2 class="wiz-title" id="calib-header-title">Turn the TV OFF (Standby)</h2>
+                <p class="wiz-desc" id="calib-header-desc">
+                  Press power on the remote for <strong id="calib-tv-label">TV1</strong> (<span id="calib-tv-ip">192.168.0.x</span>).
+                </p>
               </div>
             </div>
 
-            <div class="net-list-wrapper">
-              <!-- Prompt Instruction Box -->
-              <div class="calib-prompt-box" id="calib-prompt-box">
-                <div class="calib-prompt-main" id="calib-prompt-title">Turn the TV OFF (Standby)</div>
-                <div class="calib-prompt-detail" id="calib-prompt-desc">Use the TV remote to turn the TV off. We need to verify that network ports close.</div>
-              </div>
-
+            <div class="net-list-wrapper calib-content-body">
               <!-- Verification Check Items -->
               <div class="calib-pill-list">
                 <!-- Check 1: Standby / OFF -->
@@ -274,7 +271,7 @@
                       <span class="calib-pill-sub" id="chk-calib-off-sub">Awaiting Standby (Turn TV OFF)...</span>
                     </div>
                   </div>
-                  <span class="material-symbols-rounded chk-status-icon" id="chk-calib-off-status">radio_button_unchecked</span>
+                  <span class="material-symbols-rounded chk-status-icon" id="chk-calib-off-status">sync</span>
                 </div>
 
                 <!-- Check 2: Active / ON -->
@@ -301,14 +298,14 @@
                 </div>
               </div>
 
-              <!-- Helper Hint (Shown after 30s timeout) -->
+              <!-- Helper Hint (Floats inline if 30s timeout is reached) -->
               <div id="calib-help-box" class="calib-help-row" style="display: none;">
                 <span class="material-symbols-rounded">info</span>
-                <span>Taking longer than expected? Ensure you are using the primary TV remote (not the Set-Top Box or Fire TV remote).</span>
+                <span>Taking longer than expected? Ensure you are using the primary TV remote.</span>
               </div>
             </div>
 
-            <!-- Polished Footer with Standard Onboarding Classes -->
+            <!-- Standard Footer Navigation -->
             <div class="wiz-footer">
               <button type="button" class="btn-back" onclick="cancelCalibrationAndBack()">Back</button>
               <button type="button" class="btn-next" id="btn-calib-proceed" onclick="completeCalibrationAndProceed()" disabled>Proceed</button>

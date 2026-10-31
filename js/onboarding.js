@@ -37,16 +37,10 @@ export function startTvCalibration(device) {
     wifiCalibStage = 'OFF_WAIT';
     calibProvingTicks = 0;
 
-    // Set UI labels
-    const labelEl = document.getElementById('calib-tv-label');
-    const ipEl = document.getElementById('calib-tv-ip');
-    if (labelEl) labelEl.innerText = device.label || 'TV1';
-    if (ipEl) ipEl.innerText = device.ip;
-
-    // Reset UI cards and prompts
+    // Set UI labels & Initial Step Instruction in the main header
     setCalibPrompt(
         "Turn the TV OFF (Standby)",
-        "Press the power button on your TV remote. We will verify that network ports close."
+        `Press power on remote for <strong>${device.label || 'TV1'}</strong> (${device.ip}).`
     );
 
     resetCalibPill('chk-calib-off', 'Awaiting Standby (Turn TV OFF)...', 'power_settings_new');
@@ -171,10 +165,10 @@ function startCalibrationPolling() {
 }
 
 function setCalibPrompt(main, desc) {
-    const titleEl = document.getElementById('calib-prompt-title');
-    const descEl = document.getElementById('calib-prompt-desc');
+    const titleEl = document.getElementById('calib-header-title');
+    const descEl = document.getElementById('calib-header-desc');
     if (titleEl) titleEl.innerText = main;
-    if (descEl) descEl.innerText = desc;
+    if (descEl) descEl.innerHTML = desc;
 }
 
 function resetCalibPill(id, subText, iconName) {

@@ -629,3 +629,46 @@ def calibrate_probe():
         "is_on": tv_is_on,
         "status": status_label
     })
+
+
+@tv_bp.route("/calibrate_finalize", methods=["POST"])
+def calibrate_finalize():
+    """
+    Enforces Single-TV binding:
+    - Retains ONLY the calibrated TV device as 'TV1'.
+    - Deletes all other entries from tv_devices.
+    - Resets daemon state/identity files to only track this device.
+    - Restarts tv-monitor to drop stale polling threads.
+    """
+    data = request.get_json(force=True) or {}
+    device_id = data.get("id")
+
+    if not isinstance(device_id, int):
+        return jsonify({"success": False, "error": "id (int) required"}), 400
+
+    try:
+        with get_conn() as conn:
+            # 1. Ensure this TV is set as TV1
+            conn.execute("UPDATE tv_devices SET label='TV1' WHERE id=?", (device_id,))
+            # 2. Prune all other entries from tv_devices
+            conn.execute("DELETE FROM tv_devices WHERE id != ?", (device_id,))
+            conn.commit()
+
+        # 3. Synchronize tv_monitor state file cleanly
+        import json as _json
+        state_path = "/var/lib/tv_monitor_state.json"
+        identity_path = "/var/lib/tv_monitor_identity.json"
+
+        # Wipe lingering states of other TVs
+        try:
+            with open(state_path, "w") as f:
+                _json.dump({"TV1": "STARTED"}, f)
+        except Exception:
+            pass
+
+        # 4. Notify tv-monitor systemd service to flush background worker sockets
+        subprocess.run(["systemctl", "restart", "tv-monitor.service"], timeout=5)
+
+        return jsonify({"success": True, "message": "Single-TV binding locked"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

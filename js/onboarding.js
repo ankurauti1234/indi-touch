@@ -216,15 +216,58 @@ async function probeTvState(ip, tvType) {
 export function cancelCalibrationAndBack() {
     clearInterval(calibPollTimer);
     clearTimeout(calibTimeoutTimer);
+
+    // 1. Invalidate active selection so stale devices cannot proceed
+    selectedTvDevice = null;
+
+    // 2. Clear visual selections in the list
+    document.querySelectorAll('#onboard-tv-list .net-item').forEach(i => {
+        i.classList.remove('selected');
+        const icon = i.querySelector('.tv-check-icon');
+        if (icon) icon.innerText = 'radio_button_unchecked';
+    });
+
+    // 3. Strictly disable the Proceed button
+    const nextBtn = document.getElementById('btn-next-5-wifi');
+    if (nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.setAttribute('disabled', 'true');
+    }
+
+    // 4. Reset views
     const calibView = document.getElementById('step-5d-calib-view');
     const wifiView = document.getElementById('step-5-wifi-view');
     if (calibView) calibView.style.display = 'none';
     if (wifiView) wifiView.style.display = 'flex';
 }
 
-export function completeCalibrationAndProceed() {
+export async function completeCalibrationAndProceed() {
     clearInterval(calibPollTimer);
     clearTimeout(calibTimeoutTimer);
+
+    const btnProceed = document.getElementById('btn-calib-proceed');
+    if (btnProceed) {
+        btnProceed.disabled = true;
+        btnProceed.classList.add('loading');
+    }
+
+    // Lock single-TV exclusivity on the backend
+    if (calibActiveDevice && calibActiveDevice.id) {
+        try {
+            await fetch('/api/tv/calibrate_finalize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: calibActiveDevice.id })
+            });
+        } catch (e) {
+            console.error("Failed to prune stale TVs:", e);
+        }
+    }
+
+    // Clear state before moving forward
+    selectedTvDevice = null;
+
+    // Advance to Step 7
     animateStep(5, 7);
     currentStep = 7;
     handleStepLogic(currentStep);
@@ -685,6 +728,15 @@ export async function selectPlug(el, mac) {
 export async function startTvSubnetScan() {
     const list = document.getElementById('onboard-tv-list');
     const refreshBtn = document.getElementById('btn-refresh-tv-scan');
+    const nextBtn = document.getElementById('btn-next-5-wifi');
+
+    // Invalidate state immediately upon triggering a scan
+    selectedTvDevice = null;
+    if (nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.setAttribute('disabled', 'true');
+    }
+
     if (!list) return;
 
     list.innerHTML = '<div class="wifi-skeleton">Sweeping local subnet for TVs...</div>';
@@ -731,21 +783,28 @@ function stopTvScanPolling() {
 
 export function renderTvScanResults(candidates) {
     const list = document.getElementById('onboard-tv-list');
+    const countLabel = document.getElementById('tv-scan-count-label');
+    const nextBtn = document.getElementById('btn-next-5-wifi');
+
     if (!list) return;
+
+    // Reset Proceed button state whenever results render
+    if (!selectedTvDevice && nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.setAttribute('disabled', 'true');
+    }
 
     if (!candidates || candidates.length === 0) {
         list.innerHTML = '<div class="wifi-skeleton">No devices found. Ensure TV is ON and on the same Wi-Fi.</div>';
+        if (countLabel) countLabel.innerText = "Discovered Devices (0)";
         return;
     }
 
     list.innerHTML = candidates.map(dev => {
         const isMonitorable = dev.monitorable;
         const devJson = JSON.stringify(dev).replace(/"/g, '&quot;');
-        const isSelected = selectedTvDevice && (
-            (selectedTvDevice.id && selectedTvDevice.id === dev.id) ||
-            (selectedTvDevice.mac && selectedTvDevice.mac === dev.mac) ||
-            (selectedTvDevice.ip === dev.ip)
-        );
+        // Only select if user actively clicked this device during this specific session
+        const isSelected = selectedTvDevice && (selectedTvDevice.ip === dev.ip);
 
         return `
             <div class="net-item tv-compact-item ${isSelected ? 'selected' : ''} ${isMonitorable ? 'monitorable-tv' : 'non-monitorable'}" 

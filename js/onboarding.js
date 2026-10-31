@@ -22,118 +22,60 @@ let onBaselineWatt = null;
 let liveWattPollInterval = null;
 let isCalibRunning = false; // Abort flag for the 30s sampling loop
 
-// ── View 5D: Robust Calibration State Engine ─────────────────────────────────
+// ── View 5D: Robust Sequential Calibration Engine ───────────────────────────
 
 let calibPollTimer = null;
 let calibTimeoutTimer = null;
 let calibActiveDevice = null;
-let calibCurrentPhase = 0;       // 0=Baseline Fingerprint, 1=Action 1, 2=Action 2, 3=Done
-let calibStartingState = null;   // true=ON, false=OFF
-let calibHitCounter = 0;
+let wifiCalibStage = 'OFF_WAIT'; // 'OFF_WAIT' -> 'ON_WAIT' -> 'PROVING_ON' -> 'DONE'
+let calibProvingTicks = 0;
+const REQUIRED_PROVING_TICKS = 7; // ~8-10 seconds of verified consecutive signals
 
-export async function startTvCalibration(device) {
+export function startTvCalibration(device) {
     if (!device) return;
     calibActiveDevice = device;
-    calibCurrentPhase = 0;
-    calibHitCounter = 0;
+    wifiCalibStage = 'OFF_WAIT';
+    calibProvingTicks = 0;
 
-    // Preserve UI Layout & Header values
+    // Set UI labels
     const labelEl = document.getElementById('calib-tv-label');
     const ipEl = document.getElementById('calib-tv-ip');
     if (labelEl) labelEl.innerText = device.label || 'TV1';
     if (ipEl) ipEl.innerText = device.ip;
 
-    // Reset visual cards
-    const basePhase = document.getElementById('calib-phase-baseline');
-    const stepperBox = document.getElementById('calib-stepper-box');
-    const helpBox = document.getElementById('calib-help-box');
-    const succBox = document.getElementById('calib-success-box');
-    const btnProceed = document.getElementById('btn-calib-proceed');
+    // Reset UI cards and prompts
+    setCalibPrompt(
+        "Turn the TV OFF (Standby)",
+        "Press the power button on your TV remote. We will verify that network ports close."
+    );
 
-    if (basePhase) basePhase.style.display = 'flex';
-    if (stepperBox) stepperBox.style.display = 'none';
+    resetCalibPill('chk-calib-off', 'Awaiting Standby (Turn TV OFF)...', 'power_settings_new');
+    resetCalibPill('chk-calib-on', 'Pending prior step', 'tv');
+    markCalibPillRunning('chk-calib-off');
+
+    const prog = document.getElementById('calib-progress-container');
+    if (prog) prog.style.display = 'none';
+
+    const helpBox = document.getElementById('calib-help-box');
     if (helpBox) helpBox.style.display = 'none';
-    if (succBox) succBox.style.display = 'none';
+
+    const btnProceed = document.getElementById('btn-calib-proceed');
     if (btnProceed) btnProceed.disabled = true;
 
-    // Transition view cleanly
+    // Switch view to 5D
     const wifiView = document.getElementById('step-5-wifi-view');
     const calibView = document.getElementById('step-5d-calib-view');
     if (wifiView) wifiView.style.display = 'none';
     if (calibView) calibView.style.display = 'flex';
 
-    // Helper message fallback after 25s
+    // Start 30s timeout reminder
     clearTimeout(calibTimeoutTimer);
     calibTimeoutTimer = setTimeout(() => {
         const hb = document.getElementById('calib-help-box');
-        if (hb && calibCurrentPhase < 3) hb.style.display = 'flex';
-    }, 25000);
+        if (hb && wifiCalibStage !== 'DONE') hb.style.display = 'flex';
+    }, 30000);
 
-    // Initial Baseline Fingerprint: 3 rapid queries (500ms apart)
-    let votes = [];
-    for (let i = 0; i < 3; i++) {
-        const probe = await probeTvState(device.ip, device.tv_type);
-        votes.push(probe.is_on);
-        await new Promise(res => setTimeout(res, 500));
-    }
-
-    // Determine baseline by majority vote
-    const onVotes = votes.filter(v => v === true).length;
-    calibStartingState = onVotes >= 2;
-
-    setupCalibrationSteps(calibStartingState);
-}
-
-function setupCalibrationSteps(isCurrentlyOn) {
-    calibCurrentPhase = 1;
-    calibHitCounter = 0;
-
-    const basePhase = document.getElementById('calib-phase-baseline');
-    const stepperBox = document.getElementById('calib-stepper-box');
-    if (basePhase) basePhase.style.display = 'none';
-    if (stepperBox) stepperBox.style.display = 'block';
-
-    const s1Card = document.getElementById('calib-step-1-card');
-    const s1Title = document.getElementById('calib-step-1-title');
-    const s1Desc = document.getElementById('calib-step-1-desc');
-    const s1Icon = document.getElementById('calib-step-1-icon');
-    const s1Badge = document.getElementById('calib-step-1-badge');
-
-    const s2Card = document.getElementById('calib-step-2-card');
-    const s2Title = document.getElementById('calib-step-2-title');
-    const s2Desc = document.getElementById('calib-step-2-desc');
-    const s2Icon = document.getElementById('calib-step-2-icon');
-    const s2Badge = document.getElementById('calib-step-2-badge');
-
-    // Reset card states
-    if (s1Card) { s1Card.className = 'calib-card active'; }
-    if (s2Card) { s2Card.className = 'calib-card disabled'; }
-    if (s1Badge) { s1Badge.className = 'calib-badge status-waiting'; s1Badge.innerText = 'Waiting...'; }
-    if (s2Badge) { s2Badge.className = 'calib-badge status-pending'; s2Badge.innerText = 'Pending'; }
-
-    const lineFill = document.getElementById('calib-connector-fill');
-    if (lineFill) lineFill.style.height = '0%';
-
-    if (isCurrentlyOn) {
-        // Path A: TV is ON -> Prompt OFF first
-        if (s1Title) s1Title.innerText = "Turn TV OFF";
-        if (s1Desc) s1Desc.innerText = "Press the Power button on your TV remote to put the TV in Standby.";
-        if (s1Icon) s1Icon.innerText = "power_settings_new";
-
-        if (s2Title) s2Title.innerText = "Turn TV Back ON";
-        if (s2Desc) s2Desc.innerText = "Turn the screen back ON to complete bidirectional validation.";
-        if (s2Icon) s2Icon.innerText = "tv";
-    } else {
-        // Path B: TV is OFF -> Prompt ON first
-        if (s1Title) s1Title.innerText = "Turn TV ON";
-        if (s1Desc) s1Desc.innerText = "Press the Power button on your TV remote to power the screen ON.";
-        if (s1Icon) s1Icon.innerText = "tv";
-
-        if (s2Title) s2Title.innerText = "Turn TV Back OFF";
-        if (s2Desc) s2Desc.innerText = "Put the TV back in Standby to complete bidirectional validation.";
-        if (s2Icon) s2Icon.innerText = "power_settings_new";
-    }
-
+    // Start verification polling
     startCalibrationPolling();
 }
 
@@ -141,73 +83,126 @@ function startCalibrationPolling() {
     clearInterval(calibPollTimer);
 
     calibPollTimer = setInterval(async () => {
-        if (!calibActiveDevice || calibCurrentPhase >= 3) return;
+        if (!calibActiveDevice || wifiCalibStage === 'DONE') return;
 
         const res = await probeTvState(calibActiveDevice.ip, calibActiveDevice.tv_type);
         const isTvOn = res.is_on;
 
-        if (calibCurrentPhase === 1) {
-            // Action 1 target: flip from baseline
-            const targetState = !calibStartingState;
-            if (isTvOn === targetState) {
-                calibHitCounter++;
-                if (calibHitCounter >= 1) { // Immediate transition on confirmed state change
-                    onStep1Complete();
-                }
-            } else {
-                calibHitCounter = 0;
+        // Stage 1: Waiting for TV to turn OFF / Standby
+        if (wifiCalibStage === 'OFF_WAIT') {
+            if (!isTvOn) {
+                // TV is now OFF or in Standby!
+                markCalibPillDone('chk-calib-off', 'Verified (Standby / Off)');
+                wifiCalibStage = 'ON_WAIT';
+
+                markCalibPillRunning('chk-calib-on');
+                const onSub = document.getElementById('chk-calib-on-sub');
+                if (onSub) onSub.innerText = 'Awaiting Power (Turn TV ON)...';
+
+                setCalibPrompt(
+                    "Now Turn the TV Back ON",
+                    "Press the power button on your TV remote. We will verify the network port wakes up."
+                );
             }
-        } else if (calibCurrentPhase === 2) {
-            // Action 2 target: return to baseline
-            const targetState = calibStartingState;
-            if (isTvOn === targetState) {
-                calibHitCounter++;
-                if (calibHitCounter >= 1) {
-                    onStep2Complete();
+        }
+        // Stage 2: Waiting for TV to turn back ON
+        else if (wifiCalibStage === 'ON_WAIT') {
+            if (isTvOn) {
+                wifiCalibStage = 'PROVING_ON';
+                calibProvingTicks = 0;
+                const prog = document.getElementById('calib-progress-container');
+                if (prog) prog.style.display = 'flex';
+                setCalibPrompt(
+                    "Confirming Stable Signal...",
+                    "TV detected ON. Verifying continuous network activity..."
+                );
+            }
+        }
+        // Stage 3: Proving buffer (guards against false wakes)
+        else if (wifiCalibStage === 'PROVING_ON') {
+            if (isTvOn) {
+                calibProvingTicks++;
+                const pct = Math.min(100, Math.round((calibProvingTicks / REQUIRED_PROVING_TICKS) * 100));
+
+                const fillEl = document.getElementById('calib-progress-fill');
+                const pctEl = document.getElementById('calib-progress-pct');
+                const lblEl = document.getElementById('calib-progress-label');
+
+                if (fillEl) fillEl.style.width = `${pct}%`;
+                if (pctEl) pctEl.innerText = `${pct}%`;
+                if (lblEl) lblEl.innerText = `Confirming stable signal (${pct}%)...`;
+
+                if (calibProvingTicks >= REQUIRED_PROVING_TICKS) {
+                    wifiCalibStage = 'DONE';
+                    clearInterval(calibPollTimer);
+                    clearTimeout(calibTimeoutTimer);
+
+                    markCalibPillDone('chk-calib-on', 'Verified (Port Responding)');
+                    setCalibPrompt(
+                        "✔ Verification Complete",
+                        "TV lifecycle verified successfully. You can now proceed."
+                    );
+
+                    const prog = document.getElementById('calib-progress-container');
+                    if (prog) prog.style.display = 'none';
+
+                    const helpBox = document.getElementById('calib-help-box');
+                    if (helpBox) helpBox.style.display = 'none';
+
+                    const btnProceed = document.getElementById('btn-calib-proceed');
+                    if (btnProceed) {
+                        btnProceed.disabled = false;
+                        btnProceed.removeAttribute('disabled');
+                    }
                 }
             } else {
-                calibHitCounter = 0;
+                // Port dropped prematurely during proving
+                calibProvingTicks = 0;
+                wifiCalibStage = 'ON_WAIT';
+                const prog = document.getElementById('calib-progress-container');
+                if (prog) prog.style.display = 'none';
+                setCalibPrompt(
+                    "Signal Interrupted",
+                    "Keep TV powered on with screen active."
+                );
             }
         }
     }, 1200);
 }
 
-function onStep1Complete() {
-    calibCurrentPhase = 2;
-    calibHitCounter = 0;
-
-    const s1Card = document.getElementById('calib-step-1-card');
-    const s1Badge = document.getElementById('calib-step-1-badge');
-    const lineFill = document.getElementById('calib-connector-fill');
-    if (s1Card) { s1Card.className = 'calib-card completed'; }
-    if (s1Badge) { s1Badge.className = 'calib-badge status-done'; s1Badge.innerText = 'Detected'; }
-    if (lineFill) lineFill.style.height = '100%';
-
-    const s2Card = document.getElementById('calib-step-2-card');
-    const s2Badge = document.getElementById('calib-step-2-badge');
-    if (s2Card) { s2Card.className = 'calib-card active'; }
-    if (s2Badge) { s2Badge.className = 'calib-badge status-waiting'; s2Badge.innerText = 'Waiting...'; }
+function setCalibPrompt(main, desc) {
+    const titleEl = document.getElementById('calib-prompt-title');
+    const descEl = document.getElementById('calib-prompt-desc');
+    if (titleEl) titleEl.innerText = main;
+    if (descEl) descEl.innerText = desc;
 }
 
-function onStep2Complete() {
-    calibCurrentPhase = 3;
-    clearInterval(calibPollTimer);
-    clearTimeout(calibTimeoutTimer);
+function resetCalibPill(id, subText, iconName) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'calib-pill pending';
+    const sub = document.getElementById(`${id}-sub`);
+    if (sub) sub.innerText = subText;
+    const status = document.getElementById(`${id}-status`);
+    if (status) status.innerText = 'radio_button_unchecked';
+}
 
-    const s2Card = document.getElementById('calib-step-2-card');
-    const s2Badge = document.getElementById('calib-step-2-badge');
-    if (s2Card) { s2Card.className = 'calib-card completed'; }
-    if (s2Badge) { s2Badge.className = 'calib-badge status-done'; s2Badge.innerText = 'Detected'; }
+function markCalibPillRunning(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'calib-pill running';
+    const status = document.getElementById(`${id}-status`);
+    if (status) status.innerText = 'sync';
+}
 
-    const helpBox = document.getElementById('calib-help-box');
-    const succBox = document.getElementById('calib-success-box');
-    const btnProceed = document.getElementById('btn-calib-proceed');
-    if (helpBox) helpBox.style.display = 'none';
-    if (succBox) succBox.style.display = 'flex';
-    if (btnProceed) {
-        btnProceed.disabled = false;
-        btnProceed.removeAttribute('disabled');
-    }
+function markCalibPillDone(id, subText) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'calib-pill done';
+    const sub = document.getElementById(`${id}-sub`);
+    if (sub) sub.innerText = subText;
+    const status = document.getElementById(`${id}-status`);
+    if (status) status.innerText = 'check_circle';
 }
 
 async function probeTvState(ip, tvType) {

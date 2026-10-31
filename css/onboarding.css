@@ -1022,7 +1022,7 @@
     color: var(--text-sub);
 }
 
-/* ── View 5D: TV Calibration Layout ──────────────────────────────────────── */
+/* ── View 5D: TV Calibration & Verification Layout ──────────────────────── */
 
 #step-5d-calib-view {
     height: 100%;
@@ -1035,227 +1035,168 @@
     flex-shrink: 0;
 }
 
-.calib-wrapper {
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: calc(100vh - 380px);
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
-    margin-bottom: 110px !important;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* Common Card Base */
-.calib-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
+/* Prompt Banner Box */
+.calib-prompt-box {
     background: var(--bg-surface-container, #1e293b);
     border: 1px solid var(--outline-variant, rgba(255, 255, 255, 0.12));
-    border-radius: 18px;
-    transition: all 0.25s ease;
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
 }
 
-.calib-card.active {
+.calib-prompt-main {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-main, #f1f5f9);
+    margin-bottom: 4px;
+}
+
+.calib-prompt-detail {
+    font-size: 13.5px;
+    color: var(--text-sub, #94a3b8);
+    line-height: 1.4;
+}
+
+/* Verification Pill Cards */
+.calib-pill-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.calib-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--bg-surface-container, #1e293b);
+    border: 1px solid var(--outline-variant, rgba(255, 255, 255, 0.12));
+    border-radius: 14px;
+    transition: all 0.2s ease;
+}
+
+.calib-pill.pending {
+    opacity: 0.5;
+}
+
+.calib-pill.running {
     border-color: var(--primary, #d0bcff);
     background: rgba(208, 188, 255, 0.08);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
-.calib-card.completed {
+.calib-pill.done {
     border-color: rgba(100, 210, 154, 0.4);
     background: rgba(100, 210, 154, 0.08);
 }
 
-.calib-card.disabled {
-    opacity: 0.45;
-}
-
-/* Icon Container */
-.calib-icon-box {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    background: var(--bg-surface-container-high, #2b3648);
+.calib-pill-left {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.calib-card.active .calib-icon-box {
-    background: var(--primary, #d0bcff);
-    color: #1c1b1f;
-}
-
-.calib-card.completed .calib-icon-box {
-    background: var(--green-border, #64d29a);
-    color: #0b2b1b;
-}
-
-.calib-icon-box .material-symbols-rounded {
-    font-size: 26px !important;
-}
-
-/* Card Content Area */
-.calib-card-info {
-    flex: 1;
+    gap: 14px;
     min-width: 0;
 }
 
-.calib-step-count {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-sub, #94a3b8);
-    margin-bottom: 2px;
-}
-
-.calib-step-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-main, #f1f5f9);
-    margin: 0 0 2px 0;
-}
-
-.calib-step-desc {
-    font-size: 13.5px;
-    color: var(--text-sub, #94a3b8);
-    margin: 0;
-    line-height: 1.35;
-}
-
-/* Badges */
-.calib-badge {
-    font-size: 12px;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 10px;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.status-waiting {
-    background: rgba(208, 188, 255, 0.2);
-    color: var(--primary, #d0bcff);
-    animation: pulse-op 1.5s infinite ease-in-out;
-}
-
-.status-detecting {
-    background: rgba(56, 189, 248, 0.2);
-    color: #38bdf8;
-    animation: pulse-op 1.2s infinite ease-in-out;
-}
-
-.status-done {
-    background: rgba(100, 210, 154, 0.2);
-    color: var(--green-border, #64d29a);
-}
-
-.status-pending {
-    background: rgba(255, 255, 255, 0.05);
+.calib-pill-icon {
+    font-size: 24px !important;
     color: var(--text-sub, #94a3b8);
 }
 
-/* Connecting Step Line */
-.calib-connector-line {
-    width: 2px;
-    height: 18px;
-    background: var(--outline-variant, rgba(255, 255, 255, 0.12));
-    margin-left: 44px;
-    position: relative;
-}
-
-.calib-connector-fill {
-    width: 100%;
-    height: 0%;
-    background: var(--green-border, #64d29a);
-    transition: height 0.4s ease;
-}
-
-/* Baseline Phase Specifics */
-.baseline-card {
-    padding: 24px 20px;
-}
-
-.calib-pulse-ring {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.rotating {
-    animation: spin 1.8s linear infinite;
-    font-size: 32px !important;
+.calib-pill.running .calib-pill-icon {
     color: var(--primary, #d0bcff);
 }
 
-/* Success Card */
-.calib-success-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    background: rgba(100, 210, 154, 0.12);
-    border: 1px solid rgba(100, 210, 154, 0.4);
-    border-radius: 18px;
-    margin-top: 4px;
-}
-
-.calib-success-card .icon-success {
-    font-size: 36px !important;
+.calib-pill.done .calib-pill-icon {
     color: var(--green-border, #64d29a);
-    flex-shrink: 0;
 }
 
-.calib-success-card h3 {
-    font-size: 16px;
+.calib-pill-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.calib-pill-title {
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-main, #f1f5f9);
-    margin: 0 0 2px 0;
 }
 
-.calib-success-card p {
+.calib-pill-sub {
+    font-size: 12.5px;
+    color: var(--text-sub, #94a3b8);
+}
+
+.calib-pill.done .calib-pill-sub {
+    color: var(--green-border, #64d29a);
+}
+
+.chk-status-icon {
+    font-size: 22px !important;
+    color: var(--text-sub, #94a3b8);
+}
+
+.calib-pill.done .chk-status-icon {
+    color: var(--green-border, #64d29a);
+}
+
+.calib-pill.running .chk-status-icon {
+    color: var(--primary, #d0bcff);
+    animation: spin 2s linear infinite;
+}
+
+/* Proving Progress Bar */
+.calib-progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 18px;
+    background: rgba(208, 188, 255, 0.06);
+    border: 1px solid rgba(208, 188, 255, 0.2);
+    border-radius: 14px;
+    margin-bottom: 12px;
+}
+
+.calib-progress-label-row {
+    display: flex;
+    justify-content: space-between;
     font-size: 13px;
-    color: var(--text-sub, #94a3b8);
-    margin: 0;
+    font-weight: 500;
+    color: var(--text-main, #f1f5f9);
+}
+
+.calib-progress-bar-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.calib-progress-bar-fill {
+    height: 100%;
+    background: var(--primary, #d0bcff);
+    border-radius: 8px;
+    transition: width 0.3s ease;
 }
 
 /* Helper Box */
-.calib-help-box {
+.calib-help-row {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
     background: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    border-radius: 14px;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 12px;
     color: #f59e0b;
     font-size: 13px;
     line-height: 1.4;
 }
 
-.calib-help-box .material-symbols-rounded {
+.calib-help-row .material-symbols-rounded {
     font-size: 20px !important;
     flex-shrink: 0;
-}
-
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-@keyframes pulse-op {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
 }
 
 

@@ -217,24 +217,32 @@ export function cancelCalibrationAndBack() {
     clearInterval(calibPollTimer);
     clearTimeout(calibTimeoutTimer);
 
-    // 1. Invalidate active selection so stale devices cannot proceed
+    // 1. Reset Proceed button on calibration screen
+    const calibBtn = document.getElementById('btn-calib-proceed');
+    if (calibBtn) {
+        calibBtn.classList.remove('loading');
+        calibBtn.disabled = true;
+    }
+
+    // 2. Invalidate active selection so stale devices cannot proceed
     selectedTvDevice = null;
 
-    // 2. Clear visual selections in the list
+    // 3. Clear visual selections in the list
     document.querySelectorAll('#onboard-tv-list .net-item').forEach(i => {
         i.classList.remove('selected');
         const icon = i.querySelector('.tv-check-icon');
         if (icon) icon.innerText = 'radio_button_unchecked';
     });
 
-    // 3. Strictly disable the Proceed button
+    // 4. Strictly disable the View 5C Proceed button
     const nextBtn = document.getElementById('btn-next-5-wifi');
     if (nextBtn) {
+        nextBtn.classList.remove('loading');
         nextBtn.disabled = true;
         nextBtn.setAttribute('disabled', 'true');
     }
 
-    // 4. Reset views
+    // 5. Reset views
     const calibView = document.getElementById('step-5d-calib-view');
     const wifiView = document.getElementById('step-5-wifi-view');
     if (calibView) calibView.style.display = 'none';
@@ -247,27 +255,28 @@ export async function completeCalibrationAndProceed() {
 
     const btnProceed = document.getElementById('btn-calib-proceed');
     if (btnProceed) {
-        btnProceed.disabled = true;
         btnProceed.classList.add('loading');
+        btnProceed.disabled = true;
     }
 
-    // Lock single-TV exclusivity on the backend
-    if (calibActiveDevice && calibActiveDevice.id) {
-        try {
+    try {
+        if (calibActiveDevice && calibActiveDevice.id) {
             await fetch('/api/tv/calibrate_finalize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: calibActiveDevice.id })
             });
-        } catch (e) {
-            console.error("Failed to prune stale TVs:", e);
+        }
+    } catch (e) {
+        console.error("Failed to prune stale TVs:", e);
+    } finally {
+        // ALWAYS remove the loading state once the backend call finishes
+        if (btnProceed) {
+            btnProceed.classList.remove('loading');
         }
     }
 
-    // Clear state before moving forward
-    selectedTvDevice = null;
-
-    // Advance to Step 7
+    // Advance to Step 7 (HHID Page)
     animateStep(5, 7);
     currentStep = 7;
     handleStepLogic(currentStep);
@@ -346,6 +355,16 @@ export function prevStep() {
 
     if (currentStep === 7) {
         if (detectionMethod === 'wifi' || detectionMethod === 'skipped') {
+            // Reset any loading or disabled state on the calibration button
+            const calibBtn = document.getElementById('btn-calib-proceed');
+            if (calibBtn) {
+                calibBtn.classList.remove('loading');
+            }
+            const wifiNextBtn = document.getElementById('btn-next-5-wifi');
+            if (wifiNextBtn) {
+                wifiNextBtn.classList.remove('loading');
+            }
+
             animateStep(7, 5);
             currentStep = 5;
             handleStepLogic(currentStep);

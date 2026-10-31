@@ -637,8 +637,8 @@ def calibrate_finalize():
     Enforces Single-TV binding:
     - Retains ONLY the calibrated TV device as 'TV1'.
     - Deletes all other entries from tv_devices.
-    - Resets daemon state/identity files to only track this device.
-    - Restarts tv-monitor to drop stale polling threads.
+    - Synchronizes daemon state and identity files for TV1.
+    - Asynchronously restarts tv-monitor to drop stale polling threads without blocking the UI.
     """
     data = request.get_json(force=True) or {}
     device_id = data.get("id")
@@ -647,28 +647,40 @@ def calibrate_finalize():
         return jsonify({"success": False, "error": "id (int) required"}), 400
 
     try:
+        tv_mac = None
         with get_conn() as conn:
-            # 1. Ensure this TV is set as TV1
+            # 1. Fetch MAC address to sync identity cleanly before pruning[cite: 1]
+            row = conn.execute("SELECT mac FROM tv_devices WHERE id=?", (device_id,)).fetchone()
+            if row:
+                tv_mac = row[0]
+
+            # 2. Assign TV1 and prune all other rows[cite: 1]
             conn.execute("UPDATE tv_devices SET label='TV1' WHERE id=?", (device_id,))
-            # 2. Prune all other entries from tv_devices
             conn.execute("DELETE FROM tv_devices WHERE id != ?", (device_id,))
             conn.commit()
 
-        # 3. Synchronize tv_monitor state file cleanly
+        # 3. Synchronize tv_monitor state and identity files cleanly
         import json as _json
         state_path = "/var/lib/tv_monitor_state.json"
         identity_path = "/var/lib/tv_monitor_identity.json"
 
-        # Wipe lingering states of other TVs
         try:
             with open(state_path, "w") as f:
                 _json.dump({"TV1": "STARTED"}, f)
         except Exception:
             pass
 
-        # 4. Notify tv-monitor systemd service to flush background worker sockets
-        subprocess.run(["systemctl", "restart", "tv-monitor.service"], timeout=5)
+        if tv_mac:
+            try:
+                with open(identity_path, "w") as f:
+                    _json.dump({"TV1": tv_mac}, f)
+            except Exception:
+                pass
+
+        # 4. Asynchronous restart: fires off systemctl without blocking the Flask response
+        subprocess.Popen(["systemctl", "restart", "tv-monitor.service"])
 
         return jsonify({"success": True, "message": "Single-TV binding locked"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+

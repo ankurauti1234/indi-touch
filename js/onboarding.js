@@ -559,23 +559,17 @@ export function renderTvScanResults(candidates) {
         );
 
         return `
-            <div class="net-item ${isSelected ? 'selected' : ''} ${isMonitorable ? 'monitorable-tv' : 'non-monitorable'}" 
+            <div class="net-item tv-compact-item ${isSelected ? 'selected' : ''} ${isMonitorable ? 'monitorable-tv' : 'non-monitorable'}" 
                  onclick="selectTvDevice(this, ${devJson})">
-                <div class="net-signal">
-                    <span class="material-symbols-rounded">${isMonitorable ? 'tv' : 'devices_other'}</span>
-                    <div style="display:flex; flex-direction:column; gap:2px;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="net-name">${dev.model || (isMonitorable ? 'Smart TV' : 'Network Device')}</span>
-                            <span class="tv-badge-pill ${isMonitorable ? 'verified' : 'other'}">
-                                ${isMonitorable ? (dev.tv_type || 'TV') : 'Other'}
-                            </span>
-                        </div>
-                        <span style="font-size:12px; color:#94a3b8; font-family:monospace;">
-                            ${dev.ip} ${dev.mac ? `• ${dev.mac}` : ''}
-                        </span>
-                    </div>
+                <div class="tv-item-left">
+                    <span class="material-symbols-rounded tv-item-icon">${isMonitorable ? 'tv' : 'devices_other'}</span>
+                    <span class="net-name">${dev.model || (isMonitorable ? 'Smart TV' : 'Network Device')}</span>
+                    <span class="tv-brand-badge ${isMonitorable ? 'brand-known' : 'brand-generic'}">
+                        ${isMonitorable ? (dev.tv_type || 'TV') : 'Other'}
+                    </span>
+                    <span class="tv-ip-inline">${dev.ip}</span>
                 </div>
-                <span class="material-symbols-rounded" style="color: ${isSelected ? '#3b82f6' : '#64748b'};">
+                <span class="material-symbols-rounded tv-check-icon">
                     ${isSelected ? 'check_circle' : 'radio_button_unchecked'}
                 </span>
             </div>

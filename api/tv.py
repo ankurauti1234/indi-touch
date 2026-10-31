@@ -592,49 +592,40 @@ def verify_poll():
 
 @tv_bp.route("/calibrate_probe", methods=["POST"])
 def calibrate_probe():
-    """
-    Fast TV state probe for onboarding calibration.
-    Returns:
-      is_on: True if port is open AND screen is not in standby.
-      status: 'ON', 'STANDBY', or 'OFF'.
-    """
     data = request.get_json(force=True) or {}
     ip = (data.get("ip") or "").strip()
-    tv_type = (data.get("tv_type") or "").strip().lower()
 
     if not ip:
         return jsonify({"success": False, "error": "IP is required"}), 400
 
-    # Determine primary port for this brand
-    port = BRAND_PRIMARY_PORT.get(tv_type)
-    if not port:
-        # Fallback to inspecting common TV ports
-        open_ports = [p for p in [8001, 3000, 5555, 8008, 8060] if _tcp_open(ip, p)]
-        port = open_ports[0] if open_ports else 8001
+    # 1. Use the original 16-port classifier already in tv.py
+    tv_type, open_ports = _classify_by_ports(ip)
 
-    is_open = _tcp_open(ip, port)
     is_standby = False
 
-    # Deep check for Samsung Tizen API
-    if tv_type == "samsung" and is_open:
+    # 2. If it's a Samsung TV with port 8001/8002 open, check if it's in standby
+    if tv_type == "samsung" and (8001 in open_ports or 8002 in open_ports):
         try:
-            r = requests.get(f"http://{ip}:8001/api/v2/", timeout=1.0)
+            r = requests.get(f"http://{ip}:8001/api/v2/", timeout=0.8)
             if r.status_code == 200:
-                dev = r.json().get("device", {})
-                power_state = str(dev.get("PowerState", "")).lower()
-                if power_state in ("standby", "off"):
+                data = r.json()
+                dev = data.get("device", data)
+                # Check standby state from Samsung device info
+                p_state = str(dev.get("powerState") or dev.get("PowerState") or "").strip().lower()
+                if p_state in ["standby", "off"]:
                     is_standby = True
         except Exception:
             pass
 
-    tv_is_on = bool(is_open and not is_standby)
-    raw_status = "ON" if tv_is_on else ("STANDBY" if is_standby else "OFF")
+    # Active means at least one monitorable TV port is open AND it is not reporting standby
+    tv_is_on = bool(tv_type is not None and not is_standby)
+    status_label = "ON" if tv_is_on else ("STANDBY" if is_standby else "OFF")
 
     return jsonify({
         "success": True,
         "ip": ip,
         "tv_type": tv_type,
-        "port": port,
+        "open_ports": open_ports,
         "is_on": tv_is_on,
-        "status": raw_status
+        "status": status_label
     })

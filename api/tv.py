@@ -598,28 +598,57 @@ def calibrate_probe():
     if not ip:
         return jsonify({"success": False, "error": "IP is required"}), 400
 
-    # 1. Use the original 16-port classifier already in tv.py
-    tv_type, open_ports = _classify_by_ports(ip)
+    # 1. Multi-attempt port probe to absorb network latency / dropped packets
+    open_ports = []
+    tv_type = None
+    for _ in range(2):
+        tv_type, open_ports = _classify_by_ports(ip)
+        if open_ports:
+            break
+        time.sleep(0.3)
 
     is_standby = False
 
-    # 2. If it's a Samsung TV with port 8001/8002 open, check if it's in standby
+    # 2. Samsung-specific standby inspection
     if tv_type == "samsung" and (8001 in open_ports or 8002 in open_ports):
         try:
-            r = requests.get(f"http://{ip}:8001/api/v2/", timeout=0.8)
+            r = requests.get(f"http://{ip}:8001/api/v2/", timeout=2.0)
             if r.status_code == 200:
-                data = r.json()
-                dev = data.get("device", data)
-                # Check standby state from Samsung device info
+                resp_data = r.json()
+                dev = resp_data.get("device", resp_data)
                 p_state = str(dev.get("powerState") or dev.get("PowerState") or "").strip().lower()
                 if p_state in ["standby", "off"]:
                     is_standby = True
         except Exception:
             pass
 
-    # Active means at least one monitorable TV port is open AND it is not reporting standby
-    tv_is_on = bool(tv_type is not None and not is_standby)
-    status_label = "ON" if tv_is_on else ("STANDBY" if is_standby else "OFF")
+    # 3. If ports closed, verify with ICMP ping before declaring OFF
+    ping_alive = False
+    if not open_ports:
+        try:
+            res = subprocess.run(
+                ["ping", "-c", "1", "-W", "1", ip],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=2,
+            )
+            ping_alive = (res.returncode == 0)
+        except Exception:
+            ping_alive = False
+
+    # Evaluation logic:
+    # - Port open and not reporting standby -> ON
+    # - Samsung reporting standby, or port closed but ping succeeds -> STANDBY
+    # - Port closed AND ping dead -> OFF
+    if open_ports and not is_standby:
+        tv_is_on = True
+        status_label = "ON"
+    elif is_standby or (not open_ports and ping_alive):
+        tv_is_on = False
+        status_label = "STANDBY"
+    else:
+        tv_is_on = False
+        status_label = "OFF"
 
     return jsonify({
         "success": True,
@@ -629,6 +658,7 @@ def calibrate_probe():
         "is_on": tv_is_on,
         "status": status_label
     })
+
 
 
 @tv_bp.route("/calibrate_finalize", methods=["POST"])

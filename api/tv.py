@@ -589,44 +589,96 @@ def verify_poll():
     })
 
 # ── Calibration Probe Route ───────────────────────────────────────────────────
+_CALIBRATION_OFF_TIMERS = {}
+_REQUIRED_OFF_DURATION = 4.0  # Seconds the TV must stay continuously off/standby
+
+
 @tv_bp.route("/calibrate_probe", methods=["POST"])
 def calibrate_probe():
+    global _CALIBRATION_OFF_TIMERS
+
     data = request.get_json(force=True) or {}
     ip = (data.get("ip") or "").strip()
 
     if not ip:
         return jsonify({"success": False, "error": "IP is required"}), 400
 
-    # 1. Use the original 16-port classifier already in tv.py
     tv_type, open_ports = _classify_by_ports(ip)
-
+    is_actively_on = False
     is_standby = False
 
-    # 2. If it's a Samsung TV with port 8001/8002 open, check if it's in standby
-    if tv_type == "samsung" and (8001 in open_ports or 8002 in open_ports):
-        try:
-            r = requests.get(f"http://{ip}:8001/api/v2/", timeout=0.8)
-            if r.status_code == 200:
-                data = r.json()
-                dev = data.get("device", data)
-                # Check standby state from Samsung device info
-                p_state = str(dev.get("powerState") or dev.get("PowerState") or "").strip().lower()
-                if p_state in ["standby", "off"]:
-                    is_standby = True
-        except Exception:
-            pass
+    # Check active state
+    if open_ports:
+        if tv_type == "samsung" and (8001 in open_ports or 8002 in open_ports):
+            try:
+                r = requests.get(f"http://{ip}:8001/api/v2/", timeout=1.5)
+                if r.status_code == 200:
+                    dev = r.json().get("device", r.json())
+                    p_state = str(dev.get("powerState") or dev.get("PowerState") or "").strip().lower()
+                    if p_state in ["standby", "off"]:
+                        is_standby = True
+                    else:
+                        is_actively_on = True
+                else:
+                    # Open port, answered HTTP -> screen is still active
+                    is_actively_on = True
+            except Exception:
+                # Port 8001 open but request timed out -> assume active, do not trip false OFF
+                is_actively_on = True
+        else:
+            # Other TV brands with open monitorable ports
+            is_actively_on = True
 
-    # Active means at least one monitorable TV port is open AND it is not reporting standby
-    tv_is_on = bool(tv_type is not None and not is_standby)
-    status_label = "ON" if tv_is_on else ("STANDBY" if is_standby else "OFF")
+    now = time.time()
 
+    # 1. TV is active and confirmed ON
+    if is_actively_on:
+        # Clear any pending timer
+        _CALIBRATION_OFF_TIMERS.pop(ip, None)
+        return jsonify({
+            "success": True,
+            "ip": ip,
+            "tv_type": tv_type,
+            "open_ports": open_ports,
+            "is_on": True,
+            "status": "ON"
+        })
+
+    # 2. TV appears OFF or STANDBY
+    # If this is the first time it failed, start the timer and report ON
+    if ip not in _CALIBRATION_OFF_TIMERS:
+        _CALIBRATION_OFF_TIMERS[ip] = now
+        return jsonify({
+            "success": True,
+            "ip": ip,
+            "tv_type": tv_type,
+            "open_ports": open_ports,
+            "is_on": True,
+            "status": "ON"
+        })
+
+    # Check how long it has been continuously off/standby
+    elapsed = now - _CALIBRATION_OFF_TIMERS[ip]
+    if elapsed >= _REQUIRED_OFF_DURATION:
+        # Confirmed: TV has been consistently off/standby for >= 4 seconds
+        status_label = "STANDBY" if is_standby else "OFF"
+        return jsonify({
+            "success": True,
+            "ip": ip,
+            "tv_type": tv_type,
+            "open_ports": open_ports,
+            "is_on": False,
+            "status": status_label
+        })
+
+    # Still inside the 4-second confirmation window -> Hold as ON
     return jsonify({
         "success": True,
         "ip": ip,
         "tv_type": tv_type,
         "open_ports": open_ports,
-        "is_on": tv_is_on,
-        "status": status_label
+        "is_on": True,
+        "status": "ON"
     })
 
 

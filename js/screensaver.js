@@ -1,5 +1,13 @@
 import { config, memberData, tvState, getAvatarUrl } from './data.js';
 
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+});
+let lastDateDay = -1;
+let cachedDateStr = '';
+
 let idleTimer;
 
 export function resetIdle(isPriority = false) {
@@ -10,6 +18,7 @@ export function resetIdle(isPriority = false) {
     s.classList.remove('active');
     document.body.classList.remove('screensaver-active'); // <-- ESSENTIAL FIX
     clearTimeout(idleTimer);
+    stopClock();
 
     // Disable screensaver only during ACTIVE onboarding
     if (!config.onboardingCompleted) {
@@ -41,6 +50,7 @@ export function resetIdle(isPriority = false) {
             // Reveal smoothly in next frame
             requestAnimationFrame(() => {
                 s.classList.add('active');
+                startClock();
             });
         }
     }, timeout);
@@ -51,6 +61,21 @@ window.setScreensaverTimeout = (ms) => {
     resetIdle();
 };
 
+let clockTimer = null;
+
+export function startClock() {
+    if (clockTimer) return;
+    updateClock();
+    clockTimer = setInterval(updateClock, 1000);
+}
+
+export function stopClock() {
+    if (clockTimer) {
+        clearInterval(clockTimer);
+        clockTimer = null;
+    }
+}
+
 export function updateClock() {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
@@ -60,8 +85,15 @@ export function updateClock() {
     const digits = document.getElementById('clock-time-digits');
     const secsEl = document.getElementById('clock-time-secs');
 
-    if (digits) digits.textContent = `${hours}:${mins}`;
-    if (secsEl) secsEl.textContent = secs;
+    if (digits) {
+        const currentHhmm = `${hours}:${mins}`;
+        if (digits.textContent !== currentHhmm) {
+            digits.textContent = currentHhmm;
+        }
+    }
+    if (secsEl) {
+        secsEl.textContent = secs;
+    }
 
     const clock = document.getElementById('clock-time');
     if (clock) {
@@ -69,9 +101,13 @@ export function updateClock() {
         else clock.classList.remove('massive');
     }
 
-    const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const dateEl = document.getElementById('clock-date');
-    if (dateEl) dateEl.innerText = dateStr;
+    const todayDay = now.getDate();
+    if (todayDay !== lastDateDay) {
+        cachedDateStr = dateFormatter.format(now);
+        lastDateDay = todayDay;
+        const dateEl = document.getElementById('clock-date');
+        if (dateEl) dateEl.textContent = cachedDateStr;
+    }
 }
 
 // OpenWeatherMap Integration

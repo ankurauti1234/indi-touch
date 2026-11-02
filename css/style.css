@@ -41,6 +41,18 @@ body.remote-mode * {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    backdrop-filter: none !important;
+    filter: none !important;
+    will-change: auto !important;
+}
+
+/* Ensure inactive cards strictly retain their grayscale appearance */
+.reduce-animations .member-card.inactive {
+    filter: grayscale(80%) brightness(0.85) !important;
+}
+
+.reduce-animations .member-card.local-avatar.inactive {
+    filter: grayscale(80%) brightness(0.8) !important;
 }
 
 /* Remote Focus ring — used for full-UI navigation in remote mode */
@@ -1320,8 +1332,6 @@ body.light-mode .input-box.remoteFocused {
             transparent 46%),
         rgba(5, 5, 8, 0.80);
 
-    backdrop-filter: blur(16px);
-
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -1587,15 +1597,6 @@ body.osk-open .main-stage {
 }
 
 /* SEVERITY COLORS */
-/* Performance Mode: Reduce Animations */
-.reduce-animations *,
-.reduce-animations *::before,
-.reduce-animations *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-}
 
 :root {
     --sev-info: #D0BCFF;
@@ -1657,22 +1658,24 @@ body.osk-open .main-stage {
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.35s ease;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
     color: #fff;
     padding: 20px 24px 24px;
     text-align: center;
-    border-radius: 42px;
     overflow: hidden;
-    transform: translateZ(0);
+    transform: scale(1.02) translateZ(0);
     backface-visibility: hidden;
-    will-change: opacity;
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out, visibility 0s linear 0.6s !important;
 }
 
 #screensaver.active {
-    opacity: 1;
-    pointer-events: auto;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: scale(1) translateZ(0);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out, visibility 0s linear 0s !important;
 }
 
 #screensaver.center-clock {
@@ -2600,13 +2603,6 @@ body.osk-open .nav-rail {
     align-self: flex-start;
 }
 
-/* 5. Screensaver layering */
-#screensaver.active {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 2147483647 !important;
-}
-
 /* 6. Hide OSK immediately whenever screensaver is active */
 body.screensaver-active #osk-container {
     display: none !important;
@@ -2615,9 +2611,14 @@ body.screensaver-active #osk-container {
     pointer-events: none !important;
 }
 
-/* 7. Ensure screensaver viewport stays strictly 600px high even if osk-open is active */
-body.osk-open #screensaver,
-#screensaver {
+/* 7. Clamp screensaver viewport to 600px only when OSK is open */
+body.osk-open #screensaver {
     height: 600px !important;
     max-height: 600px !important;
+    bottom: auto !important;
+}
+
+/* 8. Ensure screensaver ALWAYS transitions smoothly regardless of reduce-animations setting */
+.reduce-animations #screensaver {
+    transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1), transform 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }

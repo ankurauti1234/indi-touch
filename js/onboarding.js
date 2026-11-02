@@ -901,8 +901,17 @@ export function renderTvScanResults(candidates) {
 }
 
 export function selectTvDevice(el, device) {
-    document.querySelectorAll('#onboard-tv-list .net-item').forEach(i => i.classList.remove('selected'));
+    // 1. Reset all items and their circle icons
+    document.querySelectorAll('#onboard-tv-list .net-item').forEach(i => {
+        i.classList.remove('selected');
+        const icon = i.querySelector('.tv-check-icon');
+        if (icon) icon.innerText = 'radio_button_unchecked';
+    });
+
+    // 2. Select clicked row and activate circle icon
     el.classList.add('selected');
+    const activeIcon = el.querySelector('.tv-check-icon');
+    if (activeIcon) activeIcon.innerText = 'check_circle';
 
     selectedTvDevice = device;
     const nextBtn = document.getElementById('btn-next-5-wifi');

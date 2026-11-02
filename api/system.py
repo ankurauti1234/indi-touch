@@ -4,12 +4,70 @@
 import os
 import subprocess
 import socket
+import time
+import threading
 
 from flask import Blueprint, jsonify, request
 
 from .config import SYSTEM_FILES, METER_ID
 
 system_bp = Blueprint("system", __name__)
+
+# ── Wi-Fi status caching (30s TTL) ────────────────────────────────────────────
+_wifi_status_cache = None
+_wifi_status_timestamp = 0.0
+_wifi_status_lock = threading.Lock()
+_WIFI_CACHE_TTL = 30.0  # seconds
+
+
+def get_wifi_connected() -> bool:
+    """Return cached wlan0 connection state; refresh via nmcli every 30s."""
+    global _wifi_status_cache, _wifi_status_timestamp
+
+    now = time.time()
+    # Fast path: valid fresh cache (lock-free read)
+    if _wifi_status_cache is not None and (now - _wifi_status_timestamp) < _WIFI_CACHE_TTL:
+        return _wifi_status_cache
+
+    # If another thread is actively refreshing, serve stale cache if available
+    if not _wifi_status_lock.acquire(blocking=False):
+        if _wifi_status_cache is not None:
+            return _wifi_status_cache
+        # Cold boot: wait for the active refresh to finish
+        _wifi_status_lock.acquire(blocking=True)
+
+    try:
+        now = time.time()
+        # Double-check: another thread might have updated while we waited
+        if _wifi_status_cache is not None and (now - _wifi_status_timestamp) < _WIFI_CACHE_TTL:
+            return _wifi_status_cache
+
+        wifi_ok = False
+        try:
+            r = subprocess.run(
+                ["nmcli", "-t", "-g", "GENERAL.STATE", "device", "show", "wlan0"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+            if "connected" in r.stdout.lower():
+                wifi_ok = True
+        except Exception:
+            wifi_ok = os.path.exists(SYSTEM_FILES.get("wifi_up", "/run/wifi_up"))
+
+        _wifi_status_cache = wifi_ok
+        _wifi_status_timestamp = now
+        return _wifi_status_cache
+    finally:
+        _wifi_status_lock.release()
+
+
+def invalidate_wifi_cache():
+    """Invalidates the 30-second WiFi status cache immediately."""
+    global _wifi_status_cache, _wifi_status_timestamp
+    with _wifi_status_lock:
+        _wifi_status_cache = None
+        _wifi_status_timestamp = 0.0
 
 # Common RPi backlight paths
 BACKLIGHT_PATHS = [
@@ -71,15 +129,7 @@ def get_mac_address():
 @system_bp.route("/status", methods=["GET"])
 def system_status():
     """Unified status of all /run file indicators + network info."""
-    # Robust WiFi check: check if wlan0 is actually connected via nmcli
-    wifi_ok = False
-    try:
-        r = subprocess.run(["nmcli", "-t", "-g", "GENERAL.STATE", "device", "show", "wlan0"], 
-                           capture_output=True, text=True, timeout=2)
-        if "connected" in r.stdout.lower():
-            wifi_ok = True
-    except:
-        wifi_ok = os.path.exists(SYSTEM_FILES["wifi_up"])
+    wifi_ok = get_wifi_connected()
 
     ble_available = os.path.exists(SYSTEM_FILES["bluetooth_available"])
     tv_on = True
@@ -90,7 +140,7 @@ def system_status():
                 with open(SYSTEM_FILES["tv_status"], "r") as f:
                     tv_state = f.read().strip().upper()
                     tv_on = (tv_state == "ON")
-            except:
+            except Exception:
                 tv_on = False
         else:
             tv_on = False
@@ -103,7 +153,7 @@ def system_status():
             import json
             with open(sw_version_path, "r") as f:
                 sw_versions = json.load(f)
-        except:
+        except Exception:
             pass
 
     return jsonify({

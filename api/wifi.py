@@ -10,6 +10,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 
 from .config import SYSTEM_FILES
+from api.system import invalidate_wifi_cache
 
 wifi_bp = Blueprint("wifi", __name__)
 
@@ -151,6 +152,8 @@ def wifi_connect():
     except Exception:
         pass
 
+    invalidate_wifi_cache()
+
     print(f"[WiFi] Connected to {ssid}")
     return jsonify({"success": True, "ssid": ssid})
 
@@ -159,4 +162,6 @@ def wifi_connect():
 @wifi_bp.route("/disconnect", methods=["POST"])
 def wifi_disconnect():
     ok, _ = _run(["sudo", "nmcli", "device", "disconnect", "wlan0"])
+    if ok:
+        invalidate_wifi_cache()
     return jsonify({"success": ok})

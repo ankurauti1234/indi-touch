@@ -43,6 +43,8 @@ def create_app() -> Flask:
     app.register_blueprint(wallpaper_bp,  url_prefix="/api/wallpaper")
 
     # ── Serve frontend ─────────────────────────────────────────────────────────
+    STATIC_DIRS = {"css", "js", "assets", "fonts", "lang"}
+
     @app.route("/")
     def index():
         return send_from_directory(root, "index.html")
@@ -53,10 +55,19 @@ def create_app() -> Flask:
 
     @app.route("/<path:path>")
     def static_files(path):
-        # Block access to hidden files/directories such as .git, .env, .vscode, etc.
+        # Block dotfiles/hidden paths
         if any(part.startswith(".") for part in path.split("/")):
             abort(404)
 
-        return send_from_directory(root, path)
+        # Allow root index.html
+        if path == "index.html":
+            return send_from_directory(root, "index.html")
+
+        # Allow only specified static directories
+        top = path.split("/", 1)[0]
+        if top in STATIC_DIRS:
+            return send_from_directory(root, path)
+
+        abort(404)
 
     return app

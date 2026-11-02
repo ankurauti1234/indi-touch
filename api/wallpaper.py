@@ -9,6 +9,9 @@ from PIL import Image, ImageOps
 from flask import Blueprint, jsonify, request, send_from_directory, send_file
 from .config import WALLPAPER_DIR, AVATAR_DIR
 from .db import load_members_data, update_member_offline_avatar
+import re
+
+MEMBER_CODE_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
 wallpaper_bp = Blueprint("wallpaper", __name__)
 
@@ -67,7 +70,7 @@ def wallpaper_status():
         ext = os.path.splitext(wp)[1]
         return jsonify({
             "hasWallpaper": True,
-            "url": f"/api/wallpaper/image?t={int(os.path.getmtime(wp))}",
+            "url": f"/api/wallpaper/image?t={os.stat(wp).st_mtime_ns}",
             "sizeKB": size_kb,
             "ext": ext
         })
@@ -80,7 +83,9 @@ def wallpaper_image():
     wp = _get_current_wallpaper()
     if not wp:
         return jsonify({"error": "No wallpaper set"}), 404
-    return send_from_directory(WALLPAPER_DIR, os.path.basename(wp))
+    resp = send_from_directory(WALLPAPER_DIR, os.path.basename(wp))
+    resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return resp
 
 
 # ── POST /api/wallpaper/upload ────────────────────────────────────────────────
@@ -120,7 +125,7 @@ def wallpaper_upload():
         size_kb = round(os.path.getsize(dest) / 1024, 1)
         print(f"[WALLPAPER] Optimized: {size_kb}KB")
 
-        return jsonify({"success": True, "url": f"/api/wallpaper/image?t={int(os.path.getmtime(dest))}"})
+        return jsonify({"success": True, "url": f"/api/wallpaper/image?t={os.stat(dest).st_mtime_ns}"})
 
     except Exception as e:
         print(f"[WALLPAPER] Upload error: {e}")
@@ -158,8 +163,8 @@ def upload_avatar():
         return jsonify({"success": False, "error": "No file provided"}), 400
     
     member_code = request.form.get("member_code")
-    if not member_code:
-        return jsonify({"success": False, "error": "Member code required"}), 400
+    if not member_code or not MEMBER_CODE_RE.match(member_code):
+        return jsonify({"success": False, "error": "Invalid or missing member code"}), 400
 
     file = request.files["file"]
     if not file.filename:
@@ -200,7 +205,7 @@ def upload_avatar():
 
         return jsonify({
             "success": True, 
-            "url": f"/api/wallpaper/avatar_image?code={member_code}&t={int(os.path.getmtime(dest))}",
+            "url": f"/api/wallpaper/avatar_image?code={member_code}&t={os.stat(dest).st_mtime_ns}",
             "sizeKB": size_kb
         })
 
@@ -212,12 +217,14 @@ def upload_avatar():
 @wallpaper_bp.route("/avatar_image", methods=["GET"])
 def get_avatar_image():
     code = request.args.get("code")
-    if not code:
-        return jsonify({"error": "Member code required"}), 400
+    if not code or not MEMBER_CODE_RE.match(code):
+        return jsonify({"error": "Invalid or missing member code"}), 400
     
     # Find the file
     matches = glob.glob(os.path.join(AVATAR_DIR, f"avatar_{code}.*"))
     if not matches:
         return jsonify({"error": "No avatar set"}), 404
     
-    return send_from_directory(AVATAR_DIR, os.path.basename(matches[0]))
+    resp = send_from_directory(AVATAR_DIR, os.path.basename(matches[0]))
+    resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return resp

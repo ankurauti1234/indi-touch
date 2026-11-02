@@ -71,6 +71,8 @@ def get_mac_address():
 @system_bp.route("/status", methods=["GET"])
 def system_status():
     """Unified status of all /run file indicators + network info."""
+    import json as _json
+
     # Robust WiFi check: check if wlan0 is actually connected via nmcli
     wifi_ok = False
     try:
@@ -85,9 +87,13 @@ def system_status():
     except Exception:
         wifi_ok = os.path.exists(SYSTEM_FILES.get("wifi_up", "/run/wifi_network_up"))
 
-    # 1. Smartplug / BLE presence flag (original logic preserved)
-    tv_flag_file = SYSTEM_FILES.get("tv_status", "/run/tv-status-on")
-    ble_tv_on = os.path.exists(tv_flag_file)
+    # 1. BLE Smartplug presence flags
+    # Checks legacy flag, tv_status_monitor daemon flag, and SYSTEM_FILES mapping
+    ble_tv_on = (
+        os.path.exists("/run/tv-status-on")
+        or os.path.exists("/run/tv_status")
+        or os.path.exists(SYSTEM_FILES.get("tv_status", "/run/tv-status-on"))
+    )
 
     # 2. Wi-Fi TV state check from /var/lib/tv_monitor_state.json
     wifi_tv_on = False
@@ -95,7 +101,7 @@ def system_status():
     if os.path.exists(state_file):
         try:
             with open(state_file, "r") as f:
-                states = json.load(f)
+                states = _json.load(f)
                 if isinstance(states, dict):
                     wifi_tv_on = any(s == "STARTED" for s in states.values())
         except Exception:
@@ -123,7 +129,7 @@ def system_status():
     if os.path.exists(sw_version_path):
         try:
             with open(sw_version_path, "r") as f:
-                sw_versions = json.load(f)
+                sw_versions = _json.load(f)
         except Exception:
             sw_versions = {}
 

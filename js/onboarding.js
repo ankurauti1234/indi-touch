@@ -150,6 +150,10 @@ function startCalibrationPolling() {
                     const helpBox = document.getElementById('calib-help-box');
                     if (helpBox) helpBox.style.display = 'none';
 
+                    // Reveal success banner upon completing both verification stages
+                    const succ = document.getElementById('calib-success-card');
+                    if (succ) succ.style.display = 'flex';
+
                     const btnProceed = document.getElementById('btn-calib-proceed');
                     if (btnProceed) {
                         btnProceed.disabled = false;
@@ -160,8 +164,13 @@ function startCalibrationPolling() {
                 // Port dropped prematurely during proving
                 calibProvingTicks = 0;
                 wifiCalibStage = 'ON_WAIT';
+
                 const prog = document.getElementById('calib-progress-container');
                 if (prog) prog.style.display = 'none';
+
+                const succ = document.getElementById('calib-success-card');
+                if (succ) succ.style.display = 'none';
+
                 setCalibPrompt(
                     "Signal Interrupted",
                     "Keep TV powered on with screen active."

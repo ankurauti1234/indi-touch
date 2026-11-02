@@ -53,8 +53,15 @@ export function startTvCalibration(device) {
     const helpBox = document.getElementById('calib-help-box');
     if (helpBox) helpBox.style.display = 'none';
 
+    // Reset success banner for fresh calibration run
+    const succ = document.getElementById('calib-success-card');
+    if (succ) succ.style.display = 'none';
+
     const btnProceed = document.getElementById('btn-calib-proceed');
-    if (btnProceed) btnProceed.disabled = true;
+    if (btnProceed) {
+        btnProceed.disabled = true;
+        btnProceed.setAttribute('disabled', 'true');
+    }
 
     // Switch view to 5D
     const wifiView = document.getElementById('step-5-wifi-view');

@@ -1191,6 +1191,66 @@
 }
 
 
+/* ── Wi-Fi Calibration Success Card ─────────────────────────────────────── */
+.calib-success-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(76, 175, 80, 0.12);
+    border: 1px solid rgba(76, 175, 80, 0.45);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-top: 14px;
+    animation: calibSuccessPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes calibSuccessPop {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(6px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.calib-success-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(76, 175, 80, 0.2);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.calib-success-icon {
+    font-size: 28px !important;
+    color: #4caf50;
+    font-variation-settings: 'FILL' 1;
+}
+
+.calib-success-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.calib-success-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #4caf50;
+    letter-spacing: 0.2px;
+}
+
+.calib-success-sub {
+    font-size: 13px;
+    color: var(--text-sub, #a0a0a0);
+}
+
+
 /* ── Step 6: TV Calibration Restored Scale & Larger Prompts ────────────────── */
 
 #step-6 {

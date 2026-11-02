@@ -589,7 +589,6 @@ def verify_poll():
     })
 
 # ── Calibration Probe Route ───────────────────────────────────────────────────
-
 @tv_bp.route("/calibrate_probe", methods=["POST"])
 def calibrate_probe():
     data = request.get_json(force=True) or {}
@@ -598,67 +597,67 @@ def calibrate_probe():
     if not ip:
         return jsonify({"success": False, "error": "IP is required"}), 400
 
-    # 1. Multi-attempt port probe to absorb network latency / dropped packets
-    open_ports = []
-    tv_type = None
-    for _ in range(2):
-        tv_type, open_ports = _classify_by_ports(ip)
-        if open_ports:
-            break
-        time.sleep(0.3)
+    def check_tv_active_once(target_ip):
+        """Returns True if the TV shows any sign of being actively ON."""
+        t_type, ports = _classify_by_ports(target_ip)
+        if not ports:
+            return False, t_type, ports
 
-    is_standby = False
+        # If Samsung, verify PowerState isn't standby
+        if t_type == "samsung" and (8001 in ports or 8002 in ports):
+            try:
+                r = requests.get(f"http://{target_ip}:8001/api/v2/", timeout=1.5)
+                if r.status_code == 200:
+                    d = r.json()
+                    dev = d.get("device", d)
+                    p_state = str(dev.get("powerState") or dev.get("PowerState") or "").strip().lower()
+                    if p_state in ["standby", "off"]:
+                        return False, t_type, ports
+            except Exception:
+                # If HTTP fails but port 8001 was open, TV is likely still on
+                pass
 
-    # 2. Samsung-specific standby inspection
-    if tv_type == "samsung" and (8001 in open_ports or 8002 in open_ports):
-        try:
-            r = requests.get(f"http://{ip}:8001/api/v2/", timeout=2.0)
-            if r.status_code == 200:
-                resp_data = r.json()
-                dev = resp_data.get("device", resp_data)
-                p_state = str(dev.get("powerState") or dev.get("PowerState") or "").strip().lower()
-                if p_state in ["standby", "off"]:
-                    is_standby = True
-        except Exception:
-            pass
+        return True, t_type, ports
 
-    # 3. If ports closed, verify with ICMP ping before declaring OFF
-    ping_alive = False
-    if not open_ports:
-        try:
-            res = subprocess.run(
-                ["ping", "-c", "1", "-W", "1", ip],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=2,
-            )
-            ping_alive = (res.returncode == 0)
-        except Exception:
-            ping_alive = False
+    # 1. First probe
+    is_active, tv_type, open_ports = check_tv_active_once(ip)
 
-    # Evaluation logic:
-    # - Port open and not reporting standby -> ON
-    # - Samsung reporting standby, or port closed but ping succeeds -> STANDBY
-    # - Port closed AND ping dead -> OFF
-    if open_ports and not is_standby:
-        tv_is_on = True
-        status_label = "ON"
-    elif is_standby or (not open_ports and ping_alive):
-        tv_is_on = False
-        status_label = "STANDBY"
-    else:
-        tv_is_on = False
-        status_label = "OFF"
+    # 2. If it appears ACTIVE, return ON immediately (no delay when TV is on)
+    if is_active:
+        return jsonify({
+            "success": True,
+            "ip": ip,
+            "tv_type": tv_type,
+            "open_ports": open_ports,
+            "is_on": True,
+            "status": "ON"
+        })
 
+    # 3. If it appeared OFF or STANDBY, do NOT trust it immediately.
+    # Enforce a 5-second sustained verification window (5 samples across 5s).
+    for _ in range(5):
+        time.sleep(1.0)
+        recheck_active, re_type, re_ports = check_tv_active_once(ip)
+        if recheck_active:
+            # TV answered! It was a transient drop.
+            return jsonify({
+                "success": True,
+                "ip": ip,
+                "tv_type": re_type or tv_type,
+                "open_ports": re_ports or open_ports,
+                "is_on": True,
+                "status": "ON"
+            })
+
+    # 4. Only if it stayed completely unreachable/standby for 5 full seconds:
     return jsonify({
         "success": True,
         "ip": ip,
         "tv_type": tv_type,
         "open_ports": open_ports,
-        "is_on": tv_is_on,
-        "status": status_label
+        "is_on": False,
+        "status": "OFF"
     })
-
 
 
 @tv_bp.route("/calibrate_finalize", methods=["POST"])

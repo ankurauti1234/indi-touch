@@ -2,17 +2,37 @@
 # api/db.py — SQLite database initialization and helpers
 
 import sqlite3
+import threading
 from datetime import datetime
 from .config import DB_PATH, METER_ID, load_hhid, FALLBACK_AVATAR
 
 
-def get_conn():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
+_local = threading.local()
+
+
+def get_conn() -> sqlite3.Connection:
+    """Thread-local SQLite connection with optimized PRAGMAs."""
+    conn = getattr(_local, "conn", None)
+    if conn is None:
+        conn = sqlite3.connect(DB_PATH, timeout=10.0)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute("PRAGMA synchronous = NORMAL;")
+        conn.execute("PRAGMA busy_timeout = 10000;")
+        conn.execute("PRAGMA foreign_keys = ON;")
+        conn.execute("PRAGMA cache_size = -2000;")
+        conn.execute("PRAGMA temp_store = MEMORY;")
+        _local.conn = conn
     return conn
 
 
 def init_db():
+    # Set WAL mode outside a transaction block
+    raw_conn = sqlite3.connect(DB_PATH, timeout=10.0)
+    raw_conn.execute("PRAGMA journal_mode = WAL;")
+    raw_conn.execute("PRAGMA busy_timeout = 10000;")
+    raw_conn.close()
+
     with get_conn() as conn:
         cur = conn.cursor()
 
@@ -37,6 +57,7 @@ def init_db():
         cur.execute("PRAGMA table_info(members)")
         cols = {c[1] for c in cur.fetchall()}
 
+        added_cols = set()
         for col, typedef in [
             ("name", "TEXT"),
             ("avatar_url", "TEXT"),
@@ -45,8 +66,11 @@ def init_db():
             if col not in cols:
                 print(f"[DB] Adding '{col}' column to members")
                 cur.execute(f"ALTER TABLE members ADD COLUMN {col} {typedef}")
+                added_cols.add(col)
 
-        if "name" in cols:
+        # Run backfill ONLY if 'name' was newly added during this run
+        if "name" in added_cols:
+            print("[DB] Backfilling default member names from member_code")
             cur.execute("""
                 UPDATE members
                 SET name = member_code

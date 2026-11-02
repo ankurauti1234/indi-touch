@@ -51,7 +51,7 @@ def run_flask():
         flask_app,
         host="127.0.0.1",
         port=FLASK_PORT,
-        threads=8,
+        threads=2,
     )
 
 
@@ -166,33 +166,45 @@ class BrowserWindow(QMainWindow):
 
 # ── Background Internet Checker ───────────────────────────────────────────────
 def check_internet_loop():
-    while True:
-        internet_ok = False
-        try:
-            # 8.8.8.8:53 is Google DNS (TCP), very reliable for internet checking
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(3.0)
-            s.connect(("8.8.8.8", 53))
-            s.close()
-            internet_ok = True
-        except Exception:
-            internet_ok = False
+    """Multi-target DNS check (1.1.1.1, 8.8.8.8, 9.9.9.9) with backoff and hysteresis."""
+    endpoints = [("1.1.1.1", 53), ("8.8.8.8", 53), ("9.9.9.9", 53)]
+    consecutive_failures = 0
+    failure_threshold = 3  # Require 3 consecutive failed cycles to declare offline
+    flag_path = SYSTEM_FILES.get("internet_ok", "/run/internet_ok")
 
-        flag_path = SYSTEM_FILES.get("internet_ok", "/run/internet_ok")
-        if internet_ok:
+    while True:
+        probe_success = False
+        for host, port in endpoints:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(1.5)
+                s.connect((host, port))
+                s.close()
+                probe_success = True
+                break
+            except Exception:
+                continue
+
+        if probe_success:
+            consecutive_failures = 0
             if not os.path.exists(flag_path):
                 try:
                     open(flag_path, "w").close()
                 except Exception:
                     pass
+            # Healthy state: sleep 60 seconds to save CPU
+            time.sleep(60)
         else:
-            if os.path.exists(flag_path):
-                try:
-                    os.remove(flag_path)
-                except Exception:
-                    pass
-
-        time.sleep(5)  # Next check in 5 seconds
+            consecutive_failures += 1
+            if consecutive_failures >= failure_threshold:
+                if os.path.exists(flag_path):
+                    try:
+                        os.remove(flag_path)
+                    except Exception:
+                        pass
+            # Down state: retry faster with backoff capped at 60s
+            retry_delay = min(5 * (2 ** (consecutive_failures - 1)), 60)
+            time.sleep(retry_delay)
 
 
 # ── Boot sequence ─────────────────────────────────────────────────────────────
@@ -246,7 +258,20 @@ def main():
     internet_thread = threading.Thread(target=check_internet_loop, daemon=True, name="internet_check")
     internet_thread.start()
     
-    time.sleep(1.5)  # wait for Flask to bind before Qt loads the URL
+    # Wait for Flask to bind before Qt loads the URL
+    start_time = time.time()
+    flask_ready = False
+    while time.time() - start_time < 15.0:
+        try:
+            with socket.create_connection(("127.0.0.1", FLASK_PORT), timeout=0.5):
+                flask_ready = True
+                break
+        except OSError:
+            time.sleep(0.05)
+
+    if not flask_ready:
+        print(f"[ERROR] Flask failed to bind on port {FLASK_PORT} within 15 seconds.")
+        sys.exit(1)
     print(f"[APP] Flask running at http://127.0.0.1:{FLASK_PORT}")
     print(f"[APP] Installation done: {is_installation_done()}")
 

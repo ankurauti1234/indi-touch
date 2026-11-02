@@ -1,4 +1,4 @@
-import { config, memberData, tvState, save as legacySave, loadMembers, getAvatarUrl } from './data.js';
+import { config, memberData, tvState, loadMembers, getAvatarUrl } from './data.js';
 
 // --- Focus State ---
 let focusedIndex = 0;

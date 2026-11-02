@@ -85,9 +85,24 @@ def system_status():
     except Exception:
         wifi_ok = os.path.exists(SYSTEM_FILES.get("wifi_up", "/run/wifi_network_up"))
 
-    # TV is ON if the presence flag /run/tv-status-on exists
+    # 1. Smartplug / BLE presence flag (original logic preserved)
     tv_flag_file = SYSTEM_FILES.get("tv_status", "/run/tv-status-on")
-    tv_on = os.path.exists(tv_flag_file)
+    ble_tv_on = os.path.exists(tv_flag_file)
+
+    # 2. Wi-Fi TV state check from /var/lib/tv_monitor_state.json
+    wifi_tv_on = False
+    state_file = "/var/lib/tv_monitor_state.json"
+    if os.path.exists(state_file):
+        try:
+            with open(state_file, "r") as f:
+                states = json.load(f)
+                if isinstance(states, dict):
+                    wifi_tv_on = any(s == "STARTED" for s in states.values())
+        except Exception:
+            pass
+
+    # TV is active if either BLE Smartplug or Wi-Fi TV is ON
+    tv_on = ble_tv_on or wifi_tv_on
 
     # Bluetooth availability
     ble_available = os.path.exists(SYSTEM_FILES.get("bluetooth_available", "/run/bluetooth_available"))
@@ -128,6 +143,7 @@ def system_status():
         "internet": os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok")),
         "sw_versions": sw_versions,
     })
+
 
 # ── POST /api/system/brightness ───────────────────────────────────────────────
 @system_bp.route("/brightness", methods=["POST"])

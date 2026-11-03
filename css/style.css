@@ -1908,7 +1908,6 @@ body.osk-open .main-stage {
 
 .hub-notif-card {
     background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
     border-radius: 16px;
     padding: 8px 12px;
     display: flex;
@@ -2095,7 +2094,6 @@ body.osk-open .main-stage {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
     z-index: 2000;
     display: none;
     align-items: center;
@@ -2466,7 +2464,6 @@ body.osk-open .main-stage {
     bottom: 12px;
     right: 12px;
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
     padding: 6px 12px;
     border-radius: 12px;
     font-size: 11px;

@@ -160,44 +160,75 @@ export function toggleFocused() {
 
 import { timers } from './utils.js';
 let toggleDebounceTimer = null;
+
 export async function toggleMember(index) {
     if (!tvState.on) {
         console.warn("Toggle member ignored: TV is OFF");
         return;
     }
+
     if (toggleDebounceTimer) return;
-    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 500); // 500ms debounce
-    if (memberData[index]) {
-        try {
-            const r = await fetch('/api/members/toggle', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ index: index })
-            });
-            const res = await r.json();
-            if (res.success) {
-                // Update local state and redraw
-                memberData[index].active = res.active;
+    toggleDebounceTimer = timers.setTimeout(() => { toggleDebounceTimer = null; }, 200);
 
-                // Record the most recent member declaration
-                if (res.active && window.recordMemberDeclaration) {
-                    window.recordMemberDeclaration();
-                }
+    const member = memberData[index];
+    if (!member) return;
 
-                renderGrid();
+    const container = document.getElementById('grid-container');
+    const card = container ? container.querySelector(`.member-card[data-index="${index}"]`) : null;
 
-                // Update Still Watching timer
-                if (window.updateStillWatchingState) {
-                    window.updateStillWatchingState();
-                }
+    // 1. Optimistic update: flip state immediately for responsive touch feedback
+    const previousState = !!member.active;
+    const optimisticState = !previousState;
+    member.active = optimisticState;
 
-                // Also update screensaver if active
-                if (window.renderScreensaverMembers) {
-                    window.renderScreensaverMembers();
-                }
+    if (card) {
+        card.classList.toggle('active', optimisticState);
+        card.classList.toggle('inactive', !optimisticState);
+    }
+
+    try {
+        const r = await fetch('/api/members/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ index: index })
+        });
+        const res = await r.json();
+
+        if (res.success) {
+            // Confirm canonical state returned from backend
+            member.active = res.active;
+            if (card) {
+                card.classList.toggle('active', !!res.active);
+                card.classList.toggle('inactive', !res.active);
             }
-        } catch (e) {
-            console.error("Toggle member failed", e);
+
+            // Record declaration
+            if (res.active && window.recordMemberDeclaration) {
+                window.recordMemberDeclaration();
+            }
+
+            // Update timers and overlays
+            if (window.updateStillWatchingState) {
+                window.updateStillWatchingState();
+            }
+            if (window.renderScreensaverMembers) {
+                window.renderScreensaverMembers();
+            }
+        } else {
+            // Revert if API rejected the update
+            member.active = previousState;
+            if (card) {
+                card.classList.toggle('active', previousState);
+                card.classList.toggle('inactive', !previousState);
+            }
+        }
+    } catch (e) {
+        console.error("Toggle member failed", e);
+        // Revert on network error
+        member.active = previousState;
+        if (card) {
+            card.classList.toggle('active', previousState);
+            card.classList.toggle('inactive', !previousState);
         }
     }
 }

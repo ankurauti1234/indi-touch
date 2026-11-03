@@ -316,9 +316,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!popover) return;
 
         let isTvOn = tvState.on;
-        if (!config.bleAvailable) {
-            isTvOn = true;
-        }
 
         const tvOverlay = document.getElementById('tv-off-overlay');
         const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
@@ -368,9 +365,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Monitor TV state and active members every 5 seconds
     timers.setInterval(() => {
         let isTvOn = tvState.on;
-        if (!config.bleAvailable) {
-            isTvOn = true;
-        }
 
         const tvOverlay = document.getElementById('tv-off-overlay');
         const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';

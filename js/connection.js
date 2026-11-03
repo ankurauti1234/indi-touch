@@ -369,6 +369,21 @@ export function applyDeviceState(d) {
 // Expose globally for QtWebEngine push
 window.applyDeviceState = applyDeviceState;
 
+// ─── Real-API Poller Fallback ─────────────────────────────────────────────────
+async function _pollStatus() {
+    try {
+        const r = await fetch(API_STATUS_URL);
+        if (!r.ok) return;
+        const d = await r.json();
+        applyDeviceState(d);
+    } catch {
+        /* network not available yet */
+    }
+}
+
 export function initConnectionMonitor() {
-    // Polling removed: Qt now pushes state via window.applyDeviceState(state)
+    // Initial fetch shortly after boot
+    timers.setTimeout(_pollStatus, 1500);
+    // Periodic HTTP fallback to guarantee runtime state sync
+    timers.setInterval(_pollStatus, POLL_INTERVAL);
 }

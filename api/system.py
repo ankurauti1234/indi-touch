@@ -160,35 +160,40 @@ def system_status():
 
     wifi_ok = get_wifi_connected()
 
-    # 1. BLE Smartplug presence flags
-    # Checks legacy flag, tv_status_monitor daemon flag, and SYSTEM_FILES mapping
-    ble_tv_on = (
-        os.path.exists("/run/tv-status-on")
-        or os.path.exists("/run/tv_status")
-        or os.path.exists(SYSTEM_FILES.get("tv_status", "/run/tv-status-on"))
-    )
+    # Bluetooth availability (check actual file flag)
+    ble_available = os.path.isfile(SYSTEM_FILES.get("bluetooth_available", "/run/bluetooth_available"))
+
+    # 1. BLE Smartplug presence flags (only evaluated if BLE hardware is available)
+    ble_tv_on = False
+    if ble_available:
+        ble_tv_on = (
+            os.path.isfile("/run/tv-status-on")
+            or os.path.isfile("/run/tv_status")
+            or os.path.isfile(SYSTEM_FILES.get("tv_status", "/run/tv-status-on"))
+        )
 
     # 2. Wi-Fi TV state check from /var/lib/tv_monitor_state.json
     wifi_tv_on = False
     state_file = "/var/lib/tv_monitor_state.json"
-    if os.path.exists(state_file):
+    if os.path.isfile(state_file):
         try:
             with open(state_file, "r") as f:
                 states = _json.load(f)
                 if isinstance(states, dict):
                     wifi_tv_on = any(s == "STARTED" for s in states.values())
         except Exception:
-            pass
+            wifi_tv_on = False
 
-    # TV is active if either BLE Smartplug or Wi-Fi TV is ON
-    tv_on = ble_tv_on or wifi_tv_on
-
-    # Bluetooth availability
-    ble_available = os.path.exists(SYSTEM_FILES.get("bluetooth_available", "/run/bluetooth_available"))
+    # TV power resolution:
+    # If BLE is available, either plug or Wi-Fi TV triggers ON; otherwise Wi-Fi TV owns it
+    if ble_available:
+        tv_on = ble_tv_on or wifi_tv_on
+    else:
+        tv_on = wifi_tv_on
 
     sw_versions = {}
     sw_version_path = "/var/lib/sw_version.json"
-    if os.path.exists(sw_version_path):
+    if os.path.isfile(sw_version_path):
         try:
             with open(sw_version_path, "r") as f:
                 sw_versions = _json.load(f)
@@ -211,7 +216,6 @@ def system_status():
         "internet": os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok")),
         "sw_versions": sw_versions,
     })
-
 
 # ── POST /api/system/brightness ───────────────────────────────────────────────
 @system_bp.route("/brightness", methods=["POST"])

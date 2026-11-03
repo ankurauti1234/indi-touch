@@ -132,17 +132,34 @@ class BrowserWindow(QMainWindow):
         wifi = os.path.exists(SYSTEM_FILES["wifi_up"])
         internet = os.path.exists(SYSTEM_FILES.get("internet_ok", "/run/internet_ok"))
 
-        tv_on = True
+        # Check BLE / plug file
+        ble_on = False
         if os.path.exists(SYSTEM_FILES.get("bluetooth_available", "")):
             tv_path = SYSTEM_FILES.get("tv_status", "")
-            if os.path.exists(tv_path):
+            if os.path.isfile(tv_path):
                 try:
                     with open(tv_path, "r") as f:
-                        tv_on = (f.read().strip().upper() == "ON")
+                        ble_on = (f.read().strip().upper() == "ON")
                 except Exception:
-                    tv_on = False
-            else:
-                tv_on = False
+                    ble_on = False
+
+        # Check Wi-Fi TV monitor state
+        wifi_tv_on = False
+        wifi_state_file = "/var/lib/tv_monitor_state.json"
+        if os.path.isfile(wifi_state_file):
+            try:
+                with open(wifi_state_file, "r") as f:
+                    states = json.load(f)
+                    if isinstance(states, dict):
+                        wifi_tv_on = any(s == "STARTED" for s in states.values())
+            except Exception:
+                wifi_tv_on = False
+
+        # If Bluetooth is available, BLE owns power state; otherwise Wi-Fi TV owns it
+        if os.path.exists(SYSTEM_FILES.get("bluetooth_available", "")):
+            tv_on = ble_on or wifi_tv_on
+        else:
+            tv_on = wifi_tv_on
 
         return {
             "usb": bool(jack or hdmi),

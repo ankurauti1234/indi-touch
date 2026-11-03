@@ -9,54 +9,75 @@ let lastDateDay = -1;
 let cachedDateStr = '';
 
 let idleTimer;
+let isDismissing = false;
+
+export function isScreensaverActive() {
+    const s = document.getElementById('screensaver');
+    return s && s.classList.contains('active');
+}
+
+export function dismissScreensaver(e) {
+    const s = document.getElementById('screensaver');
+    if (!s || !s.classList.contains('active')) return;
+
+    stopClock(); 
+
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    }
+
+    isDismissing = true;
+    s.classList.remove('active');
+    document.body.classList.remove('screensaver-active');
+
+    // Keep pointer shield alive during the 500ms fade-out so no click hits the app below
+    setTimeout(() => {
+        isDismissing = false;
+    }, 600);
+
+    resetIdle();
+}
 
 export function resetIdle(isPriority = false) {
     const s = document.getElementById('screensaver');
     if (!s) return;
 
-    // 1. Cleanly dismiss screensaver state
-    s.classList.remove('active');
-    document.body.classList.remove('screensaver-active'); // <-- ESSENTIAL FIX
     clearTimeout(idleTimer);
-    stopClock();
 
-    // Disable screensaver only during ACTIVE onboarding
     if (!config.onboardingCompleted) {
         const onboardingLayer = document.getElementById('onboarding-layer');
         const isVisible = onboardingLayer &&
             !onboardingLayer.classList.contains('hidden') &&
             onboardingLayer.style.display !== 'none' &&
             onboardingLayer.style.opacity !== '0';
-        if (isVisible) {
-            console.log("Screensaver blocked by Onboarding Layer visibility");
-            return;
-        }
+        if (isVisible) return;
     }
 
-    // Use 5s if priority (e.g. TV Off), otherwise use config or 15s default
     const timeout = isPriority ? 5000 : (config.screenTimeout || 15000);
-    console.log(`Screensaver scheduled in ${timeout}ms. (TV ON: ${tvState.on}, Priority: ${isPriority})`);
 
     idleTimer = setTimeout(() => {
-        if (s) {
-            // Remove keyboard mode so the app frame resets from 900px back to 600px
+        if (s && !isDismissing) {
             document.body.classList.remove('osk-open');
 
-            // Pre-render DOM elements synchronously before fading in
+            // 1. Prepare DOM contents first
             renderScreensaverMembers();
 
-            document.body.classList.add('screensaver-active');
-
-            // Reveal smoothly in next frame
+            // 2. Wait 2 frames to ensure the browser has fully painted the DOM before triggering opacity fade
             requestAnimationFrame(() => {
-                s.classList.add('active');
-                startClock();
+                requestAnimationFrame(() => {
+                    document.body.classList.add('screensaver-active');
+                    s.classList.add('active');
+                    startClock();
+                });
             });
         }
     }, timeout);
 }
+
 window.setScreensaverTimeout = (ms) => {
-    // This allows immediate update from settings
+    config.screenTimeout = ms;
     clearTimeout(idleTimer);
     resetIdle();
 };
@@ -65,7 +86,7 @@ let clockTimer = null;
 
 export function startClock() {
     if (clockTimer) return;
-    updateClock();
+    updateClock(); // Run immediately on show
     clockTimer = setInterval(updateClock, 1000);
 }
 
@@ -110,21 +131,23 @@ export function updateClock() {
     }
 }
 
-// OpenWeatherMap Integration
-const OWM_API_KEY = '0c0a2611ed5caefff0ef2e5cb6f4cdc0';
+// OpenWeatherMap Integration via backend proxy
+let isFetchingWeather = false;
 
 async function fetchWeather(city) {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${OWM_API_KEY}`, {
+        const res = await fetch(`/api/system/weather?city=${encodeURIComponent(city)}`, {
             signal: controller.signal
         });
         clearTimeout(timeoutId);
 
+        if (!res.ok) return null;
+
         const data = await res.json();
-        if (data && data.main) {
+        if (data && data.main && data.weather && data.weather.length > 0) {
             return {
                 temp: Math.round(data.main.temp),
                 icon: data.weather[0].icon,
@@ -138,14 +161,16 @@ async function fetchWeather(city) {
 }
 
 export async function initLocation() {
-    const city = config.location || 'Yerevan';
     const widget = document.getElementById('saver-weather');
-    if (!widget) return;
+    if (!widget || isFetchingWeather) return;
+
+    const city = config.location || 'auto';
 
     if (!widget.innerHTML.trim() || widget.innerHTML.includes('material-symbols-rounded')) {
         widget.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 2s linear infinite">sync</span>`;
     }
 
+    isFetchingWeather = true;
     try {
         const weather = await fetchWeather(city);
         if (weather) {
@@ -158,14 +183,17 @@ export async function initLocation() {
                 <span class="weather-desc-inline">${desc}</span>
             `;
         } else {
-            throw new Error("Null weather data");
+            if (!widget.querySelector('img')) {
+                widget.innerHTML = `
+                    <span class="material-symbols-rounded">wb_cloudy</span>
+                    <span class="weather-temp">--°C</span>
+                `;
+            }
         }
     } catch (e) {
-        console.warn("Weather sync failed, using fallback", e);
-        widget.innerHTML = `
-            <span class="material-symbols-rounded">wb_cloudy</span>
-            <span class="weather-temp">--°C</span>
-        `;
+        console.warn("Weather sync error:", e);
+    } finally {
+        isFetchingWeather = false;
     }
 }
 
@@ -182,17 +210,14 @@ export function renderScreensaverMembers() {
     if (tvTag) {
         if (!config.bleAvailable) {
             tvTag.style.display = 'none';
-            if (clock) clock.classList.remove('massive');
         } else {
             tvTag.style.display = 'flex';
             if (tvState.on) {
                 tvTag.classList.remove('offline');
                 if (tvText) tvText.innerText = 'TV ON';
-                if (clock) clock.classList.remove('massive');
             } else {
                 tvTag.classList.add('offline');
                 if (tvText) tvText.innerText = 'TV OFF';
-                if (clock) clock.classList.add('massive');
             }
         }
     }
@@ -201,7 +226,7 @@ export function renderScreensaverMembers() {
 
     const saver = document.getElementById('screensaver');
     if (saver) {
-        if (activeMembers.length >= 5) {
+        if (activeMembers.length >= 6) {
             saver.classList.add('compact-view');
         } else {
             saver.classList.remove('compact-view');
@@ -215,12 +240,14 @@ export function renderScreensaverMembers() {
         watchingArea.style.display = hasMembers ? 'block' : 'none';
     }
 
-    // Center the clock in screensaver when no members are active
+    // Centered & massive clock when NO active members; standard when members are present
     if (saver) {
         if (!hasMembers) {
             saver.classList.add('center-clock');
+            if (clock) clock.classList.add('massive');
         } else {
             saver.classList.remove('center-clock');
+            if (clock) clock.classList.remove('massive');
         }
     }
 
@@ -229,14 +256,45 @@ export function renderScreensaverMembers() {
         return;
     }
 
-    container.innerHTML = activeMembers.map(m => {
-        const url = getAvatarUrl(m);
-        return `
+    const MAX_VISIBLE = 6;
+    let html = '';
+
+    if (activeMembers.length <= MAX_VISIBLE) {
+        html = activeMembers.map(m => {
+            const url = getAvatarUrl(m);
+            return `
+            <div class="saver-member-item">
+                <img src="${url}" class="saver-member-avatar" alt="${m.name}">
+                <div class="saver-member-name">${m.name}</div>
+            </div>`;
+        }).join('');
+    } else {
+        const visibleMembers = activeMembers.slice(0, 5);
+        const remainingCount = activeMembers.length - 5;
+
+        // First 5 members rendered normally
+        html = visibleMembers.map(m => {
+            const url = getAvatarUrl(m);
+            return `
+            <div class="saver-member-item">
+                <img src="${url}" class="saver-member-avatar" alt="${m.name}">
+                <div class="saver-member-name">${m.name}</div>
+            </div>`;
+        }).join('');
+
+        // 6th slot: Preserves exact bubble architecture with clean frosted inner pill
+        html += `
         <div class="saver-member-item">
-            <img src="${url}" class="saver-member-avatar">
-            <div class="saver-member-name">${m.name}</div>
+            <div class="saver-member-avatar">
+                <div class="saver-overflow-inner">
+                    +${remainingCount}
+                </div>
+            </div>
+            <div class="saver-member-name">MORE</div>
         </div>`;
-    }).join('');
+    }
+
+    container.innerHTML = html;
 }
 
 // ── WALLPAPER BACKGROUND ─────────────────────────────────────────────────────
@@ -251,7 +309,7 @@ async function applyWallpaper(forceBust = false) {
         const d = await r.json();
 
         if (d.hasWallpaper) {
-            const urlToUse = forceBust ? `${d.url}?t=${Date.now()}` : d.url;
+            const urlToUse = d.url;
             if (_cachedWallpaperUrl !== urlToUse) {
                 _cachedWallpaperUrl = urlToUse;
                 saver.style.backgroundImage = `url('${urlToUse}')`;
@@ -268,9 +326,37 @@ async function applyWallpaper(forceBust = false) {
 }
 
 export function refreshWallpaperOnScreensaver() {
-    // Only force-bust cache when user explicitly changes wallpaper in settings
     applyWallpaper(true);
 }
 
-// Pre-load wallpaper once on startup
+// Setup dedicated, non-leaking touch listeners on the screensaver itself
+function setupScreensaverDismissListeners() {
+    const saver = document.getElementById('screensaver');
+    if (!saver) return;
+
+    // Capture touch directly on the screensaver before anything else
+    ['pointerdown', 'touchstart', 'mousedown'].forEach(evtName => {
+        saver.addEventListener(evtName, (e) => {
+            if (saver.classList.contains('active')) {
+                dismissScreensaver(e);
+            }
+        }, { capture: true, passive: false });
+    });
+
+    // Absorb trailing clicks during the 500ms fade-out
+    document.addEventListener('click', (e) => {
+        if (isDismissing) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        }
+    }, { capture: true, passive: false });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupScreensaverDismissListeners);
+} else {
+    setupScreensaverDismissListeners();
+}
+
 applyWallpaper();

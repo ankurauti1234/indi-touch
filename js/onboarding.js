@@ -1,5 +1,6 @@
 import { t } from './i18n.js';
-import { config, save } from './data.js';
+import { config } from './data.js';
+import { reconcileConnectionPopups } from './connection.js';
 
 let currentStep = 1;
 const totalSteps = 7; 
@@ -344,7 +345,13 @@ export function completeSetup() {
     const layer = document.getElementById('onboarding-layer');
     if (layer) {
         layer.classList.add('hidden');
-        setTimeout(() => layer.style.display = 'none', 600);
+        setTimeout(() => {
+            layer.style.display = 'none';
+            // Reconcile popups now that onboarding layer is fully hidden
+            if (typeof reconcileConnectionPopups === 'function') {
+                reconcileConnectionPopups();
+            }
+        }, 600);
     }
     
     // Refresh UI
@@ -481,3 +488,10 @@ window.toggleOnboardInfo = async () => {
         }
     }
 };
+
+// Expose functions called by inline HTML event handlers (onclick)
+window.selectNet = selectNet;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.refreshWifi = refreshWifi;
+window.toggleOnboardPass = toggleOnboardPass;

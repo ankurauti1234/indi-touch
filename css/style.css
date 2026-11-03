@@ -215,6 +215,20 @@ body {
 
 /* ── STILL WATCHING POPUP ───────────────────────────────────────────── */
 
+#still-watching-popover {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483648 !important; /* Higher than screensaver (2147483647) */
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+#still-watching-popover.visible {
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
 #still-watching-popover .conn-card {
     width: 560px;
     max-width: 90%;
@@ -242,6 +256,48 @@ body {
 
 #still-watching-popover .conn-actions button {
     flex: 1;
+}
+
+/* ── Light Mode Support ── */
+body.light-mode #still-watching-popover {
+    background: rgba(15, 15, 17, 0.5);
+}
+
+body.light-mode #still-watching-popover .conn-card {
+    background: var(--bg-card);
+    border: 1px solid var(--outline-variant);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode #still-watching-popover .conn-icon {
+    background: #EDE9FE !important;
+}
+
+body.light-mode #still-watching-popover .conn-icon .material-symbols-rounded {
+    color: var(--primary) !important;
+}
+
+body.light-mode #still-watching-popover .conn-title {
+    color: var(--text-main);
+}
+
+body.light-mode #still-watching-popover .conn-body {
+    color: var(--text-sub);
+}
+
+body.light-mode #still-watching-popover .conn-btn-secondary {
+    background: var(--bg-surface-container-high);
+    color: var(--text-main);
+    border: 1px solid var(--outline-variant);
+}
+
+body.light-mode #still-watching-popover .conn-btn-secondary:hover {
+    background: var(--bg-card-hover);
+}
+
+body.light-mode #still-watching-popover .conn-btn-primary {
+    background: var(--primary);
+    color: var(--on-primary);
 }
 
 /* WiFi popup buttons */
@@ -492,7 +548,12 @@ body {
     overflow: hidden;
     position: relative;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
+    /* Snappy transition: only animate the exact properties that change */
+    transition: filter 140ms cubic-bezier(0.2, 0, 0, 1),
+                border-color 140ms cubic-bezier(0.2, 0, 0, 1),
+                background-color 140ms cubic-bezier(0.2, 0, 0, 1),
+                box-shadow 140ms cubic-bezier(0.2, 0, 0, 1),
+                opacity 140ms cubic-bezier(0.2, 0, 0, 1);
     cursor: pointer;
     border: 2px solid transparent;
     height: calc((100% - (var(--gap) * (var(--rows) - 1))) / var(--rows));
@@ -1127,87 +1188,6 @@ body.light-mode .input-box.remoteFocused {
     opacity: 0.9;
 }
 
-/* SURVEY STYLES */
-.survey-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: 20px;
-}
-
-.survey-card {
-    background: var(--bg-surface-container);
-    padding: 40px;
-    border-radius: 32px;
-    width: 100%;
-    max-width: 600px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-}
-
-.survey-question {
-    font-size: 28px;
-    font-weight: 400;
-    margin: 0;
-    color: var(--text-main);
-    text-align: center;
-    line-height: 1.4;
-}
-
-.survey-options {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.survey-opt-btn {
-    background: var(--bg-card);
-    border: 2px solid transparent;
-    border-radius: 16px;
-    padding: 16px 24px;
-    color: var(--text-main);
-    font-size: 18px;
-    text-align: left;
-    cursor: pointer;
-    transition: 0.2s cubic-bezier(0.2, 0, 0, 1);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.survey-opt-btn:hover {
-    background: var(--bg-card-hover);
-    border-color: var(--primary);
-}
-
-.survey-opt-btn:active {
-    transform: scale(0.98);
-    background: var(--secondary-container);
-}
-
-.opt-label {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--secondary-container);
-    color: var(--on-secondary-container);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.survey-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 16px;
-}
-
 /* MATERIAL MODAL */
 #modal-overlay {
     position: fixed;
@@ -1284,32 +1264,12 @@ body.light-mode .input-box.remoteFocused {
 .modal-btn:active {
     opacity: 0.7;
 }
-
 @keyframes premiumFadeIn {
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
-    }
-}
-
-
-@keyframes premiumPulse {
-    0% {
-        transform: scale(1);
-        filter: drop-shadow(0 0 0px rgba(255, 180, 171, 0));
-    }
-
-    50% {
-        transform: scale(1.15);
-        filter: drop-shadow(0 0 15px rgba(255, 180, 171, 0.6));
-    }
-
-    100% {
-        transform: scale(1);
-        filter: drop-shadow(0 0 0px rgba(255, 180, 171, 0));
     }
 }
 
@@ -1318,7 +1278,7 @@ body.light-mode .input-box.remoteFocused {
 #critical-popover {
     position: fixed;
     inset: 0;
-    z-index: 200000000;
+    z-index: 2147483648 !important;
 
     display: flex;
     align-items: center;
@@ -1597,7 +1557,6 @@ body.osk-open .main-stage {
 }
 
 /* SEVERITY COLORS */
-
 :root {
     --sev-info: #D0BCFF;
     --sev-warn: #FFB866;
@@ -1651,22 +1610,26 @@ body.osk-open .main-stage {
 #screensaver {
     position: fixed;
     inset: 0;
-    background: #000;
+    background: #000000;
     z-index: 2147483647 !important;
-    /* Maximum possible z-index */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
+    padding: 32px 36px 28px;
+    box-sizing: border-box;
+    text-align: center;
+    color: #fff;
+    overflow: hidden;
+
+    /* Hidden state */
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
-    color: #fff;
-    padding: 20px 24px 24px;
-    text-align: center;
-    overflow: hidden;
     transform: scale(1.02) translateZ(0);
     backface-visibility: hidden;
+
+    /* Smooth exit fade */
     transition: opacity 0.6s ease-out, transform 0.6s ease-out, visibility 0s linear 0.6s !important;
 }
 
@@ -1675,6 +1638,8 @@ body.osk-open .main-stage {
     visibility: visible !important;
     pointer-events: auto !important;
     transform: scale(1) translateZ(0);
+
+    /* Smooth entrance fade */
     transition: opacity 0.6s ease-out, transform 0.6s ease-out, visibility 0s linear 0s !important;
 }
 
@@ -1683,23 +1648,53 @@ body.osk-open .main-stage {
 }
 
 #screensaver.center-clock .saver-clock {
-    margin-top: 0 !important;
-    margin-bottom: 24px !important;
+    margin: 0 !important;
 }
 
+/* Enlarges the existing info bar when center-clock is active */
+#screensaver.center-clock .saver-info-row {
+    margin-top: 32px;
+    padding: 12px 32px;
+    gap: 28px;
+    border-radius: 50px;
+}
+
+#screensaver.center-clock #clock-date,
+#screensaver.center-clock .weather-temp {
+    font-size: 44px;
+}
+
+#screensaver.center-clock .weather-desc-inline {
+    font-size: 38px;
+}
+
+#screensaver.center-clock #saver-weather img {
+    width: 60px !important;
+    height: 60px !important;
+}
+
+#screensaver.center-clock .saver-divider {
+    height: 36px;
+}
+
+/* Hero Clock Section */
 .saver-clock {
-    margin-top: 10px;
-    margin-bottom: 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding-top: 12px;
 }
 
 #clock-time {
-    font-size: 300px !important;
+    font-size: 260px !important;
     font-weight: 700;
-    line-height: 0.8;
-    letter-spacing: -8px;
-    margin-bottom: 0px;
+    line-height: 0.85;
+    letter-spacing: -6px;
+    margin: 0;
     color: #ffffff;
-    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     display: flex;
@@ -1708,26 +1703,20 @@ body.osk-open .main-stage {
     justify-content: center;
 }
 
-#clock-time.massive {
-    font-size: 380px !important;
-    line-height: 0.8;
+/* Existing massive rule: sets clock digits to true hero scale */
+#clock-time.massive,
+#screensaver.center-clock #clock-time,
+#screensaver.center-clock .clock-main-digits,
+#clock-time.massive .clock-main-digits {
+    font-size: 310px !important;
+    line-height: 0.85 !important;
+    letter-spacing: -6px !important;
 }
 
 .clock-main-digits {
-    font-size: inherit !important;
-    line-height: 0.8;
+    font-size: inherit;
+    line-height: inherit;
     font-weight: 200;
-}
-
-.saver-active-area {
-    width: 100%;
-    margin-top: 0;
-    /* Let space-between position it naturally */
-}
-
-.saver-members-title {
-    margin-bottom: 8px;
-    /* Tighter spacing */
 }
 
 .clock-secs,
@@ -1735,73 +1724,62 @@ body.osk-open .main-stage {
     display: none !important;
 }
 
-/* TV Status Tag */
-.saver-tv-tag {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 2px 12px;
-    background: rgba(100, 210, 154, 0.2);
-    color: #64d29a;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 1px;
-}
-
-.saver-tv-tag.offline {
-    background: rgba(255, 255, 255, 0.1);
-    color: #8e8e8e;
-}
-
+/* Info Row: Date + Weather */
 .saver-info-row {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 20px;
-    opacity: 0.7;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    padding: 8px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 40px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 #clock-date {
-    font-size: 32px;
+    font-size: 34px;
     font-weight: 400;
-    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.95);
     letter-spacing: 0.5px;
 }
 
-.saver-dot {
-    width: 4px;
-    height: 4px;
-    background: #fff;
-    border-radius: 50%;
-    opacity: 0.4;
-    margin: 0 4px;
+.saver-divider {
+    width: 2px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 2px;
+    flex-shrink: 0;
 }
 
 #saver-weather {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: none;
     border: none;
     padding: 0;
 }
 
 #saver-weather img {
-    width: 44px !important;
-    height: 44px !important;
+    width: 48px !important;
+    height: 48px !important;
+    object-fit: contain;
 }
 
 .weather-temp {
-    font-size: 32px;
+    font-size: 34px;
     font-weight: 400;
-    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .weather-desc-inline {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 300;
-    opacity: 0.6;
+    opacity: 0.75;
     margin-left: 4px;
 }
 
@@ -1809,19 +1787,49 @@ body.osk-open .main-stage {
     display: none;
 }
 
+/* TV Status Badge */
+.saver-tv-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 18px;
+    background: rgba(100, 210, 154, 0.15);
+    color: #64d29a;
+    border: 1px solid rgba(100, 210, 154, 0.3);
+    border-radius: 24px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.saver-tv-tag.offline {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #a0a0a0;
+}
+
+.saver-tv-tag .material-symbols-rounded {
+    font-size: 22px !important;
+}
+
 /* ── SCREENSAVER ACTIVE MEMBERS ────────────────────────────────────────── */
 
 .saver-active-area {
     width: 100%;
     margin-top: auto;
+    padding-top: 10px;
+    padding-bottom: 8px;
 }
 
 .saver-members-title {
     font-size: 13px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 2.5px;
-    opacity: 0.45;
-    margin-bottom: 16px;
+    letter-spacing: 3px;
+    opacity: 0.5;
+    margin-bottom: 14px;
     text-align: center;
 }
 
@@ -1829,9 +1837,9 @@ body.osk-open .main-stage {
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    gap: 32px;
+    gap: 28px;
     width: 100%;
-    max-width: 960px;
+    max-width: 1080px;
     margin: 0 auto;
     flex-wrap: nowrap;
 }
@@ -1841,8 +1849,8 @@ body.osk-open .main-stage {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
-    width: 160px;
+    gap: 10px;
+    width: 150px;
     flex-shrink: 0;
 }
 
@@ -1856,13 +1864,14 @@ body.osk-open .main-stage {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     object-fit: cover;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .saver-member-name {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 500;
+    color: #ffffff;
     opacity: 0.95;
-    color: #fff;
     width: 100%;
     text-align: center;
     white-space: nowrap;
@@ -1871,97 +1880,50 @@ body.osk-open .main-stage {
     letter-spacing: 0.5px;
 }
 
-/* Compact View (5+ Members) */
-.compact-view .clock-main-digits {
-    font-size: 140px;
-}
-
+/* Compact View (6+ Members) - Gentle shrink, members stay prominent */
 .compact-view #saver-active-members {
-    gap: 18px;
+    gap: 20px;
+    max-width: 1100px;
 }
 
 .compact-view .saver-member-item {
     width: 140px;
-    gap: 10px;
+    gap: 8px;
 }
 
 .compact-view .saver-member-avatar {
-    width: 110px;
-    height: 110px;
-    padding: 6px;
-    border-width: 3px;
+    width: 120px;
+    height: 120px;
+    padding: 7px;
+    border-width: 3.5px;
 }
 
 .compact-view .saver-member-name {
-    font-size: 22px;
+    font-size: 24px;
 }
 
+.compact-view .saver-overflow-inner {
+    font-size: 28px;
+}
 
-/* M3 NOTIFICATION CARDS */
-.hub-notif-area {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+/* Overflow Bubble Inner Badge */
+.saver-overflow-inner {
     width: 100%;
-    max-width: 480px;
-}
-
-.hub-notif-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    animation: slideInUp 0.8s cubic-bezier(0.2, 0, 0, 1) forwards;
-}
-
-.hub-notif-icon-v2 {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
+    height: 100%;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    font-size: 32px;
+    font-weight: 700;
+    box-sizing: border-box;
+    letter-spacing: 0.5px;
 }
 
-.hub-notif-icon-v2 span {
-    font-size: 20px;
-    color: #000;
-}
-
-.hub-notif-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.hub-notif-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.hub-notif-title {
-    font-weight: 500;
-    font-size: 13px;
-    color: var(--text-main);
-}
-
-.hub-notif-time {
-    font-size: 9px;
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.hub-notif-text {
-    font-size: 11px;
-    color: var(--text-sub);
-    line-height: 1.2;
+.compact-view .saver-overflow-inner {
+    font-size: 26px;
 }
 
 @keyframes slideInUp {
@@ -1969,7 +1931,6 @@ body.osk-open .main-stage {
         transform: translateY(40px);
         opacity: 0;
     }
-
     to {
         transform: translateY(0);
         opacity: 1;
@@ -2094,8 +2055,7 @@ body.osk-open .main-stage {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.85);
     z-index: 2000;
     display: none;
     align-items: center;

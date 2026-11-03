@@ -6,12 +6,11 @@ export function navTo(viewId) {
         document.activeElement.blur();
     }
 
-    // 2. Sidebar Buttons Logic
+    // 2. Sidebar Buttons Logic (notifications removed in device-optimisation)
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
     let btnId = '';
     if (viewId === 'home') btnId = 'btn-home';
-    else if (viewId === 'notifications') btnId = 'btn-notif';
     else if (viewId === 'settings') btnId = 'btn-settings';
     else if (viewId === 'guest-add') btnId = 'btn-guest';
 

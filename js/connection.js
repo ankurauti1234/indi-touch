@@ -4,6 +4,8 @@ import { openSetting } from './settings.js';
 import { timers } from './utils.js';
 import { config, tvState, toggleTv, loadMembers, loadGuests } from './data.js';
 
+const API_STATUS_URL = '/api/system/status';
+const POLL_INTERVAL = 8000;       // 8 s
 const WIFI_COOLDOWN = 2 * 60_000; // 2 min
 
 let _usbConnected = true;

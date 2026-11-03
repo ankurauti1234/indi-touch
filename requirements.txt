@@ -1,4 +1,4 @@
-# requirements.txt — RPi dependencies for main.py
+# requirements.txt — RPi dependencies for app.py
 flask>=3.0
 flask-cors>=4.0
 dbus-python>=1.2.18

@@ -308,6 +308,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ---------------- Active Member Reminder State Machine ----------------
     let activeMemberReminderDismissTimer = null;
     let activeMemberReminderRepeatTimer = null;
+    let activeMemberDelayTimer = null;
     let activeMemberReminderCycleStarted = false;
 
     function showActiveMemberReminder() {
@@ -319,34 +320,45 @@ document.addEventListener('DOMContentLoaded', async () => {
             isTvOn = true;
         }
 
-        if (!isTvOn || !config.onboardingCompleted) {
+        const tvOverlay = document.getElementById('tv-off-overlay');
+        const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
+
+        // Abort if TV is off, onboarding is incomplete, or the TV Off overlay is visible
+        if (!isTvOn || !config.onboardingCompleted || isOverlayVisible) {
             popover.classList.remove('active');
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
+            timers.clearTimeout(activeMemberDelayTimer);
+            activeMemberDelayTimer = null;
             activeMemberReminderCycleStarted = false;
             return;
         }
 
         const activeCount = memberData.filter(m => m.active).length;
+
+        // If someone is active, stop and clean up
         if (activeCount > 0) {
             popover.classList.remove('active');
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
+            timers.clearTimeout(activeMemberDelayTimer);
+            activeMemberDelayTimer = null;
             activeMemberReminderCycleStarted = false;
             return;
         }
 
+        // Show the popover
         activeMemberReminderCycleStarted = true;
         popover.classList.add('active');
 
         timers.clearTimeout(activeMemberReminderDismissTimer);
         timers.clearTimeout(activeMemberReminderRepeatTimer);
 
-        // Show for 10 seconds
+        // Keep visible for 10 seconds
         activeMemberReminderDismissTimer = timers.setTimeout(() => {
             popover.classList.remove('active');
 
-            // Wait 60 seconds before showing again
+            // Wait 60 seconds before showing it again
             activeMemberReminderRepeatTimer = timers.setTimeout(() => {
                 showActiveMemberReminder();
             }, 60 * 1000);
@@ -360,28 +372,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             isTvOn = true;
         }
 
-        if (!isTvOn || !config.onboardingCompleted) {
-            const popover = document.getElementById('critical-popover');
-            if (popover) popover.classList.remove('active');
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-            activeMemberReminderCycleStarted = false;
-            return;
-        }
-
-        const activeCount = memberData.filter(m => m.active).length;
-        if (activeCount > 0) {
-            const popover = document.getElementById('critical-popover');
-            if (popover) popover.classList.remove('active');
-            timers.clearTimeout(activeMemberReminderDismissTimer);
-            timers.clearTimeout(activeMemberReminderRepeatTimer);
-            activeMemberReminderCycleStarted = false;
-            return;
-        }
-
+        const tvOverlay = document.getElementById('tv-off-overlay');
+        const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
         const popover = document.getElementById('critical-popover');
-        if (popover && !popover.classList.contains('active') && !activeMemberReminderCycleStarted) {
-            showActiveMemberReminder();
+        const activeCount = memberData.filter(m => m.active).length;
+
+        // 1. If TV is off, onboarding incomplete, overlay is visible, or someone is active: clear everything immediately
+        if (!isTvOn || !config.onboardingCompleted || isOverlayVisible || activeCount > 0) {
+            if (popover) {
+                popover.classList.remove('active');
+            }
+
+            timers.clearTimeout(activeMemberReminderDismissTimer);
+            timers.clearTimeout(activeMemberReminderRepeatTimer);
+            timers.clearTimeout(activeMemberDelayTimer);
+            activeMemberDelayTimer = null;
+            activeMemberReminderCycleStarted = false;
+            return;
+        }
+
+        // 2. All members are undeclared while TV is ON:
+        // Do NOT show immediately. Start the 60-second delay first.
+        if (!activeMemberReminderCycleStarted && !activeMemberDelayTimer) {
+            activeMemberDelayTimer = timers.setTimeout(() => {
+                activeMemberDelayTimer = null;
+                showActiveMemberReminder();
+            }, 60 * 1000); // 60-second grace period before the reminder can fire
         }
     }, 5000);
 
@@ -414,6 +430,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 3. Clear timers & start 60s cooldown so popup doesn't instantly reappear
         timers.clearTimeout(activeMemberReminderDismissTimer);
         timers.clearTimeout(activeMemberReminderRepeatTimer);
+        timers.clearTimeout(activeMemberDelayTimer);
+        activeMemberDelayTimer = null;
         activeMemberReminderCycleStarted = true;
         activeMemberReminderRepeatTimer = timers.setTimeout(() => {
             showActiveMemberReminder();

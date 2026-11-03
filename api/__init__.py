@@ -33,6 +33,7 @@ def create_app() -> Flask:
     from .system        import system_bp
     from .notifications import notifications_bp
     from .wallpaper     import wallpaper_bp
+    from .tv            import tv_bp, init_tv_table
 
     app.register_blueprint(wifi_bp,          url_prefix="/api/wifi")
     app.register_blueprint(members_bp,       url_prefix="/api/members")
@@ -41,6 +42,13 @@ def create_app() -> Flask:
     app.register_blueprint(system_bp,        url_prefix="/api/system")
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(wallpaper_bp,     url_prefix="/api/wallpaper")
+    app.register_blueprint(tv_bp,            url_prefix="/api/tv")
+
+    # Initialize TV devices table
+    try:
+        init_tv_table()
+    except Exception as e:
+        app.logger.warning(f"Could not init tv table: {e}")
 
     # ── Serve frontend ─────────────────────────────────────────────────────────
     STATIC_DIRS = {"css", "js", "assets", "fonts", "lang"}

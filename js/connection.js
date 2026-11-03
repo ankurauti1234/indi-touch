@@ -22,6 +22,25 @@ function isOnboarding() {
     return !layer.classList.contains('hidden') && layer.style.display !== 'none';
 }
 
+// ─── TV Off Main-Stage Overlay Helper ─────────────────────────────────────────
+export function syncTvOverlay(tvOn) {
+    const overlay = document.getElementById('tv-off-overlay');
+    if (!overlay) return;
+
+    // Check which view is currently active
+    const activeView = document.querySelector('.main-stage .view.active');
+    const viewId = activeView ? activeView.id : '';
+
+    // Only restrict Home (member grid) and Guest Add views
+    const isRestrictedView = (viewId === 'view-home' || viewId === 'view-guest-add');
+
+    if (!tvOn && isRestrictedView) {
+        overlay.style.display = 'flex';
+    } else {
+        overlay.style.display = 'none';
+    }
+}
+
 // ─── USB Popup ────────────────────────────────────────────────────────────────
 function injectUsbPopup() {
     if (isOnboarding()) return;
@@ -309,6 +328,11 @@ export function applyDeviceState(d) {
                 tvIcon.classList.remove('online');
             }
         }
+    }
+
+    // 4.5 Sync Main-Stage Overlay without obstructing Sidebar
+    if (d.tv_on !== undefined) {
+        syncTvOverlay(Boolean(d.tv_on));
     }
 
     // 5. TV State Side Effects (members undeclare, screensaver, etc.)

@@ -695,3 +695,787 @@
     font-family: monospace;
     opacity: 0.8;
 }
+
+/* ── Step 5: Detection Method Selection & Wi-Fi Discovery ──────────────────── */
+
+.method-cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.method-card {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--bg-surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.method-card:hover,
+.method-card:active {
+    background: var(--bg-surface-container-high);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.method-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(208, 188, 255, 0.12);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+.method-card-icon .material-symbols-rounded {
+    font-size: 28px !important;
+}
+
+.method-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.method-card-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 2px;
+}
+
+.method-card-desc {
+    font-size: 13px;
+    color: var(--text-sub);
+    line-height: 1.35;
+}
+
+.method-card-arrow {
+    color: var(--text-sub);
+    font-size: 24px;
+    opacity: 0.6;
+}
+
+.btn-secondary-skip {
+    background: transparent !important;
+    border: 1px solid var(--outline-variant) !important;
+    color: var(--text-sub) !important;
+}
+
+/* ── View 5C: Subview Layout & Bounded Scrolling ─────────────────────────── */
+
+#step-5-wifi-view {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#step-5-wifi-view .wiz-header-row {
+    flex-shrink: 0;
+}
+
+/* Manual IP Probe: Compact touch row directly above list */
+#step-5-wifi-view .manual-probe-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 10px 0;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+#step-5-wifi-view .manual-probe-row input {
+    flex: 1;
+    height: 40px;
+    background: var(--bg-surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: 12px;
+    padding: 0 14px;
+    color: var(--text-main);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+#step-5-wifi-view .manual-probe-row input:focus {
+    border-color: var(--primary);
+}
+
+#step-5-wifi-view .btn-probe-manual {
+    height: 40px;
+    padding: 0 16px;
+    background: var(--bg-surface-container-high);
+    border: 1px solid var(--outline-variant);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+#step-5-wifi-view .btn-probe-manual:active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--on-primary, #1c1b1f);
+}
+
+/* Device List Wrapper: Strictly bounded so it terminates well above .wiz-footer */
+#step-5-wifi-view .net-list-wrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: calc(100vh - 410px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    margin-bottom: 125px !important;
+    padding-bottom: 8px;
+}
+
+#step-5-wifi-view .net-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Compact TV List Item: Single-Line Parallel Row with Boosted Font */
+.tv-compact-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 0 16px !important;
+    background: var(--bg-surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tv-compact-item:active {
+    background: var(--bg-surface-container-high);
+}
+
+.tv-compact-item.selected {
+    background: rgba(208, 188, 255, 0.12);
+    border-color: var(--primary);
+}
+
+.tv-compact-item.non-monitorable {
+    opacity: 0.55;
+}
+
+.tv-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.tv-item-icon {
+    font-size: 22px !important;
+    color: var(--text-sub);
+    flex-shrink: 0;
+}
+
+.tv-compact-item .net-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+.tv-brand-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    background: rgba(100, 210, 154, 0.15);
+    color: var(--green-border, #64d29a);
+    border: 1px solid rgba(100, 210, 154, 0.35);
+    flex-shrink: 0;
+}
+
+.tv-brand-badge.brand-generic {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-sub);
+    border-color: transparent;
+}
+
+.tv-ip-inline {
+    font-family: monospace;
+    font-size: 13.5px;
+    color: var(--text-sub);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
+.tv-check-icon {
+    font-size: 22px !important;
+    color: var(--text-sub);
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.tv-compact-item.selected .tv-check-icon {
+    color: var(--primary);
+}
+
+/* Fallback / Retry Modal */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-card {
+    width: 90%;
+    max-width: 440px;
+    background: var(--bg-surface-container, #1e293b);
+    border: 1px solid var(--outline-variant);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.modal-icon-warn {
+    color: #f59e0b;
+    font-size: 30px !important;
+}
+
+.modal-title {
+    color: var(--text-main);
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.modal-body {
+    color: var(--text-sub);
+    font-size: 14px;
+    line-height: 1.45;
+    margin-bottom: 22px;
+}
+
+.modal-actions-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-modal-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px;
+    background: var(--bg-surface-container-high);
+    border: 1px solid var(--outline-variant);
+    border-radius: 16px;
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-modal-action:active {
+    border-color: var(--primary);
+}
+
+.btn-modal-skip {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-sub);
+}
+
+/* ── View 5D: TV Calibration & Verification Layout ──────────────────────── */
+
+#step-5d-calib-view {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#step-5d-calib-view .wiz-header-row.calib-header-compact {
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+
+.calib-content-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: calc(100vh - 330px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    margin-bottom: 95px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Verification Pill Cards */
+.calib-pill-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.calib-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-surface-container, #1e293b);
+    border: 1px solid var(--outline-variant, rgba(255, 255, 255, 0.12));
+    border-radius: 14px;
+    transition: all 0.2s ease;
+}
+
+.calib-pill.pending {
+    opacity: 0.45;
+}
+
+.calib-pill.running {
+    border-color: var(--primary, #d0bcff);
+    background: rgba(208, 188, 255, 0.08);
+}
+
+.calib-pill.done {
+    border-color: rgba(100, 210, 154, 0.4);
+    background: rgba(100, 210, 154, 0.08);
+}
+
+.calib-pill-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.calib-pill-icon {
+    font-size: 24px !important;
+    color: var(--text-sub, #94a3b8);
+}
+
+.calib-pill.running .calib-pill-icon {
+    color: var(--primary, #d0bcff);
+}
+
+.calib-pill.done .calib-pill-icon {
+    color: var(--green-border, #64d29a);
+}
+
+.calib-pill-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.calib-pill-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main, #f1f5f9);
+}
+
+.calib-pill-sub {
+    font-size: 12.5px;
+    color: var(--text-sub, #94a3b8);
+}
+
+.calib-pill.done .calib-pill-sub {
+    color: var(--green-border, #64d29a);
+}
+
+.chk-status-icon {
+    font-size: 22px !important;
+    color: var(--text-sub, #94a3b8);
+}
+
+.calib-pill.done .chk-status-icon {
+    color: var(--green-border, #64d29a);
+}
+
+.calib-pill.running .chk-status-icon {
+    color: var(--primary, #d0bcff);
+    animation: spin 2s linear infinite;
+}
+
+/* Proving Progress Bar */
+.calib-progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 14px;
+    background: rgba(208, 188, 255, 0.06);
+    border: 1px solid rgba(208, 188, 255, 0.2);
+    border-radius: 12px;
+}
+
+.calib-progress-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-main, #f1f5f9);
+}
+
+.calib-progress-bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.calib-progress-bar-fill {
+    height: 100%;
+    background: var(--primary, #d0bcff);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+/* Helper Box */
+.calib-help-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 10px;
+    color: #f59e0b;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.calib-help-row .material-symbols-rounded {
+    font-size: 18px !important;
+    flex-shrink: 0;
+}
+
+
+/* ── Wi-Fi Calibration Success Card ─────────────────────────────────────── */
+.calib-success-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(76, 175, 80, 0.12);
+    border: 1px solid rgba(76, 175, 80, 0.45);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-top: 14px;
+    animation: calibSuccessPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes calibSuccessPop {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(6px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.calib-success-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(76, 175, 80, 0.2);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.calib-success-icon {
+    font-size: 28px !important;
+    color: #4caf50;
+    font-variation-settings: 'FILL' 1;
+}
+
+.calib-success-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.calib-success-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #4caf50;
+    letter-spacing: 0.2px;
+}
+
+.calib-success-sub {
+    font-size: 13px;
+    color: var(--text-sub, #a0a0a0);
+}
+
+
+/* ── Step 6: TV Calibration Restored Scale & Larger Prompts ────────────────── */
+
+#step-6 {
+    padding-bottom: 110px !important;
+}
+
+.calib-container {
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    z-index: 10;
+}
+
+/* Hero Live Telemetry Badge */
+.calib-hero-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: var(--bg-surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: 28px;
+    padding: 10px 26px;
+    align-self: center;
+}
+
+.calib-hero-icon {
+    font-size: 38px !important;
+    color: var(--primary);
+}
+
+.calib-hero-data {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.calib-hero-watt {
+    font-size: 36px !important; /* Full hero size restored */
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-main);
+    letter-spacing: -0.5px;
+}
+
+/* Side-by-Side Horizontal Blocks */
+.calib-cards-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+}
+
+.calib-pill {
+    background: var(--bg-surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: 20px;
+    padding: 16px 20px; /* Generous touch area */
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.calib-pill.pending {
+    opacity: 0.65;
+}
+
+.calib-pill.running {
+    opacity: 1;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.25);
+}
+
+.calib-pill.done {
+    opacity: 1;
+    background: var(--bg-surface-container-high);
+    border-color: rgba(100, 210, 154, 0.4);
+    box-shadow: 0 4px 12px rgba(100, 210, 154, 0.12);
+}
+
+.calib-pill-icon {
+    font-size: 32px !important; /* Restored icon size */
+    color: var(--text-sub);
+    flex-shrink: 0;
+}
+
+.calib-pill.done .calib-pill-icon {
+    color: var(--green-border) !important;
+}
+
+.calib-pill-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.calib-pill-title {
+    font-size: 18px !important; /* Restored title scale */
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.calib-pill-sub {
+    font-size: 14px !important; /* Restored subtitle scale */
+    color: var(--text-sub);
+    margin-top: 2px;
+}
+
+.calib-pill-status {
+    font-size: 26px !important; /* Restored radio/check status scale */
+    opacity: 0.4;
+    flex-shrink: 0;
+}
+
+.calib-pill.done .calib-pill-status {
+    color: var(--green-border) !important;
+    opacity: 1 !important;
+}
+
+.calib-pill-spinner {
+    width: 24px !important;
+    height: 24px !important;
+    border-width: 3px !important;
+    flex-shrink: 0;
+}
+
+/* Enlarged Instruction / Prompt Box */
+.calib-prompt-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 58px;
+    gap: 6px;
+    margin: 4px 0;
+}
+
+/* Calibration Error / Interrupted State */
+.calib-prompt-box.aborted {
+    background: rgba(255, 84, 73, 0.12);
+    border: 1px solid rgba(255, 84, 73, 0.35);
+    border-radius: 16px;
+    padding: 10px 18px;
+}
+
+.calib-prompt-box.aborted .calib-prompt-main {
+    color: #ffb4ab !important;
+    font-weight: 600;
+}
+
+.calib-prompt-main {
+    font-size: 19px !important; /* Bigger, clearer headline */
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: -0.2px;
+}
+
+.calib-prompt-detail {
+    font-size: 16px !important; /* Bigger explanation text */
+    color: var(--text-sub);
+    line-height: 1.4;
+}
+
+/* Progress Bar (Compact & Slower Visual Sweep) */
+.calib-progress-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin: 6px 0;
+}
+
+.calib-progress-track {
+    width: 340px; /* Constrained width so the visual fill moves slowly */
+    max-width: 80%;
+    height: 7px;
+    background: var(--surface-variant);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.calib-progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--primary);
+    /* Linear transition over update intervals makes the motion fluid */
+    transition: width 0.1s linear;
+}
+
+.calib-progress-label {
+    font-size: 14px;
+    color: var(--text-sub);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.2px;
+}
+
+/* Action Button */
+.calib-btn-wrap {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+    margin-top: 6px;
+}
+
+.calib-action-btn {
+    padding: 16px 48px !important;
+    font-size: 18px !important;
+    border-radius: 26px !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 10;
+}
+
+.calib-action-btn:disabled {
+    opacity: 0.35 !important;
+    filter: grayscale(1) !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+}

@@ -156,39 +156,53 @@ def get_mac_address():
 @system_bp.route("/status", methods=["GET"])
 def system_status():
     """Unified status of all /run file indicators + network info."""
-    wifi_ok = get_wifi_connected()
-    ble_available = os.path.exists(SYSTEM_FILES["bluetooth_available"])
-    tv_on = True
+    import json as _json
 
-    if ble_available:
-        if os.path.exists(SYSTEM_FILES["tv_status"]):
-            try:
-                with open(SYSTEM_FILES["tv_status"], "r") as f:
-                    tv_state = f.read().strip().upper()
-                    tv_on = (tv_state == "ON")
-            except Exception:
-                tv_on = False
-        else:
-            tv_on = False
+    wifi_ok = get_wifi_connected()
+
+    # 1. BLE Smartplug presence flags
+    # Checks legacy flag, tv_status_monitor daemon flag, and SYSTEM_FILES mapping
+    ble_tv_on = (
+        os.path.exists("/run/tv-status-on")
+        or os.path.exists("/run/tv_status")
+        or os.path.exists(SYSTEM_FILES.get("tv_status", "/run/tv-status-on"))
+    )
+
+    # 2. Wi-Fi TV state check from /var/lib/tv_monitor_state.json
+    wifi_tv_on = False
+    state_file = "/var/lib/tv_monitor_state.json"
+    if os.path.exists(state_file):
+        try:
+            with open(state_file, "r") as f:
+                states = _json.load(f)
+                if isinstance(states, dict):
+                    wifi_tv_on = any(s == "STARTED" for s in states.values())
+        except Exception:
+            pass
+
+    # TV is active if either BLE Smartplug or Wi-Fi TV is ON
+    tv_on = ble_tv_on or wifi_tv_on
+
+    # Bluetooth availability
+    ble_available = os.path.exists(SYSTEM_FILES.get("bluetooth_available", "/run/bluetooth_available"))
 
     sw_versions = {}
     sw_version_path = "/var/lib/sw_version.json"
     if os.path.exists(sw_version_path):
         try:
-            import json
             with open(sw_version_path, "r") as f:
-                sw_versions = json.load(f)
+                sw_versions = _json.load(f)
         except Exception:
-            pass
+            sw_versions = {}
 
     return jsonify({
         "success": True,
         "meter_id": METER_ID,
         "wifi": wifi_ok,
-        "gsm": os.path.exists(SYSTEM_FILES["gsm_up"]),
-        "usb_jack": os.path.exists(SYSTEM_FILES["jack_status"]),
-        "hdmi_vcc": os.path.exists(SYSTEM_FILES["hdmi_input"]),
-        "video_detection": os.path.exists(SYSTEM_FILES["video_detection"]),
+        "gsm": os.path.exists(SYSTEM_FILES.get("gsm_up", "/run/gsm_network_up")),
+        "usb_jack": os.path.exists(SYSTEM_FILES.get("jack_status", "/run/jack_status")),
+        "hdmi_vcc": os.path.exists(SYSTEM_FILES.get("hdmi_input", "/run/input_source_hdmi")),
+        "video_detection": os.path.exists(SYSTEM_FILES.get("video_detection", "/run/video_object_detection")),
         "tv_on": tv_on,
         "ble_available": ble_available,
         "installation_done": _is_installation_done(),

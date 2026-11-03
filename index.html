@@ -56,7 +56,6 @@
         <div id="step-1" class="step active welcome-step">
           <div class="welcome-left">
             <div class="welcome-text-content">
-              <!-- <span class="material-symbols-rounded hero-icon-minimal">hub</span> -->
               <span class="material-symbols-rounded hero-icon-minimal">
                 nest_display
               </span>
@@ -147,8 +146,290 @@
           </div>
         </div>
 
-        <!-- Step 5: HHID Entry (4 digits) -->
+        <!-- Step 5: TV Detection Method & Discovery -->
         <div id="step-5" class="step">
+
+          <!-- View 5A: Selection Screen -->
+          <div id="step-5-select-view" class="step-subview active">
+            <div class="wiz-header">
+              <h2 class="wiz-title">TV Detection Method</h2>
+              <p class="wiz-desc">Select how this meter will track TV power states.</p>
+            </div>
+
+            <div class="method-cards-grid">
+              <div class="method-card" id="card-method-ble" onclick="selectDetectionMethod('ble')">
+                <div class="method-card-icon">
+                  <span class="material-symbols-rounded">bluetooth</span>
+                </div>
+                <div class="method-card-content">
+                  <div class="method-card-title">Bluetooth Smart Plug</div>
+                  <div class="method-card-desc">Measures physical active and standby wattage load via BLE plug.</div>
+                </div>
+                <span class="material-symbols-rounded method-card-arrow">chevron_right</span>
+              </div>
+
+              <div class="method-card" id="card-method-wifi" onclick="selectDetectionMethod('wifi')">
+                <div class="method-card-icon">
+                  <span class="material-symbols-rounded">tv</span>
+                </div>
+                <div class="method-card-content">
+                  <div class="method-card-title">Wi-Fi Network TV</div>
+                  <div class="method-card-desc">Monitors TV lifecycle (STARTED/STANDBY) over local network ports.</div>
+                </div>
+                <span class="material-symbols-rounded method-card-arrow">chevron_right</span>
+              </div>
+            </div>
+
+            <div class="wiz-footer">
+              <button class="btn-back" onclick="prevStep()">Back</button>
+              <button class="btn-next btn-secondary-skip" onclick="skipDetectionToStep7()">Skip Detection</button>
+            </div>
+          </div>
+
+          <!-- View 5B: BLE Smart Plug Flow -->
+          <div id="step-5-ble-view" class="step-subview" style="display:none;">
+            <div class="wiz-header-row">
+              <div class="wiz-header-text">
+                <h2 class="wiz-title">Smart Plug Setup</h2>
+                <p class="wiz-desc">Select and pair your TV Bluetooth Smart Plug.</p>
+              </div>
+              <button class="refresh-btn-onboard" onclick="refreshBlePlugs()">
+                <span class="material-symbols-rounded">refresh</span>
+              </button>
+            </div>
+            <div class="net-list-wrapper">
+              <div class="net-list" id="onboard-ble-list">
+                <div class="wifi-skeleton">Searching for Smart Plugs...</div>
+              </div>
+            </div>
+            <div class="wiz-footer">
+              <button class="btn-back" onclick="backToMethodSelection()">Back</button>
+              <button class="btn-next" id="btn-next-5" onclick="nextStep()" disabled>Pair & Continue</button>
+            </div>
+          </div>
+
+          <!-- Sub-view 5C: Wi-Fi TV Discovery -->
+          <div id="step-5-wifi-view" class="step-subview" style="display:none;">
+            <div class="wiz-header-row">
+              <div class="wiz-header-text">
+                <h2 class="wiz-title">Wi-Fi TV Discovery</h2>
+                <p class="wiz-desc">Select your TV from the network list or probe its IP.</p>
+              </div>
+              <button class="refresh-btn-onboard" id="btn-refresh-tv-scan" onclick="startTvSubnetScan()">
+                <span class="material-symbols-rounded">refresh</span>
+              </button>
+            </div>
+
+            <!-- Manual IP Probe: Above the list -->
+            <div class="manual-probe-row">
+              <input 
+                type="text" 
+                id="tv-manual-ip-input" 
+                placeholder="Enter TV IP manually (e.g. 192.168.0.76)" 
+                inputmode="decimal"
+                autocomplete="off"
+              />
+              <button type="button" class="btn-probe-manual" id="btn-probe-ip" onclick="probeManualTvIp()">
+                Enter
+              </button>
+            </div>
+
+            <!-- Scrollable Device List Container -->
+            <div class="net-list-wrapper">
+              <div class="net-list" id="onboard-tv-list">
+                <div class="wifi-skeleton">Discovering TVs on the network...</div>
+              </div>
+            </div>
+
+            <div class="wiz-footer">
+              <button class="btn-back" onclick="backToMethodSelection()">Back</button>
+              <button class="btn-next" id="btn-next-5-wifi" onclick="confirmTvSelectionAndProceed()" disabled>Proceed</button>
+            </div>
+          </div>
+
+          <!-- Sub-view 5D: Wi-Fi TV Verification & Calibration -->
+          <div id="step-5d-calib-view" class="step-subview" style="display: none;">
+            <!-- Consolidated Header: Instruction updates directly here -->
+            <div class="wiz-header-row calib-header-compact">
+              <div class="wiz-header-text">
+                <h2 class="wiz-title" id="calib-header-title">Turn the TV OFF (Standby)</h2>
+                <p class="wiz-desc" id="calib-header-desc">
+                  Press power on the remote for <strong id="calib-tv-label">TV1</strong> (<span id="calib-tv-ip">192.168.0.x</span>).
+                </p>
+              </div>
+            </div>
+
+            <div class="net-list-wrapper calib-content-body">
+              <!-- Verification Check Items -->
+              <div class="calib-pill-list">
+                <!-- Check 1: Standby / OFF -->
+                <div class="calib-pill running" id="chk-calib-off">
+                  <div class="calib-pill-left">
+                    <span class="material-symbols-rounded calib-pill-icon">power_settings_new</span>
+                    <div class="calib-pill-text">
+                      <span class="calib-pill-title">Standby Verification</span>
+                      <span class="calib-pill-sub" id="chk-calib-off-sub">Awaiting Standby (Turn TV OFF)...</span>
+                    </div>
+                  </div>
+                  <span class="material-symbols-rounded chk-status-icon" id="chk-calib-off-status">sync</span>
+                </div>
+
+                <!-- Check 2: Active / ON -->
+                <div class="calib-pill pending" id="chk-calib-on">
+                  <div class="calib-pill-left">
+                    <span class="material-symbols-rounded calib-pill-icon">tv</span>
+                    <div class="calib-pill-text">
+                      <span class="calib-pill-title">Active Power Verification</span>
+                      <span class="calib-pill-sub" id="chk-calib-on-sub">Pending prior step</span>
+                    </div>
+                  </div>
+                  <span class="material-symbols-rounded chk-status-icon" id="chk-calib-on-status">radio_button_unchecked</span>
+                </div>
+              </div>
+
+              <!-- Sustained Signal Progress Bar (Proving Buffer) -->
+              <div class="calib-progress-container" id="calib-progress-container" style="display: none;">
+                <div class="calib-progress-label-row">
+                  <span id="calib-progress-label">Confirming stable signal...</span>
+                  <span id="calib-progress-pct">0%</span>
+                </div>
+                <div class="calib-progress-bar-track">
+                  <div class="calib-progress-bar-fill" id="calib-progress-fill" style="width: 0%;"></div>
+                </div>
+              </div>
+
+              <!-- Success Banner (Shows on calibration completion) -->
+              <div id="calib-success-card" class="calib-success-banner" style="display: none;">
+                <div class="calib-success-icon-wrap">
+                  <span class="material-symbols-rounded calib-success-icon">check_circle</span>
+                </div>
+                <div class="calib-success-info">
+                  <span class="calib-success-title">Wi-Fi Calibration Successful!</span>
+                  <span class="calib-success-sub">Standby & Active power cycles verified cleanly.</span>
+                </div>
+              </div>
+
+              <!-- Helper Hint (Floats inline if 30s timeout is reached) -->
+              <div id="calib-help-box" class="calib-help-row" style="display: none;">
+                <span class="material-symbols-rounded">info</span>
+                <span>Taking longer than expected? Ensure you are using the primary TV remote.</span>
+              </div>
+            </div>
+
+            <!-- Standard Footer Navigation -->
+            <div class="wiz-footer">
+              <button type="button" class="btn-back" onclick="cancelCalibrationAndBack()">Back</button>
+              <button type="button" class="btn-next" id="btn-calib-proceed" onclick="completeCalibrationAndProceed()" disabled>Proceed</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Step 6: TV Power & Network Verification -->
+        <div id="step-6" class="step">
+          <div class="wiz-header">
+            <h2 class="wiz-title" id="step-6-title">TV Power Calibration</h2>
+            <p class="wiz-desc" id="step-6-desc">Measure baseline electrical loads or verify network states.</p>
+          </div>
+
+          <!-- 6A: BLE Plug Calibration Container -->
+          <div id="calib-ble-container" class="calib-container">
+            <div class="calib-hero-badge">
+              <span class="material-symbols-rounded calib-hero-icon">bolt</span>
+              <div class="calib-hero-data">
+                <span class="calib-hero-watt" id="calib-live-watt">0.0 W</span>
+              </div>
+            </div>
+
+            <div class="calib-cards-row">
+              <div class="calib-pill pending" id="chk-calib-on">
+                <span class="material-symbols-rounded calib-pill-icon">tv</span>
+                <div class="calib-pill-text">
+                  <div class="calib-pill-title">TV Active (ON) Load</div>
+                  <div class="calib-pill-sub" id="chk-calib-on-sub">Awaiting capture</div>
+                </div>
+                <span class="material-symbols-rounded calib-pill-status" id="chk-calib-on-status">radio_button_unchecked</span>
+                <div class="chk-spinner" style="display:none;"></div>
+              </div>
+
+              <div class="calib-pill pending" id="chk-calib-off">
+                <span class="material-symbols-rounded calib-pill-icon">tv_off</span>
+                <div class="calib-pill-text">
+                  <div class="calib-pill-title">TV Standby (OFF) Load</div>
+                  <div class="calib-pill-sub" id="chk-calib-off-sub">Awaiting capture</div>
+                </div>
+                <span class="material-symbols-rounded calib-pill-status" id="chk-calib-off-status">radio_button_unchecked</span>
+                <div class="chk-spinner" style="display:none;"></div>
+              </div>
+            </div>
+
+            <div class="calib-prompt-box" id="calib-prompt-box">
+              <div class="calib-prompt-main">Turn TV ON</div>
+              <div class="calib-prompt-detail">Ensure TV is ON before capturing baseline.</div>
+            </div>
+
+            <div class="calib-progress-wrap" id="calib-progress-container" style="display:none;">
+              <div class="calib-progress-track">
+                <div class="calib-progress-fill" id="calib-progress-bar"></div>
+              </div>
+              <div class="calib-progress-label" id="calib-progress-label">Sampling...</div>
+            </div>
+
+            <div class="calib-btn-wrap">
+              <button class="btn-next calib-action-btn" id="btn-calib-action">
+                <span id="btn-calib-text">Capture TV ON Baseline</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 6B: Wi-Fi Network TV Verification Container -->
+          <div id="calib-wifi-container" class="calib-container" style="display:none;">
+            <div class="calib-cards-row">
+              <!-- Pill 1: Standby / Port Closed Test -->
+              <div class="calib-pill pending" id="chk-wifi-off">
+                <span class="material-symbols-rounded calib-pill-icon">power_settings_new</span>
+                <div class="calib-pill-text">
+                  <div class="calib-pill-title">Standby Verification</div>
+                  <div class="calib-pill-sub" id="chk-wifi-off-sub">Awaiting TV power off</div>
+                </div>
+                <span class="material-symbols-rounded calib-pill-status" id="chk-wifi-off-status">radio_button_unchecked</span>
+                <div class="chk-spinner" style="display:none;"></div>
+              </div>
+
+              <!-- Pill 2: Active / Port Open & Proved Test -->
+              <div class="calib-pill pending" id="chk-wifi-on">
+                <span class="material-symbols-rounded calib-pill-icon">live_tv</span>
+                <div class="calib-pill-text">
+                  <div class="calib-pill-title">Active Verification</div>
+                  <div class="calib-pill-sub" id="chk-wifi-on-sub">Awaiting TV power on</div>
+                </div>
+                <span class="material-symbols-rounded calib-pill-status" id="chk-wifi-on-status">radio_button_unchecked</span>
+                <div class="chk-spinner" style="display:none;"></div>
+              </div>
+            </div>
+
+            <div class="calib-prompt-box" id="wifi-prompt-box">
+              <div class="calib-prompt-main">Turn TV OFF (Standby)</div>
+              <div class="calib-prompt-detail">Use your TV remote to switch it into Standby mode.</div>
+            </div>
+
+            <div class="calib-progress-wrap" id="wifi-progress-container" style="display:none;">
+              <div class="calib-progress-track">
+                <div class="calib-progress-fill" id="wifi-progress-bar"></div>
+              </div>
+              <div class="calib-progress-label" id="wifi-progress-label">Verifying...</div>
+            </div>
+          </div>
+
+          <!-- Step 6 Footer -->
+          <div class="wiz-footer">
+            <button class="btn-back" onclick="prevStep()">Back</button>
+            <button class="btn-next" id="btn-next-6" onclick="nextStep()" disabled>Continue to Step 7</button>
+          </div>
+        </div>
+
+        <!-- Step 7: HHID Entry (4 digits) -->
+        <div id="step-7" class="step">
           <div class="wiz-header">
             <h2 class="wiz-title">Device Association</h2>
             <p class="wiz-desc">Enter the 4-digit Household ID suffix.</p>
@@ -162,12 +443,12 @@
           </div>
           <div class="wiz-footer">
             <button class="btn-back" onclick="prevStep()">Back</button>
-            <button class="btn-next" id="btn-next-5" onclick="submitHHID()">Submit</button>
+            <button class="btn-next" id="btn-next-7" onclick="submitHHID()">Submit</button>
           </div>
         </div>
 
-        <!-- Step 6: OTP Verification -->
-        <div id="step-6" class="step">
+        <!-- Step 8: OTP Verification -->
+        <div id="step-8" class="step">
           <div class="wiz-header">
             <h2 class="wiz-title">Verify OTP</h2>
             <p class="wiz-desc" id="otp-phone-mask">Enter the 4-digit code sent to registered mobile.</p>
@@ -178,12 +459,12 @@
           </div>
           <div class="wiz-footer">
             <button class="btn-back" onclick="prevStep()">Back</button>
-            <button class="btn-next" id="btn-next-6" onclick="submitOTP()">Verify</button>
+            <button class="btn-next" id="btn-next-8" onclick="submitOTP()">Verify</button>
           </div>
         </div>
 
-        <!-- Step 7: Finalizing -->
-        <div id="step-7" class="step">
+        <!-- Step 9: Finalizing -->
+        <div id="step-9" class="step">
           <div class="step-content-centered">
             <div class="install-loader"></div>
             <h2 class="hero-title" style="font-size:32px">Finalizing Setup</h2>
@@ -199,17 +480,26 @@
       </div>
     </div>
   </div>
-  </div>
-  </div>
-  </div>
 
   <script type="module">
-    import { nextStep, prevStep, selectNet, toggleOnboardPass, refreshWifi } from "./js/onboarding.js";
+    import { 
+      nextStep, 
+      prevStep, 
+      selectNet, 
+      toggleOnboardPass, 
+      refreshWifi,
+      refreshBlePlugs,
+      selectPlug,
+      triggerCalibrationStep
+    } from "./js/onboarding.js";
     window.nextStep = nextStep;
     window.prevStep = prevStep;
     window.selectNet = selectNet;
     window.toggleOnboardPass = toggleOnboardPass;
     window.refreshWifi = refreshWifi;
+    window.refreshBlePlugs = refreshBlePlugs;
+    window.selectPlug = selectPlug;
+    window.triggerCalibrationStep = triggerCalibrationStep;
   </script>
 
   <div id="app-frame">
@@ -234,15 +524,23 @@
     </nav>
 
     <div class="main-stage">
+      <!-- Universal Main-Stage TV Off Overlay (Does NOT cover nav-rail) -->
+      <div id="tv-off-overlay" class="grid-lock-overlay" style="display: none;">
+        <div class="lock-content">
+          <span class="material-symbols-rounded lock-icon">tv_off</span>
+          <h3 class="lock-title" data-i18n="tv_is_off">TV is Off</h3>
+          <p class="lock-msg" data-i18n="member_decl_disabled">Member and guest declarations are disabled while the TV is off.</p>
+        </div>
+      </div>
       <section id="view-home" class="view active">
         <div id="grid-container"></div>
-        <div id="tv-off-overlay" class="grid-lock-overlay tv-only" style="display: none;">
+        <!-- <div id="tv-off-overlay" class="grid-lock-overlay" style="display: none;">
           <div class="lock-content">
             <span class="material-symbols-rounded lock-icon">tv_off</span>
             <h3 class="lock-title" data-i18n="tv_is_off">TV is Off</h3>
             <p class="lock-msg" data-i18n="member_decl_disabled">Member declaration is disabled while TV is off.</p>
           </div>
-        </div>
+        </div> -->
       </section>
 
       <section id="view-settings" class="view">
@@ -792,6 +1090,28 @@
 
         <button id="still-watch-continue" class="conn-btn-primary">
           I'm Watching
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fallback / Retry Modal for Wi-Fi TV Detection -->
+  <div id="tv-fallback-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="material-symbols-rounded modal-icon-warn">warning</span>
+        <h3 class="modal-title">TV Not Verified</h3>
+      </div>
+      <p class="modal-body" id="tv-fallback-msg">No monitorable TV ports responded on this network. Ensure the TV is ON and connected to the same Wi-Fi.</p>
+      <div class="modal-actions-col">
+        <button class="btn-modal-action" onclick="retryTvScanFromModal()">
+          <span class="material-symbols-rounded">refresh</span> Retry Wi-Fi Scan
+        </button>
+        <button class="btn-modal-action" onclick="switchToBleFromModal()">
+          <span class="material-symbols-rounded">bluetooth</span> Switch to Bluetooth Smart Plug
+        </button>
+        <button class="btn-modal-action btn-modal-skip" onclick="skipFromModal()">
+          <span class="material-symbols-rounded">skip_next</span> Skip Detection to Step 7
         </button>
       </div>
     </div>

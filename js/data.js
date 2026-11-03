@@ -1,4 +1,5 @@
 /* js/data.js */
+import { syncTvOverlay } from './connection.js';
 
 // Live state objects that components can reference
 export let memberData = [];
@@ -49,6 +50,9 @@ export async function loadConfig() {
         // Bluetooth / TV availability — strict: only true if explicitly true
         config.bleAvailable = dStatus.ble_available === true;
         tvState.on = dStatus.tv_on === true;
+
+        // Apply initial TV UI state & overlay
+        toggleTv(tvState.on);
 
         // Hide all TV-related elements if bluetooth is not available
         const tvElements = document.querySelectorAll('.tv-only');
@@ -146,8 +150,16 @@ export function toggleTv(state) {
     tvState.on = state;
     if (window.updateTvUI) window.updateTvUI(state);
 
+    syncTvOverlay(state);
+    
     // Optimistic clear for immediate UI feedback before API confirms
     if (!state) {
+        // Immediately close the active member reminder if it is currently visible
+        const popover = document.getElementById('critical-popover');
+        if (popover) {
+            popover.classList.remove('active');
+        }
+
         memberData.forEach(m => m.active = false);
         guests.length = 0;
         if (window.renderGrid) window.renderGrid();

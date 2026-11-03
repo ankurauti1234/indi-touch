@@ -25,7 +25,7 @@ SYSTEM_FILES = {
     "video_detection": f"{RUN_DIR}/video_object_detection",
     "current_state":   f"{VAR_LIB}/current_state",
     "last_boot_id":    f"{VAR_LIB}/meter_last_boot_id.txt",
-    "tv_status":       f"{RUN_DIR}/tv_status",
+    "tv_status":       f"{RUN_DIR}/tv-status-on",
     "bluetooth_available": f"{RUN_DIR}/bluetooth_available",
     "internet_ok":     f"{RUN_DIR}/internet_ok",
 }

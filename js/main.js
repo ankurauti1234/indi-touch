@@ -285,6 +285,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyTranslations();
             updateLanguageUI(lang);
             renderGrid();
+            if (window.renderGuestList) {
+                window.renderGuestList();
+            }
         }
     };
 

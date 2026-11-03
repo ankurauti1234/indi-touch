@@ -176,7 +176,7 @@ export function renderGuestList() {
 
     if (guests.length === 0) {
         container.innerHTML = `
-            <div style="color:var(--text-sub); opacity:0.6; font-style:italic;">
+            <div style="color:var(--text-sub); opacity:0.6; font-style:italic;" data-i18n="no_guests">
                 ${t('no_guests')}
             </div>
 
@@ -199,7 +199,7 @@ export function renderGuestList() {
                     info
                 </span>
 
-                ${t('guest_cycle_info') || 'Guests are active for 24 hours (2 AM to 2 AM cycle).'}
+                <span data-i18n="guest_cycle_info">${t('guest_cycle_info') || 'Guests are active for 24 hours (2 AM to 2 AM cycle).'}</span>
             </div>
         `;
 
@@ -243,3 +243,5 @@ export function renderGuestList() {
         `;
     }).join('');
 }
+
+window.renderGuestList = renderGuestList;

@@ -120,8 +120,7 @@ def publish_absence_cancelled_event(cancelled_at: int = None):
     except Exception as e:
         _log(f"Absence cancelled event failed: {e}")
         return False
-
-
+        
 if __name__ == "__main__":
     # Quick test
     send_event("test", {"status": "ok"})

@@ -42,14 +42,25 @@ def household_absence():
             'activated_at': activated_at
         }
 
-        # Event Type 23: Away Mode Active (strictly state = True)
-        send_event(23, {'state': True})
+        # Event Type 5: Away Mode Activated with device local ISO time
+        payload_activate = {
+            'action': 'activated',
+            'start_time': to_device_iso(start_time),
+            'end_time': to_device_iso(end_time),
+            'activated_at': datetime.now().isoformat()
+        }
+        send_event(5, payload_activate)
 
         return jsonify({'success': True, 'absence': current_absence}), 200
 
     elif request.method == 'DELETE':
-        # Event Type 23: Away Mode Cancelled (strictly state = False)
-        send_event(23, {'state': False})
+        # Event Type 6: Away Mode Cancelled with device local ISO time
+        payload_cancel = {
+            'action': 'cancelled',
+            'cancelled_at': datetime.now().isoformat()
+        }
+        send_event(6, payload_cancel)
 
         current_absence = None
         return jsonify({'success': True, 'message': 'Absence cancelled'}), 200
+    

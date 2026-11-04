@@ -3,6 +3,7 @@
 import { openSetting } from './settings.js';
 import { timers } from './utils.js';
 import { config } from './data.js';
+import { isAwayModeActive, getAbsenceRecord } from './absence.js';
 
 const API_STATUS_URL = '/api/system/status';
 const POLL_INTERVAL  = 8000;       // 8 s
@@ -24,7 +25,7 @@ function isOnboarding() {
 }
 
 // ─── Universal Stage Lock Overlay (TV Off & Away Mode) ────────────────────────
-export async function syncTvOverlay(tvOn) {
+export function syncTvOverlay(tvOn) {
     if (typeof tvOn === 'boolean') {
         _lastTvOnState = tvOn;
     }
@@ -43,21 +44,9 @@ export async function syncTvOverlay(tvOn) {
         return;
     }
 
-    // Safely query absence state if available
-    let isAwayActive = false;
-    let absenceRec = null;
-
-    try {
-        const absModule = await import('./absence.js');
-        if (typeof absModule.isAwayModeActive !== 'undefined') {
-            isAwayActive = absModule.isAwayModeActive;
-        }
-        if (typeof absModule.getAbsenceRecord === 'function') {
-            absenceRec = absModule.getAbsenceRecord();
-        }
-    } catch {
-        // absence.js not present or not loaded yet; fallback gracefully
-    }
+    // Direct synchronous query from statically imported absence state
+    const isAwayActive = Boolean(isAwayModeActive);
+    const absenceRec = typeof getAbsenceRecord === 'function' ? getAbsenceRecord() : null;
 
     const iconEl = document.getElementById('tv-overlay-icon');
     const titleEl = document.getElementById('tv-overlay-title');

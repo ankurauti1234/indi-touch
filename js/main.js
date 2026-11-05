@@ -424,6 +424,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     let activeMemberDelayTimer = null;
     let activeMemberReminderCycleStarted = false;
 
+    // Helper: returns true if calibrating TV from settings or if onboarding overlay is visible
+    function isCalibratingOrOnboarding() {
+        if (window._isSettingsCalibMode) return true;
+        const onboardingLayer = document.getElementById('onboarding-layer');
+        return Boolean(onboardingLayer && !onboardingLayer.classList.contains('hidden') && onboardingLayer.style.display !== 'none');
+    }
+
     function showActiveMemberReminder() {
         const popover = document.getElementById('critical-popover');
         if (!popover) return;
@@ -431,8 +438,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tvOverlay = document.getElementById('tv-off-overlay');
         const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
 
-        // Abort if TV is off, onboarding is incomplete, or the TV Off overlay is visible
-        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible) {
+        // Abort if TV is off, onboarding is incomplete, calibration/onboarding is running, or TV Off overlay is visible
+        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible || isCalibratingOrOnboarding()) {
             popover.classList.remove('active');
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
@@ -480,8 +487,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const popover = document.getElementById('critical-popover');
         const activeCount = memberData.filter(m => m.active).length;
 
-        // 1. If TV is off, onboarding incomplete, overlay is visible, or someone is active: clear everything immediately
-        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible || activeCount > 0) {
+        // 1. If TV is off, onboarding incomplete, calibration/onboarding running, overlay visible, or someone active: clear immediately
+        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible || activeCount > 0 || isCalibratingOrOnboarding()) {
             if (popover) {
                 popover.classList.remove('active');
             }

@@ -238,19 +238,46 @@ export function cancelCalibrationAndBack() {
     if (calibBtn) {
         calibBtn.classList.remove('loading');
         calibBtn.disabled = true;
+        calibBtn.setAttribute('disabled', 'true');
     }
 
-    // 2. Invalidate active selection so stale devices cannot proceed
-    selectedTvDevice = null;
+    // 2. Reset calibration indicators, pills, and timeout hints
+    const succ = document.getElementById('calib-success-card');
+    if (succ) succ.style.display = 'none';
 
-    // 3. Clear visual selections in the list
+    const prog = document.getElementById('calib-progress-container');
+    if (prog) prog.style.display = 'none';
+
+    const helpBox = document.getElementById('calib-help-box');
+    if (helpBox) helpBox.style.display = 'none';
+
+    const offPill = document.getElementById('chk-calib-off');
+    if (offPill) {
+        offPill.className = 'calib-pill pending';
+        const sub = document.getElementById('chk-calib-off-sub');
+        if (sub) sub.innerText = 'Awaiting Power State...';
+    }
+
+    const onPill = document.getElementById('chk-calib-on');
+    if (onPill) {
+        onPill.className = 'calib-pill pending';
+        const sub = document.getElementById('chk-calib-on-sub');
+        if (sub) sub.innerText = 'Awaiting Power State...';
+    }
+
+    // 3. Invalidate active selection so stale devices cannot proceed
+    selectedTvDevice = null;
+    calibActiveDevice = null;
+    wifiCalibStage = 'OFF_WAIT';
+
+    // 4. Clear visual selections in the list
     document.querySelectorAll('#onboard-tv-list .net-item').forEach(i => {
         i.classList.remove('selected');
         const icon = i.querySelector('.tv-check-icon');
         if (icon) icon.innerText = 'radio_button_unchecked';
     });
 
-    // 4. Strictly disable the View 5C Proceed button
+    // 5. Strictly disable the View 5C Proceed button
     const nextBtn = document.getElementById('btn-next-5-wifi');
     if (nextBtn) {
         nextBtn.classList.remove('loading');
@@ -258,11 +285,15 @@ export function cancelCalibrationAndBack() {
         nextBtn.setAttribute('disabled', 'true');
     }
 
-    // 5. Reset views
+    // 6. Reset views (works seamlessly in both Onboarding and Settings sub-panel mount)
     const calibView = document.getElementById('step-5d-calib-view');
     const wifiView = document.getElementById('step-5-wifi-view');
     if (calibView) calibView.style.display = 'none';
-    if (wifiView) wifiView.style.display = 'flex';
+    if (wifiView) {
+        wifiView.style.display = 'flex';
+        wifiView.style.flex = '1';
+        wifiView.style.flexDirection = 'column';
+    }
 }
 
 export async function completeCalibrationAndProceed() {
@@ -310,51 +341,80 @@ export async function completeCalibrationAndProceed() {
 }
 
 
-// ── Hidden Wi-Fi Tv Calibration Mode in Settings ───────────────────────────────────────────────
+// ── Hidden Wi-Fi Tv Calibration Mode in Settings ───────────────────────────────
 let _isSettingsCalibMode = false;
 
 export function openTvCalibrationFromSettings() {
-  _isSettingsCalibMode = true;
+    _isSettingsCalibMode = true;
 
-  // Hide system info panel, show TV calibration panel
-  const sysPanel = document.getElementById('set-system');
-  const calibPanel = document.getElementById('set-tv-calibration');
-  if (sysPanel) sysPanel.classList.remove('active');
-  if (calibPanel) calibPanel.classList.add('active');
+    // 1. Hide System Info panel & activate TV Calibration panel
+    const sysPanel = document.getElementById('set-system');
+    const calibPanel = document.getElementById('set-tv-calibration');
+    if (sysPanel) sysPanel.classList.remove('active');
+    if (calibPanel) calibPanel.classList.add('active');
 
-  // Reparent or reveal View 5C inside #settings-tv-calib-mount
-  const calibMount = document.getElementById('settings-tv-calib-mount');
-  const wifiView = document.getElementById('step-5-wifi-view');
-  if (calibMount && wifiView) {
-    calibMount.appendChild(wifiView);
-    wifiView.style.display = 'flex';
-  }
+    // 2. Mount both View 5C and View 5D inside the mount container
+    const mount = document.getElementById('settings-tv-calib-mount');
+    const wifiView = document.getElementById('step-5-wifi-view');
+    const calibView = document.getElementById('step-5d-calib-view');
 
-  // Trigger scan
-  startTvSubnetScan();
+    if (mount) {
+        if (wifiView) {
+            mount.appendChild(wifiView);
+            wifiView.style.display = 'flex';
+        }
+        if (calibView) {
+            mount.appendChild(calibView);
+            calibView.style.display = 'none';
+        }
+    }
+
+    // 3. Clear existing selection and kick off discovery scan
+    selectedTvDevice = null;
+    const nextBtn = document.getElementById('btn-next-5-wifi');
+    if (nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.setAttribute('disabled', 'true');
+    }
+
+    startTvSubnetScan();
 }
 
 export function closeTvCalibrationSettings() {
-  _isSettingsCalibMode = false;
+    _isSettingsCalibMode = false;
 
-  // Restore step views back into onboarding container if needed
-  const step5Container = document.getElementById('step-5');
-  const wifiView = document.getElementById('step-5-wifi-view');
-  const calibView = document.getElementById('step-5d-calib-view');
-  if (step5Container) {
-    if (wifiView) step5Container.appendChild(wifiView);
-    if (calibView) step5Container.appendChild(calibView);
-  }
+    // 1. Clear any active poll timers
+    stopTvScanPolling();
+    if (typeof calibPollTimer !== 'undefined') clearInterval(calibPollTimer);
+    if (typeof calibTimeoutTimer !== 'undefined') clearTimeout(calibTimeoutTimer);
 
-  // Switch panels back
-  const calibPanel = document.getElementById('set-tv-calibration');
-  const sysPanel = document.getElementById('set-system');
-  if (calibPanel) calibPanel.classList.remove('active');
-  if (sysPanel) {
-    sysPanel.classList.add('active');
-    loadTvSystemInfo();
-  }
+    // 2. Return views to Step 5 container
+    const step5 = document.getElementById('step-5');
+    const wifiView = document.getElementById('step-5-wifi-view');
+    const calibView = document.getElementById('step-5d-calib-view');
+    if (step5) {
+        if (wifiView) {
+            step5.appendChild(wifiView);
+            wifiView.style.display = 'none';
+        }
+        if (calibView) {
+            step5.appendChild(calibView);
+            calibView.style.display = 'none';
+        }
+    }
+
+    // 3. Switch panels back to System Info and reload data
+    const calibPanel = document.getElementById('set-tv-calibration');
+    const sysPanel = document.getElementById('set-system');
+    if (calibPanel) calibPanel.classList.remove('active');
+    if (sysPanel) {
+        sysPanel.classList.add('active');
+        if (typeof window.loadSystemInfo === 'function') {
+            window.loadSystemInfo();
+        }
+    }
 }
+
 
 // ── Step Navigation Engine ──────────────────────────────────────────────────
 
@@ -785,6 +845,13 @@ export function selectDetectionMethod(method) {
 }
 
 export function backToMethodSelection() {
+    if (typeof _isSettingsCalibMode !== 'undefined' && _isSettingsCalibMode) {
+        if (typeof closeTvCalibrationSettings === 'function') {
+            closeTvCalibrationSettings();
+        }
+        return;
+    }
+
     resetStep5Subviews();
 }
 

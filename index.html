@@ -490,9 +490,7 @@
       refreshWifi,
       refreshBlePlugs,
       selectPlug,
-      triggerCalibrationStep,
-      openTvCalibrationFromSettings,
-      closeTvCalibrationSettings
+      triggerCalibrationStep
     } from "./js/onboarding.js";
     window.nextStep = nextStep;
     window.prevStep = prevStep;
@@ -502,8 +500,6 @@
     window.refreshBlePlugs = refreshBlePlugs;
     window.selectPlug = selectPlug;
     window.triggerCalibrationStep = triggerCalibrationStep;
-    window.openTvCalibrationFromSettings = openTvCalibrationFromSettings;
-    window.closeTvCalibrationSettings = closeTvCalibrationSettings;
   </script>
 
   <div id="app-frame">
@@ -816,8 +812,9 @@
               <div class="avatar-label" data-i18n="shapes">Shapes</div>
             </div>
           </div>
-        </div>
 
+        </div>
+        
         <div id="set-members" class="settings-panel">
           <div class="page-header">
             <button class="back-btn" onclick="closeSetting()">

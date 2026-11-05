@@ -1629,3 +1629,7 @@ window.skipFromModal = skipFromModal;
 window.startTvCalibration = startTvCalibration;
 window.cancelCalibrationAndBack = cancelCalibrationAndBack;
 window.completeCalibrationAndProceed = completeCalibrationAndProceed;
+
+// Expose System Info TV Calibration handlers
+window.openTvCalibrationFromSettings = openTvCalibrationFromSettings;
+window.closeTvCalibrationSettings = closeTvCalibrationSettings;

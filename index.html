@@ -812,8 +812,8 @@
               <div class="avatar-label" data-i18n="shapes">Shapes</div>
             </div>
           </div>
-
         </div>
+
         <div id="set-members" class="settings-panel">
           <div class="page-header">
             <button class="back-btn" onclick="closeSetting()">
@@ -839,33 +839,25 @@
 
           <div class="list-group" id="sys-info-content" style="padding:0 20px">
             <div class="wifi-skeleton" data-i18n="loading_sys_info">Loading system info...</div>
-          </div>
 
-          <!-- INSERT PART 1 HERE: Inside #set-system, below #sys-info-content -->
-          <div class="sys-info-section" style="padding: 0 20px; margin-top: 18px;">
-            <div class="section-title-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <h4 style="margin: 0; font-size: 14px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px;">TV Power Detection</h4>
-              <span id="sys-tv-detection-badge" class="badge" style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.08);">Checking...</span>
-            </div>
-            <div class="list-item" style="padding: 12px 14px; border-radius: 8px; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <span class="material-symbols-rounded" id="sys-tv-icon" style="font-size: 24px;">tv</span>
-                <div>
-                  <div id="sys-tv-target-label" style="font-weight: 500;">Wi-Fi TV Tracking</div>
-                  <div id="sys-tv-target-detail" style="font-size: 12px; opacity: 0.6;">Loading configuration...</div>
-                </div>
+            <!-- Integrated TV Power Detection list item -->
+            <div class="list-item" id="item-sys-tv-calib" onclick="openTvCalibrationFromSettings()" style="cursor: pointer;">
+              <div class="icon-box">
+                <span class="material-symbols-rounded" id="sys-tv-icon">tv</span>
               </div>
-              <button class="stage-lock-btn" id="btn-open-tv-calib-settings" onclick="openTvCalibrationFromSettings()" style="padding: 6px 14px; font-size: 13px;">
-                <span class="material-symbols-rounded" style="font-size: 18px;">tune</span>
-                <span>Configure TV</span>
-              </button>
+              <div class="item-content">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <h4 data-i18n="tv_power_detection" style="margin: 0;">TV Power Detection</h4>
+                  <span id="sys-tv-detection-badge" class="wifi-badge" style="font-size: 11px; padding: 2px 6px;">Checking...</span>
+                </div>
+                <p id="sys-tv-target-detail" style="font-size: 12px; opacity: 0.6; margin-top: 2px;">Loading configuration...</p>
+              </div>
+              <span class="material-symbols-rounded chevron">chevron_right</span>
             </div>
           </div>
         </div>
 
-        </div> <!-- End of #set-system -->
-
-        <!-- INSERT PART 2 HERE: Sibling to #set-system, before or after #set-connectivity -->
+        <!-- TV Calibration Sub-Panel (Sibling to #set-system) -->
         <div id="set-tv-calibration" class="settings-panel" style="display: none;">
           <div class="page-header">
             <button class="back-btn" onclick="closeTvCalibrationSettings()">

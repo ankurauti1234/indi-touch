@@ -589,13 +589,27 @@ export async function loadSystemInfo() {
         const el = document.getElementById('sys-info-content');
         if (!el) return;
 
+        // Fetch TV configuration state for the calibration row
+        let tvStatusText = 'Not Configured';
+        let tvDetail = 'Tap to scan and calibrate TV';
+        let tvBadgeClass = 'hw-warn';
+        try {
+            const tvRes = await fetch('/api/tv/status');
+            const tvData = await tvRes.json();
+            if (tvData.active_device) {
+                tvStatusText = 'Calibrated';
+                tvDetail = `${tvData.active_device.label || tvData.active_device.model || 'TV'} (${tvData.active_device.ip})`;
+                tvBadgeClass = 'hw-ok';
+            }
+        } catch (_) {}
+
         el.innerHTML = `
             <div class="info-group">
                 <div class="info-row" style="background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:12px">
                     <span class="info-label">${t('Device Identifier')}</span>
                     <span class="info-value" style="font-family:monospace; font-size:18px">${d.meter_id}</span>
                 </div>
-                
+
                 <div class="info-row">
                     <span class="info-label">${t('Local IP Address')}</span>
                     <span class="info-value">${d.ip_address}</span>
@@ -648,6 +662,24 @@ export async function loadSystemInfo() {
                     <span class="material-symbols-rounded">smart_toy</span>
                     <span class="hw-grid-label">Video AI</span>
                     <span class="hw-grid-status">${d.video_detection ? 'Running' : 'Stopped'}</span>
+                </div>
+            </div>
+
+            <!-- TV Calibration Section -->
+            <div style="margin:20px 0 10px 4px; font-size:12px; text-transform:uppercase; color:var(--primary); letter-spacing:1px; opacity:0.8">TV Power Calibration</div>
+            <div class="info-group">
+                <div class="info-row" onclick="window.openTvCalibrationFromSettings()" style="cursor:pointer; padding: 12px 14px; display:flex; align-items:center; justify-content:space-between">
+                    <div style="display:flex; align-items:center; gap:12px">
+                        <span class="material-symbols-rounded" style="font-size:22px; color:var(--primary)">tv</span>
+                        <div>
+                            <div style="font-weight:500; font-size:14px">Wi-Fi TV Tracking</div>
+                            <div style="font-size:12px; opacity:0.6; margin-top:2px">${tvDetail}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px">
+                        <span class="hw-grid-status ${tvBadgeClass}">${tvStatusText}</span>
+                        <span class="material-symbols-rounded chevron" style="opacity:0.5">chevron_right</span>
+                    </div>
                 </div>
             </div>
         `;

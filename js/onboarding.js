@@ -342,19 +342,32 @@ let _isSettingsCalibMode = false;
 export function openTvCalibrationFromSettings() {
     _isSettingsCalibMode = true;
 
-    // 1. Switch active view from Settings to Onboarding
-    const settingsView = document.getElementById('view-settings');
-    const onboardView = document.getElementById('view-onboarding');
+    // 1. Switch to onboarding view using the app's native router
+    if (typeof window.navTo === 'function') {
+        window.navTo('onboarding');
+    } else {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        const onboard = document.getElementById('view-onboarding');
+        if (onboard) onboard.classList.add('active');
+    }
 
-    if (settingsView) settingsView.classList.remove('active');
-    if (onboardView) onboardView.classList.add('active');
+    // 2. Set onboarding state explicitly to Step 5
+    currentStep = 5;
+    detectionMethod = 'wifi';
 
-    // 2. Hide all steps except Step 5
-    document.querySelectorAll('#view-onboarding .step').forEach(s => s.classList.remove('active'));
+    // 3. Deactivate all wizard steps, activate Step 5
+    document.querySelectorAll('#view-onboarding .step').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+    });
+
     const step5 = document.getElementById('step-5');
-    if (step5) step5.classList.add('active');
+    if (step5) {
+        step5.classList.add('active');
+        step5.style.display = 'flex';
+    }
 
-    // 3. Inside Step 5, activate View 5C (Wi-Fi Discovery) directly
+    // 4. Set sub-views: Show View 5C (Wi-Fi discovery), hide others
     const selectView = document.getElementById('step-5-select-view');
     const bleView = document.getElementById('step-5-ble-view');
     const wifiView = document.getElementById('step-5-wifi-view');
@@ -363,9 +376,12 @@ export function openTvCalibrationFromSettings() {
     if (selectView) selectView.style.display = 'none';
     if (bleView) bleView.style.display = 'none';
     if (calibView) calibView.style.display = 'none';
-    if (wifiView) wifiView.style.display = 'flex';
+    if (wifiView) {
+        wifiView.style.display = 'flex';
+        wifiView.style.flex = '1';
+    }
 
-    // 4. Reset selection and trigger the subnet scan
+    // 5. Invalidate previous device selection & reset proceed button
     selectedTvDevice = null;
     const nextBtn = document.getElementById('btn-next-5-wifi');
     if (nextBtn) {
@@ -374,33 +390,44 @@ export function openTvCalibrationFromSettings() {
         nextBtn.setAttribute('disabled', 'true');
     }
 
-    startTvSubnetScan();
+    // 6. Trigger Wi-Fi discovery scan
+    if (typeof startTvSubnetScan === 'function') {
+        startTvSubnetScan();
+    }
 }
 
 export function closeTvCalibrationSettings() {
     _isSettingsCalibMode = false;
 
-    // 1. Stop any ongoing scan/calibration polling
+    // 1. Clear active polling loops
     stopTvScanPolling();
     if (typeof calibPollTimer !== 'undefined') clearInterval(calibPollTimer);
     if (typeof calibTimeoutTimer !== 'undefined') clearTimeout(calibTimeoutTimer);
 
-    // 2. Hide onboarding view, restore settings view
-    const onboardView = document.getElementById('view-onboarding');
-    const settingsView = document.getElementById('view-settings');
-    const sysPanel = document.getElementById('set-system');
+    // 2. Return to Settings view via the app's native router
+    if (typeof window.navTo === 'function') {
+        window.navTo('settings');
+    } else {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        const setView = document.getElementById('view-settings');
+        if (setView) setView.classList.add('active');
+    }
 
-    if (onboardView) onboardView.classList.remove('active');
-    if (settingsView) settingsView.classList.add('active');
+    // 3. Re-open System Info panel specifically
+    if (typeof window.openSetting === 'function') {
+        window.openSetting('system');
+    } else {
+        document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+        const sysPanel = document.getElementById('set-system');
+        if (sysPanel) sysPanel.classList.add('active');
+    }
 
-    // 3. Ensure System Info panel is active and reloaded
-    if (sysPanel) {
-        sysPanel.classList.add('active');
-        if (typeof window.loadSystemInfo === 'function') {
-            window.loadSystemInfo();
-        }
+    // 4. Refresh system info stats so updated TV status is displayed
+    if (typeof window.loadSystemInfo === 'function') {
+        window.loadSystemInfo();
     }
 }
+
 
 
 // ── Step Navigation Engine ──────────────────────────────────────────────────

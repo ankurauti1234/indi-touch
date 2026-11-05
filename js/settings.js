@@ -1,6 +1,6 @@
-import { renderGrid } from './grid.js';
 import { renderGuestList } from './guest.js';
-import { config, save, memberData, updateSetting } from './data.js';
+import { renderGrid } from './grid.js';
+import { config, memberData, updateSetting } from './data.js';
 import { applyRemoteMode, isRemoteMode } from './remote.js';
 import { t } from './i18n.js';
 
@@ -27,16 +27,31 @@ export function openSetting(id) {
     if (id === 'system')       loadSystemInfo();
     if (id === 'power')        _initPowerPanel();
     if (id === 'wallpaper')    loadWallpaperSettings();
+    if (id === 'avatars' || id === 'avatar') _initAvatarPanel();
 }
 
 function _initPowerPanel() {
-    // Highlight the current screen timeout chip
-    const ms  = (config && config.screenTimeout) || 300000;
-    const min = Math.round(ms / 60000);
+    // Highlight current screen timeout chip accurately
+    const currentMs = (config && config.screenTimeout) || 300000;
+    
     document.querySelectorAll('#set-power .chip').forEach(c => {
-        const val = parseInt(c.dataset.min || c.innerText);
-        if (val === min) c.classList.add('selected');
-        else c.classList.remove('selected');
+        const text = c.innerText.trim().toLowerCase();
+        let chipMs = 0;
+        
+        if (text.endsWith('s')) {
+            chipMs = parseFloat(text) * 1000;
+        } else if (text.endsWith('m')) {
+            chipMs = parseFloat(text) * 60 * 1000;
+        } else {
+            chipMs = parseFloat(text) * 60 * 1000;
+        }
+
+        // Match within 500ms tolerance
+        if (Math.abs(chipMs - currentMs) < 500) {
+            c.classList.add('selected');
+        } else {
+            c.classList.remove('selected');
+        }
     });
 }
 
@@ -113,29 +128,37 @@ export function toggleAnimations() {
     if (window.showToast) window.showToast(newVal ? 'Animations Reduced' : 'Animations Restored');
 }
 
-export async function selectAvatarStyle(style) {
-    currentAvatarStyle = style;
-    updateSetting('avatarStyle', style);
+function _initAvatarPanel() {
+    const activeStyle = config.avatarStyle || 'local';
+    document.querySelectorAll('#set-avatars .avatar-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
 
-    // Update UI Selection
-    document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
-    const selectedOpt = document.getElementById('avat-' + style);
-    if (selectedOpt) {
-        selectedOpt.classList.add('selected');
+    const target = document.getElementById(`avat-${activeStyle}`);
+    if (target) {
+        target.classList.add('selected');
     }
-
-    // Save to global state used by Grid
-    window.globalAvatarStyle = style;
-
-    // Re-render grid to show new avatars
-    renderGrid();
-
-    // Re-render guest list immediately
-    renderGuestList();
 }
 
+export async function selectAvatarStyle(style) {
+    config.avatarStyle = style;
+    await updateSetting('avatarStyle', style);
 
-// --- NEW SETTINGS LOGIC ---
+    // Update UI selected indicators in settings
+    document.querySelectorAll('#set-avatars .avatar-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    const target = document.getElementById(`avat-${style}`);
+    if (target) {
+        target.classList.add('selected');
+    }
+
+    renderGrid();
+    renderGuestList();
+    renderScreensaverMembers();
+}
+window.selectAvatarStyle = selectAvatarStyle;
+
 
 // ── WIFI (real API) ──────────────────────────────────────────────────────────
 let _currentSsid = null;
@@ -428,10 +451,11 @@ window.selectTimeout = function(minutes, el) {
     const parent = el.parentElement;
     if (parent) parent.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
-    const ms = minutes * 60 * 1000;
-    
+    const ms = Math.round(minutes * 60 * 1000);
+
+    config.screenTimeout = ms;
     updateSetting('screenTimeout', ms);
-    
+
     if (window.setScreensaverTimeout) window.setScreensaverTimeout(ms);
 };
 
@@ -522,7 +546,7 @@ window.onMemberBlur = function (index, inputEl) {
     const cleaned = inputEl.value.replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 
     if (!cleaned) {
-        const fallbackName = `Member ${index + 1}`;
+        const fallbackName = `M${index + 1}`;
         inputEl.value = fallbackName;
         inputEl.style.borderColor = '';
         inputEl.style.outline = '';
@@ -660,7 +684,7 @@ async function loadWallpaperSettings() {
         if (d.hasWallpaper) {
             if (noImg) noImg.style.display = 'none';
             if (hasImg) hasImg.style.display = 'flex';
-            if (thumb) thumb.src = `${d.url}&t=${Date.now()}`;
+            if (thumb) thumb.src = d.url;
             if (sizeInfo) sizeInfo.textContent = `${d.sizeKB} KB • ${d.ext.replace('.', '').toUpperCase()} ${t('Active')}`;
             if (resetBtn) resetBtn.style.display = 'flex';
             if (statusText) statusText.textContent = t('active_bg');
@@ -706,3 +730,48 @@ window.resetWallpaper = async function() {
         if (window.showToast) window.showToast('Error: ' + e.message);
     }
 };
+
+
+export async function loadTvSystemInfo() {
+  const badge = document.getElementById('sys-tv-detection-badge');
+  const targetLabel = document.getElementById('sys-tv-target-label');
+  const targetDetail = document.getElementById('sys-tv-target-detail');
+  const tvIcon = document.getElementById('sys-tv-icon');
+
+  try {
+    const res = await fetch('/api/tv/status');
+    const data = await res.json();
+
+    if (data.active_device) {
+      if (badge) {
+        badge.innerText = 'Wi-Fi Active';
+        badge.style.background = 'rgba(100, 210, 154, 0.2)';
+        badge.style.color = '#64d29a';
+      }
+      if (targetLabel) targetLabel.innerText = data.active_device.label || data.active_device.model || 'Calibrated Wi-Fi TV';
+      if (targetDetail) targetDetail.innerText = `IP: ${data.active_device.ip || 'N/A'} • Port: ${data.active_device.port || 'Auto'}`;
+      if (tvIcon) tvIcon.innerText = 'tv';
+    } else if (config.bleAvailable && config.blePlugConnected) {
+      if (badge) {
+        badge.innerText = 'BLE Smart Plug';
+        badge.style.background = 'rgba(74, 144, 226, 0.2)';
+        badge.style.color = '#4A90E2';
+      }
+      if (targetLabel) targetLabel.innerText = 'Smart Plug Detection';
+      if (targetDetail) targetDetail.innerText = 'Tracking via Bluetooth Smart Plug load';
+      if (tvIcon) tvIcon.innerText = 'power';
+    } else {
+      if (badge) {
+        badge.innerText = 'Unconfigured';
+        badge.style.background = 'rgba(255, 184, 102, 0.2)';
+        badge.style.color = '#FFB866';
+      }
+      if (targetLabel) targetLabel.innerText = 'No TV Calibrated';
+      if (targetDetail) targetDetail.innerText = 'Tap Configure to scan and calibrate field TV';
+      if (tvIcon) tvIcon.innerText = 'tv_off';
+    }
+  } catch (err) {
+    if (badge) badge.innerText = 'Error';
+    if (targetDetail) targetDetail.innerText = 'Unable to query TV status';
+  }
+}

@@ -292,10 +292,68 @@ export async function completeCalibrationAndProceed() {
         }
     }
 
-    // Advance to Step 7 (HHID Page)
+    // Branch: If launched from hidden System Info settings
+    if (typeof _isSettingsCalibMode !== 'undefined' && _isSettingsCalibMode) {
+        if (typeof closeTvCalibrationSettings === 'function') {
+            closeTvCalibrationSettings();
+        }
+        if (typeof window.showToast === 'function') {
+            window.showToast("TV Calibrated Successfully");
+        }
+        return;
+    }
+
+    // Default: Advance to Step 7 (HHID Page) during onboarding
     animateStep(5, 7);
     currentStep = 7;
     handleStepLogic(currentStep);
+}
+
+
+// ── Hidden Wi-Fi Tv Calibration Mode in Settings ───────────────────────────────────────────────
+let _isSettingsCalibMode = false;
+
+export function openTvCalibrationFromSettings() {
+  _isSettingsCalibMode = true;
+
+  // Hide system info panel, show TV calibration panel
+  const sysPanel = document.getElementById('set-system');
+  const calibPanel = document.getElementById('set-tv-calibration');
+  if (sysPanel) sysPanel.classList.remove('active');
+  if (calibPanel) calibPanel.classList.add('active');
+
+  // Reparent or reveal View 5C inside #settings-tv-calib-mount
+  const calibMount = document.getElementById('settings-tv-calib-mount');
+  const wifiView = document.getElementById('step-5-wifi-view');
+  if (calibMount && wifiView) {
+    calibMount.appendChild(wifiView);
+    wifiView.style.display = 'flex';
+  }
+
+  // Trigger scan
+  startTvSubnetScan();
+}
+
+export function closeTvCalibrationSettings() {
+  _isSettingsCalibMode = false;
+
+  // Restore step views back into onboarding container if needed
+  const step5Container = document.getElementById('step-5');
+  const wifiView = document.getElementById('step-5-wifi-view');
+  const calibView = document.getElementById('step-5d-calib-view');
+  if (step5Container) {
+    if (wifiView) step5Container.appendChild(wifiView);
+    if (calibView) step5Container.appendChild(calibView);
+  }
+
+  // Switch panels back
+  const calibPanel = document.getElementById('set-tv-calibration');
+  const sysPanel = document.getElementById('set-system');
+  if (calibPanel) calibPanel.classList.remove('active');
+  if (sysPanel) {
+    sysPanel.classList.add('active');
+    loadTvSystemInfo();
+  }
 }
 
 // ── Step Navigation Engine ──────────────────────────────────────────────────

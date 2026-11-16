@@ -53,7 +53,7 @@ export function resetHomeTimer() {
 window.resetHomeTimer = resetHomeTimer;
 
 // ── Developer PIN Modal Logic ────────────────────────────────────────────────
-const DEV_PIN = '69420'; // Set your technician PIN here
+const DEV_PIN = '102938'; // Set your technician PIN here
 let _enteredDevPin = '';
 
 function _updateDevPinDots(isError = false) {
@@ -73,7 +73,7 @@ window.openDevPinModal = () => {
     _updateDevPinDots(false);
     const sub = document.getElementById('dev-pin-subtitle');
     if (sub) {
-        sub.innerText = 'Enter 5-digit PIN to unlock System Info';
+        sub.innerText = 'Enter 6-digit PIN to unlock System Info';
         sub.style.color = 'var(--text-sub)';
     }
     const overlay = document.getElementById('dev-pin-overlay');
@@ -87,11 +87,11 @@ window.closeDevPinModal = () => {
 };
 
 window.enterDevPinDigit = (digit) => {
-    if (_enteredDevPin.length >= 5) return;
+    if (_enteredDevPin.length >= 6) return;
     _enteredDevPin += digit;
     _updateDevPinDots(false);
 
-    if (_enteredDevPin.length === 5) {
+    if (_enteredDevPin.length === 6) {
         if (_enteredDevPin === DEV_PIN) {
             setTimeout(() => {
                 window.closeDevPinModal();
@@ -140,6 +140,9 @@ window.handleSettingsTitleClick = () => {
     }
 };
 
+
+
+// ── Daily Maintenance & Still Watching Logic ───────────────────────────────
 let lastMemberInteractionAt = null;
 
 function recordMemberInteraction() {

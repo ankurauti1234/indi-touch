@@ -52,14 +52,91 @@ export function resetHomeTimer() {
 }
 window.resetHomeTimer = resetHomeTimer;
 
+// ── Developer PIN Modal Logic ────────────────────────────────────────────────
+const DEV_PIN = '1234'; // Set your technician PIN here
+let _enteredDevPin = '';
+
+function _updateDevPinDots(isError = false) {
+    const dots = document.querySelectorAll('#dev-pin-dots .pin-dot');
+    dots.forEach((dot, idx) => {
+        dot.classList.remove('filled', 'error');
+        if (isError) {
+            dot.classList.add('error');
+        } else if (idx < _enteredDevPin.length) {
+            dot.classList.add('filled');
+        }
+    });
+}
+
+window.openDevPinModal = () => {
+    _enteredDevPin = '';
+    _updateDevPinDots(false);
+    const sub = document.getElementById('dev-pin-subtitle');
+    if (sub) {
+        sub.innerText = 'Enter 4-digit PIN to unlock System Info';
+        sub.style.color = 'var(--text-sub)';
+    }
+    const overlay = document.getElementById('dev-pin-overlay');
+    if (overlay) overlay.classList.add('active');
+};
+
+window.closeDevPinModal = () => {
+    _enteredDevPin = '';
+    const overlay = document.getElementById('dev-pin-overlay');
+    if (overlay) overlay.classList.remove('active');
+};
+
+window.enterDevPinDigit = (digit) => {
+    if (_enteredDevPin.length >= 4) return;
+    _enteredDevPin += digit;
+    _updateDevPinDots(false);
+
+    if (_enteredDevPin.length === 4) {
+        if (_enteredDevPin === DEV_PIN) {
+            setTimeout(() => {
+                window.closeDevPinModal();
+                const sysBtn = document.getElementById('btn-sys-info');
+                if (sysBtn) sysBtn.style.display = 'flex';
+                if (typeof window.showToast === 'function') {
+                    window.showToast('System Info Revealed');
+                }
+            }, 150);
+        } else {
+            _updateDevPinDots(true);
+            const dotsWrap = document.getElementById('dev-pin-dots');
+            const sub = document.getElementById('dev-pin-subtitle');
+            if (sub) {
+                sub.innerText = 'Incorrect PIN. Try again.';
+                sub.style.color = 'var(--error)';
+            }
+            if (dotsWrap) {
+                dotsWrap.classList.remove('pin-shake');
+                void dotsWrap.offsetWidth;
+                dotsWrap.classList.add('pin-shake');
+            }
+            setTimeout(() => {
+                _enteredDevPin = '';
+                _updateDevPinDots(false);
+            }, 450);
+        }
+    }
+};
+
+window.backspaceDevPin = () => {
+    if (_enteredDevPin.length > 0) {
+        _enteredDevPin = _enteredDevPin.slice(0, -1);
+        _updateDevPinDots(false);
+    }
+};
+
+// ── 3-Tap Trigger on Settings Title ──────────────────────────────────────────
 let settingsClickCount = 0;
 window.handleSettingsTitleClick = () => {
     settingsClickCount++;
     console.log("Settings click:", settingsClickCount);
     if (settingsClickCount === 3) {
-        document.getElementById('btn-sys-info').style.display = 'flex';
-        showToast("System Info Revealed");
         settingsClickCount = 0;
+        window.openDevPinModal();
     }
 };
 

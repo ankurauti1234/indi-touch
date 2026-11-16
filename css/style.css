@@ -2146,6 +2146,70 @@ body.osk-open .main-stage {
     margin-bottom: 24px;
 }
 
+/* Developer PIN Keypad */
+.pin-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--outline);
+    background: transparent;
+    transition: all 0.15s ease;
+}
+
+.pin-dot.filled {
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.15);
+}
+
+.pin-dot.error {
+    background: var(--error);
+    border-color: var(--error);
+}
+
+.dev-pin-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.pin-key {
+    height: 54px;
+    border-radius: 16px;
+    border: 1px solid var(--outline-variant);
+    background: var(--bg-surface-container-high);
+    color: var(--text-main);
+    font-size: 20px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.pin-key:active {
+    transform: scale(0.94);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+}
+
+.pin-key-action {
+    font-size: 14px;
+    color: var(--text-sub);
+    background: transparent;
+}
+
+@keyframes pinShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+}
+
+.pin-shake {
+    animation: pinShake 0.35s ease;
+}
+
 .input-field-v2 {
     background: var(--bg-card);
     border: 2px solid var(--surface-variant);

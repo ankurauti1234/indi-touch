@@ -888,6 +888,45 @@
           </div>
         </div>
 
+        <!-- Developer / System Info PIN Popover -->
+        <div id="dev-pin-overlay" class="popover-overlay">
+          <div class="popover-card" style="width: 360px; text-align: center;">
+            <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+              <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--secondary-container); color: var(--on-secondary-container); display: flex; align-items: center; justify-content: center;">
+                <span class="material-symbols-rounded">lock</span>
+              </div>
+            </div>
+            <h3>Developer Access</h3>
+            <p id="dev-pin-subtitle" style="margin-bottom: 20px;">Enter 4-digit PIN to unlock System Info</p>
+
+            <!-- 4-Dot PIN Indicator -->
+            <div id="dev-pin-dots" style="display: flex; justify-content: center; gap: 16px; margin-bottom: 24px;">
+              <span class="pin-dot"></span>
+              <span class="pin-dot"></span>
+              <span class="pin-dot"></span>
+              <span class="pin-dot"></span>
+            </div>
+
+            <!-- Touch Numeric Keypad -->
+            <div class="dev-pin-keypad">
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('1')">1</button>
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('2')">2</button>
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('3')">3</button>
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('4')">4</button>
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('5')">5</button>
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('6')">6</button>
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('7')">7</button>
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('8')">8</button>
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('9')">9</button>
+              <button type="button" class="pin-key pin-key-action" onclick="closeDevPinModal()">Cancel</button>
+              <button type="button" class="pin-key" onclick="enterDevPinDigit('0')">0</button>
+              <button type="button" class="pin-key pin-key-action" onclick="backspaceDevPin()">
+                <span class="material-symbols-rounded" style="font-size: 20px;">backspace</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div id="set-location" class="settings-panel">
           <div class="page-header">
             <button class="back-btn" onclick="closeSetting()">

@@ -53,7 +53,7 @@ export function resetHomeTimer() {
 window.resetHomeTimer = resetHomeTimer;
 
 // ── Developer PIN Modal Logic ────────────────────────────────────────────────
-const DEV_PIN = '1234'; // Set your technician PIN here
+const DEV_PIN = '69420'; // Set your technician PIN here
 let _enteredDevPin = '';
 
 function _updateDevPinDots(isError = false) {

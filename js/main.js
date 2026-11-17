@@ -11,6 +11,7 @@ import { openSurvey } from './survey.js';
 import { initRemote } from './remote.js';
 import { initConnectionMonitor, setUsbState, setWifiState, setInternetState } from './connection.js';
 import { timers } from './utils.js';
+import { initAbsenceCalendar, isAwayModeActive } from './absence.js';
 
 
 // Expose functions globally for HTML inline event handlers
@@ -433,6 +434,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGuestList();
     initLocation();
     renderNotifications();
+    initAbsenceCalendar();
 
     // 4. Finalize - Hide app loader
     hideAppLoader();
@@ -518,8 +520,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tvOverlay = document.getElementById('tv-off-overlay');
         const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
 
-        // Abort if TV is off, onboarding is incomplete, calibration/onboarding is running, or TV Off overlay is visible
-        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible || isCalibratingOrOnboarding()) {
+        let isTvOn = tvState.on;
+        if (typeof config.bleAvailable !== 'undefined' && !config.bleAvailable) {
+            isTvOn = true;
+        }
+
+        // Abort if TV is off, onboarding incomplete, overlay visible, Away Mode active, or calibrating
+        if (!isTvOn || !config.onboardingCompleted || isOverlayVisible || isAwayModeActive || isCalibratingOrOnboarding()) {
             popover.classList.remove('active');
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
@@ -567,8 +574,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const popover = document.getElementById('critical-popover');
         const activeCount = memberData.filter(m => m.active).length;
 
-        // 1. If TV is off, onboarding incomplete, calibration/onboarding running, overlay visible, or someone active: clear immediately
-        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible || activeCount > 0 || isCalibratingOrOnboarding()) {
+        let isTvOn = tvState.on;
+        if (typeof config.bleAvailable !== 'undefined' && !config.bleAvailable) {
+            isTvOn = true;
+        }
+
+        // 1. If TV is off, onboarding incomplete, overlay visible, Away Mode active, calibrating, or someone active: clear immediately
+        if (!isTvOn || !config.onboardingCompleted || isOverlayVisible || activeCount > 0 || isAwayModeActive || isCalibratingOrOnboarding()) {
             if (popover) {
                 popover.classList.remove('active');
             }

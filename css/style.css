@@ -314,6 +314,13 @@ body {
     align-items: center;
 }
 
+.bottom-rail {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .status-icon-btn {
     width: 48px;
     height: 48px;
@@ -434,6 +441,451 @@ body {
     transform: scale(1);
 }
 
+
+/* ── Fullscreen Absence View Layout ─────────────────────────────────────── */
+
+body.hide-nav-rail .nav-rail {
+    display: none !important;
+}
+
+body.hide-nav-rail .main-stage {
+    width: 100vw !important;
+    max-width: 1024px !important;
+}
+
+#view-absence {
+    width: 100%;
+    height: 100%;
+    padding: 20px 24px;
+    box-sizing: border-box;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#view-absence.active {
+    display: flex;
+}
+
+.cal-view-card {
+    width: 100%;
+    max-width: 980px;
+    height: 550px;
+    background: var(--bg-surface);
+    border: 1px solid var(--outline-variant);
+    border-radius: 36px;
+    display: flex;
+    overflow: hidden;
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55);
+}
+
+/* ── LEFT PANE: Balanced Larger Calendar (approx 58% width) ───────────── */
+.cal-left-pane {
+    flex: 1.4;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: var(--bg-surface);
+}
+
+/* Top Stepper Controls */
+.cal-top-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--outline-variant);
+}
+
+.cal-stepper-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cal-stepper-label {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-main);
+    min-width: 130px;
+    text-align: center;
+    letter-spacing: 0.4px;
+}
+
+.cal-nav-arrow {
+    background: var(--bg-surface-container);
+    border: 1px solid var(--outline-variant);
+    color: var(--text-main);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.cal-nav-arrow:active {
+    transform: scale(0.9);
+    background: var(--primary-container);
+}
+
+.cal-nav-arrow span {
+    font-size: 26px;
+}
+
+/* Weekday Column Headers */
+.cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: var(--text-sub);
+    opacity: 0.85;
+    margin: 14px 0 8px 0;
+}
+
+/* Days 7-Column Grid */
+.cal-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: 50px;
+    gap: 8px 0;
+    text-align: center;
+}
+
+/* Base Day Cell: Clean circular touch targets */
+.cal-day-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-main);
+    border-radius: 50% !important;
+    width: 46px !important;
+    height: 46px !important;
+    margin: 0 auto;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.cal-day-cell:active:not(.disabled) {
+    transform: scale(0.9);
+}
+
+.cal-day-cell.other-month {
+    color: var(--text-sub);
+    opacity: 0.25;
+}
+
+.cal-day-cell.disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.cal-day-cell.today {
+    border: 2px solid var(--outline);
+}
+
+/* Range Markers */
+.cal-day-cell.range-start,
+.cal-day-cell.range-end {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
+    font-weight: 700 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.cal-day-cell.in-range {
+    background: rgba(208, 188, 255, 0.22) !important;
+    color: var(--text-main) !important;
+    border-radius: 50% !important;
+}
+
+/* ── RIGHT PANE: Scaled Hero Card (approx 42% width) ──────────────────── */
+.cal-right-pane {
+    flex: 1.1;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    padding: 30px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 32px;
+}
+
+/* Header */
+.cal-hero-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cal-hero-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    opacity: 0.9;
+}
+
+.cal-hero-badge span {
+    font-size: 24px;
+}
+
+.cal-hero-close {
+    background: rgba(0, 0, 0, 0.18);
+    border: none;
+    color: inherit;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.cal-hero-close:active {
+    transform: scale(0.9);
+}
+
+.cal-hero-close span {
+    font-size: 24px;
+}
+
+/* Side-by-Side Date Range Block */
+.cal-right-pane .cal-hero-main {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 10px 0;
+    width: 100%;
+}
+
+.cal-range-node {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.cal-range-tag {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.cal-range-node .cal-hero-day {
+    font-size: 46px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -1.5px;
+}
+
+.cal-range-node .cal-hero-weekday {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+
+.cal-range-node .cal-hero-full-date {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.85;
+    margin-top: 3px;
+    white-space: nowrap;
+}
+
+.cal-range-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--on-primary-container);
+    opacity: 0.7;
+    padding: 0 4px;
+}
+
+.cal-range-divider span {
+    font-size: 28px;
+}
+
+/* Schedule Info Details */
+.cal-hero-details {
+    background: rgba(0, 0, 0, 0.14);
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cal-detail-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    opacity: 0.8;
+}
+
+.cal-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.cal-detail-item span.material-symbols-rounded {
+    font-size: 20px;
+    opacity: 0.9;
+}
+
+/* Activate Button */
+.cal-submit-btn {
+    width: 100%;
+    padding: 18px 24px;
+    border: none;
+    border-radius: 22px;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+    transition: 0.2s;
+}
+
+.cal-submit-btn:active {
+    transform: scale(0.97);
+}
+
+.cal-submit-btn span.material-symbols-rounded {
+    font-size: 22px;
+}
+
+/* ── Active State: Flat Solid Dark Red (No Shades / No Inset Shadows) ──── */
+.cal-right-pane.is-active {
+    background: #801010 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.cal-right-pane.is-active .cal-hero-badge,
+.cal-right-pane.is-active .cal-detail-item {
+    color: #ffffff !important;
+}
+
+.cal-right-pane.is-active .cal-range-divider {
+    color: #ffffff !important;
+    opacity: 0.8;
+}
+
+.cal-right-pane.is-active .cal-hero-details {
+    background: rgba(0, 0, 0, 0.2) !important;
+    box-shadow: none !important;
+}
+
+/* Flat Red Cancel Mode Button */
+.cal-submit-btn.btn-cancel-mode {
+    background: #b3261e !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.cal-submit-btn.btn-cancel-mode:active {
+    background: #8c1d18 !important;
+    transform: scale(0.97);
+}
+
+/* ── Ensure Home View Container clips edge-to-edge ────────────────────── */
+#view-home {
+    position: relative;
+    overflow: hidden;
+}
+
+/* ── Minimal Home Grid Lockdown Overlay (Full Grid Span) ─────────────── */
+#away-lock-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: rgba(12, 12, 12, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 !important;
+    animation: fadeInLock 0.2s ease-out;
+}
+
+@keyframes fadeInLock {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#away-lock-overlay .lock-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 24px;
+}
+
+#away-lock-overlay .lock-icon {
+    font-size: 64px;
+    color: #e6e1e5;
+    opacity: 0.9;
+}
+
+#away-lock-overlay .lock-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: #e6e1e5;
+    margin: 0;
+    letter-spacing: 0.2px;
+}
+
+#away-lock-overlay .lock-subtitle {
+    font-size: 16px;
+    color: #cac4d0;
+    margin: 0;
+}
+
 /* VIEWS */
 .main-stage {
     flex: 1;
@@ -547,8 +999,13 @@ body {
 }
 
 /* M3 Error color */
+/* ── Ensure Main Stage is the Anchoring Context ────────────────────────── */
+.main-stage {
+    position: relative;
+    overflow: hidden;
+}
 
-/* Universal Main-Stage TV Off Overlay */
+/* ── Universal Stage Lock Overlay ─────────────────────────────────────── */
 .grid-lock-overlay {
     position: absolute;
     top: 0;
@@ -557,47 +1014,77 @@ body {
     bottom: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 15, 18, 0.88);
+    margin: 0;
+    padding: 0;
+    background: rgba(14, 14, 16, 0.94);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     display: none; /* Controlled dynamically by syncTvOverlay() */
     align-items: center;
     justify-content: center;
     z-index: 500;
-    margin: 0;
     border-radius: 0;
-    pointer-events: auto; /* Intercepts all clicks/touches */
+    pointer-events: auto;
 }
 
 .lock-content {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     text-align: center;
-    max-width: 440px;
-    padding: 32px;
+    gap: 12px;
+    padding: 24px;
+    max-width: 480px;
 }
 
 .lock-icon {
-    font-size: 72px !important;
-    color: var(--text-sub, #8e8e93);
-    margin-bottom: 16px;
-    opacity: 0.9;
+    font-size: 68px !important;
+    color: #e6e1e5;
+    opacity: 0.92;
 }
 
 .lock-title {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 600;
-    color: var(--text-main, #ffffff);
-    margin: 0 0 10px 0;
+    color: #e6e1e5;
+    margin: 0;
+    letter-spacing: 0.2px;
 }
 
 .lock-msg {
-    font-size: 16px;
-    color: var(--text-sub, #8e8e93);
-    line-height: 1.5;
+    font-size: 15px;
+    color: #cac4d0;
     margin: 0;
-    opacity: 0.85;
+    line-height: 1.4;
+}
+
+/* Neutral Manage Button for Away Mode */
+.stage-lock-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+    background: rgba(230, 225, 229, 0.12);
+    color: #e6e1e5;
+    border: 1px solid rgba(230, 225, 229, 0.25);
+    border-radius: 20px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.stage-lock-btn:active {
+    background: rgba(230, 225, 229, 0.22);
+    transform: scale(0.97);
+}
+
+.stage-lock-btn span.material-symbols-rounded {
+    font-size: 20px;
+    color: inherit;
 }
 
 /* FOCUSED STATE — remote control cursor */

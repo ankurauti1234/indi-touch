@@ -90,13 +90,17 @@ export async function renderGrid() {
 }
 
 window.updateTvUI = function(tvOn) {
-    const overlay = document.getElementById('tv-off-overlay');
-    if (overlay) {
-        overlay.style.display = tvOn ? 'none' : 'flex';
+    if (typeof window.syncTvOverlay === 'function') {
+        window.syncTvOverlay(tvOn);
+    } else {
+        const overlay = document.getElementById('tv-off-overlay');
+        if (overlay) {
+            overlay.style.display = tvOn ? 'none' : 'flex';
+        }
     }
     // If TV is off, clear focus to prevent accidental toggles
     if (!tvOn) clearGridFocus();
-}
+};
 
 export function applyFocus() {
     const cards = document.querySelectorAll('#grid-container .member-card');

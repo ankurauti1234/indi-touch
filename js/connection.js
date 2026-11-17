@@ -1,16 +1,18 @@
-/* js/connection.js — USB and WiFi connection warning popups */
+/* js/connection.js — USB, WiFi, TV-Off, and Household Absence stage synchronization */
 
 import { openSetting } from './settings.js';
 import { timers } from './utils.js';
 import { config } from './data.js';
+import { isAwayModeActive } from './absence.js';
 
 const API_STATUS_URL = '/api/system/status';
 const POLL_INTERVAL  = 8000;       // 8 s
 const WIFI_COOLDOWN  = 2 * 60_000; // 2 min
 
-let _usbConnected  = true;
-let _wifiConnected = true;
+let _usbConnected      = true;
+let _wifiConnected     = true;
 let _internetConnected = true;
+let _lastTvOnState     = true;
 
 function isOnboarding() {
     if (config.onboardingCompleted === false) return true;
@@ -22,24 +24,72 @@ function isOnboarding() {
            layer.style.opacity !== '0';
 }
 
-// ─── TV Off Main-Stage Overlay Helper ─────────────────────────────────────────
+// ─── Universal Stage Lock Overlay (TV Off & Away Mode) ────────────────────────
 export function syncTvOverlay(tvOn) {
+    if (typeof tvOn === 'boolean') {
+        _lastTvOnState = tvOn;
+    }
+
     const overlay = document.getElementById('tv-off-overlay');
     if (!overlay) return;
 
-    // Check which view is currently active
+    // Check which view is currently active in the main stage
     const activeView = document.querySelector('.main-stage .view.active');
     const viewId = activeView ? activeView.id : '';
 
     // Only restrict Home (member grid) and Guest Add views
     const isRestrictedView = (viewId === 'view-home' || viewId === 'view-guest-add');
-
-    if (!tvOn && isRestrictedView) {
-        overlay.style.display = 'flex';
-    } else {
+    if (!isRestrictedView) {
         overlay.style.display = 'none';
+        return;
     }
+
+    // Direct synchronous query from statically imported absence state
+    const isAwayActive = Boolean(isAwayModeActive);
+
+    const iconEl = document.getElementById('tv-overlay-icon');
+    const titleEl = document.getElementById('tv-overlay-title');
+    const msgEl = document.getElementById('tv-overlay-msg');
+    const manageBtn = document.getElementById('btn-overlay-manage-away');
+
+    // Priority 1: Household Away Mode
+    if (isAwayActive) {
+        if (iconEl) iconEl.innerText = 'flight_takeoff';
+        if (titleEl) {
+            titleEl.innerText = 'Household Away Mode Active';
+            titleEl.removeAttribute('data-i18n');
+        }
+        if (msgEl) {
+            msgEl.removeAttribute('data-i18n');
+            msgEl.innerText = 'Member and guest declarations are disabled while Away Mode is active.';
+        }
+        if (manageBtn) manageBtn.style.display = 'inline-flex';
+        overlay.style.display = 'flex';
+        return;
+    }
+
+    // Priority 2: TV Off Mode
+    if (!_lastTvOnState) {
+        if (iconEl) iconEl.innerText = 'tv_off';
+        if (titleEl) {
+            titleEl.innerText = 'TV is Off';
+            titleEl.setAttribute('data-i18n', 'tv_is_off');
+        }
+        if (msgEl) {
+            msgEl.innerText = 'Member and guest declarations are disabled while the TV is off.';
+            msgEl.setAttribute('data-i18n', 'member_decl_disabled');
+        }
+        if (manageBtn) manageBtn.style.display = 'none';
+        overlay.style.display = 'flex';
+        return;
+    }
+
+    // Default: Both TV is ON and Away Mode is INACTIVE
+    if (manageBtn) manageBtn.style.display = 'none';
+    overlay.style.display = 'none';
 }
+
+window.syncTvOverlay = syncTvOverlay;
 
 // ─── USB Popup ────────────────────────────────────────────────────────────────
 function injectUsbPopup() {

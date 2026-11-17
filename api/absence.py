@@ -1,6 +1,5 @@
 # api/absence.py
 from flask import Blueprint, request, jsonify
-from datetime import datetime
 from .collector_service import send_event
 
 absence_bp = Blueprint('absence_bp', __name__)
@@ -30,19 +29,9 @@ def household_absence():
         household_status = status
 
         if status == 'absent':
-            # Event Type 5: Away Mode Activated
-            send_event(5, {
-                'action': 'activated',
-                'status': 'absent',
-                'activated_at': datetime.now().isoformat()
-            })
+            send_event(5, {'status': 'absent'})
         else:
-            # Event Type 6: Away Mode Deactivated
-            send_event(6, {
-                'action': 'cancelled',
-                'status': 'present',
-                'cancelled_at': datetime.now().isoformat()
-            })
+            send_event(6, {'status': 'present'})
 
         return jsonify({
             'success': True,
@@ -52,11 +41,7 @@ def household_absence():
 
     elif request.method == 'DELETE':
         household_status = 'present'
-        send_event(6, {
-            'action': 'cancelled',
-            'status': 'present',
-            'cancelled_at': datetime.now().isoformat()
-        })
+        send_event(6, {'status': 'present'})
         return jsonify({
             'success': True,
             'active': False,

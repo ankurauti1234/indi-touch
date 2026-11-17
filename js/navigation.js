@@ -1,19 +1,11 @@
 // js/navigation.js — Navigation & Universal Stage Synchronization
 
 import { closeSetting } from './settings.js';
-import { initAbsenceCalendar } from './absence.js';
 import { syncTvOverlay } from './connection.js';
 
 export function navTo(viewId) {
     if (document.activeElement && document.activeElement !== document.body) {
         document.activeElement.blur();
-    }
-
-    // Toggle fullscreen mode (hide navbar) when entering absence view
-    if (viewId === 'absence') {
-        document.body.classList.add('hide-nav-rail');
-    } else {
-        document.body.classList.remove('hide-nav-rail');
     }
 
     // Sidebar Buttons Logic
@@ -24,7 +16,6 @@ export function navTo(viewId) {
     else if (viewId === 'notifications') btnId = 'btn-notif';
     else if (viewId === 'settings') btnId = 'btn-settings';
     else if (viewId === 'guest-add') btnId = 'btn-guest';
-    else if (viewId === 'absence') btnId = 'btn-absence';
 
     if (btnId) {
         const btn = document.getElementById(btnId);
@@ -49,10 +40,6 @@ export function navTo(viewId) {
         const scroller = targetView.querySelector('.list-group, .settings-scroll-area');
         if (scroller) {
             scroller.scrollTop = 0;
-        }
-
-        if (viewId === 'absence' && typeof initAbsenceCalendar === 'function') {
-            initAbsenceCalendar();
         }
     }
 

@@ -3,7 +3,7 @@
 import { openSetting } from './settings.js';
 import { timers } from './utils.js';
 import { config } from './data.js';
-import { isAwayModeActive, getAbsenceRecord } from './absence.js';
+import { isAwayModeActive } from './absence.js';
 
 const API_STATUS_URL = '/api/system/status';
 const POLL_INTERVAL  = 8000;       // 8 s
@@ -46,7 +46,6 @@ export function syncTvOverlay(tvOn) {
 
     // Direct synchronous query from statically imported absence state
     const isAwayActive = Boolean(isAwayModeActive);
-    const absenceRec = typeof getAbsenceRecord === 'function' ? getAbsenceRecord() : null;
 
     const iconEl = document.getElementById('tv-overlay-icon');
     const titleEl = document.getElementById('tv-overlay-title');
@@ -55,20 +54,14 @@ export function syncTvOverlay(tvOn) {
 
     // Priority 1: Household Away Mode
     if (isAwayActive) {
-        if (iconEl) iconEl.innerText = 'event_upcoming';
+        if (iconEl) iconEl.innerText = 'flight_takeoff';
         if (titleEl) {
             titleEl.innerText = 'Household Away Mode Active';
             titleEl.removeAttribute('data-i18n');
         }
         if (msgEl) {
             msgEl.removeAttribute('data-i18n');
-            if (absenceRec && absenceRec.end_time) {
-                const endD = new Date(absenceRec.end_time * 1000);
-                const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                msgEl.innerText = `Absence scheduled until ${MONTHS[endD.getMonth()]} ${endD.getDate()}, ${endD.getFullYear()} (11:59 PM). Member declarations are disabled.`;
-            } else {
-                msgEl.innerText = 'Member and guest declarations are disabled while Away Mode is active.';
-            }
+            msgEl.innerText = 'Member and guest declarations are disabled while Away Mode is active.';
         }
         if (manageBtn) manageBtn.style.display = 'inline-flex';
         overlay.style.display = 'flex';

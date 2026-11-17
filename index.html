@@ -237,7 +237,7 @@
 
       <!-- Bottom Rail: Vacation / Away Mode Trigger -->
       <div class="bottom-rail">
-        <button class="nav-btn" id="btn-absence" onclick="navTo('absence')" title="Away Mode">
+        <button class="nav-btn" id="btn-absence" onclick="openAwayModeModal()" title="Away Mode">
           <span class="material-symbols-rounded">event_upcoming</span>
         </button>
       </div>
@@ -252,7 +252,7 @@
           <p class="lock-msg" id="tv-overlay-msg" data-i18n="member_decl_disabled">Member and guest declarations are disabled while the TV is off.</p>
           
           <!-- Neutral Manage Button for Away Mode -->
-          <button class="stage-lock-btn" id="btn-overlay-manage-away" onclick="navTo('absence')" style="display: none;">
+          <button class="stage-lock-btn" id="btn-overlay-manage-away" onclick="openAwayModeModal()" style="display: none;">
             <span class="material-symbols-rounded">edit_calendar</span>
             <span>Manage Away Mode</span>
           </button>
@@ -785,113 +785,23 @@
       </div>
     </div>
 
-    <!-- Full-Screen Absence / Vacation Calendar View -->
-    <section id="view-absence" class="view">
-      <div class="cal-view-card">
-
-        <!-- LEFT SIDE: Calendar Grid & Dual Nav Selectors -->
-        <div class="cal-left-pane">
-          <!-- Top Controls: Month (Left) vs Year (Right) -->
-          <div class="cal-top-controls">
-            <!-- Month Stepper -->
-            <div class="cal-stepper-group">
-              <button class="cal-nav-arrow" onclick="calPrevMonth()">
-                <span class="material-symbols-rounded">chevron_left</span>
-              </button>
-              <span class="cal-stepper-label" id="cal-month-label">November</span>
-              <button class="cal-nav-arrow" onclick="calNextMonth()">
-                <span class="material-symbols-rounded">chevron_right</span>
-              </button>
-            </div>
-
-            <!-- Year Stepper -->
-            <div class="cal-stepper-group">
-              <button class="cal-nav-arrow" onclick="calPrevYear()">
-                <span class="material-symbols-rounded">chevron_left</span>
-              </button>
-              <span class="cal-stepper-label" id="cal-year-label">2026</span>
-              <button class="cal-nav-arrow" onclick="calNextYear()">
-                <span class="material-symbols-rounded">chevron_right</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Day Headers -->
-          <div class="cal-weekdays">
-            <span>SUN</span>
-            <span>MON</span>
-            <span>TUE</span>
-            <span>WED</span>
-            <span>THU</span>
-            <span>FRI</span>
-            <span>SAT</span>
-          </div>
-
-          <!-- 7-Column Days Grid -->
-          <div class="cal-days-grid" id="cal-days-grid">
-            <!-- Rendered dynamically -->
+    <!-- Household Away Mode Confirmation Popover -->
+    <div id="away-mode-overlay" class="popover-overlay">
+      <div class="popover-card" style="width: 400px; text-align: center;">
+        <div style="display: flex; justify-content: center; margin-bottom: 14px;">
+          <div id="away-modal-icon-wrap" style="width: 52px; height: 52px; border-radius: 50%; background: var(--secondary-container); color: var(--on-secondary-container); display: flex; align-items: center; justify-content: center;">
+            <span class="material-symbols-rounded" id="away-modal-icon" style="font-size: 26px;">flight_takeoff</span>
           </div>
         </div>
-
-        <!-- RIGHT SIDE: Solid Accent Hero Card -->
-        <div class="cal-right-pane" id="cal-right-pane">
-          <div class="cal-hero-top">
-            <div class="cal-hero-badge" id="cal-hero-badge">
-              <span class="material-symbols-rounded" id="cal-badge-icon">event_upcoming</span>
-              <span id="cal-badge-text">AWAY MODE</span>
-            </div>
-            <button class="cal-hero-close" onclick="navTo('home')">
-              <span class="material-symbols-rounded">close</span>
-            </button>
-          </div>
-
-          <!-- Hero Date Range Block -->
-          <div class="cal-hero-main">
-            <!-- Departing -->
-            <div class="cal-range-node" id="cal-node-start">
-              <span class="cal-range-tag">DEPARTING</span>
-              <div class="cal-hero-day" id="cal-start-day">--</div>
-              <div class="cal-hero-weekday" id="cal-start-weekday">--------</div>
-              <div class="cal-hero-full-date" id="cal-start-month-year">--- ----</div>
-            </div>
-
-            <!-- Divider Arrow -->
-            <div class="cal-range-divider">
-              <span class="material-symbols-rounded">arrow_forward</span>
-            </div>
-
-            <!-- Returning -->
-            <div class="cal-range-node" id="cal-node-end">
-              <span class="cal-range-tag">RETURNING</span>
-              <div class="cal-hero-day" id="cal-end-day">--</div>
-              <div class="cal-hero-weekday" id="cal-end-weekday">--------</div>
-              <div class="cal-hero-full-date" id="cal-end-month-year">--- ----</div>
-            </div>
-          </div>
-
-          <div class="cal-hero-details">
-            <div class="cal-detail-title" id="cal-detail-title">Absence Schedule</div>
-            <div class="cal-detail-item">
-              <span class="material-symbols-rounded">date_range</span>
-              <span id="cal-hero-duration">-- Days Duration</span>
-            </div>
-            <div class="cal-detail-item">
-              <span class="material-symbols-rounded" id="cal-detail-subicon">event_available</span>
-              <span id="cal-detail-subtext">Logs resume day after return</span>
-            </div>
-          </div>
-
-          <div class="cal-hero-actions">
-            <!-- Action Button toggles between Activate and Cancel states -->
-            <button class="cal-submit-btn" id="btn-activate-absence" onclick="handleAbsenceAction()">
-              <span class="material-symbols-rounded" id="btn-absence-icon">check</span>
-              <span id="btn-absence-label">Activate Away Mode</span>
-            </button>
-          </div>
+        <h3 id="away-modal-title">Activate Away Mode?</h3>
+        <p id="away-modal-desc" style="margin-bottom: 24px;">All active members and guests will be undeclared, and member interactions will pause until you deactivate Away Mode.</p>
+        <div class="popover-actions" style="justify-content: center; gap: 12px;">
+          <button type="button" class="modal-btn" onclick="closeAwayModeModal()">Cancel</button>
+          <button type="button" class="modal-btn primary" id="btn-confirm-away" onclick="handleAbsenceAction()">Activate</button>
         </div>
-
       </div>
-    </section>
+    </div>
+    
   </div>
 
   <!-- Active Members Reminder -->

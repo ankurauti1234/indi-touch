@@ -1,34 +1,17 @@
-// js/absence.js — Absence Calendar & Active Mode Controller
+// js/absence.js — Household Away Mode Toggle & Popover Controller
 
 import { syncTvOverlay } from './connection.js';
 
-const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-let viewYear = new Date().getFullYear();
-let viewMonth = new Date().getMonth();
-
-let rangeStart = null;
-let rangeEnd = null;
-let isPickingEnd = false;
-
-// Exported states for connection.js and navigation sync
+// Exported state for connection.js and main.js sync
 export let isAwayModeActive = false;
-let activeAbsenceRecord = null;
 
-export function getAbsenceRecord() {
-    return activeAbsenceRecord;
-}
-
-// Function to undeclare all members on backend, reload state, and dismiss popover
+// Undeclare all members on backend, reload state, and dismiss reminder popover
 async function undeclareAllMembersAndGuests() {
-    // 1. Instantly dismiss active-member reminder popover if visible
     const popover = document.getElementById('critical-popover');
     if (popover) {
         popover.classList.remove('active');
     }
 
-    // 2. Call backend undeclare endpoints for members and guests in parallel
     try {
         console.log("Away Mode: Undeclaring all members & clearing guests...");
         await Promise.all([
@@ -39,12 +22,10 @@ async function undeclareAllMembersAndGuests() {
         console.error("Failed to undeclare via API:", e);
     }
 
-    // 3. Immediately clear local UI active classes
     document.querySelectorAll('.member-btn.active, .member-card.active, .guest-card.active').forEach(el => {
         el.classList.remove('active');
     });
 
-    // 4. Force data reload from backend and refresh UI grids + badge
     try {
         const m = await import('./data.js');
         await Promise.all([
@@ -59,239 +40,70 @@ async function undeclareAllMembersAndGuests() {
     }
 }
 
-function initAbsenceCalendar() {
-    fetchAbsenceStatus();
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (!isAwayModeActive) {
-        rangeStart = new Date(today);
-        rangeStart.setDate(today.getDate() + 1);
-
-        rangeEnd = new Date(today);
-        rangeEnd.setDate(today.getDate() + 7);
-
-        viewYear = rangeStart.getFullYear();
-        viewMonth = rangeStart.getMonth();
-    }
-
-    isPickingEnd = false;
-    renderCalendar();
-    updateHeroRange();
-    applyActiveModeUI();
+async function initAbsenceCalendar() {
+    await fetchAbsenceStatus();
 }
 
 async function fetchAbsenceStatus() {
     try {
         const res = await fetch('/api/household/absence');
         const data = await res.json();
-        if (data.active && data.absence) {
-            isAwayModeActive = true;
-            activeAbsenceRecord = data.absence;
-
-            rangeStart = new Date(data.absence.start_time * 1000);
-            rangeStart.setHours(0, 0, 0, 0);
-
-            rangeEnd = new Date(data.absence.end_time * 1000);
-            rangeEnd.setHours(0, 0, 0, 0);
-
-            viewYear = rangeStart.getFullYear();
-            viewMonth = rangeStart.getMonth();
-        } else {
-            isAwayModeActive = false;
-            activeAbsenceRecord = null;
-        }
+        isAwayModeActive = Boolean(data.active || data.status === 'absent');
     } catch (e) {
         console.warn("Could not fetch absence status:", e);
     }
-    renderCalendar();
-    updateHeroRange();
     applyActiveModeUI();
     if (typeof syncTvOverlay === 'function') syncTvOverlay();
 }
 
 function applyActiveModeUI() {
-    const rightPane = document.getElementById('cal-right-pane');
-    const badgeText = document.getElementById('cal-badge-text');
-    const btn = document.getElementById('btn-activate-absence');
-    const btnIcon = document.getElementById('btn-absence-icon');
-    const btnLabel = document.getElementById('btn-absence-label');
-    const subText = document.getElementById('cal-detail-subtext');
     const navBtn = document.getElementById('btn-absence');
+    const titleEl = document.getElementById('away-modal-title');
+    const descEl = document.getElementById('away-modal-desc');
+    const iconEl = document.getElementById('away-modal-icon');
+    const iconWrap = document.getElementById('away-modal-icon-wrap');
+    const confirmBtn = document.getElementById('btn-confirm-away');
 
-    if (!rightPane || !btn) return;
+    if (navBtn) {
+        navBtn.classList.toggle('active', isAwayModeActive);
+    }
 
     if (isAwayModeActive) {
-        rightPane.classList.add('is-active');
-        if (badgeText) badgeText.innerText = 'AWAY MODE ACTIVE';
-        if (btnIcon) btnIcon.innerText = 'close';
-        if (btnLabel) btnLabel.innerText = 'Cancel Away Mode';
-        btn.classList.add('btn-cancel-mode');
-        if (subText) subText.innerText = 'All member interactions paused';
-        if (navBtn) navBtn.classList.add('active');
-    } else {
-        rightPane.classList.remove('is-active');
-        if (badgeText) badgeText.innerText = 'AWAY MODE';
-        if (btnIcon) btnIcon.innerText = 'check';
-        if (btnLabel) btnLabel.innerText = 'Activate Away Mode';
-        btn.classList.remove('btn-cancel-mode');
-        if (subText) subText.innerText = 'Logs resume day after return';
-        if (navBtn) navBtn.classList.remove('active');
-    }
-}
-
-function calPrevMonth() {
-    if (isAwayModeActive) return;
-    const now = new Date();
-    if (viewYear === now.getFullYear() && viewMonth <= now.getMonth()) {
-        return;
-    }
-    viewMonth--;
-    if (viewMonth < 0) {
-        viewMonth = 11;
-        viewYear--;
-    }
-    renderCalendar();
-}
-
-function calNextMonth() {
-    if (isAwayModeActive) return;
-    viewMonth++;
-    if (viewMonth > 11) {
-        viewMonth = 0;
-        viewYear++;
-    }
-    renderCalendar();
-}
-
-function calPrevYear() {
-    if (isAwayModeActive) return;
-    const now = new Date();
-    if (viewYear > now.getFullYear()) {
-        viewYear--;
-        renderCalendar();
-    }
-}
-
-function calNextYear() {
-    if (isAwayModeActive) return;
-    viewYear++;
-    renderCalendar();
-}
-
-function renderCalendar() {
-    const grid = document.getElementById('cal-days-grid');
-    const monthLabel = document.getElementById('cal-month-label');
-    const yearLabel = document.getElementById('cal-year-label');
-    if (!grid) return;
-
-    if (monthLabel) monthLabel.innerText = MONTH_FULL[viewMonth];
-    if (yearLabel) yearLabel.innerText = viewYear;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const firstDayIndex = new Date(viewYear, viewMonth, 1).getDay();
-    const lastDayOfMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const prevMonthLastDay = new Date(viewYear, viewMonth, 0).getDate();
-
-    let cellsHtml = '';
-
-    for (let i = firstDayIndex - 1; i >= 0; i--) {
-        const d = prevMonthLastDay - i;
-        cellsHtml += `<div class="cal-day-cell other-month disabled">${String(d).padStart(2, '0')}</div>`;
-    }
-
-    for (let day = 1; day <= lastDayOfMonth; day++) {
-        const cellDate = new Date(viewYear, viewMonth, day);
-        cellDate.setHours(0, 0, 0, 0);
-
-        const isPast = cellDate < today;
-        const isToday = cellDate.getTime() === today.getTime();
-
-        const isStart = rangeStart && cellDate.getTime() === rangeStart.getTime();
-        const isEnd = rangeEnd && cellDate.getTime() === rangeEnd.getTime();
-        const inRange = rangeStart && rangeEnd && cellDate > rangeStart && cellDate < rangeEnd;
-
-        let classes = ['cal-day-cell'];
-        if (isPast) classes.push('disabled');
-        if (isToday) classes.push('today');
-        if (isStart) classes.push('range-start');
-        if (isEnd) classes.push('range-end');
-        if (inRange) classes.push('in-range');
-        if (isAwayModeActive) classes.push('calendar-locked');
-
-        // Block click event if past date or if Away Mode is active
-        const onclick = (isPast || isAwayModeActive) ? '' : `onclick="calSelectDay(${viewYear}, ${viewMonth}, ${day})"`;
-        cellsHtml += `<div class="${classes.join(' ')}" ${onclick}>${String(day).padStart(2, '0')}</div>`;
-    }
-
-    const totalFilled = firstDayIndex + lastDayOfMonth;
-    const nextDays = (7 - (totalFilled % 7)) % 7;
-    for (let d = 1; d <= nextDays; d++) {
-        cellsHtml += `<div class="cal-day-cell other-month disabled">${String(d).padStart(2, '0')}</div>`;
-    }
-
-    grid.innerHTML = cellsHtml;
-}
-
-function calSelectDay(year, month, day) {
-    if (isAwayModeActive) return;
-
-    const picked = new Date(year, month, day);
-    picked.setHours(0, 0, 0, 0);
-
-    if (!isPickingEnd || !rangeStart) {
-        rangeStart = picked;
-        rangeEnd = null;
-        isPickingEnd = true;
-    } else {
-        if (picked < rangeStart) {
-            rangeEnd = rangeStart;
-            rangeStart = picked;
-        } else {
-            rangeEnd = picked;
+        if (titleEl) titleEl.innerText = 'Deactivate Away Mode?';
+        if (descEl) descEl.innerText = 'Household Away Mode is currently active. Resume normal member and guest declarations?';
+        if (iconEl) iconEl.innerText = 'home';
+        if (iconWrap) {
+            iconWrap.style.background = 'var(--primary-container)';
+            iconWrap.style.color = 'var(--on-primary-container)';
         }
-        isPickingEnd = false;
+        if (confirmBtn) {
+            confirmBtn.innerText = 'Deactivate';
+            confirmBtn.classList.add('danger');
+        }
+    } else {
+        if (titleEl) titleEl.innerText = 'Activate Away Mode?';
+        if (descEl) descEl.innerText = 'All active members and guests will be undeclared, and member interactions will pause until you deactivate Away Mode.';
+        if (iconEl) iconEl.innerText = 'flight_takeoff';
+        if (iconWrap) {
+            iconWrap.style.background = 'var(--secondary-container)';
+            iconWrap.style.color = 'var(--on-secondary-container)';
+        }
+        if (confirmBtn) {
+            confirmBtn.innerText = 'Activate';
+            confirmBtn.classList.remove('danger');
+        }
     }
-
-    renderCalendar();
-    updateHeroRange();
 }
 
-function updateHeroRange() {
-    const startDayEl = document.getElementById('cal-start-day');
-    const startWeekdayEl = document.getElementById('cal-start-weekday');
-    const startMyEl = document.getElementById('cal-start-month-year');
+export function openAwayModeModal() {
+    applyActiveModeUI();
+    const overlay = document.getElementById('away-mode-overlay');
+    if (overlay) overlay.classList.add('active');
+}
 
-    const endDayEl = document.getElementById('cal-end-day');
-    const endWeekdayEl = document.getElementById('cal-end-weekday');
-    const endMyEl = document.getElementById('cal-end-month-year');
-    const durEl = document.getElementById('cal-hero-duration');
-
-    if (rangeStart && startDayEl) {
-        startDayEl.innerText = rangeStart.getDate();
-        startWeekdayEl.innerText = WEEKDAYS[rangeStart.getDay()];
-        startMyEl.innerText = `${MONTH_FULL[rangeStart.getMonth()]} ${rangeStart.getFullYear()}`;
-    }
-
-    if (rangeEnd && endDayEl) {
-        endDayEl.innerText = rangeEnd.getDate();
-        endWeekdayEl.innerText = WEEKDAYS[rangeEnd.getDay()];
-        endMyEl.innerText = `${MONTH_FULL[rangeEnd.getMonth()]} ${rangeEnd.getFullYear()}`;
-    } else if (endDayEl) {
-        endDayEl.innerText = '--';
-        endWeekdayEl.innerText = 'SELECT RETURN';
-        endMyEl.innerText = 'Tap a date on calendar';
-    }
-
-    if (rangeStart && rangeEnd && durEl) {
-        const diffDays = Math.round((rangeEnd - rangeStart) / (1000 * 60 * 60 * 24)) + 1;
-        durEl.innerText = `${diffDays} Day${diffDays > 1 ? 's' : ''} Duration`;
-    } else if (durEl) {
-        durEl.innerText = 'Picking range...';
-    }
+export function closeAwayModeModal() {
+    const overlay = document.getElementById('away-mode-overlay');
+    if (overlay) overlay.classList.remove('active');
 }
 
 async function handleAbsenceAction() {
@@ -303,20 +115,14 @@ async function handleAbsenceAction() {
 }
 
 async function activateAbsenceMode() {
-    if (!rangeStart) return;
-
-    const btn = document.getElementById('btn-activate-absence');
+    const btn = document.getElementById('btn-confirm-away');
     if (btn) btn.disabled = true;
-
-    const effectiveEnd = rangeEnd || rangeStart;
-    const startTimestamp = Math.floor(rangeStart.getTime() / 1000);
-    const endTimestamp = Math.floor(new Date(effectiveEnd).setHours(23, 59, 59, 0) / 1000);
 
     try {
         const res = await fetch('/api/household/absence', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ start_time: startTimestamp, end_time: endTimestamp })
+            body: JSON.stringify({ status: 'absent' })
         });
 
         if (!res.ok) {
@@ -329,12 +135,11 @@ async function activateAbsenceMode() {
 
         if (data.success) {
             isAwayModeActive = true;
-            activeAbsenceRecord = { start_time: startTimestamp, end_time: endTimestamp };
 
-            // Undeclare on backend, reload data, and kill reminder popup
             await undeclareAllMembersAndGuests();
 
             applyActiveModeUI();
+            closeAwayModeModal();
             if (typeof syncTvOverlay === 'function') syncTvOverlay();
             if (window.showToast) window.showToast("Household Away Mode activated.");
         } else {
@@ -349,12 +154,14 @@ async function activateAbsenceMode() {
 }
 
 async function cancelAbsenceMode() {
-    const btn = document.getElementById('btn-activate-absence');
+    const btn = document.getElementById('btn-confirm-away');
     if (btn) btn.disabled = true;
 
     try {
         const res = await fetch('/api/household/absence', {
-            method: 'DELETE'
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'present' })
         });
 
         if (!res.ok) {
@@ -367,26 +174,23 @@ async function cancelAbsenceMode() {
 
         if (data.success) {
             isAwayModeActive = false;
-            activeAbsenceRecord = null;
             applyActiveModeUI();
+            closeAwayModeModal();
             if (typeof syncTvOverlay === 'function') syncTvOverlay();
-            if (window.showToast) window.showToast("Household Away Mode cancelled.");
+            if (window.showToast) window.showToast("Household Away Mode deactivated.");
         } else {
-            if (window.showToast) window.showToast(data.error || "Failed to cancel away mode");
+            if (window.showToast) window.showToast(data.error || "Failed to deactivate away mode");
         }
     } catch (e) {
         console.error("Failed to cancel absence:", e);
-        if (window.showToast) window.showToast("Error cancelling away mode");
+        if (window.showToast) window.showToast("Error deactivating away mode");
     } finally {
         if (btn) btn.disabled = false;
     }
 }
 
-window.calPrevMonth = calPrevMonth;
-window.calNextMonth = calNextMonth;
-window.calPrevYear = calPrevYear;
-window.calNextYear = calNextYear;
-window.calSelectDay = calSelectDay;
+window.openAwayModeModal = openAwayModeModal;
+window.closeAwayModeModal = closeAwayModeModal;
 window.handleAbsenceAction = handleAbsenceAction;
 
 export { initAbsenceCalendar, initAbsenceCalendar as initAbsenceManager };

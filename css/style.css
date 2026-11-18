@@ -1025,6 +1025,7 @@ body.hide-nav-rail .main-stage {
     z-index: 500;
     border-radius: 0;
     pointer-events: auto;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .lock-content {
@@ -1085,6 +1086,35 @@ body.hide-nav-rail .main-stage {
 .stage-lock-btn span.material-symbols-rounded {
     font-size: 20px;
     color: inherit;
+}
+
+/* ── Light Mode Overrides for Stage Lock Overlay ──────────────────────── */
+body.light-mode .grid-lock-overlay {
+    background: rgba(248, 249, 252, 0.92);
+}
+
+body.light-mode .lock-icon {
+    color: var(--text-main, #1d1b20);
+    opacity: 0.85;
+}
+
+body.light-mode .lock-title {
+    color: var(--text-main, #1d1b20);
+}
+
+body.light-mode .lock-msg {
+    color: var(--text-sub, #49454f);
+}
+
+body.light-mode .stage-lock-btn {
+    background: var(--secondary-container, #e8def8);
+    color: var(--on-secondary-container, #1d192b);
+    border: 1px solid rgba(29, 25, 43, 0.14);
+}
+
+body.light-mode .stage-lock-btn:active {
+    background: rgba(103, 80, 164, 0.2);
+    transform: scale(0.97);
 }
 
 /* FOCUSED STATE — remote control cursor */

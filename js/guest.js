@@ -1,6 +1,6 @@
 import { t } from './i18n.js';
 import { showModal } from './ui.js';
-import { guests, loadGuests, getAvatarUrl } from './data.js';
+import { guests, loadGuests, getAvatarUrl, tvState } from './data.js';
 
 let currentDuration = "24 Hour";
 let currentGender = "Male";

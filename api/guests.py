@@ -166,7 +166,7 @@ def update_guests():
         print("Publishing guest update event...")
 
         try:
-            publish_guest_event(guests)
+            publish_guest_event(guest_list)
             print("Guest update event published successfully")
         except Exception as mqtt_error:
             print("MQTT PUBLISH ERROR:", str(mqtt_error))

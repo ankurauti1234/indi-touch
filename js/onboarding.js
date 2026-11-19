@@ -1076,7 +1076,6 @@ export async function probeManualTvIp() {
     if (!ip) return;
 
     const list = document.getElementById('onboard-tv-list');
-    const prevHtml = list ? list.innerHTML : '';
     if (list) list.innerHTML = `<div class="wifi-skeleton">Probing ${ip}...</div>`;
 
     try {
@@ -1106,11 +1105,9 @@ export async function probeManualTvIp() {
             const nextBtn = document.getElementById('btn-next-5-wifi');
             if (nextBtn) nextBtn.disabled = false;
         } else {
-            if (list) list.innerHTML = prevHtml || '<div class="wifi-skeleton">No monitorable TV found at that IP.</div>';
-            showTvFallbackModal(d.message || `No monitorable TV ports responded at ${ip}. Ensure the TV is ON and on the same Wi-Fi.`);
+            showTvFallbackModal(d.message || "Device reachable but no monitorable TV port was found.");
         }
     } catch (e) {
-        if (list) list.innerHTML = prevHtml || '<div class="wifi-skeleton">Probe failed.</div>';
         showTvFallbackModal("Probe error: " + e.message);
     }
 }

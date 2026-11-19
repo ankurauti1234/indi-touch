@@ -596,25 +596,9 @@ export async function loadSystemInfo() {
         try {
             const tvRes = await fetch('/api/tv/status');
             const tvData = await tvRes.json();
-
-            const activeTv =
-                tvData.active_device ||
-                tvData.device ||
-                tvData.tv ||
-                (Array.isArray(tvData.devices)
-                    ? tvData.devices.find(dev => dev.is_active || dev.active || dev.calibrated || dev.label) || tvData.devices[0]
-                    : null);
-
-            if (activeTv && (activeTv.ip || activeTv.mac || activeTv.tv_type || activeTv.model)) {
-                const tvName = activeTv.label || activeTv.model || (activeTv.tv_type ? `${activeTv.tv_type.toUpperCase()} TV` : 'Smart TV');
-                const tvTypeTag = activeTv.tv_type ? ` • ${activeTv.tv_type.toUpperCase()}` : '';
-                const tvIpTag = activeTv.ip ? ` (${activeTv.ip})` : '';
+            if (tvData.active_device) {
                 tvStatusText = 'Calibrated';
-                tvDetail = `${tvName}${tvTypeTag}${tvIpTag}`;
-                tvBadgeClass = 'hw-ok';
-            } else if (tvData.calibrated || tvData.configured) {
-                tvStatusText = 'Calibrated';
-                tvDetail = tvData.ip ? `Wi-Fi TV (${tvData.ip})` : 'Wi-Fi TV Configured';
+                tvDetail = `${tvData.active_device.label || tvData.active_device.model || 'TV'} (${tvData.active_device.ip})`;
                 tvBadgeClass = 'hw-ok';
             }
         } catch (_) {}

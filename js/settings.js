@@ -589,16 +589,30 @@ export async function loadSystemInfo() {
         const el = document.getElementById('sys-info-content');
         if (!el) return;
 
-        // Fetch TV configuration state for the calibration row
+        // Fetch calibrated TV device details from /api/tv/list and live state from /api/tv/status
         let tvStatusText = 'Not Configured';
         let tvDetail = 'Tap to scan and calibrate TV';
         let tvBadgeClass = 'hw-warn';
         try {
-            const tvRes = await fetch('/api/tv/status');
-            const tvData = await tvRes.json();
-            if (tvData.active_device) {
+            const [listRes, statusRes] = await Promise.all([
+                fetch('/api/tv/list'),
+                fetch('/api/tv/status').catch(() => null)
+            ]);
+            const listData = await listRes.json();
+            const statusData = statusRes ? await statusRes.json() : {};
+
+            const devices = Array.isArray(listData) ? listData : (listData.devices || listData.tvs || []);
+            const activeTv =
+                devices.find(dev => dev.label && String(dev.label).trim() !== '') ||
+                devices.find(dev => dev.monitorable) ||
+                devices[0];
+
+            if (activeTv && (activeTv.ip || activeTv.mac || activeTv.label)) {
+                const tvLabel = activeTv.label || activeTv.model || 'TV1';
+                const tvType = activeTv.tv_type ? ` • ${activeTv.tv_type.toUpperCase()}` : '';
+                const liveState = (statusData.states && statusData.states[tvLabel]) ? ` • ${statusData.states[tvLabel]}` : '';
                 tvStatusText = 'Calibrated';
-                tvDetail = `${tvData.active_device.label || tvData.active_device.model || 'TV'} (${tvData.active_device.ip})`;
+                tvDetail = `${tvLabel}${tvType} (${activeTv.ip || 'No IP'})${liveState}`;
                 tvBadgeClass = 'hw-ok';
             }
         } catch (_) {}

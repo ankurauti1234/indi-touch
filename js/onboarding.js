@@ -1159,6 +1159,16 @@ export function showTvFallbackModal(msg) {
     const el = document.getElementById('tv-fallback-modal');
     const msgEl = document.getElementById('tv-fallback-msg');
     if (msgEl && msg) msgEl.innerText = msg;
+
+    const isPostOnboarding = Boolean(_isSettingsCalibMode || (config && config.onboardingCompleted));
+    const bleBtn = document.getElementById('btn-modal-switch-ble');
+    const skipBtn = document.getElementById('btn-modal-skip-step7');
+    const closeBtn = document.getElementById('btn-modal-close-calib');
+
+    if (bleBtn) bleBtn.style.display = isPostOnboarding ? 'none' : 'flex';
+    if (skipBtn) skipBtn.style.display = isPostOnboarding ? 'none' : 'flex';
+    if (closeBtn) closeBtn.style.display = isPostOnboarding ? 'flex' : 'none';
+
     if (el) el.style.display = 'flex';
 }
 
@@ -1174,11 +1184,13 @@ export function retryTvScanFromModal() {
 
 export function switchToBleFromModal() {
     hideTvFallbackModal();
+    if (_isSettingsCalibMode || (config && config.onboardingCompleted)) return;
     selectDetectionMethod('ble');
 }
 
 export function skipFromModal() {
     hideTvFallbackModal();
+    if (_isSettingsCalibMode || (config && config.onboardingCompleted)) return;
     skipDetectionToStep7();
 }
 

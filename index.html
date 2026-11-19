@@ -1212,11 +1212,14 @@
         <button class="btn-modal-action" onclick="retryTvScanFromModal()">
           <span class="material-symbols-rounded">refresh</span> Retry Wi-Fi Scan
         </button>
-        <button class="btn-modal-action" onclick="switchToBleFromModal()">
+        <button class="btn-modal-action" id="btn-modal-switch-ble" onclick="switchToBleFromModal()">
           <span class="material-symbols-rounded">bluetooth</span> Switch to Bluetooth Smart Plug
         </button>
-        <button class="btn-modal-action btn-modal-skip" onclick="skipFromModal()">
+        <button class="btn-modal-action btn-modal-skip" id="btn-modal-skip-step7" onclick="skipFromModal()">
           <span class="material-symbols-rounded">skip_next</span> Skip Detection to Step 7
+        </button>
+        <button class="btn-modal-action btn-modal-skip" id="btn-modal-close-calib" onclick="hideTvFallbackModal()" style="display:none;">
+          <span class="material-symbols-rounded">close</span> Close
         </button>
       </div>
     </div>

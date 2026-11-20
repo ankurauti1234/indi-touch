@@ -163,6 +163,7 @@ export function toggleTv(state) {
         guests.length = 0;
         if (window.renderGrid) window.renderGrid();
         if (window.renderGuestList) window.renderGuestList();
+        if (window.updateGuestBadge) window.updateGuestBadge();
         if (window.renderScreensaverMembers) window.renderScreensaverMembers();
     }
 }

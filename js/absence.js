@@ -14,10 +14,7 @@ async function undeclareAllMembersAndGuests() {
 
     try {
         console.log("Away Mode: Undeclaring all members & clearing guests...");
-        await Promise.all([
-            fetch('/api/members/undeclare', { method: 'POST' }),
-            fetch('/api/guests/clear', { method: 'POST' })
-        ]);
+        await fetch('/api/members/undeclare', { method: 'POST' });
     } catch (e) {
         console.error("Failed to undeclare via API:", e);
     }
@@ -28,10 +25,8 @@ async function undeclareAllMembersAndGuests() {
 
     try {
         const m = await import('./data.js');
-        await Promise.all([
-            typeof m.loadMembers === 'function' ? m.loadMembers() : Promise.resolve(),
-            typeof m.loadGuests === 'function' ? m.loadGuests() : Promise.resolve()
-        ]);
+        if (Array.isArray(m.guests)) m.guests.length = 0;
+        await m.loadMembers();
         if (window.renderGrid) window.renderGrid();
         if (window.renderGuestList) window.renderGuestList();
         if (window.updateGuestBadge) window.updateGuestBadge();

@@ -341,9 +341,13 @@ async function _pollStatus() {
 
                 // THEN force data reload and UI refresh
                 Promise.all([m.loadMembers(), m.loadGuests()]).then(() => {
+                    if (d.tv_on === false && Array.isArray(m.guests)) {
+                        m.guests.length = 0;
+                    }
                     console.log("Data reloaded after TV status change.");
                     if (window.renderGrid) window.renderGrid();
                     if (window.renderGuestList) window.renderGuestList();
+                    if (window.updateGuestBadge) window.updateGuestBadge();
                 });
 
                 // Reset idle timer to wake up or restart screensaver

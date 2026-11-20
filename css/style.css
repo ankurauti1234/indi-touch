@@ -2915,6 +2915,82 @@ body.osk-open .main-stage {
     font-size: 18px;
 }
 
+/* ── Light Mode Overrides for System Info ────────────────────────────────── */
+body.light-mode #set-system {
+    color: var(--text-main, #1d1b20);
+}
+
+body.light-mode .info-group {
+    background: var(--bg-card, #ffffff);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .info-row {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+body.light-mode .info-row:last-child {
+    border-bottom: none;
+}
+
+body.light-mode .info-group > .info-row:first-child[style*="rgba(255,255,255"] {
+    background: rgba(103, 80, 164, 0.06) !important;
+}
+
+body.light-mode .info-label {
+    color: var(--text-sub, #49454f);
+}
+
+body.light-mode .info-value {
+    color: var(--text-main, #1d1b20);
+}
+
+body.light-mode .hw-grid-item {
+    background: var(--bg-card, #ffffff);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    color: var(--text-main, #1d1b20);
+}
+
+body.light-mode .hw-grid-label {
+    color: var(--text-sub, #49454f);
+    opacity: 0.85;
+}
+
+body.light-mode .hw-ok {
+    background: rgba(22, 163, 74, 0.12) !important;
+    border: 1px solid rgba(22, 163, 74, 0.3) !important;
+}
+
+body.light-mode .hw-ok .material-symbols-rounded,
+body.light-mode .hw-ok .hw-grid-status {
+    color: #15803d;
+}
+
+body.light-mode .hw-err {
+    background: rgba(220, 38, 38, 0.10) !important;
+    border: 1px solid rgba(220, 38, 38, 0.28) !important;
+}
+
+body.light-mode .hw-err .material-symbols-rounded,
+body.light-mode .hw-err .hw-grid-status {
+    color: #b91c1c;
+}
+
+body.light-mode .hw-warn {
+    background: rgba(217, 119, 6, 0.12) !important;
+    border: 1px solid rgba(217, 119, 6, 0.3) !important;
+    color: #b45309;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+body.light-mode #set-system .hw-grid-status.hw-ok {
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
 /* -- WALLPAPER SETTINGS ----------------------------------------------------- */
 .wp-current-box {
     background: rgba(255, 255, 255, 0.04);

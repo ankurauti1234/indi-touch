@@ -631,8 +631,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, { passive: false });
 
     // 3. User Interaction Tracking
-    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
-    document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
+    const handleUserActivity = () => { resetIdle(); resetHomeTimer(); };
+    const isSaverVisible = () =>
+        document.getElementById('screensaver')?.classList.contains('active') ||
+        document.body.classList.contains('screensaver-active');
+
+    document.addEventListener('keydown', handleUserActivity);
+    document.addEventListener('pointerdown', () => {
+        if (isSaverVisible()) return;
+        handleUserActivity();
+    }, { capture: true });
+    document.addEventListener('click', handleUserActivity);
+
+    document.getElementById('screensaver')?.addEventListener('click', (event) => {
+        if (!isSaverVisible()) return;
+        event.preventDefault();
+        event.stopPropagation();
+        handleUserActivity();
+    });
     resetIdle();
     resetHomeTimer();
 

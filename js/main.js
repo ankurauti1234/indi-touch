@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isOverlayVisible = tvOverlay && tvOverlay.style.display !== 'none';
 
         // Abort if TV is off, onboarding incomplete, overlay visible, Away Mode active, or calibrating
-        if (!isTvOn || !config.onboardingCompleted || isOverlayVisible || isAwayModeActive || isCalibratingOrOnboarding()) {
+        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible || isAwayModeActive || isCalibratingOrOnboarding()) {
             popover.classList.remove('active');
             timers.clearTimeout(activeMemberReminderDismissTimer);
             timers.clearTimeout(activeMemberReminderRepeatTimer);
@@ -570,7 +570,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const activeCount = memberData.filter(m => m.active).length;
 
         // 1. If TV is off, onboarding incomplete, overlay visible, Away Mode active, calibrating, or someone active: clear immediately
-        if (!isTvOn || !config.onboardingCompleted || isOverlayVisible || activeCount > 0 || isAwayModeActive || isCalibratingOrOnboarding()) {
+        if (!tvState.on || !config.onboardingCompleted || isOverlayVisible || activeCount > 0 || isAwayModeActive || isCalibratingOrOnboarding()) {
             if (popover) {
                 popover.classList.remove('active');
             }

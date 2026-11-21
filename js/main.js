@@ -630,12 +630,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
     }, { passive: false });
 
-    // 3. User Interaction Tracking (capture phase so touch/swipe/stopPropagation never bypass idle reset)
-    const onUserActivity = () => { resetIdle(); resetHomeTimer(); };
-    document.addEventListener('pointerdown', onUserActivity, { capture: true, passive: true });
-    document.addEventListener('touchstart', onUserActivity, { capture: true, passive: true });
-    document.addEventListener('keydown', onUserActivity, { capture: true });
-    document.addEventListener('click', onUserActivity, { capture: true });
+    // 3. User Interaction Tracking (capture phase + swallow wake-up tap so underlying UI isn't clicked)
+    let swallowNextTap = false;
+    const isScreensaverShowing = () => {
+        const s = document.getElementById('screensaver');
+        return Boolean(s && (s.classList.contains('active') || document.body.classList.contains('screensaver-active')));
+    };
+
+    const onPointerOrTouchDown = (e) => {
+        swallowNextTap = false;
+        if (isScreensaverShowing()) {
+            swallowNextTap = true;
+            e.stopPropagation();
+        }
+        resetIdle();
+        resetHomeTimer();
+    };
+
+    const swallowTrailingEvent = (e) => {
+        if (!swallowNextTap) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (e.type === 'click') {
+            swallowNextTap = false;
+        }
+    };
+
+    document.addEventListener('pointerdown', onPointerOrTouchDown, { capture: true, passive: true });
+    document.addEventListener('touchstart', onPointerOrTouchDown, { capture: true, passive: true });
+    document.addEventListener('pointerup', swallowTrailingEvent, { capture: true });
+    document.addEventListener('touchend', swallowTrailingEvent, { capture: true });
+    document.addEventListener('click', (e) => {
+        if (swallowNextTap) {
+            swallowTrailingEvent(e);
+            return;
+        }
+        resetIdle();
+        resetHomeTimer();
+    }, { capture: true });
+    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); }, { capture: true });
     resetIdle();
     resetHomeTimer();
 

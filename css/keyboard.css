@@ -28,9 +28,6 @@
     gap: 6px;
     justify-content: center;
     width: 100%;
-    max-width: 760px;
-    padding: 0 12px;
-    box-sizing: border-box;
 }
 
 .osk-key {
@@ -39,8 +36,7 @@
     border: none;
     border-radius: 6px;
     height: 48px;
-    flex: 1 1 0;
-    min-width: 36px;
+    min-width: 40px;
     /* Standard key width */
     font-size: 20px;
     font-weight: 400;
@@ -60,19 +56,18 @@
 
 /* SPECIAL KEYS */
 .osk-key.wide {
-    flex: 1.4 1 0;
-    max-width: 72px;
+    flex-grow: 1;
+    max-width: 60px;
     font-size: 16px;
     background: #38393F;
 }
 
 .osk-key.space {
-    flex: 5 1 0;
-    max-width: none;
+    flex-grow: 4;
+    max-width: 300px;
 }
 
 .osk-key.action {
-    flex: 1.8 1 0;
     background: #381E72;
     color: #D0BCFF;
     font-weight: 500;
@@ -90,6 +85,7 @@
     .osk-key {
         height: 44px;
         font-size: 18px;
+        margin: 0 2px;
     }
 }
 

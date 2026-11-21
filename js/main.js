@@ -630,40 +630,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
     }, { passive: false });
 
-    // 3. User Interaction Tracking (capture phase + swallow wake-up tap so underlying UI isn't clicked)
-    let swallowNextTap = false;
-    let wakeTapTimestamp = 0;
-
-    const isScreensaverShowing = () => {
-        const s = document.getElementById('screensaver');
-        return Boolean(s && (s.classList.contains('active') || document.body.classList.contains('screensaver-active')));
-    };
-
-    const onPointerOrTouchDown = (e) => {
-        const now = Date.now();
-        // Reset stale flag only if this is a brand-new touch (> 400ms after the wake-up tap)
-        if (swallowNextTap && (now - wakeTapTimestamp > 400)) {
-            swallowNextTap = false;
-        }
-
-        if (isScreensaverShowing()) {
-            swallowNextTap = true;
-            wakeTapTimestamp = now;
-            e.stopPropagation();
-        }
-        resetIdle();
-        resetHomeTimer();
-    };
-
-    const swallowTrailingEvent = (e) => {
-        if (!swallowNextTap) return;
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        if (e.type === 'click') {
-            swallowNextTap = false;
-        }
-    };
+    // 3. User Interaction Tracking
+    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
+    document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
+    resetIdle();
+    resetHomeTimer();
 
     // 4. Remote Control System
     initRemote();

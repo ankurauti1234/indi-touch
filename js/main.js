@@ -630,9 +630,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
     }, { passive: false });
 
-    // 3. User Interaction Tracking
-    document.addEventListener('keydown', () => { resetIdle(); resetHomeTimer(); });
-    document.addEventListener('click', () => { resetIdle(); resetHomeTimer(); });
+    // 3. User Interaction Tracking (capture phase so touch/swipe/stopPropagation never bypass idle reset)
+    const onUserActivity = () => { resetIdle(); resetHomeTimer(); };
+    document.addEventListener('pointerdown', onUserActivity, { capture: true, passive: true });
+    document.addEventListener('touchstart', onUserActivity, { capture: true, passive: true });
+    document.addEventListener('keydown', onUserActivity, { capture: true });
+    document.addEventListener('click', onUserActivity, { capture: true });
     resetIdle();
     resetHomeTimer();
 

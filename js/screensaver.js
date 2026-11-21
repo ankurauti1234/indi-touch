@@ -46,7 +46,9 @@ export function resetIdle(isPriority = false) {
     }, timeout);
 }
 window.setScreensaverTimeout = (ms) => {
-    // This allows immediate update from settings
+    if (typeof ms === 'number' && ms > 0) {
+        config.screenTimeout = ms;
+    }
     clearTimeout(idleTimer);
     resetIdle();
 };

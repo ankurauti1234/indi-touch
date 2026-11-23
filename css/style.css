@@ -2238,7 +2238,7 @@ body.osk-open .main-stage {
 
 /* 1–4 Members Declared: Keep clock large (255px) while leaving room for avatars */
 #screensaver:not(.center-clock) #clock-time {
-    font-size: 255px !important;
+    font-size: 300px !important;
     line-height: 0.82;
 }
 

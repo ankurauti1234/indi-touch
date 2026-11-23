@@ -2222,9 +2222,9 @@ body.osk-open .main-stage {
 }
 
 #clock-time {
-    font-size: 300px !important;
+    font-size: 340px !important;
     font-weight: 700;
-    line-height: 0.78;
+    line-height: 0.76;
     letter-spacing: -8px;
     margin-bottom: 0;
     color: #ffffff;

@@ -2220,6 +2220,7 @@ body.osk-open .main-stage {
     margin-bottom: 0px;
 }
 
+/* Default / No members declared: stays at original 300px centered */
 #clock-time {
     font-size: 300px !important;
     font-weight: 700;
@@ -2236,9 +2237,16 @@ body.osk-open .main-stage {
     justify-content: center;
 }
 
-#clock-time.massive {
-    font-size: 380px !important;
-    line-height: 0.8;
+/* Members declared (1-4 members): reduce clock size and shift up */
+#screensaver:not(.center-clock) #clock-time {
+    font-size: 210px !important;
+    line-height: 0.85;
+}
+
+/* Compact View (5+ Members) */
+#screensaver.compact-view #clock-time {
+    font-size: 160px !important;
+    line-height: 0.85;
 }
 
 .clock-main-digits {
@@ -2400,10 +2408,6 @@ body.osk-open .main-stage {
 }
 
 /* Compact View (5+ Members) */
-.compact-view .clock-main-digits {
-    font-size: 140px;
-}
-
 .compact-view #saver-active-members {
     gap: 18px;
 }

@@ -62,12 +62,6 @@ export function updateClock() {
     if (digits) digits.textContent = `${hours}:${mins}`;
     if (secsEl) secsEl.textContent = secs;
 
-    const clock = document.getElementById('clock-time');
-    if (clock) {
-        if (!tvState.on) clock.classList.add('massive');
-        else clock.classList.remove('massive');
-    }
-
     const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const dateEl = document.getElementById('clock-date');
     if (dateEl) dateEl.innerText = dateStr;

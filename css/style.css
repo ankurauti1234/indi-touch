@@ -2276,11 +2276,11 @@ body.osk-open .main-stage {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 2px 12px;
+    padding: 4px 14px;
     background: rgba(100, 210, 154, 0.2);
     color: #64d29a;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     letter-spacing: 1px;
 }
@@ -2294,55 +2294,76 @@ body.osk-open .main-stage {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    opacity: 0.7;
+    gap: 24px;
+    margin-top: 12px;
+    opacity: 0.85;
 }
 
 #clock-date {
-    font-size: 32px;
+    font-size: 40px;
     font-weight: 400;
-    opacity: 0.9;
+    opacity: 0.95;
     letter-spacing: 0.5px;
 }
 
 .saver-dot {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
     background: #fff;
     border-radius: 50%;
-    opacity: 0.4;
+    opacity: 0.5;
     margin: 0 4px;
 }
 
 #saver-weather {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: none;
     border: none;
     padding: 0;
 }
 
 #saver-weather img {
-    width: 44px !important;
-    height: 44px !important;
+    width: 54px !important;
+    height: 54px !important;
 }
 
 .weather-temp {
-    font-size: 32px;
+    font-size: 40px;
     font-weight: 400;
-    opacity: 0.9;
+    opacity: 0.95;
 }
 
 .weather-desc-inline {
-    font-size: 28px;
+    font-size: 34px;
     font-weight: 300;
-    opacity: 0.6;
+    opacity: 0.65;
     margin-left: 4px;
 }
 
 .weather-desc {
     display: none;
+}
+
+/* Scale down info row slightly when members are declared so avatars have breathing room */
+#screensaver:not(.center-clock) .saver-info-row {
+    margin-top: 6px;
+    gap: 18px;
+}
+
+#screensaver:not(.center-clock) #clock-date,
+#screensaver:not(.center-clock) .weather-temp {
+    font-size: 32px;
+}
+
+#screensaver:not(.center-clock) .weather-desc-inline {
+    font-size: 28px;
+}
+
+#screensaver:not(.center-clock) #saver-weather img {
+    width: 44px !important;
+    height: 44px !important;
 }
 
 /* ── SCREENSAVER ACTIVE MEMBERS ────────────────────────────────────────── */

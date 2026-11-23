@@ -28,8 +28,8 @@ export async function addGuest() {
     if (!tvState.on) {
         console.warn("Add guest ignored: TV is OFF");
         showModal(
-            'TV is Off',
-            'Adding guests is disabled while the TV is off.'
+            t('tv_is_off'),
+            t('guest_tv_off_msg')
         );
         return;
     }

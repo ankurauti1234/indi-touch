@@ -4,6 +4,7 @@ import { openSetting } from './settings.js';
 import { timers } from './utils.js';
 import { config } from './data.js';
 import { isAwayModeActive } from './absence.js';
+import { t } from './i18n.js';
 
 const API_STATUS_URL = '/api/system/status';
 const POLL_INTERVAL  = 8000;       // 8 s
@@ -56,12 +57,12 @@ export function syncTvOverlay(tvOn) {
     if (isAwayActive) {
         if (iconEl) iconEl.innerText = 'flight_takeoff';
         if (titleEl) {
-            titleEl.innerText = 'Household Away Mode Active';
-            titleEl.removeAttribute('data-i18n');
+            titleEl.innerText = t('away_mode_active_title');
+            titleEl.setAttribute('data-i18n', 'away_mode_active_title');
         }
         if (msgEl) {
-            msgEl.removeAttribute('data-i18n');
-            msgEl.innerText = 'Member and guest declarations are disabled while Away Mode is active.';
+            msgEl.innerText = t('away_mode_active_msg');
+            msgEl.setAttribute('data-i18n', 'away_mode_active_msg');
         }
         if (manageBtn) manageBtn.style.display = 'inline-flex';
         overlay.style.display = 'flex';
@@ -72,11 +73,11 @@ export function syncTvOverlay(tvOn) {
     if (!_lastTvOnState) {
         if (iconEl) iconEl.innerText = 'tv_off';
         if (titleEl) {
-            titleEl.innerText = 'TV is Off';
+            titleEl.innerText = t('tv_is_off');
             titleEl.setAttribute('data-i18n', 'tv_is_off');
         }
         if (msgEl) {
-            msgEl.innerText = 'Member and guest declarations are disabled while the TV is off.';
+            msgEl.innerText = t('member_decl_disabled');
             msgEl.setAttribute('data-i18n', 'member_decl_disabled');
         }
         if (manageBtn) manageBtn.style.display = 'none';

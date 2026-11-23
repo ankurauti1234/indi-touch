@@ -1,6 +1,7 @@
 // js/absence.js — Household Away Mode Toggle & Popover Controller
 
 import { syncTvOverlay } from './connection.js';
+import { t } from './i18n.js';
 
 // Exported state for connection.js and main.js sync
 export let isAwayModeActive = false;
@@ -51,7 +52,7 @@ async function fetchAbsenceStatus() {
     if (typeof syncTvOverlay === 'function') syncTvOverlay();
 }
 
-function applyActiveModeUI() {
+export function applyActiveModeUI() {
     const navBtn = document.getElementById('btn-absence');
     const titleEl = document.getElementById('away-modal-title');
     const descEl = document.getElementById('away-modal-desc');
@@ -61,30 +62,45 @@ function applyActiveModeUI() {
 
     if (navBtn) {
         navBtn.classList.toggle('active', isAwayModeActive);
+        navBtn.title = t('away_mode');
     }
 
     if (isAwayModeActive) {
-        if (titleEl) titleEl.innerText = 'Deactivate Away Mode?';
-        if (descEl) descEl.innerText = 'Household Away Mode is currently active. Resume normal member and guest declarations?';
+        if (titleEl) {
+            titleEl.innerText = t('deactivate_away_title');
+            titleEl.setAttribute('data-i18n', 'deactivate_away_title');
+        }
+        if (descEl) {
+            descEl.innerText = t('deactivate_away_desc');
+            descEl.setAttribute('data-i18n', 'deactivate_away_desc');
+        }
         if (iconEl) iconEl.innerText = 'home';
         if (iconWrap) {
             iconWrap.style.background = 'var(--primary-container)';
             iconWrap.style.color = 'var(--on-primary-container)';
         }
         if (confirmBtn) {
-            confirmBtn.innerText = 'Deactivate';
+            confirmBtn.innerText = t('deactivate');
+            confirmBtn.setAttribute('data-i18n', 'deactivate');
             confirmBtn.classList.add('danger');
         }
     } else {
-        if (titleEl) titleEl.innerText = 'Activate Away Mode?';
-        if (descEl) descEl.innerText = 'All active members and guests will be undeclared, and member interactions will pause until you deactivate Away Mode.';
+        if (titleEl) {
+            titleEl.innerText = t('activate_away_title');
+            titleEl.setAttribute('data-i18n', 'activate_away_title');
+        }
+        if (descEl) {
+            descEl.innerText = t('activate_away_desc');
+            descEl.setAttribute('data-i18n', 'activate_away_desc');
+        }
         if (iconEl) iconEl.innerText = 'flight_takeoff';
         if (iconWrap) {
             iconWrap.style.background = 'var(--secondary-container)';
             iconWrap.style.color = 'var(--on-secondary-container)';
         }
         if (confirmBtn) {
-            confirmBtn.innerText = 'Activate';
+            confirmBtn.innerText = t('activate');
+            confirmBtn.setAttribute('data-i18n', 'activate');
             confirmBtn.classList.remove('danger');
         }
     }
@@ -136,13 +152,13 @@ async function activateAbsenceMode() {
             applyActiveModeUI();
             closeAwayModeModal();
             if (typeof syncTvOverlay === 'function') syncTvOverlay();
-            if (window.showToast) window.showToast("Household Away Mode activated.");
+            if (window.showToast) window.showToast(t('away_mode_activated'));
         } else {
-            if (window.showToast) window.showToast(data.error || "Failed to set away mode");
+            if (window.showToast) window.showToast(data.error || t('away_mode_set_failed'));
         }
     } catch (e) {
         console.error("Absence request failed:", e);
-        if (window.showToast) window.showToast("Network error: Could not activate away mode");
+        if (window.showToast) window.showToast(t('away_mode_network_error'));
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -172,13 +188,13 @@ async function cancelAbsenceMode() {
             applyActiveModeUI();
             closeAwayModeModal();
             if (typeof syncTvOverlay === 'function') syncTvOverlay();
-            if (window.showToast) window.showToast("Household Away Mode deactivated.");
+            if (window.showToast) window.showToast(t('away_mode_deactivated'));
         } else {
-            if (window.showToast) window.showToast(data.error || "Failed to deactivate away mode");
+            if (window.showToast) window.showToast(data.error || t('away_mode_deactivate_failed'));
         }
     } catch (e) {
         console.error("Failed to cancel absence:", e);
-        if (window.showToast) window.showToast("Error deactivating away mode");
+        if (window.showToast) window.showToast(t('away_mode_deactivate_error'));
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -187,5 +203,6 @@ async function cancelAbsenceMode() {
 window.openAwayModeModal = openAwayModeModal;
 window.closeAwayModeModal = closeAwayModeModal;
 window.handleAbsenceAction = handleAbsenceAction;
+window.applyActiveModeUI = applyActiveModeUI;
 
 export { initAbsenceCalendar, initAbsenceCalendar as initAbsenceManager };

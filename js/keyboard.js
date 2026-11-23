@@ -91,8 +91,7 @@ export function initOSK() {
 function renderKeys() {
     const container = document.getElementById('osk-container');
     container.innerHTML = ''; // Clear
-    container.dataset.lang = isSymbol ? 'sym' : inputLang;
-
+    
     let layout;
     if (isSymbol) {
         layout = keysSymbol;
@@ -109,7 +108,7 @@ function renderKeys() {
         row.forEach(key => {
             const btn = document.createElement('button');
             btn.className = 'osk-key';
-
+            
             // Text / Label Logic
             let display = key;
             if (key === 'shift') {
@@ -136,7 +135,7 @@ function renderKeys() {
             }
 
             btn.innerText = display;
-
+            
             // Interaction
             btn.onpointerdown = (e) => {
                 e.preventDefault(); // CRITICAL: Prevents keyboard button from blurring the active input!
@@ -156,14 +155,6 @@ function renderKeys() {
 
         container.appendChild(rowDiv);
     });
-
-    // Match the bottom row width directly to the row right above it (Row 3)
-    const rows = container.querySelectorAll('.osk-row');
-    if (rows.length >= 2) {
-        const upperRow = rows[rows.length - 2];
-        const bottomRow = rows[rows.length - 1];
-        bottomRow.style.width = `${upperRow.offsetWidth}px`;
-    }
 }
 
 function handleKey(key) {
@@ -242,15 +233,8 @@ function handleKey(key) {
 }
 
 export function showOSK() {
-    const container = document.getElementById('osk-container');
-    container.classList.add('visible');
+    document.getElementById('osk-container').classList.add('visible');
     document.body.classList.add('osk-open');
-
-    const rows = container.querySelectorAll('.osk-row');
-    if (rows.length >= 2) {
-        rows[rows.length - 1].style.width = `${rows[rows.length - 2].offsetWidth}px`;
-    }
-
     setTimeout(() => {
         if (activeInput) activeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);

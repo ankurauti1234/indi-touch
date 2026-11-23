@@ -31,27 +31,16 @@
     box-sizing: border-box;
 }
 
-/* Bottom row expands to match upper rows' width, with ONLY the spacebar stretching */
-.osk-row:last-child {
-    width: 100%;
-    max-width: 558px; /* Matches 10-key row width (10*48 + 9*6 + 24) */
-}
-
-/* When Armenian (13 keys in row 1) is active, match the wider 13-key upper row */
-.osk-row:first-child:has(.osk-key:nth-child(12)) ~ .osk-row:last-child {
-    max-width: 720px; /* Matches 13-key row width (13*48 + 12*6 + 24) */
-}
-
 /* Uniform fixed size for every standard letter key across all rows */
 .osk-key {
     background: #2D2E33;
     color: #E6E1E5;
     border: none;
     border-radius: 6px;
-    height: 46px;
-    flex: 0 0 50px;
-    width: 50px;
-    font-size: 20px;
+    height: 44px;
+    flex: 0 0 48px;
+    width: 48px;
+    font-size: 18px;
     font-weight: 400;
     cursor: pointer;
     user-select: none;
@@ -67,19 +56,12 @@
     transform: translateY(1px);
 }
 
-/* SPECIAL KEYS (Fixed width so they never distort) */
+/* SPECIAL KEYS */
 .osk-key.wide {
     flex: 0 0 72px;
     width: 72px;
     font-size: 16px;
     background: #38393F;
-}
-
-/* ONLY the spacebar expands to fill the bottom row */
-.osk-key.space {
-    flex: 1 1 auto;
-    width: auto;
-    min-width: 180px;
 }
 
 .osk-key.action {
@@ -96,24 +78,24 @@
     color: #383932;
 }
 
-/* ADJUSTMENTS FOR 1024px SCREEN */
-@media (max-width: 1024px) {
-    .osk-key {
-        height: 44px;
-        flex: 0 0 48px;
-        width: 48px;
-        font-size: 18px;
-    }
+/* ── BOTTOM ROW (SPACEBAR ROW) ALIGNMENT WITH ROW DIRECTLY ABOVE IT ── */
 
-    .osk-key.wide {
-        flex: 0 0 72px;
-        width: 72px;
-    }
+/* Default (English / Russian): Row 3 has 7 letter keys (48px) + 2 wide keys (72px) + 8 gaps (6px) + 24px padding = 552px */
+#osk-container .osk-row:last-child {
+    width: 552px;
+    max-width: 100%;
+}
 
-    .osk-key.action {
-        flex: 0 0 92px;
-        width: 92px;
-    }
+/* Armenian (or any layout where the row directly above spacebar has 11+ keys): 13*48 + 12*6 + 24 = 720px */
+#osk-container .osk-row:nth-last-child(2):has(.osk-key:nth-child(11)) + .osk-row:last-child {
+    width: 720px;
+}
+
+/* ONLY the spacebar expands to fill the exact remaining width of the bottom row */
+#osk-container .osk-row:last-child .osk-key.space {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 120px;
 }
 
 /* NUMERIC MODE */

@@ -2191,7 +2191,7 @@ body.osk-open .main-stage {
     pointer-events: none;
     transition: opacity 0.35s ease;
     color: #fff;
-    padding: 20px 24px 24px;
+    padding: 12px 24px 16px;
     text-align: center;
     border-radius: 42px;
     overflow: hidden;
@@ -2205,25 +2205,26 @@ body.osk-open .main-stage {
     pointer-events: auto;
 }
 
-/* 0 Members Declared: Center the clock vertically at original 300px size */
+/* 0 Members Declared: Center the clock & date/weather vertically */
 #screensaver.center-clock {
     justify-content: center !important;
 }
 
 #screensaver.center-clock .saver-clock {
     margin-top: 0 !important;
-    margin-bottom: 24px !important;
+    margin-bottom: 16px !important;
 }
 
+/* Members Active: Shift clock to top while keeping 300px size */
 .saver-clock {
-    margin-top: 10px;
+    margin-top: 4px;
     margin-bottom: 0;
 }
 
 #clock-time {
     font-size: 300px !important;
     font-weight: 700;
-    line-height: 0.8;
+    line-height: 0.78;
     letter-spacing: -8px;
     margin-bottom: 0;
     color: #ffffff;
@@ -2234,18 +2235,6 @@ body.osk-open .main-stage {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-}
-
-/* 1–4 Members Declared: Keep clock large (255px) while leaving room for avatars */
-#screensaver:not(.center-clock) #clock-time {
-    font-size: 300px !important;
-    line-height: 0.82;
-}
-
-/* 5+ Members Declared (Compact View) */
-#screensaver.compact-view #clock-time {
-    font-size: 215px !important;
-    line-height: 0.82;
 }
 
 .clock-main-digits {
@@ -2278,13 +2267,13 @@ body.osk-open .main-stage {
     color: #8e8e8e;
 }
 
-/* Date & Weather Info Row (0 Members / Centered Clock) */
+/* Date & Weather Info Row: Same size in both centered & active-member states */
 .saver-info-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 24px;
-    margin-top: 14px;
+    gap: 22px;
+    margin-top: 8px;
     opacity: 0.85;
 }
 
@@ -2314,8 +2303,8 @@ body.osk-open .main-stage {
 }
 
 #saver-weather img {
-    width: 54px !important;
-    height: 54px !important;
+    width: 48px !important;
+    height: 48px !important;
 }
 
 .weather-temp {
@@ -2333,26 +2322,6 @@ body.osk-open .main-stage {
 
 .weather-desc {
     display: none;
-}
-
-/* Scale Date & Weather down slightly when members are visible */
-#screensaver:not(.center-clock) .saver-info-row {
-    margin-top: 6px;
-    gap: 18px;
-}
-
-#screensaver:not(.center-clock) #clock-date,
-#screensaver:not(.center-clock) .weather-temp {
-    font-size: 32px;
-}
-
-#screensaver:not(.center-clock) .weather-desc-inline {
-    font-size: 28px;
-}
-
-#screensaver:not(.center-clock) #saver-weather img {
-    width: 44px !important;
-    height: 44px !important;
 }
 
 /* ── SCREENSAVER ACTIVE MEMBERS ────────────────────────────────────────── */
@@ -2387,17 +2356,17 @@ body.osk-open .main-stage {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     width: 160px;
     flex-shrink: 0;
 }
 
 .saver-member-avatar {
-    width: 130px;
-    height: 130px;
+    width: 116px;
+    height: 116px;
     border-radius: 50%;
     border: 4px solid rgba(255, 255, 255, 0.2);
-    padding: 8px;
+    padding: 6px;
     background: rgba(255, 255, 255, 0.06);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     object-fit: cover;
@@ -2405,7 +2374,7 @@ body.osk-open .main-stage {
 }
 
 .saver-member-name {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 500;
     opacity: 0.95;
     color: #fff;
@@ -2428,8 +2397,8 @@ body.osk-open .main-stage {
 }
 
 .compact-view .saver-member-avatar {
-    width: 110px;
-    height: 110px;
+    width: 104px;
+    height: 104px;
     padding: 6px;
     border-width: 3px;
 }

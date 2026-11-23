@@ -26,7 +26,7 @@
     gap: 6px;
     justify-content: center;
     width: auto;
-    max-width: 740px;
+    max-width: 98vw;
     padding: 0 12px;
     box-sizing: border-box;
 }
@@ -73,70 +73,14 @@
     font-size: 16px;
 }
 
-.osk-key.shift-active {
-    background: #D0BCFF;
-    color: #383932;
-}
-
-/* ── BOTTOM ROW (SPACEBAR ROW) ALIGNMENT WITH ROW DIRECTLY ABOVE IT ── */
-
-/* Default (English / Russian): Row 3 has 7 letter keys (48px) + 2 wide keys (72px) + 8 gaps (6px) + 24px padding = 552px */
-#osk-container .osk-row:last-child {
-    width: 552px;
-    max-width: 100%;
-}
-
-/* Armenian (or any layout where the row directly above spacebar has 11+ keys): 13*48 + 12*6 + 24 = 720px */
-#osk-container .osk-row:nth-last-child(2):has(.osk-key:nth-child(11)) + .osk-row:last-child {
-    width: 720px;
-}
-
-/* ONLY the spacebar expands to fill the exact remaining width of the bottom row */
-#osk-container .osk-row:last-child .osk-key.space {
+/* ONLY the spacebar expands to fill the bottom row */
+.osk-key.space {
     flex: 1 1 auto !important;
     width: auto !important;
     min-width: 120px;
 }
 
-/* NUMERIC MODE */
-#osk-container.numeric-mode {
-    padding-bottom: 24px;
-    background-color: #000;
-}
-
-#osk-container.numeric-mode .osk-row {
-    flex-wrap: wrap;
-    width: 100%;
-    max-width: 98%;
-    margin: 4px auto;
-    gap: 4px;
-}
-
-#osk-container.numeric-mode .osk-key {
-    background: #2D2E33;
-    flex: 1 1 8%;
-    width: auto;
-    height: 54px;
-    font-size: 18px;
-    border-radius: 8px;
-    min-width: 40px;
-}
-
-#osk-container.numeric-mode .osk-key.wide,
-#osk-container.numeric-mode .osk-key.action {
-    flex: 1.5;
-    width: auto;
-    background: #38393F;
-}
-
-#osk-container.numeric-mode .osk-key.space {
-    flex: 3;
-    width: auto;
-    background: #2D2E33;
-}
-
-#osk-container.numeric-mode .osk-row:last-child .osk-key:last-child {
-    flex: 1.5;
-    width: auto;
-    background: #38393F;
+.osk-key.shift-active {
+    background: #D0BCFF;
+    color: #383932;
 }

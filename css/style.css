@@ -2356,17 +2356,17 @@ body.osk-open .main-stage {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     width: 160px;
     flex-shrink: 0;
 }
 
 .saver-member-avatar {
-    width: 116px;
-    height: 116px;
+    width: 130px;
+    height: 130px;
     border-radius: 50%;
     border: 4px solid rgba(255, 255, 255, 0.2);
-    padding: 6px;
+    padding: 8px;
     background: rgba(255, 255, 255, 0.06);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     object-fit: cover;
@@ -2374,7 +2374,7 @@ body.osk-open .main-stage {
 }
 
 .saver-member-name {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 500;
     opacity: 0.95;
     color: #fff;
@@ -2393,12 +2393,12 @@ body.osk-open .main-stage {
 
 .compact-view .saver-member-item {
     width: 140px;
-    gap: 8px;
+    gap: 10px;
 }
 
 .compact-view .saver-member-avatar {
-    width: 104px;
-    height: 104px;
+    width: 110px;
+    height: 110px;
     padding: 6px;
     border-width: 3px;
 }

@@ -35,6 +35,20 @@ const keysSymbol = [
     ["ABC", "lang", "space", ".", "enter"]
 ];
 
+const keysSymbolHY = [
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+    ["֏", "՞", "՜", "՛", "։", "՝", "«", "»", "(", ")"],
+    ["shift", "@", "#", "-", "+", "/", "*", "\"", "!", "backspace"],
+    ["ԱԲԳ", "lang", "space", "՝", "enter"]
+];
+
+const keysSymbolRU = [
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+    ["₽", "№", "@", "_", "&", "-", "+", "(", ")", "/"],
+    ["shift", "*", "«", "»", ":", ";", "!", "?", "backspace"],
+    ["АБВ", "lang", "space", ",", "enter"]
+];
+
 // const keysNumber = [
 //     ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
 //     ["+", "x", "÷", "=", "/", "_", "<", ">", "[", "]"],
@@ -94,7 +108,9 @@ function renderKeys() {
     
     let layout;
     if (isSymbol) {
-        layout = keysSymbol;
+        if (inputLang === 'hy') layout = keysSymbolHY;
+        else if (inputLang === 'ru') layout = keysSymbolRU;
+        else layout = keysSymbol;
     } else {
         if (inputLang === 'hy') layout = keysHY;
         else if (inputLang === 'ru') layout = keysRU;
@@ -124,7 +140,7 @@ function renderKeys() {
             } else if (key === 'space') {
                 display = '';
                 btn.classList.add('space');
-            } else if (key === '?123' || key === 'ABC') {
+            } else if (key === '?123' || key === 'ABC' || key === 'ԱԲԳ' || key === 'АБВ') {
                 btn.classList.add('wide');
             } else if (key === 'lang') {
                 display = inputLang.toUpperCase();
@@ -181,7 +197,7 @@ function handleKey(key) {
         return;
     }
 
-    if (key === 'ABC') {
+    if (key === 'ABC' || key === 'ԱԲԳ' || key === 'АБВ') {
         isSymbol = false;
         isNumberMode = false; // Allow returning to alpha even if input was type="number"
         renderKeys();

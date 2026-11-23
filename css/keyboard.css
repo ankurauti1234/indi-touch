@@ -25,13 +25,24 @@
     display: flex;
     gap: 6px;
     justify-content: center;
-    width: 100%;
-    max-width: 760px;
+    width: auto;
+    max-width: 740px;
     padding: 0 12px;
     box-sizing: border-box;
 }
 
-/* Uniform fixed size for every standard letter key across all rows & languages */
+/* Bottom row expands to match upper rows' width, with ONLY the spacebar stretching */
+.osk-row:last-child {
+    width: 100%;
+    max-width: 558px; /* Matches 10-key row width (10*48 + 9*6 + 24) */
+}
+
+/* When Armenian (13 keys in row 1) is active, match the wider 13-key upper row */
+.osk-row:first-child:has(.osk-key:nth-child(12)) ~ .osk-row:last-child {
+    max-width: 720px; /* Matches 13-key row width (13*48 + 12*6 + 24) */
+}
+
+/* Uniform fixed size for every standard letter key across all rows */
 .osk-key {
     background: #2D2E33;
     color: #E6E1E5;
@@ -56,22 +67,24 @@
     transform: translateY(1px);
 }
 
-/* SPECIAL KEYS */
+/* SPECIAL KEYS (Fixed width so they never distort) */
 .osk-key.wide {
-    flex: 0 0 76px;
-    width: 76px;
+    flex: 0 0 72px;
+    width: 72px;
     font-size: 16px;
     background: #38393F;
 }
 
+/* ONLY the spacebar expands to fill the bottom row */
 .osk-key.space {
-    flex: 0 0 300px;
-    width: 300px;
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 180px;
 }
 
 .osk-key.action {
-    flex: 0 0 96px;
-    width: 96px;
+    flex: 0 0 92px;
+    width: 92px;
     background: #381E72;
     color: #D0BCFF;
     font-weight: 500;
@@ -97,11 +110,6 @@
         width: 72px;
     }
 
-    .osk-key.space {
-        flex: 0 0 280px;
-        width: 280px;
-    }
-
     .osk-key.action {
         flex: 0 0 92px;
         width: 92px;
@@ -116,6 +124,7 @@
 
 #osk-container.numeric-mode .osk-row {
     flex-wrap: wrap;
+    width: 100%;
     max-width: 98%;
     margin: 4px auto;
     gap: 4px;
